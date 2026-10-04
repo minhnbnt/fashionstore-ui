@@ -5,11 +5,11 @@ import { getProduct } from '@/lib/api'
 export function useProduct(productId: number | null) {
   return useQuery({
     queryKey: ['products', productId],
-    queryFn: () => {
+    queryFn: ({ signal }) => {
       if (productId === null) {
         throw new Error('Thiếu id sản phẩm')
       }
-      return getProduct(productId)
+      return getProduct(productId, signal)
     },
     enabled: productId !== null,
   })

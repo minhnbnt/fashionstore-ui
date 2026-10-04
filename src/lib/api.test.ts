@@ -173,3 +173,32 @@ describe('mock delete', () => {
     expect((error as ApiError).status).toBe(404)
   })
 })
+
+describe('abort signal', () => {
+  it('forwards the query signal to fetch', async () => {
+    const controller = new AbortController()
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(okResponse([]))
+
+    await listProducts(controller.signal)
+
+    const call = fetchSpy.mock.calls[0] as [string, RequestInit]
+    expect(call[1].signal).toBe(controller.signal)
+  })
+
+  it('lets abort errors propagate untouched for react-query to cancel silently', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation((_url, init) => {
+        if (init?.signal?.aborted === true) {
+          return Promise.reject(new DOMException('Aborted', 'AbortError'))
+        }
+        return Promise.resolve(okResponse([]))
+      })
+
+    const error = await listProducts(AbortSignal.abort()).catch((caught: unknown) => caught)
+
+    expect((error as DOMException).name).toBe('AbortError')
+    expect(error).not.toBeInstanceOf(ApiError)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+  })
+})

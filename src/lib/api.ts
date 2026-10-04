@@ -166,7 +166,7 @@ let mockProducts: Product[] = [
 ]
 
 // DELETE thành công trả 204 không body — không gọi .json()
-export async function deleteProduct(id: number): Promise<void> {
+export async function deleteProduct(id: number, signal?: AbortSignal): Promise<void> {
   if (mockApiEnabled()) {
     const index = mockProducts.findIndex((product) => product.id === id)
     if (index === -1) {
@@ -175,14 +175,16 @@ export async function deleteProduct(id: number): Promise<void> {
     mockProducts = mockProducts.filter((product) => product.id !== id)
     return
   }
-  await apiFetch(`/api/products/${id}`, { method: 'DELETE' })
+  await apiFetch(`/api/products/${id}`, { method: 'DELETE', signal })
 }
 
-export async function listProducts(): Promise<Product[]> {
+// Nhánh mock là dữ liệu trong bộ nhớ, resolve ngay nên bỏ qua signal.
+// Signal chỉ có ý nghĩa với fetch mạng ở nhánh real.
+export async function listProducts(signal?: AbortSignal): Promise<Product[]> {
   if (mockApiEnabled()) {
     return [...mockProducts]
   }
-  const response = await apiFetch('/api/products')
+  const response = await apiFetch('/api/products', { signal })
   const body = (await response.json()) as ApiProduct[]
   return body.map(fromApi)
 }
@@ -213,7 +215,7 @@ function nextMockId() {
   return max + 1
 }
 
-export async function getProduct(id: number): Promise<Product> {
+export async function getProduct(id: number, signal?: AbortSignal): Promise<Product> {
   if (mockApiEnabled()) {
     const found = mockProducts.find((product) => product.id === id)
     if (found === undefined) {
@@ -221,12 +223,12 @@ export async function getProduct(id: number): Promise<Product> {
     }
     return found
   }
-  const response = await apiFetch(`/api/products/${id}`)
+  const response = await apiFetch(`/api/products/${id}`, { signal })
   const body = (await response.json()) as ApiProduct
   return fromApi(body)
 }
 
-export async function createProduct(input: ProductInput): Promise<Product> {
+export async function createProduct(input: ProductInput, signal?: AbortSignal): Promise<Product> {
   if (mockApiEnabled()) {
     const created: Product = {
       ...input,
@@ -241,12 +243,13 @@ export async function createProduct(input: ProductInput): Promise<Product> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(toApiPayload(input)),
+    signal,
   })
   const body = (await response.json()) as ApiProduct
   return fromApi(body)
 }
 
-export async function updateProduct(id: number, input: ProductInput): Promise<Product> {
+export async function updateProduct(id: number, input: ProductInput, signal?: AbortSignal): Promise<Product> {
   if (mockApiEnabled()) {
     const index = mockProducts.findIndex((product) => product.id === id)
     if (index === -1) {
@@ -265,6 +268,7 @@ export async function updateProduct(id: number, input: ProductInput): Promise<Pr
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(toApiPayload(input)),
+    signal,
   })
   const body = (await response.json()) as ApiProduct
   return fromApi(body)
@@ -286,7 +290,7 @@ function isPresignResponse(body: unknown): body is PresignResponse {
 }
 
 // Upload thẳng từ browser lên S3 qua presigned URL (không qua backend, không gắn Bearer)
-export async function uploadImage(file: File): Promise<string> {
+export async function uploadImage(file: File, signal?: AbortSignal): Promise<string> {
   if (mockApiEnabled()) {
     await new Promise((resolve) => setTimeout(resolve, 10))
     return `mock-uploads/${file.name}`
@@ -295,6 +299,7 @@ export async function uploadImage(file: File): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contentType: file.type }),
+    signal,
   })
   const presignBody: unknown = await presignResponse.json()
   if (!isPresignResponse(presignBody)) {
@@ -304,6 +309,7 @@ export async function uploadImage(file: File): Promise<string> {
     method: 'PUT',
     headers: { 'Content-Type': file.type },
     body: file,
+    signal,
   })
   if (!putResponse.ok) {
     throw new ApiError(putResponse.status, 'Tải ảnh lên thất bại, vui lòng thử lại')
