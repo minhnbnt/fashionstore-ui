@@ -173,3 +173,127 @@ export async function listProducts(): Promise<Product[]> {
   const body = (await response.json()) as ApiProduct[]
   return body.map(fromApi)
 }
+
+export interface ProductInput {
+  name: string
+  description: string | null
+  price: number
+  imageKey: string | null
+}
+
+function toApiPayload(input: ProductInput) {
+  return {
+    name: input.name,
+    description: input.description,
+    price: input.price,
+    image_key: input.imageKey,
+  }
+}
+
+function nextMockId() {
+  let max = 0
+  for (const product of mockProducts) {
+    if (product.id > max) {
+      max = product.id
+    }
+  }
+  return max + 1
+}
+
+export async function getProduct(id: number): Promise<Product> {
+  if (mockApiEnabled()) {
+    const found = mockProducts.find((product) => product.id === id)
+    if (found === undefined) {
+      throw new ApiError(404, 'Không tìm thấy sản phẩm')
+    }
+    return found
+  }
+  const response = await apiFetch(`/api/products/${id}`)
+  const body = (await response.json()) as ApiProduct
+  return fromApi(body)
+}
+
+export async function createProduct(input: ProductInput): Promise<Product> {
+  if (mockApiEnabled()) {
+    const created: Product = {
+      ...input,
+      id: nextMockId(),
+      createdAt: MOCK_NOW,
+      updatedAt: MOCK_NOW,
+    }
+    mockProducts = [...mockProducts, created]
+    return created
+  }
+  const response = await apiFetch('/api/products', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(toApiPayload(input)),
+  })
+  const body = (await response.json()) as ApiProduct
+  return fromApi(body)
+}
+
+export async function updateProduct(id: number, input: ProductInput): Promise<Product> {
+  if (mockApiEnabled()) {
+    const index = mockProducts.findIndex((product) => product.id === id)
+    if (index === -1) {
+      throw new ApiError(404, 'Không tìm thấy sản phẩm')
+    }
+    const updated: Product = { ...input, id, createdAt: mockProducts[index].createdAt, updatedAt: MOCK_NOW }
+    mockProducts = mockProducts.map((product) => {
+      if (product.id === id) {
+        return updated
+      }
+      return product
+    })
+    return updated
+  }
+  const response = await apiFetch(`/api/products/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(toApiPayload(input)),
+  })
+  const body = (await response.json()) as ApiProduct
+  return fromApi(body)
+}
+
+interface PresignResponse {
+  key: string
+  url: string
+}
+
+function isPresignResponse(body: unknown): body is PresignResponse {
+  if (typeof body !== 'object' || body === null) {
+    return false
+  }
+  if (!('key' in body) || !('url' in body)) {
+    return false
+  }
+  return typeof body.key === 'string' && typeof body.url === 'string'
+}
+
+// Upload thẳng từ browser lên S3 qua presigned URL (không qua backend, không gắn Bearer)
+export async function uploadImage(file: File): Promise<string> {
+  if (mockApiEnabled()) {
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    return `mock-uploads/${file.name}`
+  }
+  const presignResponse = await apiFetch('/api/uploads/presign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contentType: file.type }),
+  })
+  const presignBody: unknown = await presignResponse.json()
+  if (!isPresignResponse(presignBody)) {
+    throw new ApiError(500, 'Presign trả về dữ liệu không hợp lệ')
+  }
+  const putResponse = await fetch(presignBody.url, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  })
+  if (!putResponse.ok) {
+    throw new ApiError(putResponse.status, 'Tải ảnh lên thất bại, vui lòng thử lại')
+  }
+  return presignBody.key
+}

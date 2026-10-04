@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { SubmitEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router'
@@ -141,7 +141,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [submitError, setSubmitError] = useState<string | null>(null)
   const summaryRef = useRef<HTMLDivElement>(null)
 
   const authMutation = useMutation({
@@ -154,17 +153,15 @@ export default function Login() {
     onSuccess: () => {
       void navigate(from, { replace: true })
     },
-    onError: (error) => {
-      setSubmitError(error.message)
-    },
   })
+  const authError = authMutation.error
 
   // Focus error summary sau khi nó được render (ref chưa tồn tại ngay trong event handler)
   useEffect(() => {
-    if (submitError !== null) {
+    if (authError !== null) {
       summaryRef.current?.focus()
     }
-  }, [submitError])
+  }, [authError])
 
   function handleEmailBlur() {
     setEmailError(validateEmail(email))
@@ -174,7 +171,7 @@ export default function Login() {
     setPasswordError(validatePassword(password, mode))
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     const nextEmailError = validateEmail(email)
     const nextPasswordError = validatePassword(password, mode)
@@ -184,13 +181,13 @@ export default function Login() {
       return
     }
 
-    setSubmitError(null)
+    authMutation.reset()
     authMutation.mutate({ mode, email: email.trim(), password })
   }
 
   function switchMode() {
     setMode(toggleMode)
-    setSubmitError(null)
+    authMutation.reset()
     setEmailError(null)
     setPasswordError(null)
   }
@@ -205,14 +202,14 @@ export default function Login() {
         </CardHeader>
 
         <CardContent>
-          {submitError !== null && (
+          {authError !== null && (
             <div
               ref={summaryRef}
               role="alert"
               tabIndex={-1}
               className="mb-4 rounded-sm border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive focus:outline-2 focus:outline-destructive"
             >
-              {submitError}
+              {authError.message}
             </div>
           )}
 

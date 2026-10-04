@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, listProducts } from '@/lib/api'
+import { ApiError, createProduct, getProduct, listProducts, updateProduct, uploadImage } from '@/lib/api'
 
 const { signOutMock, getSessionMock } = vi.hoisted(() => ({
   signOutMock: vi.fn(),
@@ -80,5 +80,69 @@ describe('listProducts (real API)', () => {
     )
 
     await expect(listProducts()).rejects.toThrow('price must be >= 0')
+  })
+})
+
+describe('mock CRUD', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_USE_MOCK', '1')
+  })
+
+  it('gets a seeded product by id', async () => {
+    const product = await getProduct(1)
+
+    expect(product.id).toBe(1)
+    expect(product.name.length).toBeGreaterThan(0)
+  })
+
+  it('throws 404 for an unknown id', async () => {
+    const error = await getProduct(999999).catch((caught: unknown) => caught)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).status).toBe(404)
+  })
+
+  it('creates then reads back the new product', async () => {
+    const created = await createProduct({
+      name: 'Áo test mock',
+      description: null,
+      price: 100000,
+      imageKey: null,
+    })
+
+    expect(created.id).toBeGreaterThan(0)
+    const found = await getProduct(created.id)
+    expect(found.name).toBe('Áo test mock')
+    expect(found.price).toBe(100000)
+  })
+
+  it('updates fields while keeping the id', async () => {
+    const created = await createProduct({
+      name: 'Áo cần sửa',
+      description: 'cũ',
+      price: 100000,
+      imageKey: null,
+    })
+
+    const updated = await updateProduct(created.id, {
+      name: 'Áo đã sửa',
+      description: 'mới',
+      price: 200000,
+      imageKey: 'mock-uploads/ao.png',
+    })
+
+    expect(updated.id).toBe(created.id)
+    expect(updated.name).toBe('Áo đã sửa')
+    expect(updated.imageKey).toBe('mock-uploads/ao.png')
+  })
+
+  it('returns a key for uploads without touching the real network', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    const file = new File(['png'], 'ao.png', { type: 'image/png' })
+
+    const key = await uploadImage(file)
+
+    expect(key).toContain('ao.png')
+    expect(fetchSpy).not.toHaveBeenCalled()
   })
 })
