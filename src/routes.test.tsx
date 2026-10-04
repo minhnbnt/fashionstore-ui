@@ -40,7 +40,7 @@ describe('routes', () => {
     renderAt('/')
 
     expect(await screen.findByText('Miễn phí vận chuyển đơn từ 500K')).toBeInTheDocument()
-    expect(screen.getByText('trang chủ shop')).toBeInTheDocument()
+    expect(screen.getByText('Mặc đẹp mỗi ngày, tối giản mà sang')).toBeInTheDocument()
   })
 
   it('redirects guests away from /admin to /login', async () => {

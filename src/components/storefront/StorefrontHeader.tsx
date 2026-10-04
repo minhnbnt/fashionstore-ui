@@ -3,6 +3,8 @@ import type { FormEvent } from 'react'
 import { Search, ShoppingBag, User } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useSession } from '@/lib/auth'
 import { useCart } from '@/hooks/useCart'
 
@@ -55,12 +57,12 @@ export default function StorefrontHeader({ onOpenCart }: { onOpenCart: () => voi
               className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
               aria-hidden="true"
             />
-            <input
+            <Input
               id="site-search"
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder="Tìm sản phẩm…"
-              className="h-9 w-full border border-input bg-transparent pr-3 pl-9 text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
+              className="pr-3 pl-9"
             />
           </div>
         </form>
@@ -75,9 +77,9 @@ export default function StorefrontHeader({ onOpenCart }: { onOpenCart: () => voi
             </Link>
           )}
           {session === null && (
-            <Link to="/login" className="px-2 text-sm font-medium hover:underline">
-              Đăng nhập
-            </Link>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/login">Đăng nhập</Link>
+            </Button>
           )}
           <button
             type="button"
