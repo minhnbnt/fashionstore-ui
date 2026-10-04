@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, createProduct, getProduct, listProducts, updateProduct, uploadImage } from '@/lib/api'
+import { ApiError, createProduct, deleteProduct, getProduct, listProducts, updateProduct, uploadImage } from '@/lib/api'
 
 const { signOutMock, getSessionMock } = vi.hoisted(() => ({
   signOutMock: vi.fn(),
@@ -144,5 +144,32 @@ describe('mock CRUD', () => {
 
     expect(key).toContain('ao.png')
     expect(fetchSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('mock delete', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_USE_MOCK', '1')
+  })
+
+  it('removes the created product', async () => {
+    const created = await createProduct({
+      name: 'Áo cần xoá',
+      description: null,
+      price: 50000,
+      imageKey: null,
+    })
+
+    await deleteProduct(created.id)
+
+    const error = await getProduct(created.id).catch((caught: unknown) => caught)
+    expect((error as ApiError).status).toBe(404)
+  })
+
+  it('throws 404 for an unknown id', async () => {
+    const error = await deleteProduct(999999).catch((caught: unknown) => caught)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).status).toBe(404)
   })
 })

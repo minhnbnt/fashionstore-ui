@@ -1,17 +1,23 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
+import { Toaster } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { listProducts } from '@/lib/api'
+import {
+  deleteProduct,
+  listProducts,
+} from '@/lib/api'
 import type { Product } from '@/lib/api'
 import ProductList from '@/pages/ProductList'
 
 vi.mock('@/lib/api', () => ({
+  deleteProduct: vi.fn(),
   listProducts: vi.fn(),
 }))
 
+const deleteProductMock = vi.mocked(deleteProduct)
 const listProductsMock = vi.mocked(listProducts)
 
 function renderList() {
@@ -24,6 +30,7 @@ function renderList() {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/']}>
+        <Toaster />
         <Routes>
           <Route path="/" element={<ProductList />} />
           <Route path="/products/new" element={<div>form tạo sản phẩm</div>} />
@@ -56,6 +63,7 @@ const SAMPLE: Product[] = [
 ]
 
 beforeEach(() => {
+  deleteProductMock.mockReset()
   listProductsMock.mockReset()
 })
 
@@ -122,5 +130,64 @@ describe('ProductList', () => {
     await user.click(screen.getByRole('link', { name: 'Thêm sản phẩm' }))
 
     expect(await screen.findByText('form tạo sản phẩm')).toBeInTheDocument()
+  })
+})
+
+describe('ProductList delete flow', () => {
+  it('asks for confirmation naming the product', async () => {
+    const user = userEvent.setup()
+    listProductsMock.mockResolvedValue(SAMPLE)
+    renderList()
+
+    await user.click(await screen.findByRole('button', { name: 'Xoá Áo thun basic' }))
+
+    const dialog = await screen.findByRole('alertdialog')
+    expect(within(dialog).getByText('Xoá sản phẩm này?')).toBeInTheDocument()
+    expect(within(dialog).getByText(/Áo thun basic/)).toBeInTheDocument()
+    expect(deleteProductMock).not.toHaveBeenCalled()
+  })
+
+  it('cancels without calling the API', async () => {
+    const user = userEvent.setup()
+    listProductsMock.mockResolvedValue(SAMPLE)
+    renderList()
+
+    await user.click(await screen.findByRole('button', { name: 'Xoá Áo thun basic' }))
+    await user.click(await screen.findByRole('button', { name: 'Huỷ' }))
+
+    expect(deleteProductMock).not.toHaveBeenCalled()
+    expect(screen.getByText('Áo thun basic')).toBeInTheDocument()
+  })
+
+  it('deletes on confirm, refreshes the list and shows a success toast', async () => {
+    const user = userEvent.setup()
+    listProductsMock.mockResolvedValueOnce(SAMPLE)
+    listProductsMock.mockResolvedValueOnce([SAMPLE[1]])
+    deleteProductMock.mockResolvedValue(undefined)
+    renderList()
+
+    await user.click(await screen.findByRole('button', { name: 'Xoá Áo thun basic' }))
+    await user.click(await screen.findByRole('button', { name: 'Xoá sản phẩm' }))
+
+    await waitFor(() => {
+      expect(deleteProductMock).toHaveBeenCalledWith(1)
+    })
+    expect(await screen.findByText('Đã xoá “Áo thun basic”')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText('Áo thun basic')).not.toBeInTheDocument()
+    })
+  })
+
+  it('shows an error toast when deletion fails', async () => {
+    const user = userEvent.setup()
+    listProductsMock.mockResolvedValue(SAMPLE)
+    deleteProductMock.mockRejectedValue(new Error('Sản phẩm đang có trong đơn hàng'))
+    renderList()
+
+    await user.click(await screen.findByRole('button', { name: 'Xoá Áo thun basic' }))
+    await user.click(await screen.findByRole('button', { name: 'Xoá sản phẩm' }))
+
+    expect(await screen.findByText('Sản phẩm đang có trong đơn hàng')).toBeInTheDocument()
+    expect(screen.getByText('Áo thun basic')).toBeInTheDocument()
   })
 })

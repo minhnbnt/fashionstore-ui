@@ -8,6 +8,7 @@ import '@fontsource-variable/cormorant'
 import '@fontsource-variable/montserrat'
 import './index.css'
 import AppRoutes from './routes.tsx'
+import { Toaster } from './components/ui/sonner.tsx'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AppRoutes />
+        <Toaster />
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,

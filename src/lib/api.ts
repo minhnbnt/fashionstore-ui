@@ -165,6 +165,19 @@ let mockProducts: Product[] = [
   },
 ]
 
+// DELETE thành công trả 204 không body — không gọi .json()
+export async function deleteProduct(id: number): Promise<void> {
+  if (mockApiEnabled()) {
+    const index = mockProducts.findIndex((product) => product.id === id)
+    if (index === -1) {
+      throw new ApiError(404, 'Không tìm thấy sản phẩm')
+    }
+    mockProducts = mockProducts.filter((product) => product.id !== id)
+    return
+  }
+  await apiFetch(`/api/products/${id}`, { method: 'DELETE' })
+}
+
 export async function listProducts(): Promise<Product[]> {
   if (mockApiEnabled()) {
     return [...mockProducts]

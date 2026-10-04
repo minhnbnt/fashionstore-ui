@@ -1,8 +1,21 @@
 import type { ReactNode } from 'react'
-import { ImageOff, Pencil, Plus } from 'lucide-react'
+import { useState } from 'react'
+import { ImageOff, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Link } from 'react-router'
+import { toast } from 'sonner'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { useDeleteProduct } from '@/hooks/useDeleteProduct'
 import { useProducts } from '@/hooks/useProducts'
 import type { Product } from '@/lib/api'
 import { formatVnd, resolveImageUrl } from '@/lib/format'
@@ -40,7 +53,20 @@ function ProductImage({ product }: { product: Product }) {
   )
 }
 
-function ProductCard({ product }: { product: Product }) {
+function confirmLabel(pending: boolean) {
+  if (pending) {
+    return 'Đang xoá…'
+  }
+  return 'Xoá sản phẩm'
+}
+
+function ProductCard({
+  product,
+  onDelete,
+}: {
+  product: Product
+  onDelete: (product: Product) => void
+}) {
   return (
     <article className="group border border-border bg-card">
       <ProductImage product={product} />
@@ -49,13 +75,23 @@ function ProductCard({ product }: { product: Product }) {
           <h2 className="truncate font-display text-lg leading-snug">{product.name}</h2>
           <p className="mt-1 text-sm font-medium">{formatVnd(product.price)}</p>
         </div>
-        <Link
-          to={`/products/${product.id}/edit`}
-          aria-label={`Sửa ${product.name}`}
-          className="shrink-0 p-1 text-muted-foreground hover:text-foreground"
-        >
-          <Pencil className="size-4" aria-hidden="true" />
-        </Link>
+        <div className="flex shrink-0">
+          <Link
+            to={`/products/${product.id}/edit`}
+            aria-label={`Sửa ${product.name}`}
+            className="p-1 text-muted-foreground hover:text-foreground"
+          >
+            <Pencil className="size-4" aria-hidden="true" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => onDelete(product)}
+            aria-label={`Xoá ${product.name}`}
+            className="p-1 text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="size-4" aria-hidden="true" />
+          </button>
+        </div>
       </div>
     </article>
   )
@@ -112,9 +148,31 @@ function EmptyState() {
 
 export default function ProductList() {
   const query = useProducts()
+  const deleteMutation = useDeleteProduct()
+  const [pendingDelete, setPendingDelete] = useState<Product | null>(null)
 
   function handleRetry() {
     void query.refetch()
+  }
+
+  function handleConfirmDelete() {
+    if (pendingDelete === null) {
+      return
+    }
+    const target = pendingDelete
+    deleteMutation.mutate(target.id, {
+      onSuccess: () => {
+        setPendingDelete(null)
+        toast.success(`Đã xoá “${target.name}”`)
+      },
+      onError: (error) => {
+        toast.error(error.message)
+      },
+    })
+  }
+
+  function closeDialog() {
+    setPendingDelete(null)
   }
 
   let content: ReactNode = null
@@ -128,7 +186,7 @@ export default function ProductList() {
     content = (
       <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
         {query.data.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={product.id} product={product} onDelete={setPendingDelete} />
         ))}
       </div>
     )
@@ -146,6 +204,32 @@ export default function ProductList() {
         </Button>
       </div>
       {content}
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeDialog()
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xoá sản phẩm này?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete !== null && `“${pendingDelete.name}” sẽ bị xoá vĩnh viễn và không thể khôi phục.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {confirmLabel(deleteMutation.isPending)}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   )
 }
