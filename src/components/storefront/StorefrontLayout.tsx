@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router'
 
 import PromoBar from '@/components/storefront/PromoBar'
+import CartDrawer from '@/components/storefront/CartDrawer'
 import StorefrontFooter from '@/components/storefront/StorefrontFooter'
 import StorefrontHeader from '@/components/storefront/StorefrontHeader'
 
@@ -20,6 +21,7 @@ export default function StorefrontLayout() {
         <Outlet context={{ cartOpen, setCartOpen }} />
       </main>
       <StorefrontFooter />
+      <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
     </div>
   )
 }
