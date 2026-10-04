@@ -20,10 +20,10 @@ import {
   Hero,
 } from '@/components/storefront/HomeSections'
 import { useProducts } from '@/hooks/useProducts'
+import { useWishlist } from '@/hooks/useWishlist'
 import type { Product } from '@/lib/api'
 import { CATEGORIES, categoryOf } from '@/lib/catalog'
 
-const WISHLIST_KEY = 'fashionstore:wishlist'
 const ALL = 'all'
 
 type SortId = 'moi-nhat' | 'gia-tang' | 'gia-giam'
@@ -37,22 +37,6 @@ function validCategory(raw: string | null): string {
     return ALL
   }
   return raw
-}
-
-function loadWishlist(): Set<number> {
-  try {
-    const raw = window.localStorage.getItem(WISHLIST_KEY)
-    if (raw === null) {
-      return new Set()
-    }
-    const parsed: unknown = JSON.parse(raw)
-    if (Array.isArray(parsed) === false) {
-      return new Set()
-    }
-    return new Set((parsed as number[]).filter((id) => typeof id === 'number'))
-  } catch {
-    return new Set()
-  }
 }
 
 function applySort(products: Product[], sort: SortId): Product[] {
@@ -97,28 +81,12 @@ export default function StorefrontHome() {
   const [category, setCategory] = useState(validCategory(params.get('cat')))
   const [sort, setSort] = useState<SortId>('moi-nhat')
   const [maxPrice, setMaxPrice] = useState('')
-  const [wishedIds, setWishedIds] = useState<Set<number>>(() => loadWishlist())
+  const { ids: wishedIds, toggle: toggleWishlist } = useWishlist()
 
   useEffect(() => {
     setKeyword(params.get('q') ?? '')
     setCategory(validCategory(params.get('cat')))
   }, [params])
-
-  useEffect(() => {
-    window.localStorage.setItem(WISHLIST_KEY, JSON.stringify([...wishedIds]))
-  }, [wishedIds])
-
-  function toggleWishlist(id: number) {
-    setWishedIds((current) => {
-      const next = new Set(current)
-      if (next.has(id)) {
-        next.delete(id)
-        return next
-      }
-      next.add(id)
-      return next
-    })
-  }
 
   function clearFilters() {
     setKeyword('')
