@@ -28,6 +28,13 @@ function CardImage({ product }: { product: Product }) {
   )
 }
 
+function heartFill(wished: boolean) {
+  if (wished) {
+    return 'currentColor'
+  }
+  return 'none'
+}
+
 export default function ShopCard({
   product,
   wished,
@@ -60,7 +67,7 @@ export default function ShopCard({
         <Heart
           className="size-4"
           aria-hidden="true"
-          fill={wished ? 'currentColor' : 'none'}
+          fill={heartFill(wished)}
         />
       </button>
     </div>

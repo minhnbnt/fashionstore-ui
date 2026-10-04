@@ -1,5 +1,5 @@
 import { LogOut } from 'lucide-react'
-import { Outlet, useNavigate } from 'react-router'
+import { Link, Outlet, useNavigate } from 'react-router'
 
 import { Button } from '@/components/ui/button'
 import { signOut, useSession } from '@/lib/auth'
@@ -17,9 +17,9 @@ export default function AdminLayout() {
     <div className="flex min-h-svh flex-col">
       <header className="sticky top-0 z-10 border-b border-border bg-background">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <a href="/admin" className="font-display text-xl font-semibold tracking-wide">
+          <Link to="/admin" className="font-display text-xl font-semibold tracking-wide">
             FashionStore · Quản trị
-          </a>
+          </Link>
           {session !== null && (
             <Button
               variant="ghost"

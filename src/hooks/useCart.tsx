@@ -25,6 +25,23 @@ const STORAGE_KEY = 'fashionstore:cart'
 
 const CartContext = createContext<CartValue | null>(null)
 
+function isCartLine(value: unknown): value is CartLine {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  const line = value as Record<string, unknown>
+  if (typeof line.id !== 'number' || Number.isFinite(line.id) === false) {
+    return false
+  }
+  if (typeof line.price !== 'number' || Number.isFinite(line.price) === false) {
+    return false
+  }
+  if (typeof line.qty !== 'number' || Number.isFinite(line.qty) === false) {
+    return false
+  }
+  return true
+}
+
 function loadCart(): CartLine[] {
   const raw = window.localStorage.getItem(STORAGE_KEY)
   if (raw === null) {
@@ -35,7 +52,7 @@ function loadCart(): CartLine[] {
     if (Array.isArray(parsed) === false) {
       return []
     }
-    return (parsed as CartLine[]).filter((line) => line.qty > 0)
+    return (parsed as unknown[]).filter(isCartLine).filter((line) => line.qty > 0)
   } catch {
     return []
   }

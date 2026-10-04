@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ImageOff, Minus, Plus } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -36,6 +36,7 @@ function DetailImage({ product }: { product: Product }) {
     <img
       src={url}
       alt={product.name}
+      loading="lazy"
       width={800}
       height={800}
       className="aspect-square w-full object-cover"
@@ -61,6 +62,10 @@ export default function ProductDetail() {
   const cart = useCart()
   const { ids: wishedIds, toggle: toggleWishlist } = useWishlist()
   const [qty, setQty] = useState(1)
+
+  useEffect(() => {
+    setQty(1)
+  }, [productId])
 
   if (productId === null) {
     return <NotFound />

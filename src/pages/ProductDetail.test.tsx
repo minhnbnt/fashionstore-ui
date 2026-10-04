@@ -73,4 +73,40 @@ describe('ProductDetail', () => {
 
     expect(await screen.findByText('Trang bạn tìm không tồn tại.')).toBeInTheDocument()
   })
+
+  it('lazy-loads the product image', async () => {
+    getMock.mockResolvedValue(SHIRT)
+    listMock.mockResolvedValue([])
+    renderDetail('1')
+
+    const image = await screen.findByAltText('Áo sơ mi lụa trắng')
+    expect(image).toHaveAttribute('loading', 'lazy')
+  })
+
+  it('resets quantity when navigating to a related product', async () => {
+    const user = userEvent.setup()
+    const SWEATER = {
+      id: 5,
+      name: 'Áo len cổ lọ',
+      description: null,
+      price: 650000,
+      imageKey: 'mock/len.jpg',
+      createdAt: '2026-10-04T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+    }
+    getMock.mockImplementation((id: number) => {
+      if (id === 5) {
+        return Promise.resolve(SWEATER)
+      }
+      return Promise.resolve(SHIRT)
+    })
+    listMock.mockResolvedValue([SHIRT, SWEATER])
+    renderDetail('1')
+
+    await user.click(await screen.findByRole('button', { name: 'Tăng số lượng' }))
+    await user.click(await screen.findByRole('link', { name: 'Áo len cổ lọ' }))
+
+    expect(await screen.findByRole('heading', { name: 'Áo len cổ lọ' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Số lượng')).toHaveTextContent('1')
+  })
 })

@@ -51,4 +51,11 @@ describe('routes', () => {
       await screen.findByRole('button', { name: 'Đăng nhập' }),
     ).toBeInTheDocument()
   })
+
+  it('shows not-found for unknown paths', async () => {
+    sessionMock.mockReturnValue({ session: null, loading: false })
+    renderAt('/khong-ton-tai')
+
+    expect(await screen.findByText('Trang bạn tìm không tồn tại.')).toBeInTheDocument()
+  })
 })

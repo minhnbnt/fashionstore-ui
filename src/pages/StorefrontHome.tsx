@@ -53,6 +53,13 @@ function applySort(products: Product[], sort: SortId): Product[] {
   return sorted
 }
 
+function pillVariant(active: boolean): 'default' | 'outline' {
+  if (active) {
+    return 'default'
+  }
+  return 'outline'
+}
+
 function LoadingGrid() {
   return (
     <div
@@ -117,7 +124,13 @@ export default function StorefrontHome() {
   }
 
   const products = query.data
-  const ceiling = maxPrice === '' ? null : Number(maxPrice)
+  let ceiling: number | null = null
+  if (maxPrice !== '') {
+    const parsed = Number(maxPrice)
+    if (Number.isNaN(parsed) === false) {
+      ceiling = parsed
+    }
+  }
   const filtered = products.filter((product) => {
     if (category !== ALL && categoryOf(product) !== category) {
       return false
@@ -176,7 +189,7 @@ export default function StorefrontHome() {
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button
-            variant={category === ALL ? 'default' : 'outline'}
+            variant={pillVariant(category === ALL)}
             size="sm"
             onClick={() => setCategory(ALL)}
             aria-pressed={category === ALL}
@@ -186,7 +199,7 @@ export default function StorefrontHome() {
           {CATEGORIES.map((item) => (
             <Button
               key={item.id}
-              variant={category === item.id ? 'default' : 'outline'}
+              variant={pillVariant(category === item.id)}
               size="sm"
               onClick={() => setCategory(item.id)}
               aria-pressed={category === item.id}

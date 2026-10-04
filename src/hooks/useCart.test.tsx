@@ -1,5 +1,4 @@
-import { act, renderHook } from '@testing-library/react'
-import { render, screen } from '@testing-library/react'
+import { act, renderHook, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -74,6 +73,18 @@ describe('useCart', () => {
     const { result } = renderHook(() => useCart(), { wrapper: Wrapper })
 
     expect(result.current.lines).toHaveLength(0)
+  })
+
+  it('drops malformed lines instead of crashing', () => {
+    window.localStorage.setItem(
+      'fashionstore:cart',
+      JSON.stringify([null, 'x', { id: 1 }, { id: 2, name: 'Áo', price: 100, imageKey: null, qty: 1 }]),
+    )
+
+    const { result } = renderHook(() => useCart(), { wrapper: Wrapper })
+
+    expect(result.current.lines).toHaveLength(1)
+    expect(result.current.lines[0].id).toBe(2)
   })
 
   it('shares state between components under one provider', async () => {
