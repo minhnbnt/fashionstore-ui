@@ -89,6 +89,13 @@ function loadErrorMessage(error: unknown) {
   return 'Không tải được sản phẩm.'
 }
 
+function fileNameFor(file: File | null) {
+  if (file === null) {
+    return 'Chưa chọn file'
+  }
+  return file.name
+}
+
 function ImagePreview({
   objectUrl,
   existingUrl,
@@ -322,6 +329,14 @@ export default function ProductForm() {
         <div className="space-y-2">
           <Label htmlFor="image">Ảnh sản phẩm</Label>
           <ImagePreview objectUrl={objectUrl} existingUrl={existingUrl} name={name} />
+          <div className="flex items-center gap-3">
+            <Button asChild>
+              <label htmlFor="image" className="cursor-pointer">
+                Chọn ảnh
+              </label>
+            </Button>
+            <span className="truncate text-sm text-muted-foreground">{fileNameFor(file)}</span>
+          </div>
           <Input
             id="image"
             type="file"
@@ -329,6 +344,7 @@ export default function ProductForm() {
             onChange={(changeEvent) => handleFileChange(changeEvent.target.files)}
             aria-invalid={fileError !== null}
             aria-describedby={errorId(fileError, 'image-error')}
+            className="sr-only"
           />
           {fileError !== null && (
             <p id="image-error" className="text-xs text-destructive">

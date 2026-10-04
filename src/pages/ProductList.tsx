@@ -15,6 +15,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useDeleteProduct } from '@/hooks/useDeleteProduct'
 import { useProducts } from '@/hooks/useProducts'
 import type { Product } from '@/lib/api'
@@ -40,16 +42,14 @@ function ProductImage({ product }: { product: Product }) {
     )
   }
   return (
-    <div className="aspect-square overflow-hidden bg-muted">
-      <img
-        src={url}
-        alt={product.name}
-        loading="lazy"
-        width={800}
-        height={800}
-        className="size-full object-cover"
-      />
-    </div>
+    <img
+      src={url}
+      alt={product.name}
+      loading="lazy"
+      width={800}
+      height={800}
+      className="aspect-square w-full object-cover"
+    />
   )
 }
 
@@ -68,12 +68,12 @@ function ProductCard({
   onDelete: (product: Product) => void
 }) {
   return (
-    <article className="group border border-border bg-card">
+    <Card size="sm">
       <ProductImage product={product} />
-      <div className="flex items-start justify-between gap-3 p-4">
+      <CardContent className="flex-row items-start justify-between">
         <div className="min-w-0">
-          <h2 className="truncate font-display text-lg leading-snug">{product.name}</h2>
-          <p className="mt-1 text-sm font-medium">{formatVnd(product.price)}</p>
+          <h2 title={product.name} className="line-clamp-2 font-display text-lg leading-snug">{product.name}</h2>
+          <p className="mt-1 whitespace-nowrap text-sm font-medium">{formatVnd(product.price)}</p>
         </div>
         <div className="flex shrink-0">
           <Link
@@ -92,8 +92,8 @@ function ProductCard({
             <Trash2 className="size-4" aria-hidden="true" />
           </button>
         </div>
-      </div>
-    </article>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -107,10 +107,10 @@ function LoadingGrid() {
     >
       {Array.from({ length: SKELETON_COUNT }, (_, index) => (
         <div key={index} aria-hidden="true" className="border border-border">
-          <div className="aspect-square animate-pulse bg-muted" />
+          <Skeleton className="aspect-square" />
           <div className="space-y-2 p-4">
-            <div className="h-5 animate-pulse bg-muted" />
-            <div className="h-4 w-1/2 animate-pulse bg-muted" />
+            <Skeleton className="h-5" />
+            <Skeleton className="h-4 w-1/2" />
           </div>
         </div>
       ))}
