@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import CartPage from '@/pages/CartPage'
+import { CartProvider } from '@/hooks/useCart'
 
 function seedCart() {
   window.localStorage.setItem(
@@ -25,7 +26,9 @@ describe('CartPage', () => {
     seedCart()
     render(
       <MemoryRouter>
-        <CartPage />
+        <CartProvider>
+          <CartPage />
+        </CartProvider>
       </MemoryRouter>,
     )
 
@@ -40,7 +43,9 @@ describe('CartPage', () => {
   it('shows an empty state linking home', async () => {
     render(
       <MemoryRouter>
-        <CartPage />
+        <CartProvider>
+          <CartPage />
+        </CartProvider>
       </MemoryRouter>,
     )
 
@@ -54,7 +59,9 @@ describe('CartPage', () => {
     render(
       <MemoryRouter>
         <Toaster />
-        <CartPage />
+        <CartProvider>
+          <CartPage />
+        </CartProvider>
       </MemoryRouter>,
     )
 

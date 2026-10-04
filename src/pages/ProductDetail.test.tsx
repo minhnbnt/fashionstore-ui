@@ -6,6 +6,7 @@ import { Toaster } from 'sonner'
 import { describe, expect, it, vi } from 'vitest'
 
 import { ApiError, getProduct, listProducts } from '@/lib/api'
+import { CartProvider } from '@/hooks/useCart'
 import ProductDetail from '@/pages/ProductDetail'
 
 vi.mock('@/lib/api', () => ({
@@ -41,9 +42,11 @@ function renderDetail(id: string) {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[`/products/${id}`]}>
         <Toaster />
-        <Routes>
-          <Route path="/products/:id" element={<ProductDetail />} />
-        </Routes>
+        <CartProvider>
+          <Routes>
+            <Route path="/products/:id" element={<ProductDetail />} />
+          </Routes>
+        </CartProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   )

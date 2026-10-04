@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 
 import type { Product } from '@/lib/api'
 
@@ -10,7 +11,19 @@ export interface CartLine {
   qty: number
 }
 
+interface CartValue {
+  lines: CartLine[]
+  count: number
+  total: number
+  add: (product: Product, qty: number) => void
+  remove: (id: number) => void
+  setQty: (id: number, qty: number) => void
+  clear: () => void
+}
+
 const STORAGE_KEY = 'fashionstore:cart'
+
+const CartContext = createContext<CartValue | null>(null)
 
 function loadCart(): CartLine[] {
   const raw = window.localStorage.getItem(STORAGE_KEY)
@@ -28,7 +41,7 @@ function loadCart(): CartLine[] {
   }
 }
 
-export function useCart() {
+export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>(() => loadCart())
 
   useEffect(() => {
@@ -92,5 +105,18 @@ export function useCart() {
     total += line.price * line.qty
   }
 
-  return { lines, count, total, add, remove, setQty, clear }
+  const value = useMemo<CartValue>(
+    () => ({ lines, count, total, add, remove, setQty, clear }),
+    [lines, count, total, add, remove, setQty, clear],
+  )
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>
+}
+
+export function useCart(): CartValue {
+  const value = useContext(CartContext)
+  if (value === null) {
+    throw new Error('useCart phải dùng bên trong CartProvider')
+  }
+  return value
 }
