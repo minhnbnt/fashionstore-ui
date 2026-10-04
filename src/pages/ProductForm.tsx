@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ImageOff } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router'
 
@@ -8,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { createProduct, getProduct, updateProduct, uploadImage } from '@/lib/api'
+import { useProduct } from '@/hooks/useProduct'
+import { useSaveProduct } from '@/hooks/useSaveProduct'
 import { resolveImageUrl } from '@/lib/format'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -130,8 +130,6 @@ export default function ProductForm() {
   const productId = parseProductId(id)
   const editing = productId !== null
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-
   const [name, setName] = useState('')
   const [priceText, setPriceText] = useState('')
   const [description, setDescription] = useState('')
@@ -143,16 +141,7 @@ export default function ProductForm() {
   const [status, setStatus] = useState<string | null>(null)
   const summaryRef = useRef<HTMLDivElement>(null)
 
-  const productQuery = useQuery({
-    queryKey: ['products', productId],
-    queryFn: () => {
-      if (productId === null) {
-        throw new Error('Thiếu id sản phẩm')
-      }
-      return getProduct(productId)
-    },
-    enabled: editing,
-  })
+  const productQuery = useProduct(productId)
 
   useEffect(() => {
     const loaded = productQuery.data
@@ -172,33 +161,10 @@ export default function ProductForm() {
     }
   }, [objectUrl])
 
-  async function save() {
-    let imageKey = productQuery.data?.imageKey ?? null
-    if (file !== null) {
-      setStatus('Đang tải ảnh lên…')
-      imageKey = await uploadImage(file)
-    }
-    setStatus('Đang lưu sản phẩm…')
-    const input = {
-      name: name.trim(),
-      description: descriptionOrNull(description),
-      price: Number(priceText.trim()),
-      imageKey,
-    }
-    if (productId !== null) {
-      return updateProduct(productId, input)
-    }
-    return createProduct(input)
-  }
-
-  const saveMutation = useMutation({
-    mutationFn: save,
+  const saveMutation = useSaveProduct(productId, {
+    onStatus: setStatus,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['products'] })
       void navigate('/')
-    },
-    onSettled: () => {
-      setStatus(null)
     },
   })
   const saveError = saveMutation.error
@@ -241,7 +207,15 @@ export default function ProductForm() {
       return
     }
     saveMutation.reset()
-    saveMutation.mutate()
+    saveMutation.mutate({
+      values: {
+        name: name.trim(),
+        description: descriptionOrNull(description),
+        price: Number(priceText.trim()),
+      },
+      file,
+      existingImageKey: productQuery.data?.imageKey ?? null,
+    })
   }
 
   if (editing && productQuery.isPending) {

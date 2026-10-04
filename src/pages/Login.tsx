@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { useMutation } from '@tanstack/react-query'
 import { Eye, EyeOff } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router'
 
@@ -14,9 +13,8 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { supabase } from '@/lib/auth'
-
-type Mode = 'signin' | 'signup'
+import type { AuthMode } from '@/hooks/useAuth'
+import { useAuthenticate } from '@/hooks/useAuth'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -31,7 +29,7 @@ function validateEmail(value: string) {
   return null
 }
 
-function validatePassword(value: string, mode: Mode) {
+function validatePassword(value: string, mode: AuthMode) {
   if (value.length === 0) {
     return 'Mật khẩu không được để trống'
   }
@@ -41,51 +39,35 @@ function validatePassword(value: string, mode: Mode) {
   return null
 }
 
-async function authenticateSignIn(email: string, password: string) {
-  const result = await supabase.signInWithPassword({ email, password })
-  if (result.error != null) {
-    throw result.error
-  }
-  return result.data
-}
-
-async function authenticateSignUp(email: string, password: string) {
-  const result = await supabase.signUp({ email, password })
-  if (result.error != null) {
-    throw result.error
-  }
-  return result.data
-}
-
-function toggleMode(current: Mode) {
+function toggleMode(current: AuthMode) {
   if (current === 'signin') {
     return 'signup'
   }
   return 'signin'
 }
 
-function titleFor(mode: Mode) {
+function titleFor(mode: AuthMode) {
   if (mode === 'signin') {
     return 'Đăng nhập'
   }
   return 'Tạo tài khoản'
 }
 
-function descriptionFor(mode: Mode) {
+function descriptionFor(mode: AuthMode) {
   if (mode === 'signin') {
     return 'Đăng nhập để quản lý sản phẩm.'
   }
   return 'Đăng ký xong bạn vào thẳng trang quản lý.'
 }
 
-function autoCompleteFor(mode: Mode) {
+function autoCompleteFor(mode: AuthMode) {
   if (mode === 'signin') {
     return 'current-password'
   }
   return 'new-password'
 }
 
-function switchLabelFor(mode: Mode) {
+function switchLabelFor(mode: AuthMode) {
   if (mode === 'signin') {
     return 'Chưa có tài khoản? Tạo tài khoản'
   }
@@ -113,7 +95,7 @@ function errorId(error: string | null, id: string) {
   return undefined
 }
 
-function submitLabel(pending: boolean, mode: Mode) {
+function submitLabel(pending: boolean, mode: AuthMode) {
   if (pending) {
     return 'Đang xử lý…'
   }
@@ -135,7 +117,7 @@ export default function Login() {
   const location = useLocation()
   const from = (location.state as { from?: string } | null)?.from ?? '/'
 
-  const [mode, setMode] = useState<Mode>('signin')
+  const [mode, setMode] = useState<AuthMode>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -143,13 +125,7 @@ export default function Login() {
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const summaryRef = useRef<HTMLDivElement>(null)
 
-  const authMutation = useMutation({
-    mutationFn: async (variables: { mode: Mode; email: string; password: string }) => {
-      if (variables.mode === 'signin') {
-        return authenticateSignIn(variables.email, variables.password)
-      }
-      return authenticateSignUp(variables.email, variables.password)
-    },
+  const authMutation = useAuthenticate({
     onSuccess: () => {
       void navigate(from, { replace: true })
     },

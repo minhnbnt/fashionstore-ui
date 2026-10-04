@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ImageOff, Pencil, Plus } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { Button } from '@/components/ui/button'
-import { listProducts } from '@/lib/api'
+import { useProducts } from '@/hooks/useProducts'
 import type { Product } from '@/lib/api'
 import { formatVnd, resolveImageUrl } from '@/lib/format'
 
@@ -112,7 +111,7 @@ function EmptyState() {
 }
 
 export default function ProductList() {
-  const query = useQuery({ queryKey: ['products'], queryFn: listProducts })
+  const query = useProducts()
 
   function handleRetry() {
     void query.refetch()
