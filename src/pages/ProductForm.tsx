@@ -171,7 +171,7 @@ export default function ProductForm() {
   const saveMutation = useSaveProduct(productId, {
     onStatus: setStatus,
     onSuccess: () => {
-      void navigate('/')
+      void navigate('/admin')
     },
   })
   const saveError = saveMutation.error
@@ -249,7 +249,7 @@ export default function ProductForm() {
           {message}
         </div>
         <Link
-          to="/"
+          to="/admin"
           className="mt-6 inline-block text-sm font-medium underline-offset-4 hover:underline"
         >
           Về danh sách
@@ -364,7 +364,7 @@ export default function ProductForm() {
             {submitLabel(saveMutation.isPending, editing)}
           </Button>
           <Button type="button" variant="outline" asChild>
-            <Link to="/">Huỷ</Link>
+            <Link to="/admin">Huỷ</Link>
           </Button>
         </div>
       </form>

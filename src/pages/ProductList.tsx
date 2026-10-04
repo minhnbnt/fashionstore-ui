@@ -77,7 +77,7 @@ function ProductCard({
         </div>
         <div className="flex shrink-0">
           <Link
-            to={`/products/${product.id}/edit`}
+            to={`/admin/products/${product.id}/edit`}
             aria-label={`Sửa ${product.name}`}
             className="p-1 text-muted-foreground hover:text-foreground"
           >
@@ -140,7 +140,7 @@ function EmptyState() {
         Thêm sản phẩm đầu tiên để bắt đầu bán hàng.
       </p>
       <Button asChild className="mt-6">
-        <Link to="/products/new">Thêm sản phẩm đầu tiên</Link>
+        <Link to="/admin/products/new">Thêm sản phẩm đầu tiên</Link>
       </Button>
     </div>
   )
@@ -197,7 +197,7 @@ export default function ProductList() {
       <div className="mb-8 flex items-center justify-between">
         <h1 className="font-display text-3xl">Sản phẩm</h1>
         <Button asChild>
-          <Link to="/products/new">
+          <Link to="/admin/products/new">
             <Plus className="size-4" aria-hidden="true" />
             Thêm sản phẩm
           </Link>

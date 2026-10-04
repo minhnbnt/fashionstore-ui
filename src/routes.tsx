@@ -1,11 +1,15 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
 
-import Layout from '@/components/Layout'
+import AdminLayout from '@/components/AdminLayout'
 import RequireAuth from '@/components/RequireAuth'
+import StorefrontLayout from '@/components/storefront/StorefrontLayout'
 
 // Lazy loading theo route (code-split): mỗi page một chunk riêng
 const Login = lazy(() => import('@/pages/Login'))
+const StorefrontHome = lazy(() => import('@/pages/StorefrontHome'))
+const ProductDetail = lazy(() => import('@/pages/ProductDetail'))
+const CartPage = lazy(() => import('@/pages/CartPage'))
 const ProductList = lazy(() => import('@/pages/ProductList'))
 const ProductForm = lazy(() => import('@/pages/ProductForm'))
 const ComingSoon = lazy(() => import('@/pages/ComingSoon'))
@@ -25,20 +29,24 @@ export default function AppRoutes() {
       <Routes>
         <Route path="/login" element={<Login />} />
 
+        <Route element={<StorefrontLayout />}>
+          <Route path="/" element={<StorefrontHome />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/orders" element={<ComingSoon title="Đơn hàng" />} />
+          <Route path="/account" element={<ComingSoon title="Tài khoản" />} />
+        </Route>
+
         <Route
           element={
             <RequireAuth>
-              <Layout />
+              <AdminLayout />
             </RequireAuth>
           }
         >
-          <Route path="/" element={<ProductList />} />
-          <Route path="/products/new" element={<ProductForm />} />
-          <Route path="/products/:id/edit" element={<ProductForm />} />
-          <Route path="/products/:id" element={<ComingSoon title="Chi tiết sản phẩm" />} />
-          <Route path="/cart" element={<ComingSoon title="Giỏ hàng" />} />
-          <Route path="/orders" element={<ComingSoon title="Đơn hàng" />} />
-          <Route path="/account" element={<ComingSoon title="Tài khoản" />} />
+          <Route path="/admin" element={<ProductList />} />
+          <Route path="/admin/products/new" element={<ProductForm />} />
+          <Route path="/admin/products/:id/edit" element={<ProductForm />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

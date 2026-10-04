@@ -1,32 +1,29 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import AppRoutes from '@/routes'
 import { useSession } from '@/lib/auth'
+import AppRoutes from '@/routes'
 
 vi.mock('@/lib/auth', () => ({
   useSession: vi.fn(),
   signOut: vi.fn(),
 }))
 
-const useSessionMock = vi.mocked(useSession)
+vi.mock('@/lib/api', () => ({
+  listProducts: vi.fn().mockResolvedValue([]),
+  getProduct: vi.fn(),
+}))
 
-beforeEach(() => {
-  useSessionMock.mockReset()
-  useSessionMock.mockReturnValue({
-    session: { access_token: 'tok' } as never,
-    loading: false,
-  })
-})
+// Page thật tồn tại dưới dạng shell tối thiểu (Task 5-7 thay bằng nội dung thật):
+// test này chỉ kiểm cấu trúc route + layout, nội dung page do test của từng task giữ.
+
+const sessionMock = vi.mocked(useSession)
 
 function renderAt(path: string) {
   const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
+    defaultOptions: { queries: { retry: false } },
   })
   return render(
     <QueryClientProvider client={queryClient}>
@@ -37,29 +34,21 @@ function renderAt(path: string) {
   )
 }
 
-describe('AppRoutes', () => {
-  it('shows the cart placeholder for /cart', async () => {
-    renderAt('/cart')
+describe('routes', () => {
+  it('shows the storefront to guests', async () => {
+    sessionMock.mockReturnValue({ session: null, loading: false })
+    renderAt('/')
 
-    expect(await screen.findByText('Giỏ hàng')).toBeInTheDocument()
-    expect(screen.getByText(/ra mắt/)).toBeInTheDocument()
+    expect(await screen.findByText('Miễn phí vận chuyển đơn từ 500K')).toBeInTheDocument()
+    expect(screen.getByText('trang chủ shop')).toBeInTheDocument()
   })
 
-  it('shows the orders placeholder for /orders', async () => {
-    renderAt('/orders')
+  it('redirects guests away from /admin to /login', async () => {
+    sessionMock.mockReturnValue({ session: null, loading: false })
+    renderAt('/admin')
 
-    expect(await screen.findByText('Đơn hàng')).toBeInTheDocument()
-  })
-
-  it('renders the brand in the header', async () => {
-    renderAt('/cart')
-
-    expect(await screen.findByRole('link', { name: 'FashionStore' })).toBeInTheDocument()
-  })
-
-  it('shows a 404 page for unknown routes', async () => {
-    renderAt('/khong-ton-tai')
-
-    expect(await screen.findByText('404')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: 'Đăng nhập' }),
+    ).toBeInTheDocument()
   })
 })

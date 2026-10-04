@@ -45,9 +45,9 @@ function renderForm(path: string) {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route path="/products/new" element={<ProductForm />} />
-          <Route path="/products/:id/edit" element={<ProductForm />} />
-          <Route path="/" element={<div>danh sách sản phẩm</div>} />
+          <Route path="/admin/products/new" element={<ProductForm />} />
+          <Route path="/admin/products/:id/edit" element={<ProductForm />} />
+          <Route path="/admin" element={<div>danh sách sản phẩm</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -63,7 +63,7 @@ beforeEach(() => {
 
 describe('ProductForm create mode', () => {
   it('renders name, price, description and image fields', () => {
-    renderForm('/products/new')
+    renderForm('/admin/products/new')
 
     expect(screen.getByLabelText('Tên sản phẩm')).toBeInTheDocument()
     expect(screen.getByLabelText('Giá (VND)')).toBeInTheDocument()
@@ -75,7 +75,7 @@ describe('ProductForm create mode', () => {
 
   it('blocks submit when the name is empty', async () => {
     const user = userEvent.setup()
-    renderForm('/products/new')
+    renderForm('/admin/products/new')
 
     await user.type(screen.getByLabelText('Giá (VND)'), '350000')
     await user.click(screen.getByRole('button', { name: 'Tạo sản phẩm' }))
@@ -86,7 +86,7 @@ describe('ProductForm create mode', () => {
 
   it('blocks submit when the price is not a positive number', async () => {
     const user = userEvent.setup()
-    renderForm('/products/new')
+    renderForm('/admin/products/new')
 
     await user.type(screen.getByLabelText('Tên sản phẩm'), 'Áo mới')
     await user.type(screen.getByLabelText('Giá (VND)'), '0')
@@ -99,7 +99,7 @@ describe('ProductForm create mode', () => {
   it('rejects non-image files', async () => {
     // user-event mô phỏng picker tôn trọng accept nên không fire change;
     // dùng fireEvent cho đường bypass (kéo-thả, chọn All files)
-    renderForm('/products/new')
+    renderForm('/admin/products/new')
 
     const bad = new File(['hello'], 'note.txt', { type: 'text/plain' })
     fireEvent.change(screen.getByLabelText('Ảnh sản phẩm'), { target: { files: [bad] } })
@@ -110,7 +110,7 @@ describe('ProductForm create mode', () => {
   it('creates with imageKey null when no file is chosen and navigates home', async () => {
     const user = userEvent.setup()
     createProductMock.mockResolvedValue({ ...EXISTING, id: 7, name: 'Áo mới' })
-    renderForm('/products/new')
+    renderForm('/admin/products/new')
 
     await user.type(screen.getByLabelText('Tên sản phẩm'), 'Áo mới')
     await user.type(screen.getByLabelText('Giá (VND)'), '350000')
@@ -132,7 +132,7 @@ describe('ProductForm create mode', () => {
     const user = userEvent.setup()
     uploadImageMock.mockResolvedValue('uploads/abc.png')
     createProductMock.mockResolvedValue({ ...EXISTING, id: 7 })
-    renderForm('/products/new')
+    renderForm('/admin/products/new')
 
     await user.type(screen.getByLabelText('Tên sản phẩm'), 'Áo mới')
     await user.type(screen.getByLabelText('Giá (VND)'), '350000')
@@ -155,7 +155,7 @@ describe('ProductForm create mode', () => {
   it('shows a focused error summary when saving fails', async () => {
     const user = userEvent.setup()
     createProductMock.mockRejectedValue(new Error('Tên đã tồn tại'))
-    renderForm('/products/new')
+    renderForm('/admin/products/new')
 
     await user.type(screen.getByLabelText('Tên sản phẩm'), 'Áo trùng')
     await user.type(screen.getByLabelText('Giá (VND)'), '350000')
@@ -170,7 +170,7 @@ describe('ProductForm create mode', () => {
 describe('ProductForm edit mode', () => {
   it('prefills fields from the loaded product', async () => {
     getProductMock.mockResolvedValue(EXISTING)
-    renderForm('/products/1/edit')
+    renderForm('/admin/products/1/edit')
 
     expect(await screen.findByDisplayValue('Áo thun basic')).toBeInTheDocument()
     expect(screen.getByDisplayValue('350000')).toBeInTheDocument()
@@ -182,7 +182,7 @@ describe('ProductForm edit mode', () => {
     const user = userEvent.setup()
     getProductMock.mockResolvedValue(EXISTING)
     updateProductMock.mockResolvedValue({ ...EXISTING, name: 'Áo thun premium' })
-    renderForm('/products/1/edit')
+    renderForm('/admin/products/1/edit')
 
     const name = await screen.findByDisplayValue('Áo thun basic')
     await user.clear(name)
@@ -203,9 +203,9 @@ describe('ProductForm edit mode', () => {
 
   it('shows an error state with a back link when the product fails to load', async () => {
     getProductMock.mockRejectedValue(new Error('Không tìm thấy'))
-    renderForm('/products/999/edit')
+    renderForm('/admin/products/999/edit')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Không tìm thấy')
-    expect(screen.getByRole('link', { name: 'Về danh sách' })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: 'Về danh sách' })).toHaveAttribute('href', '/admin')
   })
 })

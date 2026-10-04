@@ -4,7 +4,7 @@ import { Outlet, useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { signOut, useSession } from '@/lib/auth'
 
-export default function Layout() {
+export default function AdminLayout() {
   const { session } = useSession()
   const navigate = useNavigate()
 
@@ -17,8 +17,8 @@ export default function Layout() {
     <div className="flex min-h-svh flex-col">
       <header className="sticky top-0 z-10 border-b border-border bg-background">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <a href="/" className="font-display text-xl font-semibold tracking-wide">
-            FashionStore
+          <a href="/admin" className="font-display text-xl font-semibold tracking-wide">
+            FashionStore · Quản trị
           </a>
           {session !== null && (
             <Button

@@ -29,12 +29,12 @@ function renderList() {
   })
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/']}>
+      <MemoryRouter initialEntries={['/admin']}>
         <Toaster />
         <Routes>
-          <Route path="/" element={<ProductList />} />
-          <Route path="/products/new" element={<div>form tạo sản phẩm</div>} />
-          <Route path="/products/:id/edit" element={<div>form sửa sản phẩm</div>} />
+          <Route path="/admin" element={<ProductList />} />
+          <Route path="/admin/products/new" element={<div>form tạo sản phẩm</div>} />
+          <Route path="/admin/products/:id/edit" element={<div>form sửa sản phẩm</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -91,7 +91,7 @@ describe('ProductList', () => {
 
     expect(screen.getByRole('link', { name: 'Sửa Áo thun basic' })).toHaveAttribute(
       'href',
-      '/products/1/edit',
+      '/admin/products/1/edit',
     )
     // Nút Xoá + hộp thoại xác nhận thuộc Task 8 (test riêng).
   })
@@ -103,7 +103,7 @@ describe('ProductList', () => {
     expect(await screen.findByText('Chưa có sản phẩm nào')).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'Thêm sản phẩm đầu tiên' }),
-    ).toHaveAttribute('href', '/products/new')
+    ).toHaveAttribute('href', '/admin/products/new')
   })
 
   it('shows an error state and retries on demand', async () => {
