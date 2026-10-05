@@ -1,6 +1,6 @@
 import { AuthClient } from '@supabase/auth-js'
 
-import type { Session } from '@supabase/auth-js'
+import type { AuthChangeEvent, Session } from '@supabase/auth-js'
 
 let client: InstanceType<typeof AuthClient> | null = null
 
@@ -62,6 +62,18 @@ export async function sendPasswordReset(email: string): Promise<void> {
   const { error } = await getAuthClient().resetPasswordForEmail(email)
   if (error !== null) {
     throw error
+  }
+}
+
+export function subscribeToSessionChanges(callback: (session: Session | null) => void): () => void {
+  const { data: sub } = getAuthClient().onAuthStateChange(function (
+    _event: AuthChangeEvent,
+    session: Session | null,
+  ) {
+    callback(session)
+  })
+  return function () {
+    sub.subscription.unsubscribe()
   }
 }
 
