@@ -246,7 +246,7 @@ export function Testimonials() {
 
 export function Footer() {
   return (
-    <footer className="rounded-t-[2.5rem] bg-zinc-950 px-4 pt-12 pb-10 text-zinc-300">
+    <footer className="rounded-t-[2.5rem] bg-zinc-950 px-6 pt-10 pb-8 text-zinc-300 md:px-10 md:pt-12">
       <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-8 md:grid-cols-4">
         <div>
           <p className="text-2xl font-extrabold text-white">
