@@ -4,7 +4,7 @@ import { fetchSession, friendlyAuthError, validateLoginInput } from './auth'
 
 describe('validateLoginInput', () => {
   it('bat buoc nhap email', () => {
-    expect(validateLoginInput('', '123456')).toBe('Nhập email nhé.')
+    expect(validateLoginInput('', '123456')).toBe('Vui lòng nhập email.')
   })
 
   it('tu choi email thieu @', () => {
@@ -29,7 +29,7 @@ describe('friendlyAuthError', () => {
 
   it('email da co tai khoan', () => {
     expect(friendlyAuthError({ message: 'User already registered' })).toBe(
-      'Email này đã có tài khoản. Hãy đăng nhập.',
+      'Email này đã được đăng ký. Vui lòng đăng nhập.',
     )
   })
 
@@ -41,9 +41,9 @@ describe('friendlyAuthError', () => {
 
   it('loi la thi bao chung', () => {
     expect(friendlyAuthError({ message: 'Something weird' })).toBe(
-      'Có lỗi xảy ra. Thử lại sau nhé.',
+      'Đã xảy ra lỗi. Vui lòng thử lại sau.',
     )
-    expect(friendlyAuthError(null)).toBe('Có lỗi xảy ra. Thử lại sau nhé.')
+    expect(friendlyAuthError(null)).toBe('Đã xảy ra lỗi. Vui lòng thử lại sau.')
   })
 })
 

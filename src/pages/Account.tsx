@@ -22,7 +22,7 @@ export default function Account() {
     <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
       <div className="glass mx-auto w-full max-w-md rounded-3xl p-6 md:p-8">
         <p className="text-xs font-bold tracking-[0.18em] text-indigo-900 uppercase">Tài khoản</p>
-        <h1 className="mt-2 text-2xl font-extrabold tracking-tighter">Xin chào thành viên</h1>
+        <h1 className="mt-2 text-2xl font-extrabold tracking-tighter">Xin chào</h1>
         {session !== undefined && session !== null && (
           <p className="mt-1 truncate text-sm text-zinc-500">{session.user.email}</p>
         )}
@@ -48,7 +48,7 @@ export default function Account() {
         </button>
         {signOut.isError && (
           <p className="mt-3 rounded-2xl bg-red-50 px-4 py-2.5 text-sm text-red-600">
-            Đăng xuất chưa được. Thử lại nhé.
+            Đăng xuất không thành công. Vui lòng thử lại.
           </p>
         )}
       </div>

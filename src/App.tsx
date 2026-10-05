@@ -13,9 +13,9 @@ function App() {
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/dang-nhap" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route
-          path="/tai-khoan"
+          path="/account"
           element={
             <RequireAuth>
               <Account />

@@ -9,9 +9,9 @@ const NAV = ['Nữ', 'Nam', 'Unisex', 'Sale']
 export default function Header() {
   const { data: session } = useSessionQuery()
 
-  let accountTo = '/dang-nhap'
+  let accountTo = '/login'
   if (session !== null && session !== undefined) {
-    accountTo = '/tai-khoan'
+    accountTo = '/account'
   }
   return (
     <header className="fixed inset-x-0 top-0 z-50">

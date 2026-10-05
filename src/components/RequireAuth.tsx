@@ -10,7 +10,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
   }
   if (session === null || session === undefined) {
-    return <Navigate to="/dang-nhap" replace state={{ from: location.pathname }} />
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
   return <>{children}</>
 }

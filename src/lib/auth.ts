@@ -79,7 +79,7 @@ export function subscribeToSessionChanges(callback: (session: Session | null) =>
 
 export function validateLoginInput(email: string, password: string): string | null {
   if (email.trim() === '') {
-    return 'Nhập email nhé.'
+    return 'Vui lòng nhập email.'
   }
   if (email.includes('@') === false) {
     return 'Email chưa đúng định dạng.'
@@ -101,11 +101,11 @@ export function friendlyAuthError(error: unknown): string {
       return 'Email hoặc mật khẩu chưa đúng.'
     }
     if (message.includes('User already registered')) {
-      return 'Email này đã có tài khoản. Hãy đăng nhập.'
+      return 'Email này đã được đăng ký. Vui lòng đăng nhập.'
     }
     if (message.includes('Password should be')) {
       return 'Mật khẩu tối thiểu 6 ký tự.'
     }
   }
-  return 'Có lỗi xảy ra. Thử lại sau nhé.'
+  return 'Đã xảy ra lỗi. Vui lòng thử lại sau.'
 }
