@@ -30,7 +30,7 @@ function Reveal(props: { children: React.ReactNode; delay?: number }) {
 export function LogoStrip() {
   const logos = ['UNIQLO-style', 'adidas-style', 'local brand', 'BTSS', 'nét lab']
   return (
-    <section className="border-y border-sky-100 bg-white/60">
+    <section className="border-y border-sky-100 bg-white/60 dark:border-white/10 dark:bg-white/5">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-10 gap-y-2 px-4 py-4 text-sm font-semibold text-zinc-400">
         {logos.map(function (l) {
           return (
@@ -49,7 +49,9 @@ export function CategoryBento() {
     <section id="categories" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-12">
       <Reveal>
         <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">Mua theo vibe</h2>
-        <p className="mt-2 max-w-[60ch] text-zinc-600">5 ô bento, click là lọc lưới bên dưới.</p>
+        <p className="mt-2 max-w-[60ch] text-zinc-600 dark:text-zinc-300">
+          5 ô bento, click là lọc lưới bên dưới.
+        </p>
       </Reveal>
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-6">
         <a
@@ -103,7 +105,7 @@ export function ProductGrid() {
         {PRODUCTS.map(function (p, i) {
           return (
             <Reveal key={p.id} delay={(i % 4) * 0.06}>
-              <article className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-sm transition hover:shadow-xl hover:shadow-sky-200">
+              <article className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-sm transition hover:shadow-xl hover:shadow-sky-200 dark:border-white/10 dark:bg-white/5 dark:hover:shadow-black/50">
                 <div className="relative">
                   <img
                     src={p.img}
@@ -128,11 +130,15 @@ export function ProductGrid() {
                 </div>
                 <div className="p-4">
                   <h3 className="truncate text-sm font-bold">{p.name}</h3>
-                  <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{p.desc}</p>
+                  <p className="mt-1 line-clamp-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    {p.desc}
+                  </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="font-extrabold text-blue-700">{formatVnd(p.price)}</span>
+                    <span className="font-extrabold text-blue-700 dark:text-sky-300">
+                      {formatVnd(p.price)}
+                    </span>
                     {p.oldPrice && (
-                      <span className="text-xs text-zinc-400 line-through">
+                      <span className="text-xs text-zinc-400 line-through dark:text-zinc-500">
                         {formatVnd(p.oldPrice)}
                       </span>
                     )}
@@ -190,21 +196,21 @@ export function Editorial() {
         <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">
           Học Uniqlo về chất, <span className="text-gradient">học Adidas về lửa</span>
         </h2>
-        <p className="mt-3 max-w-[55ch] leading-relaxed text-zinc-600">
+        <p className="mt-3 max-w-[55ch] leading-relaxed text-zinc-600 dark:text-zinc-300">
           Phom tối giản dễ mặc mỗi ngày, điểm thêm chi tiết street-sport để không nhạt. Chất cotton,
           dạ, denim chọn kỹ từng lô.
         </p>
         <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4">
-            <Truck size={22} className="mx-auto text-indigo-800" />
+          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
+            <Truck size={22} className="mx-auto text-indigo-800 dark:text-indigo-300" />
             <p className="mt-2 text-xs font-bold">Giao toàn quốc</p>
           </div>
-          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4">
-            <ArrowsLeftRight size={22} className="mx-auto text-blue-700" />
+          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
+            <ArrowsLeftRight size={22} className="mx-auto text-blue-700 dark:text-sky-300" />
             <p className="mt-2 text-xs font-bold">Đổi trả 30 ngày</p>
           </div>
-          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4">
-            <ShieldCheck size={22} className="mx-auto text-blue-600" />
+          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
+            <ShieldCheck size={22} className="mx-auto text-blue-600 dark:text-sky-400" />
             <p className="mt-2 text-xs font-bold">Chính hãng</p>
           </div>
         </div>
@@ -235,7 +241,9 @@ export function Testimonials() {
                 <Star size={14} weight="fill" />
               </div>
               <blockquote className="mt-3 text-sm leading-relaxed">“{q.text}”</blockquote>
-              <figcaption className="mt-3 text-xs font-bold text-zinc-500">{q.name}</figcaption>
+              <figcaption className="mt-3 text-xs font-bold text-zinc-500 dark:text-zinc-400">
+                {q.name}
+              </figcaption>
             </figure>
           )
         })}

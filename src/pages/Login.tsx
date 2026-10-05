@@ -149,7 +149,7 @@ export default function Login() {
         </aside>
 
         <div className="glass rounded-3xl p-6 md:p-8">
-          <div className="flex rounded-full bg-indigo-50 p-1 text-sm font-bold">
+          <div className="flex rounded-full bg-indigo-50 p-1 text-sm font-bold dark:bg-white/10">
             <button
               type="button"
               onClick={function () {
@@ -176,7 +176,9 @@ export default function Login() {
             {mode === 'login' && <span>Chào mừng quay trở lại</span>}
             {mode === 'signup' && <span>Tạo tài khoản nét</span>}
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">Dùng chung một tài khoản cho mọi đơn hàng.</p>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Dùng chung một tài khoản cho mọi đơn hàng.
+          </p>
 
           <form onSubmit={handleSubmit} className="mt-5 space-y-3">
             <label className="block text-sm font-bold">
@@ -189,7 +191,7 @@ export default function Login() {
                 }}
                 placeholder="ban@net.vn"
                 autoComplete="email"
-                className="mt-1 w-full rounded-2xl border border-sky-100 bg-white/80 px-4 py-2.5 font-normal outline-none placeholder:text-zinc-400 focus:border-sky-400"
+                className="mt-1 w-full rounded-2xl border border-sky-100 bg-white/80 px-4 py-2.5 font-normal outline-none placeholder:text-zinc-400 focus:border-sky-400 dark:border-white/15 dark:bg-white/10"
               />
             </label>
             <label className="block text-sm font-bold">
@@ -203,7 +205,7 @@ export default function Login() {
                   }}
                   placeholder="Tối thiểu 6 ký tự"
                   autoComplete={autoComplete}
-                  className="w-full rounded-2xl border border-sky-100 bg-white/80 px-4 py-2.5 pr-11 font-normal outline-none placeholder:text-zinc-400 focus:border-sky-400"
+                  className="w-full rounded-2xl border border-sky-100 bg-white/80 px-4 py-2.5 pr-11 font-normal outline-none placeholder:text-zinc-400 focus:border-sky-400 dark:border-white/15 dark:bg-white/10"
                 />
                 <button
                   type="button"
@@ -220,12 +222,12 @@ export default function Login() {
             </label>
 
             {formError !== null && (
-              <p className="rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600">
+              <p className="rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
                 {formError}
               </p>
             )}
             {notice !== null && (
-              <p className="rounded-2xl bg-sky-50 px-4 py-2.5 text-sm font-medium text-sky-700">
+              <p className="rounded-2xl bg-sky-50 px-4 py-2.5 text-sm font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
                 {notice}
               </p>
             )}
@@ -244,7 +246,7 @@ export default function Login() {
           <button
             type="button"
             onClick={handleForgot}
-            className="mt-3 w-full text-center text-sm font-medium text-blue-700 hover:underline"
+            className="mt-3 w-full text-center text-sm font-medium text-blue-700 hover:underline dark:text-sky-300"
           >
             Quên mật khẩu?
           </button>

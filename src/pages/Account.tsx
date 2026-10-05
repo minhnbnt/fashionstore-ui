@@ -21,33 +21,37 @@ export default function Account() {
   return (
     <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
       <div className="glass mx-auto w-full max-w-md rounded-3xl p-6 md:p-8">
-        <p className="text-xs font-bold tracking-[0.18em] text-indigo-900 uppercase">Tài khoản</p>
+        <p className="text-xs font-bold tracking-[0.18em] text-indigo-900 uppercase dark:text-indigo-200">
+          Tài khoản
+        </p>
         <h1 className="mt-2 text-2xl font-extrabold tracking-tighter">Xin chào</h1>
         {session !== undefined && session !== null && (
-          <p className="mt-1 truncate text-sm text-zinc-500">{session.user.email}</p>
+          <p className="mt-1 truncate text-sm text-zinc-500 dark:text-zinc-400">
+            {session.user.email}
+          </p>
         )}
         <div className="mt-5 space-y-2 text-sm">
-          <div className="flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3">
+          <div className="flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3 dark:bg-white/10">
             <span className="font-medium">Đơn hàng của tôi</span>
-            <span className="text-xs text-zinc-400">Sắp ra mắt</span>
+            <span className="text-xs text-zinc-400 dark:text-zinc-500">Sắp ra mắt</span>
           </div>
-          <div className="flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3">
+          <div className="flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3 dark:bg-white/10">
             <span className="font-medium">Mã giảm giá</span>
-            <span className="text-xs text-zinc-400">Sắp ra mắt</span>
+            <span className="text-xs text-zinc-400 dark:text-zinc-500">Sắp ra mắt</span>
           </div>
         </div>
         <button
           type="button"
           onClick={handleSignOut}
           disabled={signOut.isPending}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-full border border-red-200 py-3 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-full border border-red-200 py-3 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-500/30 dark:hover:bg-red-500/10"
         >
           <SignOut size={16} weight="bold" />
           {signOut.isPending && <span>Đang đăng xuất…</span>}
           {signOut.isPending === false && <span>Đăng xuất</span>}
         </button>
         {signOut.isError && (
-          <p className="mt-3 rounded-2xl bg-red-50 px-4 py-2.5 text-sm text-red-600">
+          <p className="mt-3 rounded-2xl bg-red-50 px-4 py-2.5 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-300">
             Đăng xuất không thành công. Vui lòng thử lại.
           </p>
         )}

@@ -1,13 +1,15 @@
 import { Link } from 'react-router'
 
-import { Heart, MagnifyingGlass, ShoppingBag, User } from '@phosphor-icons/react'
+import { Heart, MagnifyingGlass, Moon, ShoppingBag, Sun, User } from '@phosphor-icons/react'
 
 import { useSessionQuery } from '../hooks/useSession'
+import { useTheme } from '../hooks/useTheme'
 
 const NAV = ['Nữ', 'Nam', 'Unisex', 'Sale']
 
 export default function Header() {
   const { data: session } = useSessionQuery()
+  const { theme, toggle } = useTheme()
 
   let accountTo = '/login'
   if (session !== null && session !== undefined) {
@@ -27,13 +29,17 @@ export default function Header() {
           <nav className="ml-4 hidden items-center gap-6 text-sm font-medium lg:flex">
             {NAV.map(function (item) {
               return (
-                <a key={item} href="#shop" className="text-zinc-600 transition hover:text-blue-700">
+                <a
+                  key={item}
+                  href="#shop"
+                  className="text-zinc-600 transition hover:text-blue-700 dark:text-zinc-300 dark:hover:text-sky-300"
+                >
                   {item}
                 </a>
               )
             })}
           </nav>
-          <div className="ml-auto hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-white bg-white/80 px-4 py-2 text-sm text-zinc-500 md:flex">
+          <div className="ml-auto hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-white bg-white/80 px-4 py-2 text-sm text-zinc-500 md:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-300">
             <MagnifyingGlass size={16} weight="bold" />
             <input
               className="w-full bg-transparent outline-none placeholder:text-zinc-400"
@@ -44,16 +50,25 @@ export default function Header() {
             <Link
               to={accountTo}
               aria-label="Tài khoản"
-              className="rounded-full p-2.5 transition hover:bg-indigo-100"
+              className="rounded-full p-2.5 transition hover:bg-indigo-100 dark:hover:bg-white/10"
             >
               <User size={20} />
             </Link>
             <button
               type="button"
               aria-label="Yêu thích"
-              className="rounded-full p-2.5 transition hover:bg-sky-100"
+              className="rounded-full p-2.5 transition hover:bg-sky-100 dark:hover:bg-white/10"
             >
               <Heart size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label="Đổi giao diện sáng tối"
+              className="rounded-full p-2.5 transition hover:bg-sky-100 dark:hover:bg-white/10"
+            >
+              {theme === 'dark' && <Sun size={20} />}
+              {theme !== 'dark' && <Moon size={20} />}
             </button>
             <button
               type="button"

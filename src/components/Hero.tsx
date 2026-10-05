@@ -17,7 +17,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          <p className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.18em] text-indigo-900 uppercase">
+          <p className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.18em] text-indigo-900 uppercase dark:text-indigo-200">
             <Sparkle size={14} weight="fill" />
             Bộ sưu tập thu đông 2026
           </p>
@@ -26,7 +26,7 @@ export default function Hero() {
             <br />
             <span className="text-gradient">nét riêng</span> của bạn
           </h1>
-          <p className="mt-4 max-w-[45ch] text-base leading-relaxed text-zinc-600">
+          <p className="mt-4 max-w-[45ch] text-base leading-relaxed text-zinc-600 dark:text-zinc-300">
             Basics phối sẵn từ Uniqlo-gọn, năng động kiểu Adidas, giá săn sale như AliExpress.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
@@ -44,19 +44,19 @@ export default function Hero() {
               Khám phá
             </a>
           </div>
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-zinc-600">
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-zinc-600 dark:text-zinc-300">
             <div>
-              <p className="text-xl font-extrabold text-zinc-900">12k+</p>
+              <p className="text-xl font-extrabold text-zinc-900 dark:text-white">12k+</p>
               <p>khách đã mua</p>
             </div>
-            <div className="h-10 w-px bg-zinc-200" />
+            <div className="h-10 w-px bg-zinc-200 dark:bg-white/15" />
             <div>
-              <p className="text-xl font-extrabold text-zinc-900">4.9/5</p>
+              <p className="text-xl font-extrabold text-zinc-900 dark:text-white">4.9/5</p>
               <p>đánh giá thật</p>
             </div>
-            <div className="h-10 w-px bg-zinc-200" />
+            <div className="h-10 w-px bg-zinc-200 dark:bg-white/15" />
             <div>
-              <p className="text-xl font-extrabold text-zinc-900">30 ngày</p>
+              <p className="text-xl font-extrabold text-zinc-900 dark:text-white">30 ngày</p>
               <p>đổi trả free</p>
             </div>
           </div>
@@ -85,13 +85,13 @@ export default function Hero() {
             />
             <div>
               <p className="text-sm font-bold">Áo thun oversize nét</p>
-              <p className="text-sm font-bold text-blue-700">391.000 ₫</p>
+              <p className="text-sm font-bold text-blue-700 dark:text-sky-300">391.000 ₫</p>
             </div>
             <span className="ml-4 rounded-full bg-gradient-to-r from-indigo-900 to-sky-400 px-3 py-1 text-xs font-bold text-white">
               Mới
             </span>
           </div>
-          <div className="glass absolute -top-4 right-6 rounded-full px-4 py-2 text-xs font-bold text-indigo-900">
+          <div className="glass absolute -top-4 right-6 rounded-full px-4 py-2 text-xs font-bold text-indigo-900 dark:text-indigo-200">
             Free ship đơn từ 500K
           </div>
         </motion.div>
