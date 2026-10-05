@@ -46,7 +46,7 @@ export function LogoStrip() {
 
 export function CategoryBento() {
   return (
-    <section id="categories" className="mx-auto max-w-[1400px] px-4 py-16">
+    <section id="categories" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-12">
       <Reveal>
         <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">Mua theo vibe</h2>
         <p className="mt-2 max-w-[60ch] text-zinc-600">5 ô bento, click là lọc lưới bên dưới.</p>
@@ -92,7 +92,7 @@ export function CategoryBento() {
 
 export function ProductGrid() {
   return (
-    <section id="shop" className="mx-auto max-w-[1400px] px-4 pb-8">
+    <section id="shop" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 pb-10">
       <Reveal>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">8 món đang cháy</h2>
@@ -129,7 +129,7 @@ export function ProductGrid() {
                 <div className="p-4">
                   <h3 className="truncate text-sm font-bold">{p.name}</h3>
                   <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{p.desc}</p>
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className="font-extrabold text-blue-700">{formatVnd(p.price)}</span>
                     {p.oldPrice && (
                       <span className="text-xs text-zinc-400 line-through">
@@ -163,7 +163,7 @@ export function DealMarquee() {
   ]
   const doubled = items.concat(items)
   return (
-    <section className="mt-10 overflow-hidden bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 py-3 text-white">
+    <section className="mt-8 overflow-hidden bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 py-3 text-white">
       <div className="marquee-track text-sm font-bold tracking-widest uppercase">
         {doubled.map(function (t, i) {
           return (
@@ -179,7 +179,7 @@ export function DealMarquee() {
 
 export function Editorial() {
   return (
-    <section className="mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-8 px-4 py-16 lg:grid-cols-2">
+    <section className="mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-8 px-4 py-12 lg:grid-cols-2">
       <img
         src="https://picsum.photos/seed/net-editorial/900/700"
         alt="Bộ sưu tập nét thu đông"
@@ -221,7 +221,7 @@ const QUOTES = [
 
 export function Testimonials() {
   return (
-    <section className="mx-auto max-w-[1400px] px-4 pb-16">
+    <section className="mx-auto max-w-[1400px] px-4 pb-12">
       <h2 className="text-3xl font-extrabold tracking-tighter">Khách nói gì</h2>
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         {QUOTES.map(function (q) {
@@ -282,7 +282,7 @@ export function Footer() {
             <li>028 3861 4613</li>
           </ul>
         </div>
-        <div>
+        <div className="col-span-2 md:col-span-1">
           <p className="text-sm font-bold text-white">Nhận deal</p>
           <form
             className="mt-3 flex overflow-hidden rounded-full bg-white/10 p-1"

@@ -6,12 +6,12 @@ export default function Hero() {
   const initial = reduce ? false : { opacity: 0, y: 28 }
 
   return (
-    <section id="top" className="relative overflow-hidden pt-24">
+    <section id="top" className="relative scroll-mt-24 overflow-hidden pt-[76px]">
       <div className="hero-blob top-24 left-[-120px] h-96 w-96 bg-indigo-900/40" />
       <div className="hero-blob top-40 right-[-100px] h-[28rem] w-[28rem] bg-sky-400/50" />
       <div className="hero-blob top-[420px] left-1/3 h-72 w-72 bg-blue-300/40" />
 
-      <div className="relative mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-10 px-4 pt-10 pb-16 lg:grid-cols-2 lg:pt-16">
+      <div className="relative mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-10 px-4 pt-6 pb-12 lg:grid-cols-2 lg:pt-10">
         <motion.div
           initial={initial}
           animate={{ opacity: 1, y: 0 }}
@@ -44,7 +44,7 @@ export default function Hero() {
               Khám phá
             </a>
           </div>
-          <div className="mt-8 flex items-center gap-6 text-sm text-zinc-600">
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-zinc-600">
             <div>
               <p className="text-xl font-extrabold text-zinc-900">12k+</p>
               <p>khách đã mua</p>
