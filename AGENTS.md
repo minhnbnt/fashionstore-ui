@@ -6,6 +6,7 @@ Shop "nét": landing thời trang, Vite + React 19 + Tailwind v4. Branch làm vi
 
 - `docs/design-system.md` — màu chàm-xanh băng, font Inter tự host, glass + bo góc, spacing đã chốt.
 - `docs/code-guide.md` — stack, pattern code, ảnh, motion, icon.
+- `docs/structure.md` — cây thư mục chuẩn React của repo, thêm mới để ở đâu.
 - `docs/pre-commit.md` — trước khi commit chạy gì, commit message ra sao.
 
 ## Quy tắc nhanh
