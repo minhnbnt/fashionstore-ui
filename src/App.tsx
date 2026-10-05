@@ -1,28 +1,28 @@
+import { Route, Routes } from 'react-router'
+
 import Header from './components/Header'
-import Hero from './components/Hero'
-import {
-  CategoryBento,
-  DealMarquee,
-  Editorial,
-  Footer,
-  LogoStrip,
-  ProductGrid,
-  Testimonials,
-} from './components/Sections'
+import RequireAuth from './components/RequireAuth'
+import { Footer } from './components/Sections'
+import Account from './pages/Account'
+import Home from './pages/Home'
+import Login from './pages/Login'
 
 function App() {
   return (
     <div className="grain min-h-[100dvh]">
       <Header />
-      <main>
-        <Hero />
-        <LogoStrip />
-        <CategoryBento />
-        <ProductGrid />
-        <DealMarquee />
-        <Editorial />
-        <Testimonials />
-      </main>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/dang-nhap" element={<Login />} />
+        <Route
+          path="/tai-khoan"
+          element={
+            <RequireAuth>
+              <Account />
+            </RequireAuth>
+          }
+        />
+      </Routes>
       <Footer />
     </div>
   )

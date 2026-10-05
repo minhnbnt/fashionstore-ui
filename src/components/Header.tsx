@@ -1,8 +1,18 @@
+import { Link } from 'react-router'
+
 import { Heart, MagnifyingGlass, ShoppingBag, User } from '@phosphor-icons/react'
+
+import { useSessionQuery } from '../hooks/useSession'
 
 const NAV = ['Nữ', 'Nam', 'Unisex', 'Sale']
 
 export default function Header() {
+  const { data: session } = useSessionQuery()
+
+  let accountTo = '/dang-nhap'
+  if (session !== null && session !== undefined) {
+    accountTo = '/tai-khoan'
+  }
   return (
     <header className="fixed inset-x-0 top-0 z-50">
       <div className="mx-auto max-w-[1400px] px-4">
@@ -31,13 +41,13 @@ export default function Header() {
             />
           </div>
           <div className="ml-auto flex items-center gap-1 md:ml-0">
-            <button
-              type="button"
+            <Link
+              to={accountTo}
               aria-label="Tài khoản"
               className="rounded-full p-2.5 transition hover:bg-indigo-100"
             >
               <User size={20} />
-            </button>
+            </Link>
             <button
               type="button"
               aria-label="Yêu thích"
