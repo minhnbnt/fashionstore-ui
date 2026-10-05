@@ -30,7 +30,7 @@ function Reveal(props: { children: React.ReactNode; delay?: number }) {
 export function LogoStrip() {
   const logos = ['UNIQLO-style', 'adidas-style', 'local brand', 'BTSS', 'nét lab']
   return (
-    <section className="border-y border-purple-100 bg-white/60">
+    <section className="border-y border-sky-100 bg-white/60">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-10 gap-y-2 px-4 py-4 text-sm font-semibold text-zinc-400">
         {logos.map(function (l) {
           return (
@@ -103,7 +103,7 @@ export function ProductGrid() {
         {PRODUCTS.map(function (p, i) {
           return (
             <Reveal key={p.id} delay={(i % 4) * 0.06}>
-              <article className="group overflow-hidden rounded-3xl border border-purple-100 bg-white/80 shadow-sm transition hover:shadow-xl hover:shadow-purple-200">
+              <article className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-sm transition hover:shadow-xl hover:shadow-sky-200">
                 <div className="relative">
                   <img
                     src={p.img}
@@ -114,7 +114,7 @@ export function ProductGrid() {
                     className="aspect-[4/5] w-full object-cover"
                   />
                   {p.tag && (
-                    <span className="absolute top-3 left-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1 text-xs font-bold text-white">
+                    <span className="absolute top-3 left-3 rounded-full bg-gradient-to-r from-indigo-900 to-sky-400 px-3 py-1 text-xs font-bold text-white">
                       {p.tag}
                     </span>
                   )}
@@ -130,7 +130,7 @@ export function ProductGrid() {
                   <h3 className="truncate text-sm font-bold">{p.name}</h3>
                   <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{p.desc}</p>
                   <div className="mt-2 flex items-center gap-2">
-                    <span className="font-extrabold text-pink-600">{formatVnd(p.price)}</span>
+                    <span className="font-extrabold text-blue-700">{formatVnd(p.price)}</span>
                     {p.oldPrice && (
                       <span className="text-xs text-zinc-400 line-through">
                         {formatVnd(p.oldPrice)}
@@ -163,7 +163,7 @@ export function DealMarquee() {
   ]
   const doubled = items.concat(items)
   return (
-    <section className="mt-10 overflow-hidden bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 py-3 text-white">
+    <section className="mt-10 overflow-hidden bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 py-3 text-white">
       <div className="marquee-track text-sm font-bold tracking-widest uppercase">
         {doubled.map(function (t, i) {
           return (
@@ -184,7 +184,7 @@ export function Editorial() {
         src="https://picsum.photos/seed/net-editorial/900/700"
         alt="Bộ sưu tập nét thu đông"
         loading="lazy"
-        className="h-80 w-full rounded-3xl object-cover shadow-xl shadow-pink-200 lg:h-[440px]"
+        className="h-80 w-full rounded-3xl object-cover shadow-xl shadow-sky-200 lg:h-[440px]"
       />
       <Reveal>
         <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">
@@ -195,16 +195,16 @@ export function Editorial() {
           dạ, denim chọn kỹ từng lô.
         </p>
         <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-          <div className="rounded-3xl border border-purple-100 bg-white/70 p-4">
-            <Truck size={22} className="mx-auto text-purple-600" />
+          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4">
+            <Truck size={22} className="mx-auto text-indigo-800" />
             <p className="mt-2 text-xs font-bold">Giao toàn quốc</p>
           </div>
-          <div className="rounded-3xl border border-purple-100 bg-white/70 p-4">
-            <ArrowsLeftRight size={22} className="mx-auto text-pink-600" />
+          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4">
+            <ArrowsLeftRight size={22} className="mx-auto text-blue-700" />
             <p className="mt-2 text-xs font-bold">Đổi trả 30 ngày</p>
           </div>
-          <div className="rounded-3xl border border-purple-100 bg-white/70 p-4">
-            <ShieldCheck size={22} className="mx-auto text-fuchsia-600" />
+          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4">
+            <ShieldCheck size={22} className="mx-auto text-blue-600" />
             <p className="mt-2 text-xs font-bold">Chính hãng</p>
           </div>
         </div>
@@ -227,7 +227,7 @@ export function Testimonials() {
         {QUOTES.map(function (q) {
           return (
             <figure key={q.name} className="glass rounded-3xl p-6">
-              <div className="flex gap-1 text-pink-500">
+              <div className="flex gap-1 text-sky-400">
                 <Star size={14} weight="fill" />
                 <Star size={14} weight="fill" />
                 <Star size={14} weight="fill" />
@@ -250,7 +250,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-8 md:grid-cols-4">
         <div>
           <p className="text-2xl font-extrabold text-white">
-            nét<span className="text-pink-500">.</span>
+            nét<span className="text-sky-400">.</span>
           </p>
           <p className="mt-2 text-sm text-zinc-400">Mặc đẹp là nét riêng của bạn.</p>
         </div>

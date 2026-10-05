@@ -12,12 +12,12 @@ export default function Header() {
             className="flex items-center gap-1 text-2xl font-extrabold tracking-tighter"
           >
             <span>nét</span>
-            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500" />
+            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-indigo-900 to-sky-400" />
           </a>
           <nav className="ml-4 hidden items-center gap-6 text-sm font-medium lg:flex">
             {NAV.map(function (item) {
               return (
-                <a key={item} href="#shop" className="text-zinc-600 transition hover:text-pink-600">
+                <a key={item} href="#shop" className="text-zinc-600 transition hover:text-blue-700">
                   {item}
                 </a>
               )
@@ -34,14 +34,14 @@ export default function Header() {
             <button
               type="button"
               aria-label="Tài khoản"
-              className="rounded-full p-2.5 transition hover:bg-purple-100"
+              className="rounded-full p-2.5 transition hover:bg-indigo-100"
             >
               <User size={20} />
             </button>
             <button
               type="button"
               aria-label="Yêu thích"
-              className="rounded-full p-2.5 transition hover:bg-pink-100"
+              className="rounded-full p-2.5 transition hover:bg-sky-100"
             >
               <Heart size={20} />
             </button>
