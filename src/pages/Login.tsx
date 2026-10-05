@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 
-import { ArrowsLeftRight, Eye, EyeSlash, LockKey, Tag, Truck } from '@phosphor-icons/react'
+import { ArrowsLeftRight, Eye, EyeSlash, Tag, Truck } from '@phosphor-icons/react'
 
 import { usePasswordReset, useSignIn, useSignUp } from '../hooks/useAuthMutations'
 import { useSessionQuery } from '../hooks/useSession'
@@ -248,14 +248,6 @@ export default function Login() {
           >
             Quên mật khẩu?
           </button>
-
-          <p className="mt-4 flex items-start gap-2 rounded-2xl bg-indigo-50/70 px-4 py-3 text-xs leading-relaxed text-zinc-600">
-            <LockKey size={16} className="mt-0.5 shrink-0 text-indigo-800" />
-            <span>
-              Nếu sử dụng thiết bị công cộng, vui lòng đăng xuất sau khi mua sắm. Bằng việc tiếp
-              tục, bạn đồng ý với Điều khoản và Chính sách bảo mật của nét.
-            </span>
-          </p>
         </div>
       </div>
     </main>
