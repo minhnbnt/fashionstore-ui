@@ -39,7 +39,7 @@ export default function Hero() {
             </a>
             <a
               href="#categories"
-              className="glass inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-zinc-800"
+              className="glass inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-zinc-800 dark:text-white"
             >
               Khám phá
             </a>

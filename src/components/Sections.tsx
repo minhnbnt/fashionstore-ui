@@ -190,7 +190,7 @@ export function Editorial() {
         src="https://picsum.photos/seed/net-editorial/900/700"
         alt="Bộ sưu tập nét thu đông"
         loading="lazy"
-        className="h-80 w-full rounded-3xl object-cover shadow-xl shadow-sky-200 lg:h-[440px]"
+        className="h-80 w-full rounded-3xl object-cover shadow-xl shadow-sky-200 lg:h-[440px] dark:shadow-black/60"
       />
       <Reveal>
         <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">

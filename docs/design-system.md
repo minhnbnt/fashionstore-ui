@@ -19,7 +19,7 @@
 
 ## Glass
 
-- Class `.glass` trong `src/index.css`: `backdrop-filter: blur(20px) saturate(1.4)`, viền trắng mờ + inset highlight.
+- Class `.glass` trong `src/index.css`: `backdrop-filter: blur(20px) saturate(1.4)`, viền tối mờ + inset đen nhẹ.
 - Có fallback `prefers-reduced-transparency` về nền trắng đặc.
 
 ## Spacing đã chốt (đừng phá)
