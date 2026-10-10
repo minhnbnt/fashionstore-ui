@@ -1,3 +1,15 @@
+export interface ProductColor {
+  name: string
+  hex: string
+}
+
+export interface Review {
+  name: string
+  rating: number
+  text: string
+  date: string
+}
+
 export interface Product {
   id: number
   name: string
@@ -7,6 +19,14 @@ export interface Product {
   tag: string | null
   img: string
   category: string
+  sizes: string[]
+  colors: ProductColor[]
+  stock: number
+  rating: number
+  reviewsCount: number
+  details: string[]
+  gallery: string[]
+  reviews: Review[]
 }
 
 export const CATEGORIES = [
@@ -27,6 +47,25 @@ export const PRODUCTS: Product[] = [
     tag: 'Mới',
     img: 'https://picsum.photos/seed/net-p1/600/750',
     category: 'ao',
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: [
+      { name: 'Trắng', hex: '#ffffff' },
+      { name: 'Đen', hex: '#171717' },
+      { name: 'Xanh băng', hex: '#38bdf8' },
+    ],
+    stock: 12,
+    rating: 4.8,
+    reviewsCount: 132,
+    details: ['Cotton 260gsm', 'Form oversize', 'Giặt máy nhẹ'],
+    gallery: [
+      'https://picsum.photos/seed/net-p1/600/750',
+      'https://picsum.photos/seed/net-p1-a/600/750',
+      'https://picsum.photos/seed/net-p1-b/600/750',
+    ],
+    reviews: [
+      { name: 'Linh, Hà Nội', rating: 5, text: 'Vải dày dặn, form đẹp.', date: '02.10.2026' },
+      { name: 'Trâm, Sài Gòn', rating: 5, text: 'Mặc 3 tháng chưa xù.', date: '28.09.2026' },
+    ],
   },
   {
     id: 2,
@@ -37,6 +76,24 @@ export const PRODUCTS: Product[] = [
     tag: '-20%',
     img: 'https://picsum.photos/seed/net-p2/600/750',
     category: 'vay',
+    sizes: ['S', 'M', 'L'],
+    colors: [
+      { name: 'Hồng', hex: '#f9a8d4' },
+      { name: 'Đen', hex: '#171717' },
+    ],
+    stock: 8,
+    rating: 4.9,
+    reviewsCount: 210,
+    details: ['Vải voan 2 lớp', 'Khóa ẩn sau lưng', 'Dài midi qua gối'],
+    gallery: [
+      'https://picsum.photos/seed/net-p2/600/750',
+      'https://picsum.photos/seed/net-p2-a/600/750',
+      'https://picsum.photos/seed/net-p2-b/600/750',
+    ],
+    reviews: [
+      { name: 'An, Đà Nẵng', rating: 5, text: 'Váy lên form đúng ảnh.', date: '01.10.2026' },
+      { name: 'Linh, Hà Nội', rating: 4, text: 'Vải nhẹ, cần lót cẩn thận.', date: '25.09.2026' },
+    ],
   },
   {
     id: 3,
@@ -47,6 +104,21 @@ export const PRODUCTS: Product[] = [
     tag: 'Hot',
     img: 'https://picsum.photos/seed/net-p3/600/750',
     category: 'khoac',
+    sizes: ['M', 'L', 'XL'],
+    colors: [
+      { name: 'Rêu', hex: '#4d7c0f' },
+      { name: 'Đen', hex: '#171717' },
+    ],
+    stock: 5,
+    rating: 4.7,
+    reviewsCount: 89,
+    details: ['Chống nước nhẹ', 'Lót lưới thoáng', 'Túi hộp 4 ngăn'],
+    gallery: [
+      'https://picsum.photos/seed/net-p3/600/750',
+      'https://picsum.photos/seed/net-p3-a/600/750',
+      'https://picsum.photos/seed/net-p3-b/600/750',
+    ],
+    reviews: [{ name: 'Khang, Sài Gòn', rating: 5, text: 'Đi mưa ổn, form đẹp.', date: '20.09.2026' }],
   },
   {
     id: 4,
@@ -57,6 +129,21 @@ export const PRODUCTS: Product[] = [
     tag: '-20%',
     img: 'https://picsum.photos/seed/net-p4/600/750',
     category: 'quan',
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: [
+      { name: 'Xanh đậm', hex: '#1e3a8a' },
+      { name: 'Xanh nhạt', hex: '#7dd3fc' },
+    ],
+    stock: 15,
+    rating: 4.6,
+    reviewsCount: 176,
+    details: ['Denim co giãn', 'Ống suông', 'Cạp cao'],
+    gallery: [
+      'https://picsum.photos/seed/net-p4/600/750',
+      'https://picsum.photos/seed/net-p4-a/600/750',
+      'https://picsum.photos/seed/net-p4-b/600/750',
+    ],
+    reviews: [{ name: 'Trâm, Sài Gòn', rating: 4, text: 'Co giãn tốt, ống hơi dài.', date: '18.09.2026' }],
   },
   {
     id: 5,
@@ -67,6 +154,21 @@ export const PRODUCTS: Product[] = [
     tag: 'Mới',
     img: 'https://picsum.photos/seed/net-p5/600/750',
     category: 'ao',
+    sizes: ['S', 'M', 'L'],
+    colors: [
+      { name: 'Kem', hex: '#fef3c7' },
+      { name: 'Hồng', hex: '#f9a8d4' },
+    ],
+    stock: 20,
+    rating: 4.8,
+    reviewsCount: 64,
+    details: ['100% cotton', 'Dệt mịn', 'Không xù lông'],
+    gallery: [
+      'https://picsum.photos/seed/net-p5/600/750',
+      'https://picsum.photos/seed/net-p5-a/600/750',
+      'https://picsum.photos/seed/net-p5-b/600/750',
+    ],
+    reviews: [{ name: 'An, Đà Nẵng', rating: 5, text: 'Mềm, màu ngọt.', date: '15.09.2026' }],
   },
   {
     id: 6,
@@ -77,6 +179,21 @@ export const PRODUCTS: Product[] = [
     tag: null,
     img: 'https://picsum.photos/seed/net-p6/600/750',
     category: 'vay',
+    sizes: ['S', 'M', 'L'],
+    colors: [
+      { name: 'Đen', hex: '#171717' },
+      { name: 'Be', hex: '#d6c7a8' },
+    ],
+    stock: 10,
+    rating: 4.5,
+    reviewsCount: 58,
+    details: ['Form chữ A', 'Khóa hông', 'Vải dày dặn'],
+    gallery: [
+      'https://picsum.photos/seed/net-p6/600/750',
+      'https://picsum.photos/seed/net-p6-a/600/750',
+      'https://picsum.photos/seed/net-p6-b/600/750',
+    ],
+    reviews: [{ name: 'Linh, Hà Nội', rating: 4, text: 'Tôn dáng, vải ổn.', date: '10.09.2026' }],
   },
   {
     id: 7,
@@ -87,6 +204,21 @@ export const PRODUCTS: Product[] = [
     tag: null,
     img: 'https://picsum.photos/seed/net-p7/600/750',
     category: 'phukien',
+    sizes: ['Freesize'],
+    colors: [
+      { name: 'Trắng', hex: '#ffffff' },
+      { name: 'Be', hex: '#d6c7a8' },
+    ],
+    stock: 30,
+    rating: 4.7,
+    reviewsCount: 41,
+    details: ['Canvas 16oz', 'Đựng laptop 14 inch', 'Quai chắc chắn'],
+    gallery: [
+      'https://picsum.photos/seed/net-p7/600/750',
+      'https://picsum.photos/seed/net-p7-a/600/750',
+      'https://picsum.photos/seed/net-p7-b/600/750',
+    ],
+    reviews: [{ name: 'Khang, Sài Gòn', rating: 5, text: 'Đựng vừa laptop, quai chắc.', date: '05.09.2026' }],
   },
   {
     id: 8,
@@ -97,9 +229,64 @@ export const PRODUCTS: Product[] = [
     tag: '-25%',
     img: 'https://picsum.photos/seed/net-p8/600/750',
     category: 'quan',
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: [
+      { name: 'Xám', hex: '#9ca3af' },
+      { name: 'Đen', hex: '#171717' },
+    ],
+    stock: 0,
+    rating: 4.6,
+    reviewsCount: 97,
+    details: ['Nỉ chân cua', 'Ống rộng', 'Cạp chun'],
+    gallery: [
+      'https://picsum.photos/seed/net-p8/600/750',
+      'https://picsum.photos/seed/net-p8-a/600/750',
+      'https://picsum.photos/seed/net-p8-b/600/750',
+    ],
+    reviews: [{ name: 'Trâm, Sài Gòn', rating: 5, text: 'Mềm ấm, mặc sướng.', date: '01.09.2026' }],
   },
 ]
 
 export function formatVnd(n: number): string {
   return n.toLocaleString('vi-VN') + ' ₫'
+}
+
+export function getProductById(id: string | number): Product | undefined {
+  const num = Number(id)
+  if (Number.isNaN(num)) {
+    return undefined
+  }
+  return PRODUCTS.find(function (p) {
+    return p.id === num
+  })
+}
+
+export function getRelated(p: Product, n = 4): Product[] {
+  const out: Product[] = []
+  for (const c of PRODUCTS) {
+    if (c.id === p.id) {
+      continue
+    }
+    if (c.category === p.category) {
+      out.push(c)
+    }
+    if (out.length >= n) {
+      break
+    }
+  }
+  if (out.length >= n) {
+    return out
+  }
+  for (const c of PRODUCTS) {
+    if (c.id === p.id) {
+      continue
+    }
+    if (c.category !== p.category) {
+      out.push(c)
+    }
+    if (out.length >= n) {
+      break
+    }
+  }
+  return out
 }
