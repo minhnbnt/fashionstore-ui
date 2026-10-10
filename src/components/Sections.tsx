@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+
 import {
   Heart,
   ShoppingBag,
@@ -107,14 +109,16 @@ export function ProductGrid() {
             <Reveal key={p.id} delay={(i % 4) * 0.06}>
               <article className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-sm transition hover:shadow-xl hover:shadow-sky-200 dark:border-white/10 dark:bg-white/5 dark:hover:shadow-black/50">
                 <div className="relative">
-                  <img
-                    src={p.img}
-                    alt={p.name}
-                    loading="lazy"
-                    width={600}
-                    height={750}
-                    className="aspect-[4/5] w-full object-cover"
-                  />
+                  <Link to={'/product/' + p.id}>
+                    <img
+                      src={p.img}
+                      alt={p.name}
+                      loading="lazy"
+                      width={600}
+                      height={750}
+                      className="aspect-[4/5] w-full object-cover"
+                    />
+                  </Link>
                   {p.tag && (
                     <span className="absolute top-3 left-3 rounded-full bg-gradient-to-r from-indigo-900 to-sky-400 px-3 py-1 text-xs font-bold text-white">
                       {p.tag}
@@ -129,7 +133,9 @@ export function ProductGrid() {
                   </button>
                 </div>
                 <div className="p-4">
-                  <h3 className="truncate text-sm font-bold">{p.name}</h3>
+                  <Link to={'/product/' + p.id}>
+                    <h3 className="truncate text-sm font-bold hover:underline">{p.name}</h3>
+                  </Link>
                   <p className="mt-1 line-clamp-1 text-xs text-zinc-500 dark:text-zinc-400">
                     {p.desc}
                   </p>

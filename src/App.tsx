@@ -8,6 +8,7 @@ import { Footer } from './components/Sections'
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
 const Account = lazy(() => import('./pages/Account'))
+const ProductDetail = lazy(() => import('./pages/ProductDetail'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -20,6 +21,7 @@ function App() {
       <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/login" element={<Login />} />
           <Route
             path="/account"
