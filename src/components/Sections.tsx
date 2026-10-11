@@ -1,5 +1,7 @@
 import { Link } from 'react-router'
 
+import { useList1 } from '@generated/endpoints/categories/categories'
+import { useSearch } from '@generated/endpoints/search/search'
 import {
   Heart,
   ShoppingBag,
@@ -10,7 +12,14 @@ import {
 } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
-import { CATEGORIES, PRODUCTS, formatVnd } from '../data/products'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { formatVnd } from '@/lib/format'
+
+import UserAvatar from './UserAvatar'
+
+import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
+
+export const DEFAULT_SEARCH_KEYWORD = 'áo'
 
 function Reveal(props: { children: React.ReactNode; delay?: number }) {
   const reduce = useReducedMotion()
@@ -46,47 +55,78 @@ export function LogoStrip() {
   )
 }
 
-export function CategoryBento() {
+export function CategoryBento(props: { onSelect: (keyword: string) => void }) {
+  const categoriesQuery = useList1()
+  const payload = categoriesQuery.data
+  if (categoriesQuery.isPending) {
+    return (
+      <section id="categories" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-12">
+        <p className="text-sm text-zinc-500">Đang tải danh mục…</p>
+      </section>
+    )
+  }
+  if (payload === undefined) {
+    return null
+  }
+  const categories = takeData(payload)
+  if (categories.length === 0) {
+    return null
+  }
+  const first = categories[0]
+  const rest = categories.slice(1)
+  if (first === undefined) {
+    return null
+  }
+  // TODO(mock): backend chưa có ảnh danh mục nên dùng ảnh placeholder theo slug
+  function categoryImage(slug: string | undefined): string {
+    return `https://picsum.photos/seed/net-${slug ?? 'all'}/600/700`
+  }
   return (
     <section id="categories" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-12">
       <Reveal>
         <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">Mua theo vibe</h2>
         <p className="mt-2 max-w-[60ch] text-zinc-600 dark:text-zinc-300">
-          5 ô bento, click là lọc lưới bên dưới.
+          Bấm danh mục để lọc lưới bên dưới.
         </p>
       </Reveal>
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-6">
-        <a
-          href="#shop"
-          className="group relative col-span-2 overflow-hidden rounded-3xl lg:col-span-4 lg:row-span-2"
+        <button
+          type="button"
+          onClick={function () {
+            props.onSelect(first.name ?? '')
+          }}
+          className="group relative col-span-2 overflow-hidden rounded-3xl text-left lg:col-span-4 lg:row-span-2"
         >
           <img
-            src={CATEGORIES[0].img}
-            alt={CATEGORIES[0].label}
+            src={categoryImage(first.slug)}
+            alt={first.name}
             loading="lazy"
             className="h-64 w-full object-cover transition duration-500 group-hover:scale-105 lg:h-[420px]"
           />
           <span className="glass absolute bottom-4 left-4 rounded-full px-5 py-2 text-sm font-bold">
-            {CATEGORIES[0].label}
+            {first.name}
           </span>
-        </a>
-        {CATEGORIES.slice(1).map(function (c) {
+        </button>
+        {rest.map(function (c) {
           return (
-            <a
+            <button
               key={c.id}
-              href="#shop"
-              className="group relative overflow-hidden rounded-3xl lg:col-span-2"
+              type="button"
+              onClick={function () {
+                props.onSelect(c.name ?? '')
+              }}
+              className="group relative overflow-hidden rounded-3xl text-left lg:col-span-2"
             >
               <img
-                src={c.img}
-                alt={c.label}
+                src={categoryImage(c.slug)}
+                alt={c.name}
                 loading="lazy"
                 className="h-44 w-full object-cover transition duration-500 group-hover:scale-105 lg:h-[202px]"
               />
               <span className="glass absolute bottom-3 left-3 rounded-full px-4 py-1.5 text-xs font-bold">
-                {c.label}
+                {c.name}
               </span>
-            </a>
+            </button>
           )
         })}
       </div>
@@ -94,70 +134,82 @@ export function CategoryBento() {
   )
 }
 
-export function ProductGrid() {
+export function ProductCard(props: { item: ProductSummaryResponse }) {
+  const p = props.item
+  return (
+    <article className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-sm transition hover:shadow-xl hover:shadow-sky-200 dark:border-white/10 dark:bg-white/5 dark:hover:shadow-black/50">
+      <div className="relative">
+        <Link to={'/product/' + p.id}>
+          <img
+            src={imageUrl(p.defaultImageKey)}
+            alt={p.name}
+            loading="lazy"
+            width={600}
+            height={750}
+            onError={function (e) {
+              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                e.currentTarget.src = PLACEHOLDER_IMAGE
+              }
+            }}
+            className="aspect-[4/5] w-full object-cover"
+          />
+        </Link>
+        <button
+          type="button"
+          aria-label="Yêu thích"
+          className="glass absolute top-3 right-3 rounded-full p-2"
+        >
+          <Heart size={16} />
+        </button>
+      </div>
+      <div className="p-4">
+        <Link to={'/product/' + p.id}>
+          <h3 className="truncate text-sm font-bold hover:underline">{p.name}</h3>
+        </Link>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="font-extrabold text-blue-700 dark:text-sky-300">
+            {p.minPrice !== undefined && p.minPrice !== null ? formatVnd(p.minPrice) : 'Liên hệ'}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="btn-primary mt-3 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold"
+        >
+          <ShoppingBag size={16} weight="fill" />
+          Thêm giỏ
+        </button>
+      </div>
+    </article>
+  )
+}
+
+export function ProductGrid(props: { keyword: string; limit?: number }) {
+  const limit = props.limit ?? 8
+  const searchQuery = useSearch({ q: props.keyword, limit })
+  const payload = searchQuery.data
+  const items = payload === undefined ? [] : takeData(payload)
   return (
     <section id="shop" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 pb-10">
       <Reveal>
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">8 món đang cháy</h2>
-          <p className="text-sm text-zinc-500">8 sản phẩm</p>
+          <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">
+            Kết quả cho “{props.keyword}”
+          </h2>
+          <p className="text-sm text-zinc-500">{items.length} sản phẩm</p>
         </div>
       </Reveal>
+      {searchQuery.isPending && <p className="mt-6 text-sm text-zinc-500">Đang tải sản phẩm…</p>}
+      {searchQuery.isError && (
+        <p className="mt-6 text-sm text-red-600">{hookErrorMessage('search', searchQuery.error)}</p>
+      )}
+      {searchQuery.isSuccess && items.length === 0 && (
+        <p className="mt-6 text-sm text-zinc-500">Không tìm thấy sản phẩm. Thử từ khóa khác.</p>
+      )}
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
-        {PRODUCTS.map(function (p, i) {
+        {items.map(function (p, i) {
           return (
             <Reveal key={p.id} delay={(i % 4) * 0.06}>
-              <article className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-sm transition hover:shadow-xl hover:shadow-sky-200 dark:border-white/10 dark:bg-white/5 dark:hover:shadow-black/50">
-                <div className="relative">
-                  <Link to={'/product/' + p.id}>
-                    <img
-                      src={p.img}
-                      alt={p.name}
-                      loading="lazy"
-                      width={600}
-                      height={750}
-                      className="aspect-[4/5] w-full object-cover"
-                    />
-                  </Link>
-                  {p.tag && (
-                    <span className="absolute top-3 left-3 rounded-full bg-gradient-to-r from-indigo-900 to-sky-400 px-3 py-1 text-xs font-bold text-white">
-                      {p.tag}
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    aria-label="Yêu thích"
-                    className="glass absolute top-3 right-3 rounded-full p-2"
-                  >
-                    <Heart size={16} />
-                  </button>
-                </div>
-                <div className="p-4">
-                  <Link to={'/product/' + p.id}>
-                    <h3 className="truncate text-sm font-bold hover:underline">{p.name}</h3>
-                  </Link>
-                  <p className="mt-1 line-clamp-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    {p.desc}
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="font-extrabold text-blue-700 dark:text-sky-300">
-                      {formatVnd(p.price)}
-                    </span>
-                    {p.oldPrice && (
-                      <span className="text-xs text-zinc-400 line-through dark:text-zinc-500">
-                        {formatVnd(p.oldPrice)}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    className="btn-primary mt-3 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold"
-                  >
-                    <ShoppingBag size={16} weight="fill" />
-                    Thêm giỏ
-                  </button>
-                </div>
-              </article>
+              <ProductCard item={p} />
             </Reveal>
           )
         })}
@@ -247,7 +299,8 @@ export function Testimonials() {
                 <Star size={14} weight="fill" />
               </div>
               <blockquote className="mt-3 text-sm leading-relaxed">“{q.text}”</blockquote>
-              <figcaption className="mt-3 text-xs font-bold text-zinc-500 dark:text-zinc-400">
+              <figcaption className="mt-3 flex items-center gap-2.5 text-xs font-bold text-zinc-500 dark:text-zinc-400">
+                <UserAvatar name={q.name} size={28} />
                 {q.name}
               </figcaption>
             </figure>
@@ -272,19 +325,19 @@ export function Footer() {
           <p className="text-sm font-bold text-white">Mua sắm</p>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
-              <a href="#shop" className="hover:text-white">
+              <Link to="/#shop" className="hover:text-white">
                 Hàng mới
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#shop" className="hover:text-white">
+              <Link to="/#shop" className="hover:text-white">
                 Sale
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#categories" className="hover:text-white">
+              <Link to="/#categories" className="hover:text-white">
                 Danh mục
-              </a>
+              </Link>
             </li>
           </ul>
         </div>

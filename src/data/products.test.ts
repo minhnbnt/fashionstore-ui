@@ -32,4 +32,15 @@ describe('getRelated', () => {
     expect(p.gallery.length).toBeGreaterThan(0)
     expect(p.stock).toBeGreaterThanOrEqual(0)
   })
+
+  it('SP co breakdown rating + it nhat 3 review', () => {
+    for (const p of PRODUCTS) {
+      expect(p.ratingBreakdown.length).toBe(5)
+      const total = p.ratingBreakdown.reduce(function (a, b) {
+        return a + b
+      }, 0)
+      expect(total).toBe(100)
+      expect(p.reviews.length).toBeGreaterThanOrEqual(3)
+    }
+  })
 })

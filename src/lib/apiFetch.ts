@@ -30,5 +30,8 @@ export async function customFetch<T>(url: string, options?: RequestInit): Promis
   if (response.status === 204) {
     return undefined as T
   }
-  return (await response.json()) as T
+  // Orval sinh type dang { data, status, headers } nen phai goi dung hinh do,
+  // khong tra JSON tran.
+  const body = (await response.json()) as unknown
+  return { data: body, status: response.status, headers: response.headers } as T
 }

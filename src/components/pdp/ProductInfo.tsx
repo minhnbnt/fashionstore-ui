@@ -1,11 +1,19 @@
 import { useState } from 'react'
+
 import { Minus, Plus, ShoppingBag, Star } from '@phosphor-icons/react'
 
-import { formatVnd, type Product } from '../../data/products'
+// TODO(mock): điểm và lượt đánh giá là demo, thay bằng API reviews khi backend có endpoint
+import { DEMO_RATING } from '@/data/demoReviews'
+import { priceInfo } from '@/lib/apiAdapters'
+import { formatVnd } from '@/lib/format'
 
-export default function ProductInfo(props: { product: Product }) {
+import type { ProductResponse } from '@generated/model/productResponse'
+
+export default function ProductInfo(props: { product: ProductResponse }) {
   const p = props.product
-  const [color, setColor] = useState(0)
+  const info = priceInfo(p)
+  const variants = p.variants ?? []
+  const [color, setColor] = useState<string | null>(null)
   const [size, setSize] = useState<string | null>(null)
   const [qty, setQty] = useState(1)
   const [toast, setToast] = useState<string | null>(null)
@@ -17,6 +25,15 @@ export default function ProductInfo(props: { product: Product }) {
     }, 2500)
   }
 
+  const match = variants.find(function (v) {
+    const colorOk = color === null || v.color === color
+    const sizeOk = size === null || v.size === size
+    return colorOk && sizeOk
+  })
+  const price = match?.price ?? info.minPrice
+  const compareAt = match?.compareAtPrice ?? info.maxCompareAt
+  const stock = match?.stockQuantity ?? info.totalStock
+
   function dec() {
     if (qty > 1) {
       setQty(qty - 1)
@@ -24,12 +41,12 @@ export default function ProductInfo(props: { product: Product }) {
   }
 
   function inc() {
-    if (qty < p.stock) {
+    if (qty < stock) {
       setQty(qty + 1)
     }
   }
 
-  if (p.stock === 0) {
+  if (info.totalStock === 0) {
     return (
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">{p.name}</h1>
@@ -43,59 +60,75 @@ export default function ProductInfo(props: { product: Product }) {
       <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">{p.name}</h1>
       <p className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
         <Star size={16} weight="fill" className="text-sky-400" />
-        {p.rating} · {p.reviewsCount} đánh giá
+        {DEMO_RATING.value} · {DEMO_RATING.count} đánh giá
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="text-2xl font-extrabold text-blue-700 dark:text-sky-300">
-          {formatVnd(p.price)}
+          {price !== null && price !== undefined ? formatVnd(price) : 'Liên hệ'}
         </span>
-        {p.oldPrice && (
+        {compareAt !== null && compareAt !== undefined && (
           <span className="text-sm text-zinc-400 line-through dark:text-zinc-500">
-            {formatVnd(p.oldPrice)}
+            {formatVnd(compareAt)}
           </span>
         )}
       </div>
-      <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{p.desc}</p>
-      <div className="mt-4">
-        <p className="text-sm font-bold">Màu sắc</p>
-        <div className="mt-2 flex gap-2">
-          {p.colors.map(function (c, i) {
-            return (
-              <button
-                key={c.name}
-                type="button"
-                title={c.name}
-                aria-label={c.name}
-                onClick={function () {
-                  setColor(i)
-                }}
-                className="rounded-full border border-sky-100 p-1 dark:border-white/10"
-              >
-                <span className="block h-6 w-6 rounded-full border" style={{ background: c.hex }} />
-              </button>
-            )
-          })}
+      {p.description !== undefined && (
+        <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+          {p.description}
+        </p>
+      )}
+      {info.colors.length > 0 && (
+        <div className="mt-4">
+          <p className="text-sm font-bold">Màu sắc</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {info.colors.map(function (c) {
+              const selected = color === c
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={function () {
+                    setColor(selected ? null : c)
+                  }}
+                  className={
+                    selected
+                      ? 'rounded-full bg-indigo-900 px-4 py-2 text-sm font-bold text-white'
+                      : 'rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10'
+                  }
+                >
+                  {c}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
-      <div className="mt-4">
-        <p className="text-sm font-bold">Kích cỡ</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {p.sizes.map(function (s) {
-            return (
-              <button
-                key={s}
-                type="button"
-                onClick={function () {
-                  setSize(s)
-                }}
-                className="rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10"
-              >
-                {s}
-              </button>
-            )
-          })}
+      )}
+      {info.sizes.length > 0 && (
+        <div className="mt-4">
+          <p className="text-sm font-bold">Kích cỡ</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {info.sizes.map(function (s) {
+              const selected = size === s
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={function () {
+                    setSize(selected ? null : s)
+                  }}
+                  className={
+                    selected
+                      ? 'rounded-full bg-indigo-900 px-4 py-2 text-sm font-bold text-white'
+                      : 'rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10'
+                  }
+                >
+                  {s}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
       <div className="mt-4 flex items-center gap-3">
         <div className="flex items-center gap-2 rounded-full border border-sky-100 px-2 py-1 dark:border-white/10">
           <button type="button" aria-label="Giảm" onClick={dec} className="rounded-full p-2">
@@ -106,13 +139,13 @@ export default function ProductInfo(props: { product: Product }) {
             <Plus size={14} />
           </button>
         </div>
-        <span className="text-xs text-zinc-500">Còn {p.stock} sản phẩm</span>
+        <span className="text-xs text-zinc-500">Còn {stock} sản phẩm</span>
       </div>
       <div className="mt-5 flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
           onClick={function () {
-            showToast('Đã thêm ' + qty + ' × ' + p.name + ' vào giỏ')
+            showToast('Đã thêm ' + qty + ' × ' + (p.name ?? '') + ' vào giỏ')
           }}
           className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold"
         >
@@ -122,7 +155,7 @@ export default function ProductInfo(props: { product: Product }) {
         <button
           type="button"
           onClick={function () {
-            showToast('Mua ngay: ' + p.name)
+            showToast('Mua ngay: ' + (p.name ?? ''))
           }}
           className="flex-1 rounded-full border border-sky-200 py-3 text-sm font-bold"
         >
@@ -134,10 +167,6 @@ export default function ProductInfo(props: { product: Product }) {
           {toast}
         </p>
       )}
-      <span className="hidden">
-        {String(color)}
-        {String(size)}
-      </span>
     </div>
   )
 }

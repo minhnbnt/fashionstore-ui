@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router'
 
 import { SignOut } from '@phosphor-icons/react'
 
+import UserAvatar from '../components/UserAvatar'
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useSessionQuery } from '../hooks/useSession'
 
@@ -26,9 +27,12 @@ export default function Account() {
         </p>
         <h1 className="mt-2 text-2xl font-extrabold tracking-tighter">Xin chào</h1>
         {session !== undefined && session !== null && (
-          <p className="mt-1 truncate text-sm text-zinc-500 dark:text-zinc-400">
-            {session.user.email}
-          </p>
+          <div className="mt-3 flex items-center gap-3">
+            <UserAvatar name={session.user.email ?? 'guest'} size={44} />
+            <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
+              {session.user.email}
+            </p>
+          </div>
         )}
         <div className="mt-5 space-y-2 text-sm">
           <div className="flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3 dark:bg-white/10">

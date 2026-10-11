@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react'
-import { Route, Routes } from 'react-router'
+import { lazy, Suspense, useEffect } from 'react'
+import { Route, Routes, useLocation } from 'react-router'
 
 import Header from './components/Header'
 import RequireAuth from './components/RequireAuth'
@@ -9,19 +9,35 @@ const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
 const Account = lazy(() => import('./pages/Account'))
 const ProductDetail = lazy(() => import('./pages/ProductDetail'))
+const Search = lazy(() => import('./pages/Search'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
+}
+
+function ScrollToHash() {
+  const location = useLocation()
+  useEffect(
+    function () {
+      if (location.hash !== '') {
+        document.querySelector(location.hash)?.scrollIntoView()
+      }
+    },
+    [location],
+  )
+  return null
 }
 
 function App() {
   return (
     <div className="grain min-h-[100dvh]">
       <Header />
+      <ScrollToHash />
       <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/login" element={<Login />} />
           <Route
             path="/account"

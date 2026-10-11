@@ -37,10 +37,12 @@
 ### Task 1: Mở rộng mock + helpers
 
 **Files:**
+
 - Modify: `src/data/products.ts`
 - Test: `src/data/products.test.ts`
 
 **Interfaces:**
+
 - Consumes: kiểu `Product` hiện tại (id, name, desc, price, oldPrice, tag, img, category).
 - Produces: `getProductById(id: string | number): Product | undefined`, `getRelated(p: Product, n?: number): Product[]`, fields mới `sizes: string[]`, `colors: { name: string; hex: string }[]`, `stock: number`, `rating: number`, `reviewsCount: number`, `details: string[]`, `gallery: string[]`, `reviews: { name: string; rating: number; text: string; date: string }[]`.
 
@@ -93,8 +95,16 @@ Expected: FAIL with "getProductById is not defined" / "does not provide export".
 Mở `src/data/products.ts`, giữ nguyên mọi dòng cũ, thêm interface + data:
 
 ```ts
-export interface ProductColor { name: string; hex: string }
-export interface Review { name: string; rating: number; text: string; date: string }
+export interface ProductColor {
+  name: string
+  hex: string
+}
+export interface Review {
+  name: string
+  rating: number
+  text: string
+  date: string
+}
 
 export interface Product {
   id: number
@@ -199,9 +209,11 @@ git commit -m "feat: mo rong mock product + helpers pdp"
 ### Task 2: ProductGallery
 
 **Files:**
+
 - Create: `src/components/pdp/ProductGallery.tsx`
 
 **Interfaces:**
+
 - Consumes: `Product` từ Task 1.
 - Produces: `ProductGallery(props: { product: Product })`, quản lý `active` nội bộ, export default.
 
@@ -229,13 +241,23 @@ export default function ProductGallery(props: { product: Product }) {
   return (
     <div>
       <div className="relative overflow-hidden rounded-3xl border border-sky-100 bg-white/80 dark:border-white/10 dark:bg-white/5">
-        <img src={main} alt={props.product.name} width={600} height={750} className="aspect-[4/5] w-full object-cover" />
+        <img
+          src={main}
+          alt={props.product.name}
+          width={600}
+          height={750}
+          className="aspect-[4/5] w-full object-cover"
+        />
         {props.product.tag && (
           <span className="absolute top-3 left-3 rounded-full bg-gradient-to-r from-indigo-900 to-sky-400 px-3 py-1 text-xs font-bold text-white">
             {props.product.tag}
           </span>
         )}
-        <button type="button" aria-label="Yêu thích" className="glass absolute top-3 right-3 rounded-full p-2">
+        <button
+          type="button"
+          aria-label="Yêu thích"
+          className="glass absolute top-3 right-3 rounded-full p-2"
+        >
           <Heart size={18} />
         </button>
       </div>
@@ -243,8 +265,23 @@ export default function ProductGallery(props: { product: Product }) {
         <div className="mt-3 flex gap-3">
           {imgs.map(function (src, i) {
             return (
-              <button key={src} type="button" onClick={function () { setActive(i) }} className="overflow-hidden rounded-2xl border border-sky-100 dark:border-white/10" aria-label={'Ảnh ' + (i + 1)}>
-                <img src={src} alt="" loading="lazy" width={150} height={188} className="h-20 w-16 object-cover" />
+              <button
+                key={src}
+                type="button"
+                onClick={function () {
+                  setActive(i)
+                }}
+                className="overflow-hidden rounded-2xl border border-sky-100 dark:border-white/10"
+                aria-label={'Ảnh ' + (i + 1)}
+              >
+                <img
+                  src={src}
+                  alt=""
+                  loading="lazy"
+                  width={150}
+                  height={188}
+                  className="h-20 w-16 object-cover"
+                />
               </button>
             )
           })}
@@ -272,9 +309,11 @@ git commit -m "feat: them product gallery pdp"
 ### Task 3: ProductInfo (giá + chọn + toast)
 
 **Files:**
+
 - Create: `src/components/pdp/ProductInfo.tsx`
 
 **Interfaces:**
+
 - Consumes: `Product`, `formatVnd`.
 - Produces: `ProductInfo(props: { product: Product })` — state nội bộ color/size/qty/toast, không prop drilling. Export default.
 
@@ -298,7 +337,9 @@ export default function ProductInfo(props: { product: Product }) {
 
   function showToast(msg: string) {
     setToast(msg)
-    window.setTimeout(function () { setToast(null) }, 2500)
+    window.setTimeout(function () {
+      setToast(null)
+    }, 2500)
   }
 
   function dec() {
@@ -330,9 +371,13 @@ export default function ProductInfo(props: { product: Product }) {
         {p.rating} · {p.reviewsCount} đánh giá
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-2xl font-extrabold text-blue-700 dark:text-sky-300">{formatVnd(p.price)}</span>
+        <span className="text-2xl font-extrabold text-blue-700 dark:text-sky-300">
+          {formatVnd(p.price)}
+        </span>
         {p.oldPrice && (
-          <span className="text-sm text-zinc-400 line-through dark:text-zinc-500">{formatVnd(p.oldPrice)}</span>
+          <span className="text-sm text-zinc-400 line-through dark:text-zinc-500">
+            {formatVnd(p.oldPrice)}
+          </span>
         )}
       </div>
       <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{p.desc}</p>
@@ -341,7 +386,16 @@ export default function ProductInfo(props: { product: Product }) {
         <div className="mt-2 flex gap-2">
           {p.colors.map(function (c, i) {
             return (
-              <button key={c.name} type="button" title={c.name} aria-label={c.name} onClick={function () { setColor(i) }} className="rounded-full border p-1">
+              <button
+                key={c.name}
+                type="button"
+                title={c.name}
+                aria-label={c.name}
+                onClick={function () {
+                  setColor(i)
+                }}
+                className="rounded-full border p-1"
+              >
                 <span className="block h-6 w-6 rounded-full border" style={{ background: c.hex }} />
               </button>
             )
@@ -353,7 +407,14 @@ export default function ProductInfo(props: { product: Product }) {
         <div className="mt-2 flex flex-wrap gap-2">
           {p.sizes.map(function (s) {
             return (
-              <button key={s} type="button" onClick={function () { setSize(s) }} className="rounded-full border px-4 py-2 text-sm font-bold">
+              <button
+                key={s}
+                type="button"
+                onClick={function () {
+                  setSize(s)
+                }}
+                className="rounded-full border px-4 py-2 text-sm font-bold"
+              >
                 {s}
               </button>
             )
@@ -362,24 +423,45 @@ export default function ProductInfo(props: { product: Product }) {
       </div>
       <div className="mt-4 flex items-center gap-3">
         <div className="flex items-center gap-2 rounded-full border px-2 py-1">
-          <button type="button" aria-label="Giảm" onClick={dec} className="rounded-full p-2"><Minus size={14} /></button>
+          <button type="button" aria-label="Giảm" onClick={dec} className="rounded-full p-2">
+            <Minus size={14} />
+          </button>
           <span className="min-w-6 text-center font-bold">{qty}</span>
-          <button type="button" aria-label="Tăng" onClick={inc} className="rounded-full p-2"><Plus size={14} /></button>
+          <button type="button" aria-label="Tăng" onClick={inc} className="rounded-full p-2">
+            <Plus size={14} />
+          </button>
         </div>
         <span className="text-xs text-zinc-500">Còn {p.stock} sản phẩm</span>
       </div>
       <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-        <button type="button" onClick={function () { showToast('Đã thêm ' + qty + ' × ' + p.name + ' vào giỏ') }} className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold">
+        <button
+          type="button"
+          onClick={function () {
+            showToast('Đã thêm ' + qty + ' × ' + p.name + ' vào giỏ')
+          }}
+          className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold"
+        >
           <ShoppingBag size={16} weight="fill" /> Thêm giỏ
         </button>
-        <button type="button" onClick={function () { showToast('Mua ngay: ' + p.name) }} className="flex-1 rounded-full border border-sky-200 py-3 text-sm font-bold">
+        <button
+          type="button"
+          onClick={function () {
+            showToast('Mua ngay: ' + p.name)
+          }}
+          className="flex-1 rounded-full border border-sky-200 py-3 text-sm font-bold"
+        >
           Mua ngay
         </button>
       </div>
       {toast && (
-        <p className="glass fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full px-5 py-2 text-sm font-bold">{toast}</p>
+        <p className="glass fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full px-5 py-2 text-sm font-bold">
+          {toast}
+        </p>
       )}
-      <span className="hidden">{String(color)}{String(size)}</span>
+      <span className="hidden">
+        {String(color)}
+        {String(size)}
+      </span>
     </div>
   )
 }
@@ -402,9 +484,11 @@ git commit -m "feat: them product info + toast pdp"
 ### Task 4: ProductTabs
 
 **Files:**
+
 - Create: `src/components/pdp/ProductTabs.tsx`
 
 **Interfaces:**
+
 - Consumes: `Product`.
 - Produces: `ProductTabs(props: { product: Product })` với tab state `mo-ta | thong-so | danh-gia`.
 
@@ -422,12 +506,38 @@ export default function ProductTabs(props: { product: Product }) {
   return (
     <section className="mt-10 rounded-3xl border border-sky-100 bg-white/80 p-6 dark:border-white/10 dark:bg-white/5">
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={function () { setTab('mo-ta') }} className="rounded-full border px-4 py-2 text-sm font-bold">Mô tả</button>
-        <button type="button" onClick={function () { setTab('thong-so') }} className="rounded-full border px-4 py-2 text-sm font-bold">Thông số</button>
-        <button type="button" onClick={function () { setTab('danh-gia') }} className="rounded-full border px-4 py-2 text-sm font-bold">Đánh giá ({props.product.reviewsCount})</button>
+        <button
+          type="button"
+          onClick={function () {
+            setTab('mo-ta')
+          }}
+          className="rounded-full border px-4 py-2 text-sm font-bold"
+        >
+          Mô tả
+        </button>
+        <button
+          type="button"
+          onClick={function () {
+            setTab('thong-so')
+          }}
+          className="rounded-full border px-4 py-2 text-sm font-bold"
+        >
+          Thông số
+        </button>
+        <button
+          type="button"
+          onClick={function () {
+            setTab('danh-gia')
+          }}
+          className="rounded-full border px-4 py-2 text-sm font-bold"
+        >
+          Đánh giá ({props.product.reviewsCount})
+        </button>
       </div>
       {tab === 'mo-ta' && (
-        <p className="mt-4 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{props.product.desc}</p>
+        <p className="mt-4 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+          {props.product.desc}
+        </p>
       )}
       {tab === 'thong-so' && (
         <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-zinc-600 dark:text-zinc-300">
@@ -440,8 +550,17 @@ export default function ProductTabs(props: { product: Product }) {
         <div className="mt-4 space-y-4">
           {props.product.reviews.map(function (r) {
             return (
-              <div key={r.name} className="border-b border-sky-100 pb-3 last:border-0 dark:border-white/10">
-                <p className="flex items-center gap-2 text-sm font-bold">{r.name}<span className="flex text-sky-400"><Star size={12} weight="fill" />{r.rating}</span></p>
+              <div
+                key={r.name}
+                className="border-b border-sky-100 pb-3 last:border-0 dark:border-white/10"
+              >
+                <p className="flex items-center gap-2 text-sm font-bold">
+                  {r.name}
+                  <span className="flex text-sky-400">
+                    <Star size={12} weight="fill" />
+                    {r.rating}
+                  </span>
+                </p>
                 <p className="mt-1 text-sm">{r.text}</p>
                 <p className="mt-1 text-xs text-zinc-400">{r.date}</p>
               </div>
@@ -471,9 +590,11 @@ git commit -m "feat: them tabs mo ta danh gia pdp"
 ### Task 5: RelatedProducts
 
 **Files:**
+
 - Create: `src/components/pdp/RelatedProducts.tsx`
 
 **Interfaces:**
+
 - Consumes: `Product`, `getRelated`, `formatVnd`, `Link` từ `react-router`.
 - Produces: `RelatedProducts(props: { product: Product })`.
 
@@ -494,11 +615,24 @@ export default function RelatedProducts(props: { product: Product }) {
       <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {items.map(function (p) {
           return (
-            <Link key={p.id} to={'/product/' + p.id} className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 dark:border-white/10 dark:bg-white/5">
-              <img src={p.img} alt={p.name} loading="lazy" width={600} height={750} className="aspect-[4/5] w-full object-cover" />
+            <Link
+              key={p.id}
+              to={'/product/' + p.id}
+              className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 dark:border-white/10 dark:bg-white/5"
+            >
+              <img
+                src={p.img}
+                alt={p.name}
+                loading="lazy"
+                width={600}
+                height={750}
+                className="aspect-[4/5] w-full object-cover"
+              />
               <div className="p-4">
                 <h3 className="truncate text-sm font-bold">{p.name}</h3>
-                <p className="mt-1 font-extrabold text-blue-700 dark:text-sky-300">{formatVnd(p.price)}</p>
+                <p className="mt-1 font-extrabold text-blue-700 dark:text-sky-300">
+                  {formatVnd(p.price)}
+                </p>
               </div>
             </Link>
           )
@@ -526,11 +660,13 @@ git commit -m "feat: them related products pdp"
 ### Task 6: Page + route + link lưới
 
 **Files:**
+
 - Create: `src/pages/ProductDetail.tsx`
 - Modify: `src/App.tsx` (thêm lazy route `/product/:id`)
 - Modify: `src/components/Sections.tsx` (ProductGrid bọc Link)
 
 **Interfaces:**
+
 - Consumes: `getProductById`, 4 components pdp, `Link/useParams` từ `react-router`.
 - Produces: route `/product/:id` hoạt động, lưới cũ click sang PDP.
 
@@ -552,8 +688,15 @@ export default function ProductDetail() {
     return (
       <main className="mx-auto max-w-[1400px] px-4 py-24 text-center">
         <h1 className="text-2xl font-extrabold">Không tìm thấy sản phẩm</h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">Sản phẩm không tồn tại hoặc đã gỡ.</p>
-        <Link to="/" className="btn-primary mt-6 inline-block rounded-full px-6 py-3 text-sm font-bold">Về trang chủ</Link>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+          Sản phẩm không tồn tại hoặc đã gỡ.
+        </p>
+        <Link
+          to="/"
+          className="btn-primary mt-6 inline-block rounded-full px-6 py-3 text-sm font-bold"
+        >
+          Về trang chủ
+        </Link>
       </main>
     )
   }
@@ -561,9 +704,13 @@ export default function ProductDetail() {
   return (
     <main className="mx-auto max-w-[1400px] px-4 pt-[76px] pb-12">
       <nav className="flex flex-wrap gap-2 py-6 text-sm text-zinc-500">
-        <Link to="/" className="hover:text-zinc-900">Trang chủ</Link>
+        <Link to="/" className="hover:text-zinc-900">
+          Trang chủ
+        </Link>
         <span>/</span>
-        <Link to="/#shop" className="hover:text-zinc-900">Cửa hàng</Link>
+        <Link to="/#shop" className="hover:text-zinc-900">
+          Cửa hàng
+        </Link>
         <span>/</span>
         <span className="font-bold text-zinc-900 dark:text-zinc-100">{product.name}</span>
       </nav>
