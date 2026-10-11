@@ -13,5 +13,6 @@ Shop "nét": landing thời trang, Vite + React 19 + Tailwind v4. Branch làm vi
 
 - Package manager: chỉ `pnpm`, cấm `npm`.
 - Không ternary (`? :`): dùng `if` + early `return`, trong JSX dùng `&&`.
-- Chạy `pnpm format`, `pnpm lint` (0 error), `pnpm build` xanh rồi mới commit.
+- Chạy `pnpm format`, `pnpm lint` (0 error, 0 warning), `pnpm build` xanh rồi mới commit.
+- Đổi API backend thì tải lại `docs/openapi.json` rồi `pnpm codegen` (build tự regen).
 - Không commit `dist/`, `.env` (đã gitignore / untracked thì kệ).
