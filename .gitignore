@@ -13,6 +13,11 @@ dist-ssr
 *.local
 generated
 
+# Env - never commit real .env, only .env.example
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
