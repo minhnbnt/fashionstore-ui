@@ -1,19 +1,27 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
+import { useList1 } from '@generated/endpoints/categories/categories'
 import { Heart, MagnifyingGlass, Moon, ShoppingBag, Sun, User } from '@phosphor-icons/react'
+
+import { takeData } from '@/lib/apiAdapters'
 
 import { useSessionQuery } from '../hooks/useSession'
 import { useTheme } from '../hooks/useTheme'
 import UserAvatar from './UserAvatar'
 
-const NAV = ['Áo', 'Váy & Đầm', 'Áo khoác', 'Quần', 'Phụ kiện']
+import type { CategoryResponse } from '@generated/model/categoryResponse'
 
 export default function Header() {
   const { data: session } = useSessionQuery()
   const { theme, toggle } = useTheme()
   const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
+  const categoriesQuery = useList1()
+  let categories: CategoryResponse[] = []
+  if (categoriesQuery.data !== undefined) {
+    categories = takeData(categoriesQuery.data)
+  }
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -36,14 +44,14 @@ export default function Header() {
             <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-indigo-900 to-sky-400" />
           </Link>
           <nav className="ml-4 hidden items-center gap-6 text-sm font-medium lg:flex">
-            {NAV.map(function (item) {
+            {categories.map(function (c) {
               return (
                 <Link
-                  key={item}
-                  to={'/search?q=' + encodeURIComponent(item)}
+                  key={c.id}
+                  to={'/search?category=' + encodeURIComponent(c.slug ?? '')}
                   className="text-zinc-600 transition hover:text-blue-700 dark:text-zinc-300 dark:hover:text-sky-300"
                 >
-                  {item}
+                  {c.name}
                 </Link>
               )
             })}

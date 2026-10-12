@@ -5,14 +5,19 @@ import { useSearch } from '@generated/endpoints/search/search'
 import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
-export default function RelatedProducts(props: { name: string; currentId: string }) {
-  const keyword = props.name?.split(' ')[0] ?? ''
-  const searchQuery = useSearch({ q: keyword, limit: 5 })
+import type { CategoryResponse } from '@generated/model/categoryResponse'
+
+// Cùng danh mục với sản phẩm đang xem; sản phẩm chưa gán danh mục thì lấy hàng mới về.
+export default function RelatedProducts(props: {
+  category: CategoryResponse | undefined
+  currentId: string
+}) {
+  const searchQuery = useSearch({ category: props.category?.slug, limit: 5 })
   const payload = searchQuery.data
   if (payload === undefined) {
     return null
   }
-  const items = takeData(payload)
+  const items = (takeData(payload).items ?? [])
     .filter(function (p) {
       return p.id !== props.currentId
     })

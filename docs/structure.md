@@ -14,10 +14,11 @@ fashionstore-ui/
 │   ├── assets/            # ảnh/svg nội bộ (hero.png, react.svg...)
 │   ├── components/        # Header.tsx, Hero.tsx, Sections.tsx — UI theo section
 │   │   ├── pdp/           # ProductGallery/Info/Tabs/RelatedProducts (nhận type API)
+│   │   ├── search/        # FilterPanel + Pagination của trang /search
 │   │   └── UserAvatar.tsx # avatar marble sinh từ tên
 │   ├── data/              # demoReviews.ts (TODO(mock)) + products.ts (mock cũ, chưa xóa)
 │   ├── hooks/             # useSession (queryOptions), useAuthMutations, useTheme
-│   ├── lib/               # apiFetch (customFetch + ApiError), apiAdapters (+test), format
+│   ├── lib/               # apiFetch, apiAdapters, format, searchFilters (URL ↔ bộ lọc), variants, pagination (+test)
 │   ├── pages/             # Home, ProductDetail, Search, Login, Account
 │   ├── App.tsx            # ráp Header/Routes/Footer + ScrollToHash
 │   ├── main.tsx           # providers (React Query) + import font + index.css

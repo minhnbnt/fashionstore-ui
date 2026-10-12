@@ -6,8 +6,26 @@ import { Minus, Plus, ShoppingBag, Star } from '@phosphor-icons/react'
 import { DEMO_RATING } from '@/data/demoReviews'
 import { priceInfo } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
+import { findVariant, isOptionAvailable } from '@/lib/variants'
 
 import type { ProductResponse } from '@generated/model/productResponse'
+
+function optionClass(selected: boolean, available: boolean): string {
+  if (selected) {
+    return 'rounded-full bg-indigo-900 px-4 py-2 text-sm font-bold text-white'
+  }
+  if (available === false) {
+    return 'cursor-not-allowed rounded-full border border-dashed border-zinc-200 px-4 py-2 text-sm font-bold text-zinc-400 line-through dark:border-white/10 dark:text-zinc-600'
+  }
+  return 'rounded-full border border-sky-100 px-4 py-2 text-sm font-bold transition hover:border-sky-300 dark:border-white/10 dark:hover:border-white/30'
+}
+
+function unavailableTitle(available: boolean): string | undefined {
+  if (available) {
+    return undefined
+  }
+  return 'Hết hàng với lựa chọn hiện tại'
+}
 
 export default function ProductInfo(props: { product: ProductResponse }) {
   const p = props.product
@@ -25,11 +43,35 @@ export default function ProductInfo(props: { product: ProductResponse }) {
     }, 2500)
   }
 
-  const match = variants.find(function (v) {
-    const colorOk = color === null || v.color === color
-    const sizeOk = size === null || v.size === size
-    return colorOk && sizeOk
-  })
+  const match = findVariant(variants, size, color)
+  const needsColor = info.colors.length > 0 && color === null
+  const needsSize = info.sizes.length > 0 && size === null
+
+  function pickColor(c: string) {
+    if (color === c) {
+      setColor(null)
+      return
+    }
+    setColor(c)
+    setQty(1)
+  }
+
+  function pickSize(s: string) {
+    if (size === s) {
+      setSize(null)
+      return
+    }
+    setSize(s)
+    setQty(1)
+  }
+
+  function requireSelection(): boolean {
+    if (needsColor || needsSize) {
+      showToast('Vui lòng chọn màu sắc và kích cỡ')
+      return false
+    }
+    return true
+  }
   const price = match?.price ?? info.minPrice
   const compareAt = match?.compareAtPrice ?? info.maxCompareAt
   const stock = match?.stockQuantity ?? info.totalStock
@@ -83,18 +125,18 @@ export default function ProductInfo(props: { product: ProductResponse }) {
           <div className="mt-2 flex flex-wrap gap-2">
             {info.colors.map(function (c) {
               const selected = color === c
+              const available = isOptionAvailable(variants, 'color', c, size)
               return (
                 <button
                   key={c}
                   type="button"
+                  aria-pressed={selected}
+                  disabled={available === false && selected === false}
+                  title={unavailableTitle(available)}
                   onClick={function () {
-                    setColor(selected ? null : c)
+                    pickColor(c)
                   }}
-                  className={
-                    selected
-                      ? 'rounded-full bg-indigo-900 px-4 py-2 text-sm font-bold text-white'
-                      : 'rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10'
-                  }
+                  className={optionClass(selected, available)}
                 >
                   {c}
                 </button>
@@ -109,18 +151,18 @@ export default function ProductInfo(props: { product: ProductResponse }) {
           <div className="mt-2 flex flex-wrap gap-2">
             {info.sizes.map(function (s) {
               const selected = size === s
+              const available = isOptionAvailable(variants, 'size', s, color)
               return (
                 <button
                   key={s}
                   type="button"
+                  aria-pressed={selected}
+                  disabled={available === false && selected === false}
+                  title={unavailableTitle(available)}
                   onClick={function () {
-                    setSize(selected ? null : s)
+                    pickSize(s)
                   }}
-                  className={
-                    selected
-                      ? 'rounded-full bg-indigo-900 px-4 py-2 text-sm font-bold text-white'
-                      : 'rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10'
-                  }
+                  className={optionClass(selected, available)}
                 >
                   {s}
                 </button>
@@ -145,6 +187,9 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         <button
           type="button"
           onClick={function () {
+            if (requireSelection() === false) {
+              return
+            }
             showToast('Đã thêm ' + qty + ' × ' + (p.name ?? '') + ' vào giỏ')
           }}
           className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold"
@@ -155,6 +200,9 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         <button
           type="button"
           onClick={function () {
+            if (requireSelection() === false) {
+              return
+            }
             showToast('Mua ngay: ' + (p.name ?? ''))
           }}
           className="flex-1 rounded-full border border-sky-200 py-3 text-sm font-bold"
