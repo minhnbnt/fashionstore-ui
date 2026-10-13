@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router'
 
 import { SignOut } from '@phosphor-icons/react'
 
+import ChangePasswordForm from '../components/ChangePasswordForm'
 import UserAvatar from '../components/UserAvatar'
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useSessionQuery } from '../hooks/useSession'
@@ -34,7 +35,7 @@ export default function Account() {
             </p>
           </div>
         )}
-        <div className="mt-5 space-y-2 text-sm">
+        <div className="mt-5 space-y-3 text-sm">
           <div className="flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3 dark:bg-white/10">
             <span className="font-medium">Đơn hàng của tôi</span>
             <span className="text-xs text-zinc-400 dark:text-zinc-500">Sắp ra mắt</span>
@@ -43,6 +44,7 @@ export default function Account() {
             <span className="font-medium">Mã giảm giá</span>
             <span className="text-xs text-zinc-400 dark:text-zinc-500">Sắp ra mắt</span>
           </div>
+          <ChangePasswordForm />
         </div>
         <button
           type="button"
