@@ -7,7 +7,7 @@
       "name": "Admin - Shops",
       "description": "Duyệt shop, cần role admin trong GoTrue app_metadata"
     },
-    { "name": "Search", "description": "Tìm hàng bằng BM25" },
+    { "name": "Search", "description": "Tìm hàng bằng BM25 + lọc theo danh mục, biến thể, giá" },
     { "name": "Shop - Products", "description": "Seller quản lý hàng của shop mình" },
     { "name": "Products", "description": "Xem hàng public" },
     { "name": "Orders", "description": "Buyer checkout COD va theo doi don" },
@@ -1280,22 +1280,87 @@
     "/api/search/products": {
       "get": {
         "tags": ["Search"],
-        "summary": "Tìm sản phẩm",
-        "description": "Xếp hạng BM25, chỉ hàng ACTIVE của shop APPROVED.",
+        "summary": "Tìm và lọc sản phẩm",
+        "description": "Chỉ hàng ACTIVE của shop APPROVED. Có từ khóa thì chỉ trả hàng khớp, xếp BM25; không có từ khóa thì duyệt theo bộ lọc. Size, màu, khoảng giá phải khớp trên cùng một variant.",
         "operationId": "search",
         "parameters": [
           {
             "name": "q",
             "in": "query",
-            "description": "Từ khóa",
-            "required": true,
+            "description": "Từ khóa, bỏ trống để duyệt theo bộ lọc",
+            "required": false,
             "schema": { "type": "string" },
             "example": "áo thun đen"
           },
           {
+            "name": "category",
+            "in": "query",
+            "description": "Slug danh mục",
+            "required": false,
+            "schema": { "type": "string" },
+            "example": "ao-khoac"
+          },
+          {
+            "name": "minPrice",
+            "in": "query",
+            "description": "Giá variant thấp nhất (VND)",
+            "required": false,
+            "schema": { "type": "integer", "format": "int64", "minimum": 0 },
+            "example": 100000
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "description": "Giá variant cao nhất (VND)",
+            "required": false,
+            "schema": { "type": "integer", "format": "int64", "minimum": 0 },
+            "example": 500000
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Size variant, khớp chính xác",
+            "required": false,
+            "schema": { "type": "string" },
+            "example": "M"
+          },
+          {
+            "name": "color",
+            "in": "query",
+            "description": "Màu variant, khớp chính xác",
+            "required": false,
+            "schema": { "type": "string" },
+            "example": "Đen"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Mặc định RELEVANCE khi có từ khóa, NEWEST khi không",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Cách sắp xếp kết quả. RELEVANCE chỉ có nghĩa khi có từ khóa, thiếu từ khóa thì về NEWEST.",
+              "enum": ["RELEVANCE", "NEWEST", "PRICE_ASC", "PRICE_DESC"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Trang, đếm từ 0",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
             "name": "limit",
             "in": "query",
-            "description": "Số kết quả tối đa",
+            "description": "Số kết quả mỗi trang",
             "required": false,
             "schema": {
               "type": "integer",
@@ -1309,33 +1374,15 @@
         ],
         "responses": {
           "200": {
-            "description": "Danh sách summary nhẹ kèm điểm rank",
+            "description": "Một trang summary kèm tổng số kết quả",
             "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/ProductSummaryResponse" }
-                }
-              }
+              "*/*": { "schema": { "$ref": "#/components/schemas/ProductSearchResponse" } }
             }
           },
           "400": {
-            "description": "Thiếu từ khóa",
+            "description": "Sort lạ, giá âm, minPrice > maxPrice hoặc limit ngoài 1–100",
             "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/ProductSummaryResponse" }
-                }
-              },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ProductSearchResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -1349,8 +1396,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -1359,6 +1406,14 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -1771,6 +1826,80 @@
         },
         "security": [{ "bearerAuth": [] }]
       }
+    },
+    "/api/search/facets": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Lựa chọn cho bộ lọc",
+        "description": "Size, màu và khoảng giá có trong tập khớp từ khóa + danh mục, để dựng bộ lọc.",
+        "operationId": "facets",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Từ khóa, bỏ trống = mọi sản phẩm",
+            "required": false,
+            "schema": { "type": "string" },
+            "example": "áo"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Slug danh mục",
+            "required": false,
+            "schema": { "type": "string" },
+            "example": "ao-khoac"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách size, màu và giá min/max",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SearchFacetsResponse" } }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1850,6 +1979,11 @@
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "shopId": { "type": "string", "format": "uuid" },
+          "categoryId": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "Danh mục, null nếu chưa gán"
+          },
           "name": { "type": "string" },
           "slug": { "type": "string" },
           "description": { "type": "string" },
@@ -2184,7 +2318,11 @@
             "type": ["string", "null"],
             "description": "S3 key ảnh đại diện, null nếu chưa có"
           },
-          "rank": { "type": "number", "format": "double", "description": "Điểm BM25" }
+          "rank": {
+            "type": ["number", "null"],
+            "format": "double",
+            "description": "Khoảng cách BM25, càng nhỏ càng khớp. Null khi không có từ khóa"
+          }
         }
       },
       "CategoryResponse": {
@@ -2204,6 +2342,51 @@
           "detail": { "type": "string" },
           "instance": { "type": "string", "format": "uri" },
           "properties": { "type": "object", "additionalProperties": { "type": "object" } }
+        }
+      },
+      "ProductSearchResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ProductSummaryResponse" }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng số sản phẩm khớp bộ lọc, không tính phân trang"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Trang hiện tại, đếm từ 0"
+          },
+          "limit": { "type": "integer", "format": "int32", "description": "Số sản phẩm mỗi trang" }
+        }
+      },
+      "SearchFacetsResponse": {
+        "type": "object",
+        "properties": {
+          "sizes": {
+            "type": "array",
+            "description": "Size có trong tập kết quả, xếp XS → XXXL rồi tới size lạ",
+            "items": { "type": "string" }
+          },
+          "colors": {
+            "type": "array",
+            "description": "Màu có trong tập kết quả, xếp A-Z",
+            "items": { "type": "string" }
+          },
+          "minPrice": {
+            "type": ["integer", "null"],
+            "format": "int64",
+            "description": "Giá variant rẻ nhất, null nếu không có kết quả"
+          },
+          "maxPrice": {
+            "type": ["integer", "null"],
+            "format": "int64",
+            "description": "Giá variant đắt nhất, null nếu không có kết quả"
+          }
         }
       }
     },

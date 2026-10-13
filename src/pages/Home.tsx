@@ -4,21 +4,27 @@ import Hero from '../components/Hero'
 import {
   CategoryBento,
   DealMarquee,
-  DEFAULT_SEARCH_KEYWORD,
   Editorial,
   LogoStrip,
   ProductGrid,
   Testimonials,
 } from '../components/Sections'
 
+import type { CategoryResponse } from '@generated/model/categoryResponse'
+
 export default function Home() {
-  const [keyword, setKeyword] = useState(DEFAULT_SEARCH_KEYWORD)
+  const [category, setCategory] = useState<CategoryResponse | null>(null)
   return (
     <main>
       <Hero />
       <LogoStrip />
-      <CategoryBento onSelect={setKeyword} />
-      <ProductGrid keyword={keyword} />
+      <CategoryBento
+        onSelect={function (c) {
+          setCategory(c)
+          document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' })
+        }}
+      />
+      <ProductGrid category={category} />
       <DealMarquee />
       <Editorial />
       <Testimonials />

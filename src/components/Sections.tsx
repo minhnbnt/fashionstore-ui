@@ -9,6 +9,7 @@ import {
   Truck,
   ShieldCheck,
   ArrowsLeftRight,
+  ArrowRight,
 } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
@@ -17,9 +18,8 @@ import { formatVnd } from '@/lib/format'
 
 import UserAvatar from './UserAvatar'
 
+import type { CategoryResponse } from '@generated/model/categoryResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
-
-export const DEFAULT_SEARCH_KEYWORD = 'áo'
 
 function Reveal(props: { children: React.ReactNode; delay?: number }) {
   const reduce = useReducedMotion()
@@ -55,7 +55,7 @@ export function LogoStrip() {
   )
 }
 
-export function CategoryBento(props: { onSelect: (keyword: string) => void }) {
+export function CategoryBento(props: { onSelect: (category: CategoryResponse) => void }) {
   const categoriesQuery = useList1()
   const payload = categoriesQuery.data
   if (categoriesQuery.isPending) {
@@ -93,7 +93,7 @@ export function CategoryBento(props: { onSelect: (keyword: string) => void }) {
         <button
           type="button"
           onClick={function () {
-            props.onSelect(first.name ?? '')
+            props.onSelect(first)
           }}
           className="group relative col-span-2 overflow-hidden rounded-3xl text-left lg:col-span-4 lg:row-span-2"
         >
@@ -113,7 +113,7 @@ export function CategoryBento(props: { onSelect: (keyword: string) => void }) {
               key={c.id}
               type="button"
               onClick={function () {
-                props.onSelect(c.name ?? '')
+                props.onSelect(c)
               }}
               className="group relative overflow-hidden rounded-3xl text-left lg:col-span-2"
             >
@@ -183,19 +183,37 @@ export function ProductCard(props: { item: ProductSummaryResponse }) {
   )
 }
 
-export function ProductGrid(props: { keyword: string; limit?: number }) {
+// Lưới trang chủ: chưa chọn danh mục thì hiện hàng mới về, chọn rồi thì lọc theo danh mục đó.
+export function ProductGrid(props: { category: CategoryResponse | null; limit?: number }) {
   const limit = props.limit ?? 8
-  const searchQuery = useSearch({ q: props.keyword, limit })
+  const slug = props.category?.slug
+  const searchQuery = useSearch({ category: slug, limit })
   const payload = searchQuery.data
-  const items = payload === undefined ? [] : takeData(payload)
+  let items: ProductSummaryResponse[] = []
+  let total = 0
+  if (payload !== undefined) {
+    const page = takeData(payload)
+    items = page.items ?? []
+    total = page.total ?? 0
+  }
+  let title = 'Mới về'
+  let seeAll = '/search'
+  if (props.category !== null) {
+    title = props.category.name ?? title
+    seeAll = '/search?category=' + encodeURIComponent(slug ?? '')
+  }
   return (
     <section id="shop" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 pb-10">
       <Reveal>
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">
-            Kết quả cho “{props.keyword}”
-          </h2>
-          <p className="text-sm text-zinc-500">{items.length} sản phẩm</p>
+          <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">{title}</h2>
+          <Link
+            to={seeAll}
+            className="flex items-center gap-1 text-sm font-bold text-blue-700 hover:underline dark:text-sky-300"
+          >
+            Xem tất cả {total > 0 && '(' + total + ')'}
+            <ArrowRight size={14} weight="bold" />
+          </Link>
         </div>
       </Reveal>
       {searchQuery.isPending && <p className="mt-6 text-sm text-zinc-500">Đang tải sản phẩm…</p>}
@@ -203,7 +221,7 @@ export function ProductGrid(props: { keyword: string; limit?: number }) {
         <p className="mt-6 text-sm text-red-600">{hookErrorMessage('search', searchQuery.error)}</p>
       )}
       {searchQuery.isSuccess && items.length === 0 && (
-        <p className="mt-6 text-sm text-zinc-500">Không tìm thấy sản phẩm. Thử từ khóa khác.</p>
+        <p className="mt-6 text-sm text-zinc-500">Danh mục này chưa có sản phẩm.</p>
       )}
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
         {items.map(function (p, i) {

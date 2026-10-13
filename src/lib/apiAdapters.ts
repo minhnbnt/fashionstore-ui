@@ -68,7 +68,7 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     401: 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.',
   },
   search: {
-    400: 'Từ khóa tìm kiếm chưa hợp lệ.',
+    400: 'Bộ lọc tìm kiếm chưa hợp lệ.',
   },
 }
 
