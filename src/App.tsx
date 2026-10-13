@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router'
 
 import Header from './components/Header'
 import RequireAuth from './components/RequireAuth'
+import RequireRole from './components/RequireRole'
 import { Footer } from './components/Sections'
 
 const Home = lazy(() => import('./pages/Home'))
@@ -10,6 +11,9 @@ const Login = lazy(() => import('./pages/Login'))
 const Account = lazy(() => import('./pages/Account'))
 const ProductDetail = lazy(() => import('./pages/ProductDetail'))
 const Search = lazy(() => import('./pages/Search'))
+const AuthCallback = lazy(() => import('./pages/AuthCallback'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -39,12 +43,29 @@ function App() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/search" element={<Search />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
             path="/account"
             element={
               <RequireAuth>
                 <Account />
               </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminDashboard />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/shop"
+            element={
+              <RequireRole requiredRole="shop">
+                <ShopDashboard />
+              </RequireRole>
             }
           />
         </Routes>

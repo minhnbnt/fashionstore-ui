@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router'
+import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router'
 
 import { ArrowsLeftRight, Eye, EyeSlash, Tag, Truck } from '@phosphor-icons/react'
 
-import { usePasswordReset, useSignIn, useSignUp } from '../hooks/useAuthMutations'
+import {
+  usePasswordReset,
+  useSignIn,
+  useSignInWithGoogle,
+  useSignUp,
+} from '../hooks/useAuthMutations'
 import { useSessionQuery } from '../hooks/useSession'
-import { friendlyAuthError, validateLoginInput } from '../lib/auth'
+import { friendlyAuthError, getDefaultPathForRole, getRoleFromSession, validateLoginInput } from '../lib/auth'
 
 type Mode = 'login' | 'signup'
 
@@ -14,6 +19,29 @@ const PERKS = [
   { icon: Tag, text: 'Ưu đãi sớm trước 24 giờ' },
   { icon: ArrowsLeftRight, text: 'Đổi trả trong 30 ngày' },
 ]
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
+    </svg>
+  )
+}
 
 export default function Login() {
   const [mode, setMode] = useState<Mode>('login')
@@ -25,21 +53,28 @@ export default function Login() {
 
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from || '/account'
+  const [searchParams] = useSearchParams()
+  const from = (location.state as { from?: string } | null)?.from || ''
 
   const { data: session, isPending } = useSessionQuery()
   const signIn = useSignIn()
   const signUp = useSignUp()
   const reset = usePasswordReset()
+  const googleSignIn = useSignInWithGoogle()
 
   if (isPending) {
     return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
   }
-  if (session !== null) {
-    return <Navigate to="/account" replace />
+
+  if (session !== null && session !== undefined) {
+    const role = getRoleFromSession(session)
+    const defaultPath = getDefaultPathForRole(role)
+    const dest = from !== '' ? from : defaultPath
+    return <Navigate to={dest} replace />
   }
 
-  const busy = signIn.isPending || signUp.isPending || reset.isPending
+  const oauthError = searchParams.get('error')
+  const busy = signIn.isPending || signUp.isPending || reset.isPending || googleSignIn.isPending
 
   let inputType = 'password'
   if (showPassword) {
@@ -73,7 +108,10 @@ export default function Login() {
       signIn.mutate(creds, {
         onSuccess: function (newSession) {
           if (newSession !== null) {
-            void navigate(from, { replace: true })
+            const role = getRoleFromSession(newSession)
+            const defaultPath = getDefaultPathForRole(role)
+            const dest = from !== '' ? from : defaultPath
+            void navigate(dest, { replace: true })
           }
         },
         onError: function (err) {
@@ -85,7 +123,10 @@ export default function Login() {
     signUp.mutate(creds, {
       onSuccess: function (newSession) {
         if (newSession !== null) {
-          void navigate(from, { replace: true })
+          const role = getRoleFromSession(newSession)
+          const defaultPath = getDefaultPathForRole(role)
+          const dest = from !== '' ? from : defaultPath
+          void navigate(dest, { replace: true })
           return
         }
         setNotice('Tài khoản đã được tạo. Vui lòng kiểm tra email để xác nhận.')
@@ -106,6 +147,14 @@ export default function Login() {
       onSuccess: function () {
         setNotice('Liên kết đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra email.')
       },
+      onError: function (err) {
+        setFormError(friendlyAuthError(err))
+      },
+    })
+  }
+
+  function handleGoogleSignIn() {
+    googleSignIn.mutate(undefined, {
       onError: function (err) {
         setFormError(friendlyAuthError(err))
       },
@@ -142,7 +191,7 @@ export default function Login() {
           </ul>
           <figure className="relative mt-auto pt-8">
             <blockquote className="text-sm leading-relaxed text-white/90">
-              “Đặt hôm trước, hôm sau đã nhận được. Đóng gói cẩn thận.”
+              "Đặt hôm trước, hôm sau đã nhận được. Đóng gói cẩn thận."
             </blockquote>
             <figcaption className="mt-2 text-xs font-bold text-white/70">Trâm, Sài Gòn</figcaption>
           </figure>
@@ -180,7 +229,32 @@ export default function Login() {
             Dùng chung một tài khoản cho mọi đơn hàng.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+          {/* Google Sign-In */}
+          <button
+            type="button"
+            id="btn-google-signin"
+            onClick={handleGoogleSignIn}
+            disabled={busy}
+            className="mt-5 flex w-full items-center justify-center gap-3 rounded-full border border-zinc-200 bg-white py-3 text-sm font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-60 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+          >
+            <GoogleIcon />
+            {googleSignIn.isPending && <span>Đang chuyển hướng…</span>}
+            {googleSignIn.isPending === false && <span>Tiếp tục với Google</span>}
+          </button>
+
+          <div className="my-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
+            <span className="text-xs text-zinc-400">hoặc</span>
+            <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
+          </div>
+
+          {oauthError !== null && (
+            <p className="mb-3 rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
+              Đăng nhập Google thất bại. Vui lòng thử lại.
+            </p>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3">
             <label className="block text-sm font-bold">
               Email
               <input

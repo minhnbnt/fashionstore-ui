@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import {
   sendPasswordReset,
+  signInWithGoogle,
   signInWithPassword,
   signOutEverywhere,
   signUpWithPassword,
@@ -50,6 +51,14 @@ export function usePasswordReset() {
   return useMutation({
     mutationFn: function (email: string) {
       return sendPasswordReset(email)
+    },
+  })
+}
+
+export function useSignInWithGoogle() {
+  return useMutation({
+    mutationFn: function () {
+      return signInWithGoogle()
     },
   })
 }

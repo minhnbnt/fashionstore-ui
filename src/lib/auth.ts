@@ -65,6 +65,41 @@ export async function sendPasswordReset(email: string): Promise<void> {
   }
 }
 
+export async function signInWithGoogle(): Promise<void> {
+  const { error } = await getAuthClient().signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  })
+  if (error !== null) {
+    throw error
+  }
+}
+
+export type UserRole = 'admin' | 'shop' | 'customer'
+
+export function getRoleFromSession(session: Session): UserRole {
+  const meta = session.user.app_metadata as { role?: string } | undefined
+  if (meta?.role === 'admin') {
+    return 'admin'
+  }
+  if (meta?.role === 'shop') {
+    return 'shop'
+  }
+  return 'customer'
+}
+
+export function getDefaultPathForRole(role: UserRole): string {
+  if (role === 'admin') {
+    return '/admin'
+  }
+  if (role === 'shop') {
+    return '/shop'
+  }
+  return '/account'
+}
+
 export function subscribeToSessionChanges(callback: (session: Session | null) => void): () => void {
   const { data: sub } = getAuthClient().onAuthStateChange(function (
     _event: AuthChangeEvent,
