@@ -23,8 +23,19 @@ function ScrollToHash() {
   const location = useLocation()
   useEffect(
     function () {
-      if (location.hash !== '') {
-        document.querySelector(location.hash)?.scrollIntoView()
+      if (location.hash !== '' && location.hash !== '#') {
+        const id = location.hash.replace(/^#/, '')
+        if (id !== '') {
+          try {
+            const decodedId = decodeURIComponent(id)
+            const element = document.getElementById(decodedId)
+            if (element !== null) {
+              element.scrollIntoView()
+            }
+          } catch {
+            // Ignore malformed URI or non-existent element
+          }
+        }
       }
     },
     [location],

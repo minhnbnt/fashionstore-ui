@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 
-import { fetchSession, getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
+import {
+  fetchSession,
+  getDefaultPathForRole,
+  getRoleFromSession,
+  subscribeToSessionChanges,
+} from '../lib/auth'
+
+import type { Session } from '@supabase/auth-js'
 
 type Status = 'loading' | 'error'
 
@@ -12,32 +19,45 @@ export default function AuthCallback() {
   useEffect(
     function () {
       let cancelled = false
+      let navigated = false
 
-      async function handleCallback() {
-        const session = await fetchSession()
-
-        if (cancelled) {
+      function handleRedirect(session: Session) {
+        if (cancelled || navigated) {
           return
         }
-
-        if (session === null) {
-          setStatus('error')
-          return
-        }
-
+        navigated = true
         const role = getRoleFromSession(session)
         const path = getDefaultPathForRole(role)
         void navigate(path, { replace: true })
       }
 
-      handleCallback().catch(function () {
-        if (cancelled === false) {
-          setStatus('error')
+      const unsubscribe = subscribeToSessionChanges(function (session) {
+        if (session !== null) {
+          handleRedirect(session)
         }
       })
 
+      fetchSession()
+        .then(function (session) {
+          if (session !== null) {
+            handleRedirect(session)
+          }
+        })
+        .catch(function () {
+          // Fallback timeout handles error if neither succeeds
+        })
+
+      const timeoutId = setTimeout(function () {
+        if (cancelled || navigated) {
+          return
+        }
+        setStatus('error')
+      }, 5000)
+
       return function () {
         cancelled = true
+        unsubscribe()
+        clearTimeout(timeoutId)
       }
     },
     [navigate],
