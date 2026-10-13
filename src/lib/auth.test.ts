@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { fetchSession, friendlyAuthError, validateLoginInput } from './auth'
+import { fetchSession, friendlyAuthError, validateLoginInput, validatePasswordReset } from './auth'
 
 describe('validateLoginInput', () => {
   it('bat buoc nhap email', () => {
@@ -17,6 +17,20 @@ describe('validateLoginInput', () => {
 
   it('chap nhan input hop le', () => {
     expect(validateLoginInput('ban@net.vn', '123456')).toBe(null)
+  })
+})
+
+describe('validatePasswordReset', () => {
+  it('tu choi mat khau duoi 6 ky tu', () => {
+    expect(validatePasswordReset('12345', '12345')).toBe('Mật khẩu mới tối thiểu 6 ký tự.')
+  })
+
+  it('tu choi mat khau xac nhan khong khop', () => {
+    expect(validatePasswordReset('password123', 'password456')).toBe('Mật khẩu xác nhận không khớp.')
+  })
+
+  it('chap nhan mat khau hop le va khop nhau', () => {
+    expect(validatePasswordReset('password123', 'password123')).toBe(null)
   })
 })
 

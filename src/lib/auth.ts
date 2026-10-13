@@ -59,7 +59,16 @@ export async function signOutEverywhere(): Promise<void> {
 }
 
 export async function sendPasswordReset(email: string): Promise<void> {
-  const { error } = await getAuthClient().resetPasswordForEmail(email)
+  const { error } = await getAuthClient().resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  })
+  if (error !== null) {
+    throw error
+  }
+}
+
+export async function updateUserPassword(password: string): Promise<void> {
+  const { error } = await getAuthClient().updateUser({ password })
   if (error !== null) {
     throw error
   }
@@ -125,6 +134,16 @@ export function validateLoginInput(email: string, password: string): string | nu
   return null
 }
 
+export function validatePasswordReset(password: string, confirmPassword: string): string | null {
+  if (password.length < 6) {
+    return 'Mật khẩu mới tối thiểu 6 ký tự.'
+  }
+  if (password !== confirmPassword) {
+    return 'Mật khẩu xác nhận không khớp.'
+  }
+  return null
+}
+
 interface MaybeAuthError {
   message?: string
 }
@@ -140,6 +159,12 @@ export function friendlyAuthError(error: unknown): string {
     }
     if (message.includes('Password should be')) {
       return 'Mật khẩu tối thiểu 6 ký tự.'
+    }
+    if (message.includes('New password should be different')) {
+      return 'Mật khẩu mới phải khác mật khẩu cũ.'
+    }
+    if (message.includes('Token has expired') || message.includes('token has expired')) {
+      return 'Liên kết khôi phục đã hết hạn. Vui lòng yêu cầu lại.'
     }
   }
   return 'Đã xảy ra lỗi. Vui lòng thử lại sau.'

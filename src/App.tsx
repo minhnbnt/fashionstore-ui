@@ -14,6 +14,7 @@ const Search = lazy(() => import('./pages/Search'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -54,6 +55,7 @@ function App() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/search" element={<Search />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
             path="/account"

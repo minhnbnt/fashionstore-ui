@@ -12,7 +12,7 @@ import {
 import { useSessionQuery } from '../hooks/useSession'
 import { friendlyAuthError, getDefaultPathForRole, getRoleFromSession, validateLoginInput } from '../lib/auth'
 
-type Mode = 'login' | 'signup'
+type Mode = 'login' | 'signup' | 'forgot'
 
 const PERKS = [
   { icon: Truck, text: 'Miễn phí vận chuyển cho đơn từ 500K' },
@@ -92,10 +92,33 @@ export default function Login() {
     setNotice(null)
     signIn.reset()
     signUp.reset()
+    reset.reset()
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    if (mode === 'forgot') {
+      if (email.trim() === '') {
+        setFormError('Vui lòng nhập email.')
+        return
+      }
+      if (email.includes('@') === false) {
+        setFormError('Email chưa đúng định dạng.')
+        return
+      }
+      setFormError(null)
+      reset.mutate(email.trim(), {
+        onSuccess: function () {
+          setNotice('Liên kết đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.')
+        },
+        onError: function (err) {
+          setFormError(friendlyAuthError(err))
+        },
+      })
+      return
+    }
+
     const invalid = validateLoginInput(email, password)
     if (invalid !== null) {
       setFormError(invalid)
@@ -130,22 +153,6 @@ export default function Login() {
           return
         }
         setNotice('Tài khoản đã được tạo. Vui lòng kiểm tra email để xác nhận.')
-      },
-      onError: function (err) {
-        setFormError(friendlyAuthError(err))
-      },
-    })
-  }
-
-  function handleForgot() {
-    if (email.trim() === '') {
-      setFormError('Vui lòng nhập email trước khi đặt lại mật khẩu.')
-      return
-    }
-    setFormError(null)
-    reset.mutate(email.trim(), {
-      onSuccess: function () {
-        setNotice('Liên kết đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra email.')
       },
       onError: function (err) {
         setFormError(friendlyAuthError(err))
@@ -198,63 +205,71 @@ export default function Login() {
         </aside>
 
         <div className="glass rounded-3xl p-6 md:p-8">
-          <div className="flex rounded-full bg-indigo-50 p-1 text-sm font-bold dark:bg-white/10">
-            <button
-              type="button"
-              onClick={function () {
-                handleMode('login')
-              }}
-              className="flex-1 rounded-full py-2"
-              style={{ ...(mode === 'login' && { background: '#312e81', color: '#fff' }) }}
-            >
-              Đăng nhập
-            </button>
-            <button
-              type="button"
-              onClick={function () {
-                handleMode('signup')
-              }}
-              className="flex-1 rounded-full py-2"
-              style={{ ...(mode === 'signup' && { background: '#312e81', color: '#fff' }) }}
-            >
-              Đăng ký
-            </button>
-          </div>
+          {mode !== 'forgot' && (
+            <div className="flex rounded-full bg-indigo-50 p-1 text-sm font-bold dark:bg-white/10">
+              <button
+                type="button"
+                onClick={function () {
+                  handleMode('login')
+                }}
+                className="flex-1 rounded-full py-2"
+                style={{ ...(mode === 'login' && { background: '#312e81', color: '#fff' }) }}
+              >
+                Đăng nhập
+              </button>
+              <button
+                type="button"
+                onClick={function () {
+                  handleMode('signup')
+                }}
+                className="flex-1 rounded-full py-2"
+                style={{ ...(mode === 'signup' && { background: '#312e81', color: '#fff' }) }}
+              >
+                Đăng ký
+              </button>
+            </div>
+          )}
 
           <h1 className="mt-5 text-2xl font-extrabold tracking-tighter">
             {mode === 'login' && <span>Chào mừng quay trở lại</span>}
             {mode === 'signup' && <span>Tạo tài khoản nét</span>}
+            {mode === 'forgot' && <span>Quên mật khẩu</span>}
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Dùng chung một tài khoản cho mọi đơn hàng.
+            {mode !== 'forgot' && <span>Dùng chung một tài khoản cho mọi đơn hàng.</span>}
+            {mode === 'forgot' && <span>Nhập email của bạn để nhận liên kết đặt lại mật khẩu.</span>}
           </p>
 
-          {/* Google Sign-In */}
-          <button
-            type="button"
-            id="btn-google-signin"
-            onClick={handleGoogleSignIn}
-            disabled={busy}
-            className="mt-5 flex w-full items-center justify-center gap-3 rounded-full border border-zinc-200 bg-white py-3 text-sm font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-60 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
-          >
-            <GoogleIcon />
-            {googleSignIn.isPending && <span>Đang chuyển hướng…</span>}
-            {googleSignIn.isPending === false && <span>Tiếp tục với Google</span>}
-          </button>
+          {mode !== 'forgot' && (
+            <>
+              {/* Google Sign-In */}
+              <button
+                type="button"
+                id="btn-google-signin"
+                onClick={handleGoogleSignIn}
+                disabled={busy}
+                className="mt-5 flex w-full items-center justify-center gap-3 rounded-full border border-zinc-200 bg-white py-3 text-sm font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-60 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+              >
+                <GoogleIcon />
+                {googleSignIn.isPending && <span>Đang chuyển hướng…</span>}
+                {googleSignIn.isPending === false && <span>Tiếp tục với Google</span>}
+              </button>
 
-          <div className="my-4 flex items-center gap-3">
-            <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
-            <span className="text-xs text-zinc-400">hoặc</span>
-            <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
-          </div>
+              <div className="my-4 flex items-center gap-3">
+                <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
+                <span className="text-xs text-zinc-400">hoặc</span>
+                <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
+              </div>
 
-          {oauthError !== null && (
-            <p className="mb-3 rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
-              Đăng nhập Google thất bại. Vui lòng thử lại.
-            </p>
+              {oauthError !== null && (
+                <p className="mb-3 rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
+                  Đăng nhập Google thất bại. Vui lòng thử lại.
+                </p>
+              )}
+            </>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="mt-4 space-y-3">
             <label className="block text-sm font-bold">
               Email
               <input
@@ -268,32 +283,37 @@ export default function Login() {
                 className="mt-1 w-full rounded-2xl border border-sky-100 bg-white/80 px-4 py-2.5 font-normal outline-none placeholder:text-zinc-400 focus:border-sky-400 dark:border-white/15 dark:bg-white/10"
               />
             </label>
-            <label className="block text-sm font-bold">
-              Mật khẩu
-              <span className="relative mt-1 block">
-                <input
-                  type={inputType}
-                  value={password}
-                  onChange={function (e) {
-                    setPassword(e.target.value)
-                  }}
-                  placeholder="Tối thiểu 6 ký tự"
-                  autoComplete={autoComplete}
-                  className="w-full rounded-2xl border border-sky-100 bg-white/80 px-4 py-2.5 pr-11 font-normal outline-none placeholder:text-zinc-400 focus:border-sky-400 dark:border-white/15 dark:bg-white/10"
-                />
-                <button
-                  type="button"
-                  aria-label="Hiện mật khẩu"
-                  onClick={function () {
-                    setShowPassword(!showPassword)
-                  }}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full p-1 text-zinc-500"
-                >
-                  {showPassword && <EyeSlash size={18} />}
-                  {showPassword === false && <Eye size={18} />}
-                </button>
-              </span>
-            </label>
+
+            {mode !== 'forgot' && (
+              <label className="block text-sm font-bold">
+                Mật khẩu
+                <span className="relative mt-1 block">
+                  <input
+                    type={inputType}
+                    value={password}
+                    onChange={function (e) {
+                      setPassword(e.target.value)
+                    }}
+                    placeholder="Tối thiểu 6 ký tự"
+                    autoComplete={autoComplete}
+                    className="w-full rounded-2xl border border-sky-100 bg-white/80 px-4 py-2.5 pr-11 font-normal outline-none placeholder:text-zinc-400 focus:border-sky-400 dark:border-white/15 dark:bg-white/10"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Hiện mật khẩu"
+                    onClick={function () {
+                      setShowPassword(function (prev) {
+                        return !prev
+                      })
+                    }}
+                    className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full p-1 text-zinc-500"
+                  >
+                    {showPassword && <EyeSlash size={18} />}
+                    {showPassword === false && <Eye size={18} />}
+                  </button>
+                </span>
+              </label>
+            )}
 
             {formError !== null && (
               <p className="rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
@@ -314,16 +334,33 @@ export default function Login() {
               {busy && <span>Đang xử lý…</span>}
               {busy === false && mode === 'login' && <span>Đăng nhập</span>}
               {busy === false && mode === 'signup' && <span>Tạo tài khoản</span>}
+              {busy === false && mode === 'forgot' && <span>Gửi liên kết khôi phục</span>}
             </button>
           </form>
 
-          <button
-            type="button"
-            onClick={handleForgot}
-            className="mt-3 w-full text-center text-sm font-medium text-blue-700 hover:underline dark:text-sky-300"
-          >
-            Quên mật khẩu?
-          </button>
+          {mode === 'login' && (
+            <button
+              type="button"
+              onClick={function () {
+                handleMode('forgot')
+              }}
+              className="mt-3 w-full text-center text-sm font-medium text-blue-700 hover:underline dark:text-sky-300"
+            >
+              Quên mật khẩu?
+            </button>
+          )}
+
+          {mode === 'forgot' && (
+            <button
+              type="button"
+              onClick={function () {
+                handleMode('login')
+              }}
+              className="mt-3 w-full text-center text-sm font-medium text-blue-700 hover:underline dark:text-sky-300"
+            >
+              Quay lại đăng nhập
+            </button>
+          )}
         </div>
       </div>
     </main>

@@ -6,6 +6,7 @@ import {
   signInWithPassword,
   signOutEverywhere,
   signUpWithPassword,
+  updateUserPassword,
 } from '../lib/auth'
 import { SESSION_KEY } from './useSession'
 
@@ -51,6 +52,14 @@ export function usePasswordReset() {
   return useMutation({
     mutationFn: function (email: string) {
       return sendPasswordReset(email)
+    },
+  })
+}
+
+export function useUpdatePassword() {
+  return useMutation({
+    mutationFn: function (password: string) {
+      return updateUserPassword(password)
     },
   })
 }
