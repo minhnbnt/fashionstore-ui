@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router'
 
-import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
 import { useSessionQuery } from '../hooks/useSession'
+import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
 
 import type { UserRole } from '../lib/auth'
 

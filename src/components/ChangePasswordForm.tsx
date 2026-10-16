@@ -1,14 +1,6 @@
 import { useState } from 'react'
 
-import {
-  CheckCircle,
-  Eye,
-  EyeSlash,
-  Key,
-  LockKey,
-  WarningCircle,
-  X,
-} from '@phosphor-icons/react'
+import { CheckCircle, Eye, EyeSlash, Key, LockKey, WarningCircle, X } from '@phosphor-icons/react'
 
 import { useUpdatePassword } from '../hooks/useAuthMutations'
 import { friendlyAuthError, validatePasswordReset } from '../lib/auth'
@@ -114,7 +106,10 @@ export default function ChangePasswordForm() {
       )}
 
       {isOpen && (
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3 border-t border-zinc-200/60 pt-3 dark:border-white/10">
+        <form
+          onSubmit={handleSubmit}
+          className="mt-4 space-y-3 border-t border-zinc-200/60 pt-3 dark:border-white/10"
+        >
           {formError !== null && (
             <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-3.5 py-2 text-xs font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
               <WarningCircle size={15} weight="bold" />
@@ -140,7 +135,7 @@ export default function ChangePasswordForm() {
                 }}
                 disabled={updatePassword.isPending}
                 placeholder="Tối thiểu 6 ký tự"
-                className="w-full rounded-xl border border-zinc-200 bg-white/80 px-3 py-2 pr-9 text-xs outline-none transition focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
+                className="w-full rounded-xl border border-zinc-200 bg-white/80 px-3 py-2 pr-9 text-xs transition outline-none focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
               />
               <button
                 type="button"
@@ -176,7 +171,7 @@ export default function ChangePasswordForm() {
                 }}
                 disabled={updatePassword.isPending}
                 placeholder="Nhập lại mật khẩu mới"
-                className="w-full rounded-xl border border-zinc-200 bg-white/80 px-3 py-2 pr-9 text-xs outline-none transition focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
+                className="w-full rounded-xl border border-zinc-200 bg-white/80 px-3 py-2 pr-9 text-xs transition outline-none focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
               />
               <button
                 type="button"
