@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 
-import { useList1 } from '@generated/endpoints/categories/categories'
+import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useSearch } from '@generated/endpoints/search/search'
 import {
   Heart,
@@ -56,7 +56,7 @@ export function LogoStrip() {
 }
 
 export function CategoryBento(props: { onSelect: (category: CategoryResponse) => void }) {
-  const categoriesQuery = useList1()
+  const categoriesQuery = useListCategories()
   const payload = categoriesQuery.data
   if (categoriesQuery.isPending) {
     return (

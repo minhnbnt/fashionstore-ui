@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router'
 
-import { useList1 } from '@generated/endpoints/categories/categories'
+import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useDetail } from '@generated/endpoints/products/products'
 
 import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
@@ -36,7 +36,7 @@ export default function ProductDetail() {
   const detailQuery = useDetail(id, {
     query: { enabled: id !== '' },
   })
-  const categoriesQuery = useList1()
+  const categoriesQuery = useListCategories()
   let categories: CategoryResponse[] = []
   if (categoriesQuery.data !== undefined) {
     categories = takeData(categoriesQuery.data)
