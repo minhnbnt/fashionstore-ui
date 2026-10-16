@@ -1,156 +1,106 @@
 {
   "openapi": "3.1.0",
-  "info": { "title": "OpenAPI definition", "version": "v0" },
-  "servers": [{ "url": "http://localhost:8080", "description": "Generated server url" }],
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
   "tags": [
     {
-      "name": "Admin - Shops",
-      "description": "Duyệt shop, cần role admin trong GoTrue app_metadata"
+      "name": "Products",
+      "description": "Xem hàng public"
     },
-    { "name": "Search", "description": "Tìm hàng bằng BM25 + lọc theo danh mục, biến thể, giá" },
-    { "name": "Shop - Products", "description": "Seller quản lý hàng của shop mình" },
-    { "name": "Products", "description": "Xem hàng public" },
-    { "name": "Orders", "description": "Buyer checkout COD va theo doi don" },
-    { "name": "Users", "description": "Mirror GoTrue user vào user_profile" },
-    { "name": "Uploads", "description": "Xin URL upload ảnh trực tiếp lên S3" },
-    { "name": "Seller Orders", "description": "Seller xu ly don cua shop minh" },
-    { "name": "Categories", "description": "Danh mục public, admin seed tay bằng SQL" },
-    { "name": "Shops", "description": "Đăng ký và quản lý shop của seller" }
+    {
+      "name": "Orders",
+      "description": "Buyer checkout COD va theo doi don"
+    },
+    {
+      "name": "Addresses",
+      "description": "So dia chi giao hang cua buyer"
+    },
+    {
+      "name": "Search",
+      "description": "Tìm hàng bằng BM25 + lọc theo danh mục, biến thể, giá"
+    },
+    {
+      "name": "Categories",
+      "description": "Danh mục public, admin seed tay bằng SQL"
+    },
+    {
+      "name": "Shop - Products",
+      "description": "Seller quản lý hàng của shop mình"
+    },
+    {
+      "name": "Admin - Users",
+      "description": "Quản lý tài khoản khách hàng/seller. Cần role admin."
+    },
+    {
+      "name": "Admin - Stats",
+      "description": "Số liệu tổng quan cho dashboard admin"
+    },
+    {
+      "name": "Users",
+      "description": "Mirror GoTrue user vào user_profile"
+    },
+    {
+      "name": "Uploads",
+      "description": "Xin URL upload ảnh trực tiếp lên S3"
+    },
+    {
+      "name": "Seller Orders",
+      "description": "Seller xu ly don cua shop minh"
+    },
+    {
+      "name": "Shops",
+      "description": "Đăng ký và quản lý shop của seller"
+    },
+    {
+      "name": "Admin - Shops",
+      "description": "Duyệt shop mới và kiểm duyệt shop đang hoạt động. Cần role admin."
+    }
   ],
   "paths": {
-    "/api/shops/{shopId}/products/{id}": {
+    "/api/users/me/addresses/{id}": {
       "put": {
-        "tags": ["Shop - Products"],
-        "summary": "Sửa product",
-        "description": "Id product phải thuộc đúng shop trên path, không là 404. Field null = giữ nguyên.",
+        "tags": ["Addresses"],
+        "summary": "Sua dia chi",
+        "description": "Field trong thi giu gia tri cu, ke ca dia chi default.",
         "operationId": "update",
         "parameters": [
           {
-            "name": "shopId",
-            "in": "path",
-            "description": "Id shop",
-            "required": true,
-            "schema": { "type": "string", "format": "uuid" }
-          },
-          {
             "name": "id",
             "in": "path",
-            "description": "Id product",
+            "description": "id dia chi",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateProductRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/AddressRequest"
+              }
             }
           },
           "required": true
         },
         "responses": {
           "200": {
-            "description": "Product sau update",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } } }
-          },
-          "400": {
-            "description": "Body không hợp lệ",
+            "description": "Dia chi sau khi sua",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "401": {
-            "description": "Thiếu hoặc sai JWT",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Không phải thành viên shop hoặc shop chưa duyệt",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "404": {
-            "description": "Product không thuộc shop này",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Data or state conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearerAuth": [] }]
-      }
-    },
-    "/api/shops/{id}": {
-      "put": {
-        "tags": ["Shops"],
-        "summary": "Sửa thông tin shop",
-        "description": "OWNER/STAFF của shop. Field null = giữ nguyên.",
-        "operationId": "update_1",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "id shop",
-            "required": true,
-            "schema": { "type": "string", "format": "uuid" }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/UpdateShopRequest" } }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Shop sau update",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
-          },
-          "401": {
-            "description": "Thiếu hoặc sai JWT",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Không phải thành viên shop",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "404": {
-            "description": "Shop không tồn tại",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
               }
             }
           },
@@ -158,7 +108,49 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thieu hoac sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dia chi khong ton tai hoac khong phai cua ban",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -166,12 +158,432 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["Addresses"],
+        "summary": "Xoa dia chi",
+        "description": "Xoa dung default ma con dia chi khac thi dia chi lau doi nhat len thay. Xoa cai cuoi cung thi danh sach rong.",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id dia chi",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Da xoa"
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thieu hoac sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dia chi khong ton tai hoac khong phai cua ban",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/users/me/addresses/{id}/default": {
+      "put": {
+        "tags": ["Addresses"],
+        "summary": "Doi default",
+        "description": "Dat dia chi nay lam default, default cu tu nha.",
+        "operationId": "changeDefault",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id dia chi",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dia chi default moi",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thieu hoac sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dia chi khong ton tai hoac khong phai cua ban",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/shops/{shopId}/products/{id}": {
+      "put": {
+        "tags": ["Shop - Products"],
+        "summary": "Sửa product",
+        "description": "Id product phải thuộc đúng shop trên path, không là 404. Field null = giữ nguyên.",
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "description": "Id shop",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id product",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Product sau update",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Body không hợp lệ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc shop chưa duyệt",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product không thuộc shop này",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/shops/{id}": {
+      "put": {
+        "tags": ["Shops"],
+        "summary": "Sửa thông tin shop",
+        "description": "OWNER/STAFF của shop. Field null = giữ nguyên.",
+        "operationId": "update_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id shop",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateShopRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Shop sau update",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop không tồn tại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/users": {
@@ -182,30 +594,52 @@
         "operationId": "upsert",
         "requestBody": {
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/CreateUserRequest" } }
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              }
+            }
           },
           "required": true
         },
         "responses": {
           "200": {
             "description": "Profile sau upsert",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } } }
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Body không hợp lệ",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -213,15 +647,9 @@
             "description": "Forbidden",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Data or state conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -229,12 +657,202 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/users/me/addresses": {
+      "get": {
+        "tags": ["Addresses"],
+        "summary": "Liet ke dia chi",
+        "description": "Dia chi xep theo thu tu tao, lau doi nhat truoc.",
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "Danh sach dia chi, rong neu chua co",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AddressResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thieu hoac sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AddressResponse"
+                  }
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": ["Addresses"],
+        "summary": "Them dia chi",
+        "description": "Dia chi dau tien tu thanh default.",
+        "operationId": "add",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddressRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Dia chi vua tao",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thieu hoac sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/uploads/presign": {
@@ -245,30 +863,52 @@
         "operationId": "presign",
         "requestBody": {
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/PresignRequest" } }
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignRequest"
+              }
+            }
           },
           "required": true
         },
         "responses": {
           "200": {
             "description": "Key và URL upload",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PresignResponse" } } }
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Content-type không phải ảnh",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/PresignResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/PresignResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -276,15 +916,9 @@
             "description": "Forbidden",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Data or state conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -292,12 +926,28 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/shops": {
@@ -308,39 +958,52 @@
         "operationId": "register",
         "requestBody": {
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/CreateShopRequest" } }
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShopRequest"
+              }
+            }
           },
           "required": true
         },
         "responses": {
           "201": {
             "description": "Shop vừa tạo",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Body không hợp lệ",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Slug đã có người dùng",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -348,7 +1011,9 @@
             "description": "Forbidden",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -356,12 +1021,33 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Slug đã có người dùng",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/shops/{shopId}/products": {
@@ -376,13 +1062,18 @@
             "in": "path",
             "description": "Id shop",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateProductRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
             }
           },
           "required": true
@@ -390,55 +1081,95 @@
         "responses": {
           "201": {
             "description": "Product vừa tạo",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } } }
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Body không hợp lệ",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
             "description": "Không phải thành viên shop hoặc shop chưa duyệt",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "404": {
             "description": "Shop hoặc category không tồn tại",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "409": {
             "description": "Slug hoặc SKU đã có người dùng",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/shops/{shopId}/products/{id}/images": {
@@ -453,19 +1184,29 @@
             "in": "path",
             "description": "Id shop",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           },
           {
             "name": "id",
             "in": "path",
             "description": "Id product",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "requestBody": {
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/AttachImagesRequest" } }
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachImagesRequest"
+              }
+            }
           },
           "required": true
         },
@@ -476,7 +1217,9 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/ImageResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/ImageResponse"
+                  }
                 }
               }
             }
@@ -487,11 +1230,15 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/ImageResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/ImageResponse"
+                  }
                 }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -501,11 +1248,15 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/ImageResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/ImageResponse"
+                  }
                 }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -515,11 +1266,15 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/ImageResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/ImageResponse"
+                  }
                 }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -529,11 +1284,15 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/ImageResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/ImageResponse"
+                  }
                 }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -541,12 +1300,125 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/shops/{id}/resubmit": {
+      "post": {
+        "tags": ["Shops"],
+        "summary": "Gửi duyệt lại shop bị từ chối",
+        "description": "Chỉ OWNER. REJECTED → PENDING, xóa lý do cũ, xếp cuối hàng đợi duyệt. Sửa hồ sơ bằng PUT /api/shops/{id} trước khi gửi lại.",
+        "operationId": "resubmitShop",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id shop",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop đã quay về PENDING",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải OWNER của shop",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop không tồn tại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Shop không ở trạng thái REJECTED",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/orders": {
@@ -557,48 +1429,82 @@
         "operationId": "checkout",
         "requestBody": {
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/CheckoutRequest" } }
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutRequest"
+              }
+            }
           },
           "required": true
         },
         "responses": {
           "201": {
             "description": "Don vua tao",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Item khac shop hoac body khong hop le",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
             "description": "Thieu hoac sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
             "description": "Shop chua duoc duyet",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "404": {
             "description": "Variant khong ton tai",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -606,12 +1512,18 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/seller/orders/{id}/ship": {
@@ -626,47 +1538,20 @@
             "in": "path",
             "description": "id don",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Don sau khi ship",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
-          },
-          "401": {
-            "description": "Thieu hoac sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Khong phai thanh vien shop",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "404": {
-            "description": "Don khong ton tai",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Sai trang thai",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
               }
             }
           },
@@ -674,12 +1559,78 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thieu hoac sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Khong phai thanh vien shop",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Don khong ton tai",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Sai trang thai",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/seller/orders/{id}/deliver": {
@@ -694,47 +1645,20 @@
             "in": "path",
             "description": "id don",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Don sau khi giao",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
-          },
-          "401": {
-            "description": "Thieu hoac sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Khong phai thanh vien shop",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "404": {
-            "description": "Don khong ton tai",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Sai trang thai",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
               }
             }
           },
@@ -742,12 +1666,78 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thieu hoac sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Khong phai thanh vien shop",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Don khong ton tai",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Sai trang thai",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/seller/orders/{id}/confirm": {
@@ -762,47 +1752,20 @@
             "in": "path",
             "description": "id don",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Don sau xac nhan",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
-          },
-          "401": {
-            "description": "Thieu hoac sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Khong phai thanh vien shop",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "404": {
-            "description": "Don khong ton tai",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Het kho hoac sai trang thai",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
               }
             }
           },
@@ -810,12 +1773,78 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thieu hoac sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Khong phai thanh vien shop",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Don khong ton tai",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Het kho hoac sai trang thai",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/orders/{id}/cancel": {
@@ -830,38 +1859,45 @@
             "in": "path",
             "description": "id don",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Don sau khi huy",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
             "description": "Thieu hoac sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "404": {
-            "description": "Don khong ton tai hoac khong phai cua ban",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Don khong còn o trang thai PENDING",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -869,7 +1905,76 @@
             "description": "Forbidden",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Don khong ton tai hoac khong phai cua ban",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Don khong còn o trang thai PENDING",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{id}/unlock": {
+      "patch": {
+        "tags": ["Admin - Users"],
+        "summary": "Mở khóa tài khoản",
+        "description": "LOCKED → ACTIVE, gỡ ban GoTrue. Shop bị tạm khóa kèm theo không tự mở, admin mở riêng.",
+        "operationId": "unlockUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id user",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tài khoản hoạt động lại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
               }
             }
           },
@@ -877,67 +1982,492 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tài khoản không tồn tại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tài khoản không bị khóa",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Cập nhật GoTrue thất bại, không có gì thay đổi",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{id}/lock": {
+      "patch": {
+        "tags": ["Admin - Users"],
+        "summary": "Khóa tài khoản",
+        "description": "ACTIVE → LOCKED. Chặn mọi API ngay lập tức, ban ở GoTrue, tạm khóa shop mà user làm OWNER. Không khóa được admin hoặc chính mình.",
+        "operationId": "lockUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id user",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationReasonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tài khoản đã khóa",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu lý do hoặc lý do không hợp lệ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tài khoản không tồn tại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Đã khóa, là admin, hoặc tự khóa mình",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Cập nhật GoTrue thất bại, không có gì thay đổi",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/shops/{id}/suspend": {
+      "patch": {
+        "tags": ["Admin - Shops"],
+        "summary": "Tạm khóa shop",
+        "description": "APPROVED → SUSPENDED. Shop ẩn khỏi sàn, không nhận đơn mới; đơn đang có vẫn xử lý được.",
+        "operationId": "suspendShop",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id shop",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationReasonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Shop đã tạm khóa",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu lý do hoặc lý do không hợp lệ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop không tồn tại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Shop không ở trạng thái APPROVED",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/admin/shops/{id}/reject": {
       "patch": {
         "tags": ["Admin - Shops"],
         "summary": "Từ chối shop",
-        "description": "PENDING → REJECTED.",
-        "operationId": "reject",
+        "description": "PENDING → REJECTED. Owner thấy lý do và có thể gửi duyệt lại.",
+        "operationId": "rejectShop",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "description": "id shop",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationReasonRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Shop đã từ chối",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu lý do hoặc lý do không hợp lệ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
             "description": "Không phải admin",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "404": {
             "description": "Shop không tồn tại",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "409": {
             "description": "Shop không ở trạng thái PENDING",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/shops/{id}/reinstate": {
+      "patch": {
+        "tags": ["Admin - Shops"],
+        "summary": "Mở lại shop",
+        "description": "SUSPENDED → APPROVED, xóa lý do tạm khóa.",
+        "operationId": "reinstateShop",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id shop",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shop hoạt động lại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
               }
             }
           },
@@ -945,67 +2475,106 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop không tồn tại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Shop không ở trạng thái SUSPENDED",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/admin/shops/{id}/approve": {
       "patch": {
         "tags": ["Admin - Shops"],
         "summary": "Duyệt shop",
-        "description": "PENDING → APPROVED. Role admin đọc từ claim app_metadata của JWT.",
-        "operationId": "approve",
+        "description": "PENDING → APPROVED. Owner được nâng role SHOP (DB + GoTrue app_metadata).",
+        "operationId": "approveShop",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "description": "id shop",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Shop đã duyệt",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
-          },
-          "401": {
-            "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Không phải admin",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "404": {
-            "description": "Shop không tồn tại",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Shop không ở trạng thái PENDING",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
               }
             }
           },
@@ -1013,12 +2582,88 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop không tồn tại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Shop không ở trạng thái PENDING",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Cập nhật GoTrue thất bại, không có gì thay đổi",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/users/me": {
@@ -1029,31 +2674,11 @@
         "responses": {
           "200": {
             "description": "Profile hiện tại",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } } }
-          },
-          "401": {
-            "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "404": {
-            "description": "Chưa mirror, gọi POST /api/users trước",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
               }
             }
           },
@@ -1061,7 +2686,49 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chưa mirror, gọi POST /api/users trước",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1069,12 +2736,18 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/shops/{slug}": {
@@ -1089,37 +2762,20 @@
             "in": "path",
             "description": "Slug shop",
             "required": true,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "example": "shop-an"
           }
         ],
         "responses": {
           "200": {
             "description": "Thông tin shop",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
-          },
-          "404": {
-            "description": "Không có hoặc chưa duyệt",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid JWT",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
               }
             }
           },
@@ -1127,7 +2783,44 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không có hoặc chưa duyệt",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1135,7 +2828,9 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
@@ -1154,7 +2849,19 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/ShopResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/ShopResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -1165,11 +2872,15 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/ShopResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/ShopResponse"
+                  }
                 }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1177,23 +2888,9 @@
             "description": "Forbidden",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Data or state conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1201,12 +2898,28 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/seller/orders": {
@@ -1214,7 +2927,7 @@
         "tags": ["Seller Orders"],
         "summary": "Don cua shop",
         "description": "OWNER/STAFF, gom moi shop minh tham gia.",
-        "operationId": "list",
+        "operationId": "list_1",
         "responses": {
           "200": {
             "description": "Danh sach don",
@@ -1222,7 +2935,19 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/OrderResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/OrderResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -1233,11 +2958,15 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/OrderResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/OrderResponse"
+                  }
                 }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1245,23 +2974,9 @@
             "description": "Forbidden",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Data or state conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1269,12 +2984,28 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/search/products": {
@@ -1289,7 +3020,9 @@
             "in": "query",
             "description": "Từ khóa, bỏ trống để duyệt theo bộ lọc",
             "required": false,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "example": "áo thun đen"
           },
           {
@@ -1297,7 +3030,9 @@
             "in": "query",
             "description": "Slug danh mục",
             "required": false,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "example": "ao-khoac"
           },
           {
@@ -1305,7 +3040,11 @@
             "in": "query",
             "description": "Giá variant thấp nhất (VND)",
             "required": false,
-            "schema": { "type": "integer", "format": "int64", "minimum": 0 },
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
             "example": 100000
           },
           {
@@ -1313,7 +3052,11 @@
             "in": "query",
             "description": "Giá variant cao nhất (VND)",
             "required": false,
-            "schema": { "type": "integer", "format": "int64", "minimum": 0 },
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            },
             "example": 500000
           },
           {
@@ -1321,7 +3064,9 @@
             "in": "query",
             "description": "Size variant, khớp chính xác",
             "required": false,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "example": "M"
           },
           {
@@ -1329,7 +3074,9 @@
             "in": "query",
             "description": "Màu variant, khớp chính xác",
             "required": false,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "example": "Đen"
           },
           {
@@ -1376,15 +3123,25 @@
           "200": {
             "description": "Một trang summary kèm tổng số kết quả",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductSearchResponse" } }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSearchResponse"
+                }
+              }
             }
           },
           "400": {
             "description": "Sort lạ, giá âm, minPrice > maxPrice hoặc limit ngoài 1–100",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductSearchResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSearchResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1392,7 +3149,9 @@
             "description": "Missing or invalid JWT",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1400,7 +3159,9 @@
             "description": "Forbidden",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1408,7 +3169,9 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1416,7 +3179,101 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/search/facets": {
+      "get": {
+        "tags": ["Search"],
+        "summary": "Lựa chọn cho bộ lọc",
+        "description": "Size, màu và khoảng giá có trong tập khớp từ khóa + danh mục, để dựng bộ lọc.",
+        "operationId": "facets",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Từ khóa, bỏ trống = mọi sản phẩm",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "áo"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Slug danh mục",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "ao-khoac"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách size, màu và giá min/max",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchFacetsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
@@ -1434,23 +3291,12 @@
             "description": "Lời chào",
             "content": {
               "*/*": {
-                "schema": { "type": "object", "additionalProperties": { "type": "string" } }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid JWT",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
               }
             }
           },
@@ -1458,15 +3304,29 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "401": {
+            "description": "Missing or invalid JWT",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1474,7 +3334,19 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
@@ -1493,36 +3365,20 @@
             "in": "path",
             "description": "Id product",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Chi tiết kèm variants và ảnh",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } } }
-          },
-          "404": {
-            "description": "Không có, bị ẩn hoặc shop chưa duyệt",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid JWT",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
               }
             }
           },
@@ -1530,7 +3386,44 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không có, bị ẩn hoặc shop chưa duyệt",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1538,7 +3431,9 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
@@ -1557,37 +3452,20 @@
             "in": "path",
             "description": "id don",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Chi tiet don",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
-          },
-          "401": {
-            "description": "Thieu hoac sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "404": {
-            "description": "Don khong ton tai hoac khong phai cua ban",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
               }
             }
           },
@@ -1595,7 +3473,49 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thieu hoac sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Don khong ton tai hoac khong phai cua ban",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1603,12 +3523,18 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/orders/mine": {
@@ -1623,7 +3549,19 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/OrderResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/OrderResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -1634,11 +3572,15 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/OrderResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/OrderResponse"
+                  }
                 }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1646,23 +3588,9 @@
             "description": "Forbidden",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Data or state conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1670,12 +3598,28 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/categories": {
@@ -1683,7 +3627,7 @@
         "tags": ["Categories"],
         "summary": "Liệt kê danh mục",
         "description": "Public, xếp theo sort_order.",
-        "operationId": "list_1",
+        "operationId": "listCategories",
         "responses": {
           "200": {
             "description": "Danh sách danh mục",
@@ -1691,7 +3635,29 @@
               "*/*": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/CategoryResponse" }
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -1700,31 +3666,9 @@
             "description": "Forbidden",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid JWT",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Data or state conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1732,41 +3676,111 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         }
       }
     },
-    "/api/admin/shops": {
+    "/api/admin/users": {
       "get": {
-        "tags": ["Admin - Shops"],
-        "summary": "Liệt kê shop theo trạng thái",
-        "description": "Mặc định PENDING để admin biết lối mà duyệt.",
-        "operationId": "list_2",
+        "tags": ["Admin - Users"],
+        "summary": "Danh sách tài khoản",
+        "description": "Lọc trạng thái/role, tìm theo email hoặc tên. Mới tạo trước.",
+        "operationId": "listAdminUsers",
         "parameters": [
           {
             "name": "status",
             "in": "query",
-            "description": "Trạng thái cần lọc",
+            "description": "Trạng thái, bỏ trống = tất cả",
             "required": false,
             "schema": {
               "type": "string",
-              "default": "PENDING",
-              "enum": ["PENDING", "APPROVED", "REJECTED", "SUSPENDED"]
+              "enum": ["ACTIVE", "LOCKED"]
             },
-            "example": "PENDING"
+            "example": "LOCKED"
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "description": "Role, bỏ trống = tất cả",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["CUSTOMER", "SHOP", "ADMIN"]
+            },
+            "example": "CUSTOMER"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Từ khóa: email hoặc tên hiển thị",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Trang, đếm từ 0",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Số tài khoản mỗi trang, tối đa 100",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Danh sách shop mới nhất trước",
+            "description": "Trang kết quả",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/ShopResponse" }
+                  "$ref": "#/components/schemas/PageResponseAdminUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Tham số phân trang sai",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAdminUserResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -1776,12 +3790,13 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/ShopResponse" }
+                  "$ref": "#/components/schemas/PageResponseAdminUserResponse"
                 }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1790,12 +3805,70 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/ShopResponse" }
+                  "$ref": "#/components/schemas/PageResponseAdminUserResponse"
                 }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{id}": {
+      "get": {
+        "tags": ["Admin - Users"],
+        "summary": "Chi tiết tài khoản",
+        "description": "Profile + shop tham gia + số đơn đã đặt + lịch sử khóa.",
+        "operationId": "getAdminUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id user",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chi tiết tài khoản",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDetailResponse"
+                }
               }
             }
           },
@@ -1803,90 +3876,54 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "409": {
-            "description": "Data or state conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearerAuth": [] }]
-      }
-    },
-    "/api/search/facets": {
-      "get": {
-        "tags": ["Search"],
-        "summary": "Lựa chọn cho bộ lọc",
-        "description": "Size, màu và khoảng giá có trong tập khớp từ khóa + danh mục, để dựng bộ lọc.",
-        "operationId": "facets",
-        "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "description": "Từ khóa, bỏ trống = mọi sản phẩm",
-            "required": false,
-            "schema": { "type": "string" },
-            "example": "áo"
-          },
-          {
-            "name": "category",
-            "in": "query",
-            "description": "Slug danh mục",
-            "required": false,
-            "schema": { "type": "string" },
-            "example": "ao-khoac"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Danh sách size, màu và giá min/max",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/SearchFacetsResponse" } }
-            }
-          },
-          "400": {
-            "description": "Invalid request",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
-            "description": "Missing or invalid JWT",
+            "description": "Thiếu hoặc sai JWT",
             "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDetailResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
-            "description": "Forbidden",
+            "description": "Không phải admin",
             "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDetailResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "404": {
-            "description": "Resource not found",
+            "description": "Tài khoản không tồn tại",
             "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDetailResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -1894,16 +3931,394 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/stats": {
+      "get": {
+        "tags": ["Admin - Stats"],
+        "summary": "Số liệu tổng quan",
+        "description": "Tài khoản theo trạng thái/role, shop theo trạng thái, đơn hàng theo trạng thái, GMV + doanh thu COD đã thu, và xu hướng 14 ngày gần nhất (giờ Việt Nam).",
+        "operationId": "getAdminStats",
+        "responses": {
+          "200": {
+            "description": "Số liệu",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminStatsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminStatsResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminStatsResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/shops": {
+      "get": {
+        "tags": ["Admin - Shops"],
+        "summary": "Danh sách shop",
+        "description": "Lọc theo trạng thái + tìm theo tên/slug/email owner. PENDING xếp ai nộp trước lên trước (hàng đợi duyệt), trạng thái khác xếp mới cập nhật trước.",
+        "operationId": "listAdminShops",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Trạng thái, bỏ trống = tất cả",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["PENDING", "APPROVED", "REJECTED", "SUSPENDED"]
+            },
+            "example": "PENDING"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Từ khóa: tên, slug hoặc email owner",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Trang, đếm từ 0",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Số shop mỗi trang, tối đa 100",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trang kết quả",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAdminShopResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Tham số phân trang sai",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAdminShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAdminShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAdminShopResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/shops/{id}": {
+      "get": {
+        "tags": ["Admin - Shops"],
+        "summary": "Chi tiết shop",
+        "description": "Hồ sơ + owner + số sản phẩm/đơn + lịch sử trạng thái.",
+        "operationId": "getAdminShop",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id shop",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chi tiết shop",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminShopDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminShopDetailResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminShopDetailResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop không tồn tại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminShopDetailResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
   "components": {
     "schemas": {
+      "AddressRequest": {
+        "type": "object",
+        "properties": {
+          "houseNumber": {
+            "type": ["string", "null"]
+          },
+          "street": {
+            "type": ["string", "null"]
+          },
+          "ward": {
+            "type": ["string", "null"]
+          },
+          "district": {
+            "type": ["string", "null"]
+          },
+          "city": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "AddressResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "houseNumber": {
+            "type": ["string", "null"]
+          },
+          "street": {
+            "type": ["string", "null"]
+          },
+          "ward": {
+            "type": ["string", "null"]
+          },
+          "district": {
+            "type": ["string", "null"]
+          },
+          "city": {
+            "type": ["string", "null"]
+          },
+          "defaultAddress": {
+            "type": "boolean"
+          }
+        }
+      },
       "UpdateProductRequest": {
         "type": "object",
         "properties": {
@@ -1933,14 +4348,20 @@
           "variants": {
             "type": ["array", "null"],
             "description": "Sửa variant theo id, null = không đụng variants",
-            "items": { "$ref": "#/components/schemas/UpdateVariantRequest" }
+            "items": {
+              "$ref": "#/components/schemas/UpdateVariantRequest"
+            }
           }
         }
       },
       "UpdateVariantRequest": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid", "description": "Id variant cần sửa" },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id variant cần sửa"
+          },
           "price": {
             "type": ["integer", "null"],
             "format": "int64",
@@ -1968,46 +4389,105 @@
       "ImageResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "variantId": { "type": ["string", "null"], "format": "uuid" },
-          "s3Key": { "type": "string", "description": "S3 key, frontend tự ghép base URL" },
-          "sortOrder": { "type": "integer", "format": "int32" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "variantId": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "s3Key": {
+            "type": "string",
+            "description": "S3 key, frontend tự ghép base URL"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          }
         }
       },
       "ProductResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "shopId": { "type": "string", "format": "uuid" },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "shopId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "categoryId": {
             "type": ["string", "null"],
             "format": "uuid",
             "description": "Danh mục, null nếu chưa gán"
           },
-          "name": { "type": "string" },
-          "slug": { "type": "string" },
-          "description": { "type": "string" },
-          "status": { "type": "string" },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
           "variants": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/VariantResponse" }
+            "items": {
+              "$ref": "#/components/schemas/VariantResponse"
+            }
           },
-          "images": { "type": "array", "items": { "$ref": "#/components/schemas/ImageResponse" } },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageResponse"
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "VariantResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "sku": { "type": "string" },
-          "size": { "type": "string" },
-          "color": { "type": "string" },
-          "price": { "type": "integer", "format": "int64" },
-          "compareAtPrice": { "type": ["integer", "null"], "format": "int64" },
-          "stockQuantity": { "type": "integer", "format": "int32" },
-          "defaultVariant": { "type": "boolean" },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "compareAtPrice": {
+            "type": ["integer", "null"],
+            "format": "int64"
+          },
+          "stockQuantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "defaultVariant": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "UpdateShopRequest": {
@@ -2025,17 +4505,32 @@
             "maxLength": 2000,
             "minLength": 0
           },
-          "logoKey": { "type": ["string", "null"], "description": "null = giữ nguyên" },
-          "bannerKey": { "type": ["string", "null"], "description": "null = giữ nguyên" }
+          "logoKey": {
+            "type": ["string", "null"],
+            "description": "null = giữ nguyên"
+          },
+          "bannerKey": {
+            "type": ["string", "null"],
+            "description": "null = giữ nguyên"
+          }
         }
       },
       "ShopResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "name": { "type": "string" },
-          "slug": { "type": "string" },
-          "description": { "type": "string" },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
           "logoKey": {
             "type": ["string", "null"],
             "description": "S3 key, frontend tự ghép base URL"
@@ -2044,8 +4539,18 @@
             "type": ["string", "null"],
             "description": "S3 key, frontend tự ghép base URL"
           },
-          "status": { "type": "string", "example": "APPROVED" },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "status": {
+            "type": "string",
+            "example": "APPROVED"
+          },
+          "statusReason": {
+            "type": ["string", "null"],
+            "description": "Lý do từ chối/tạm khóa gần nhất, null khi PENDING/APPROVED"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CreateUserRequest": {
@@ -2076,14 +4581,41 @@
       "UserResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid", "description": "id = GoTrue sub" },
-          "email": { "type": "string", "example": "an@t.local" },
-          "displayName": { "type": "string", "example": "An" },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "id = GoTrue sub"
+          },
+          "email": {
+            "type": "string",
+            "example": "an@t.local"
+          },
+          "displayName": {
+            "type": "string",
+            "example": "An"
+          },
           "avatarKey": {
             "type": "string",
             "description": "S3 key của avatar, null nếu chưa có. Frontend tự ghép với base URL S3."
           },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "role": {
+            "type": "string",
+            "description": "Role trên sàn",
+            "example": "CUSTOMER"
+          },
+          "status": {
+            "type": "string",
+            "description": "ACTIVE hoặc LOCKED",
+            "example": "ACTIVE"
+          },
+          "statusReason": {
+            "type": ["string", "null"],
+            "description": "Lý do khóa, null khi ACTIVE"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "PresignRequest": {
@@ -2102,15 +4634,29 @@
       "PresignResponse": {
         "type": "object",
         "properties": {
-          "key": { "type": "string", "description": "S3 key để gắn vào product sau khi upload" },
-          "url": { "type": "string", "description": "URL upload trực tiếp" },
-          "expiresAt": { "type": "string", "format": "date-time" }
+          "key": {
+            "type": "string",
+            "description": "S3 key để gắn vào product sau khi upload"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL upload trực tiếp"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CreateShopRequest": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "example": "Shop An", "maxLength": 200, "minLength": 0 },
+          "name": {
+            "type": "string",
+            "example": "Shop An",
+            "maxLength": 200,
+            "minLength": 0
+          },
           "slug": {
             "type": "string",
             "description": "Slug duy nhất toàn sàn, chữ thường + số + gạch ngang",
@@ -2118,8 +4664,15 @@
             "minLength": 1,
             "pattern": "^[a-z0-9-]+$"
           },
-          "description": { "type": ["string", "null"], "maxLength": 2000, "minLength": 0 },
-          "logoKey": { "type": ["string", "null"], "description": "S3 key logo, null nếu chưa có" },
+          "description": {
+            "type": ["string", "null"],
+            "maxLength": 2000,
+            "minLength": 0
+          },
+          "logoKey": {
+            "type": ["string", "null"],
+            "description": "S3 key logo, null nếu chưa có"
+          },
           "bannerKey": {
             "type": ["string", "null"],
             "description": "S3 key banner, null nếu chưa có"
@@ -2130,7 +4683,12 @@
       "CreateProductRequest": {
         "type": "object",
         "properties": {
-          "name": { "type": "string", "example": "Áo thun đen", "maxLength": 300, "minLength": 0 },
+          "name": {
+            "type": "string",
+            "example": "Áo thun đen",
+            "maxLength": 300,
+            "minLength": 0
+          },
           "slug": {
             "type": "string",
             "description": "Slug duy nhất trong shop",
@@ -2138,7 +4696,11 @@
             "minLength": 1,
             "pattern": "^[a-z0-9-]+$"
           },
-          "description": { "type": ["string", "null"], "maxLength": 5000, "minLength": 0 },
+          "description": {
+            "type": ["string", "null"],
+            "maxLength": 5000,
+            "minLength": 0
+          },
           "categoryId": {
             "type": ["string", "null"],
             "format": "uuid",
@@ -2147,7 +4709,9 @@
           "variants": {
             "type": "array",
             "description": "Ít nhất 1 variant, đúng 1 default",
-            "items": { "$ref": "#/components/schemas/CreateVariantRequest" },
+            "items": {
+              "$ref": "#/components/schemas/CreateVariantRequest"
+            },
             "minItems": 1
           }
         },
@@ -2162,8 +4726,16 @@
             "example": "AO-THUN-DEN-M",
             "minLength": 1
           },
-          "size": { "type": "string", "example": "M", "minLength": 1 },
-          "color": { "type": "string", "example": "Đen", "minLength": 1 },
+          "size": {
+            "type": "string",
+            "example": "M",
+            "minLength": 1
+          },
+          "color": {
+            "type": "string",
+            "example": "Đen",
+            "minLength": 1
+          },
           "price": {
             "type": "integer",
             "format": "int64",
@@ -2197,7 +4769,9 @@
           "images": {
             "type": "array",
             "description": "Danh sách ảnh cần gắn",
-            "items": { "$ref": "#/components/schemas/ImageItemRequest" },
+            "items": {
+              "$ref": "#/components/schemas/ImageItemRequest"
+            },
             "minItems": 1
           }
         },
@@ -2229,8 +4803,17 @@
       "CheckoutItemRequest": {
         "type": "object",
         "properties": {
-          "variantId": { "type": "string", "format": "uuid", "description": "Variant id muon mua" },
-          "quantity": { "type": "integer", "format": "int32", "example": 2, "minimum": 1 }
+          "variantId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Variant id muon mua"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 2,
+            "minimum": 1
+          }
         },
         "required": ["variantId"]
       },
@@ -2245,10 +4828,17 @@
           "items": {
             "type": "array",
             "description": "It nhat 1 item",
-            "items": { "$ref": "#/components/schemas/CheckoutItemRequest" },
+            "items": {
+              "$ref": "#/components/schemas/CheckoutItemRequest"
+            },
             "minItems": 1
           },
-          "shippingName": { "type": "string", "example": "An", "maxLength": 200, "minLength": 0 },
+          "shippingName": {
+            "type": "string",
+            "example": "An",
+            "maxLength": 200,
+            "minLength": 0
+          },
           "shippingPhone": {
             "type": "string",
             "example": "0900000000",
@@ -2273,83 +4863,121 @@
       "OrderItemResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "productId": { "type": ["string", "null"], "format": "uuid" },
-          "variantId": { "type": ["string", "null"], "format": "uuid" },
-          "productName": { "type": "string" },
-          "variantLabel": { "type": "string" },
-          "sku": { "type": "string" },
-          "unitPrice": { "type": "integer", "format": "int64" },
-          "quantity": { "type": "integer", "format": "int32" },
-          "lineTotal": { "type": "integer", "format": "int64" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productId": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "variantId": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantLabel": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lineTotal": {
+            "type": "integer",
+            "format": "int64"
+          }
         }
       },
       "OrderResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "code": { "type": "string" },
-          "shopId": { "type": "string", "format": "uuid" },
-          "buyerId": { "type": "string", "format": "uuid" },
-          "status": { "type": "string", "example": "PENDING" },
-          "paymentStatus": { "type": "string", "example": "UNPAID" },
-          "subtotal": { "type": "integer", "format": "int64" },
-          "shippingFee": { "type": "integer", "format": "int64" },
-          "total": { "type": "integer", "format": "int64" },
-          "shippingName": { "type": "string" },
-          "shippingPhone": { "type": "string" },
-          "shippingAddress": { "type": "string" },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "shopId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "buyerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "example": "PENDING"
+          },
+          "paymentStatus": {
+            "type": "string",
+            "example": "UNPAID"
+          },
+          "subtotal": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "shippingFee": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "shippingName": {
+            "type": "string"
+          },
+          "shippingPhone": {
+            "type": "string"
+          },
+          "shippingAddress": {
+            "type": "string"
+          },
           "items": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/OrderItemResponse" }
+            "items": {
+              "$ref": "#/components/schemas/OrderItemResponse"
+            }
           },
-          "createdAt": { "type": "string", "format": "date-time" }
-        }
-      },
-      "ProductSummaryResponse": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "shopId": { "type": "string", "format": "uuid" },
-          "name": { "type": "string" },
-          "slug": { "type": "string" },
-          "minPrice": { "type": "integer", "format": "int64" },
-          "defaultImageKey": {
-            "type": ["string", "null"],
-            "description": "S3 key ảnh đại diện, null nếu chưa có"
-          },
-          "rank": {
-            "type": ["number", "null"],
-            "format": "double",
-            "description": "Khoảng cách BM25, càng nhỏ càng khớp. Null khi không có từ khóa"
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
-      "CategoryResponse": {
+      "ModerationReasonRequest": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "name": { "type": "string" },
-          "slug": { "type": "string" },
-          "sortOrder": { "type": "integer", "format": "int32" }
-        }
-      },
-      "ProblemDetail": {
-        "properties": {
-          "type": { "type": "string", "format": "uri" },
-          "title": { "type": "string" },
-          "status": { "type": "integer", "format": "int32" },
-          "detail": { "type": "string" },
-          "instance": { "type": "string", "format": "uri" },
-          "properties": { "type": "object", "additionalProperties": { "type": "object" } }
-        }
+          "reason": {
+            "type": "string",
+            "description": "Lý do hiển thị cho shop/người dùng và lưu vào lịch sử kiểm duyệt",
+            "example": "Thông tin shop chưa đầy đủ, vui lòng bổ sung mô tả và logo",
+            "maxLength": 500,
+            "minLength": 5
+          }
+        },
+        "required": ["reason"]
       },
       "ProductSearchResponse": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ProductSummaryResponse" }
+            "items": {
+              "$ref": "#/components/schemas/ProductSummaryResponse"
+            }
           },
           "total": {
             "type": "integer",
@@ -2361,7 +4989,43 @@
             "format": "int32",
             "description": "Trang hiện tại, đếm từ 0"
           },
-          "limit": { "type": "integer", "format": "int32", "description": "Số sản phẩm mỗi trang" }
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số sản phẩm mỗi trang"
+          }
+        }
+      },
+      "ProductSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "shopId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "minPrice": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "defaultImageKey": {
+            "type": ["string", "null"],
+            "description": "S3 key ảnh đại diện, null nếu chưa có"
+          },
+          "rank": {
+            "type": ["number", "null"],
+            "format": "double",
+            "description": "Khoảng cách BM25, càng nhỏ càng khớp. Null khi không có từ khóa"
+          }
         }
       },
       "SearchFacetsResponse": {
@@ -2370,12 +5034,16 @@
           "sizes": {
             "type": "array",
             "description": "Size có trong tập kết quả, xếp XS → XXXL rồi tới size lạ",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "colors": {
             "type": "array",
             "description": "Màu có trong tập kết quả, xếp A-Z",
-            "items": { "type": "string" }
+            "items": {
+              "type": "string"
+            }
           },
           "minPrice": {
             "type": ["integer", "null"],
@@ -2386,6 +5054,430 @@
             "type": ["integer", "null"],
             "format": "int64",
             "description": "Giá variant đắt nhất, null nếu không có kết quả"
+          }
+        }
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "id = GoTrue sub"
+          },
+          "email": {
+            "type": "string",
+            "example": "an@t.local"
+          },
+          "displayName": {
+            "type": "string",
+            "example": "An"
+          },
+          "avatarKey": {
+            "type": ["string", "null"],
+            "description": "S3 key avatar"
+          },
+          "role": {
+            "type": "string",
+            "example": "CUSTOMER"
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE"
+          },
+          "statusReason": {
+            "type": ["string", "null"],
+            "description": "Lý do khóa hiện tại"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageResponseAdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "Phần tử của trang hiện tại",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng số phần tử khớp bộ lọc, không tính phân trang"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Trang hiện tại, đếm từ 0"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số phần tử mỗi trang"
+          }
+        }
+      },
+      "AdminUserDetailResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AdminUserResponse"
+          },
+          "shops": {
+            "type": "array",
+            "description": "Shop user làm OWNER/STAFF",
+            "items": {
+              "$ref": "#/components/schemas/ShopResponse"
+            }
+          },
+          "orderCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Số đơn user đã đặt (mọi trạng thái)"
+          },
+          "history": {
+            "type": "array",
+            "description": "Lịch sử khóa/mở khóa, cũ nhất trước",
+            "items": {
+              "$ref": "#/components/schemas/StatusHistoryResponse"
+            }
+          }
+        }
+      },
+      "StatusHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "fromStatus": {
+            "type": ["string", "null"],
+            "description": "Trạng thái trước, null nếu là bản ghi tạo mới",
+            "example": "PENDING"
+          },
+          "toStatus": {
+            "type": "string",
+            "example": "APPROVED"
+          },
+          "changedBy": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "id người thao tác"
+          },
+          "changedByEmail": {
+            "type": ["string", "null"],
+            "description": "Email người thao tác"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Lý do, rỗng nếu không có"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AdminDailyStatResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Ngày (giờ Việt Nam)",
+            "example": "2026-10-16"
+          },
+          "newUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tài khoản mới tạo trong ngày"
+          },
+          "newShops": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Shop mới đăng ký trong ngày"
+          },
+          "orders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Đơn đặt trong ngày (kể cả đơn đã hủy)"
+          },
+          "orderValue": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng giá trị đơn chưa hủy đặt trong ngày (VND)"
+          }
+        }
+      },
+      "AdminStatsResponse": {
+        "type": "object",
+        "properties": {
+          "totalUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng tài khoản"
+          },
+          "lockedUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tài khoản đang bị khóa"
+          },
+          "customerUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tài khoản role CUSTOMER"
+          },
+          "sellerUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tài khoản role SHOP (chủ shop đã được duyệt)"
+          },
+          "adminUsers": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tài khoản role ADMIN"
+          },
+          "totalShops": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng shop"
+          },
+          "pendingShops": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Shop chờ duyệt"
+          },
+          "approvedShops": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Shop đang hoạt động"
+          },
+          "suspendedShops": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Shop bị tạm khóa"
+          },
+          "rejectedShops": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Shop bị từ chối"
+          },
+          "totalOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng đơn hàng"
+          },
+          "pendingOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Đơn chờ shop xác nhận"
+          },
+          "confirmedOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Đơn đã xác nhận, chờ giao"
+          },
+          "shippingOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Đơn đang giao"
+          },
+          "deliveredOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Đơn đã giao"
+          },
+          "cancelledOrders": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Đơn đã hủy"
+          },
+          "grossMerchandiseValue": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng giá trị đơn chưa hủy (VND)"
+          },
+          "collectedRevenue": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Doanh thu COD đã thu (VND)"
+          },
+          "dailyTrend": {
+            "type": "array",
+            "description": "Số liệu theo ngày (giờ Việt Nam), 14 ngày gần nhất, cũ trước mới sau, ngày cuối là hôm nay",
+            "items": {
+              "$ref": "#/components/schemas/AdminDailyStatResponse"
+            }
+          }
+        }
+      },
+      "AdminShopResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "logoKey": {
+            "type": ["string", "null"],
+            "description": "S3 key, frontend tự ghép base URL"
+          },
+          "bannerKey": {
+            "type": ["string", "null"],
+            "description": "S3 key, frontend tự ghép base URL"
+          },
+          "status": {
+            "type": "string",
+            "example": "PENDING"
+          },
+          "statusReason": {
+            "type": ["string", "null"],
+            "description": "Lý do từ chối/tạm khóa gần nhất"
+          },
+          "ownerId": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "id owner, null nếu shop mất owner"
+          },
+          "ownerEmail": {
+            "type": ["string", "null"],
+            "example": "an@t.local"
+          },
+          "ownerName": {
+            "type": ["string", "null"],
+            "example": "An"
+          },
+          "ownerStatus": {
+            "type": ["string", "null"],
+            "description": "Trạng thái tài khoản owner",
+            "example": "ACTIVE"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lần nộp hồ sơ gần nhất, hàng đợi duyệt xếp theo cột này"
+          },
+          "approvedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageResponseAdminShopResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "Phần tử của trang hiện tại",
+            "items": {
+              "$ref": "#/components/schemas/AdminShopResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng số phần tử khớp bộ lọc, không tính phân trang"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Trang hiện tại, đếm từ 0"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số phần tử mỗi trang"
+          }
+        }
+      },
+      "AdminShopDetailResponse": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "$ref": "#/components/schemas/AdminShopResponse"
+          },
+          "productCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Số sản phẩm của shop (mọi trạng thái)"
+          },
+          "orderCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Số đơn hàng của shop (mọi trạng thái)"
+          },
+          "history": {
+            "type": "array",
+            "description": "Lịch sử trạng thái, cũ nhất trước",
+            "items": {
+              "$ref": "#/components/schemas/StatusHistoryResponse"
+            }
+          }
+        }
+      },
+      "ProblemDetail": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "format": "uri"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
           }
         }
       }

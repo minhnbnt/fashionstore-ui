@@ -70,6 +70,12 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
   search: {
     400: 'Bộ lọc tìm kiếm chưa hợp lệ.',
   },
+  adminStats: {
+    403: 'Bạn không có quyền xem số liệu quản trị.',
+  },
+  adminShops: {
+    403: 'Bạn không có quyền xem danh sách shop.',
+  },
 }
 
 export function apiErrorMessage(endpoint: string, status: number): string {

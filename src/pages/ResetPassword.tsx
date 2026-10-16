@@ -25,68 +25,65 @@ export default function ResetPassword() {
   const navigate = useNavigate()
   const updatePassword = useUpdatePassword()
 
-  useEffect(
-    function () {
-      let cancelled = false
+  useEffect(function () {
+    let cancelled = false
 
-      function checkRecoverySession() {
-        fetchSession()
-          .then(function (session) {
-            if (cancelled) {
-              return
-            }
-            if (session !== null) {
-              setStatus('ready')
-              return
-            }
-          })
-          .catch(function () {
-            // Wait for subscription or timeout
-          })
+    function checkRecoverySession() {
+      fetchSession()
+        .then(function (session) {
+          if (cancelled) {
+            return
+          }
+          if (session !== null) {
+            setStatus('ready')
+            return
+          }
+        })
+        .catch(function () {
+          // Wait for subscription or timeout
+        })
+    }
+
+    checkRecoverySession()
+
+    const unsubscribe = subscribeToSessionChanges(function (session) {
+      if (cancelled) {
+        return
       }
-
-      checkRecoverySession()
-
-      const unsubscribe = subscribeToSessionChanges(function (session) {
-        if (cancelled) {
-          return
-        }
-        if (session !== null) {
-          setStatus('ready')
-        }
-      })
-
-      const timer = setTimeout(function () {
-        if (cancelled) {
-          return
-        }
-        fetchSession()
-          .then(function (session) {
-            if (cancelled) {
-              return
-            }
-            if (session !== null) {
-              setStatus('ready')
-            }
-            if (session === null) {
-              setStatus('invalid')
-            }
-          })
-          .catch(function () {
-            if (cancelled === false) {
-              setStatus('invalid')
-            }
-          })
-      }, 2500)
-
-      return function () {
-        cancelled = true
-        unsubscribe()
-        clearTimeout(timer)
+      if (session !== null) {
+        setStatus('ready')
       }
-    },
-    [],
-  )
+    })
+
+    const timer = setTimeout(function () {
+      if (cancelled) {
+        return
+      }
+      fetchSession()
+        .then(function (session) {
+          if (cancelled) {
+            return
+          }
+          if (session !== null) {
+            setStatus('ready')
+          }
+          if (session === null) {
+            setStatus('invalid')
+          }
+        })
+        .catch(function () {
+          if (cancelled === false) {
+            setStatus('invalid')
+          }
+        })
+    }, 2500)
+
+    return function () {
+      cancelled = true
+      unsubscribe()
+      clearTimeout(timer)
+    }
+  }, [])
 
   useEffect(
     function () {
@@ -162,7 +159,8 @@ export default function ResetPassword() {
             Liên kết không hợp lệ
           </h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            Liên kết đặt lại mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng gửi yêu cầu khôi phục mới.
+            Liên kết đặt lại mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng gửi yêu cầu khôi phục
+            mới.
           </p>
           <Link
             to="/login"
@@ -186,7 +184,8 @@ export default function ResetPassword() {
             Đặt lại mật khẩu thành công!
           </h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            Mật khẩu của bạn đã được cập nhật. Hệ thống sẽ tự động chuyển về trang đăng nhập sau {countdown} giây.
+            Mật khẩu của bạn đã được cập nhật. Hệ thống sẽ tự động chuyển về trang đăng nhập sau{' '}
+            {countdown} giây.
           </p>
           <Link
             to="/login"
@@ -243,7 +242,7 @@ export default function ResetPassword() {
                 }}
                 disabled={updatePassword.isPending}
                 placeholder="Ít nhất 6 ký tự"
-                className="w-full rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 pr-11 text-sm outline-none transition focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
+                className="w-full rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 pr-11 text-sm transition outline-none focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
               />
               <button
                 type="button"
@@ -279,7 +278,7 @@ export default function ResetPassword() {
                 }}
                 disabled={updatePassword.isPending}
                 placeholder="Nhập lại mật khẩu mới"
-                className="w-full rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 pr-11 text-sm outline-none transition focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
+                className="w-full rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 pr-11 text-sm transition outline-none focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
               />
               <button
                 type="button"

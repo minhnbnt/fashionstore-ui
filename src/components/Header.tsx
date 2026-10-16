@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
-import { useList1 } from '@generated/endpoints/categories/categories'
+import { useListCategories } from '@generated/endpoints/categories/categories'
 import {
   Heart,
   MagnifyingGlass,
@@ -58,7 +58,7 @@ export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const categoriesQuery = useList1()
+  const categoriesQuery = useListCategories()
   let categories: CategoryResponse[] = []
   if (categoriesQuery.data !== undefined) {
     categories = takeData(categoriesQuery.data)
@@ -159,7 +159,7 @@ export default function Header() {
               </button>
 
               {dropdownOpen && isLoggedIn && (
-                <div className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-2xl border border-white/30 bg-white/90 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/90">
+                <div className="absolute top-full right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-white/30 bg-white/90 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/90">
                   {/* User info */}
                   <div className="border-b border-zinc-100 px-4 py-3 dark:border-white/10">
                     <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-100">

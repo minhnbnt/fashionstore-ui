@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 
-import { useList1 } from '@generated/endpoints/categories/categories'
+import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useFacets, useSearch } from '@generated/endpoints/search/search'
 import { SearchSort } from '@generated/model/searchSort'
 import { Funnel, MagnifyingGlass, X } from '@phosphor-icons/react'
@@ -160,7 +160,7 @@ export default function Search() {
     q: filters.q ?? undefined,
     category: filters.category ?? undefined,
   })
-  const categoriesQuery = useList1()
+  const categoriesQuery = useListCategories()
 
   const categoriesPayload = categoriesQuery.data
   let categories: CategoryResponse[] = []
