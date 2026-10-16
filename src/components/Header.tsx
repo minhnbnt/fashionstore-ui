@@ -106,6 +106,11 @@ export default function Header() {
     dashboardPath = getDefaultPathForRole(role as 'admin' | 'shop' | 'customer')
   }
 
+  let sellerChannelPath = '/account#seller-channel'
+  if (role === 'shop') {
+    sellerChannelPath = '/shop'
+  }
+
   return (
     <header className="fixed inset-x-0 top-0 z-50">
       <div className="mx-auto max-w-[1400px] px-4">
@@ -141,7 +146,17 @@ export default function Header() {
               placeholder="Tìm áo, váy, khoác…"
             />
           </form>
-          <div className="ml-auto flex items-center gap-1 md:ml-0">
+          <div className="ml-auto flex items-center gap-2 md:ml-0">
+            {/* Seller Channel Link */}
+            <Link
+              to={sellerChannelPath}
+              id="header-seller-link"
+              className="hidden items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50/80 px-3 py-1.5 text-xs font-bold text-orange-700 transition hover:bg-orange-100 sm:flex dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20"
+            >
+              <Storefront size={14} weight="bold" />
+              <span>Kênh Người Bán</span>
+            </Link>
+
             {/* User avatar / dropdown */}
             <div className="relative" ref={dropdownRef} onBlur={handleBlur}>
               <button
@@ -151,9 +166,10 @@ export default function Header() {
                 onClick={handleAvatarClick}
                 className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-indigo-100 dark:hover:bg-white/10"
               >
-                {isLoggedIn && session.user.email !== undefined ? (
+                {isLoggedIn && session.user.email !== undefined && (
                   <UserAvatar name={session.user.email} size={28} />
-                ) : (
+                )}
+                {(!isLoggedIn || session.user.email === undefined) && (
                   <User size={20} />
                 )}
               </button>
