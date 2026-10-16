@@ -54,12 +54,13 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {STATS.map(function (stat) {
           return (
-            <div
-              key={stat.label}
-              className="glass flex flex-col gap-2 rounded-2xl p-5"
-            >
+            <div key={stat.label} className="glass flex flex-col gap-2 rounded-2xl p-5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-900/40">
-                <stat.icon size={20} weight="bold" className="text-indigo-600 dark:text-indigo-400" />
+                <stat.icon
+                  size={20}
+                  weight="bold"
+                  className="text-indigo-600 dark:text-indigo-400"
+                />
               </div>
               <p className="text-2xl font-extrabold tracking-tighter">{stat.value}</p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">{stat.label}</p>

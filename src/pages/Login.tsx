@@ -10,7 +10,12 @@ import {
   useSignUp,
 } from '../hooks/useAuthMutations'
 import { useSessionQuery } from '../hooks/useSession'
-import { friendlyAuthError, getDefaultPathForRole, getRoleFromSession, validateLoginInput } from '../lib/auth'
+import {
+  friendlyAuthError,
+  getDefaultPathForRole,
+  getRoleFromSession,
+  validateLoginInput,
+} from '../lib/auth'
 
 type Mode = 'login' | 'signup' | 'forgot'
 
@@ -110,7 +115,9 @@ export default function Login() {
       setFormError(null)
       reset.mutate(email.trim(), {
         onSuccess: function () {
-          setNotice('Liên kết đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.')
+          setNotice(
+            'Liên kết đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.',
+          )
         },
         onError: function (err) {
           setFormError(friendlyAuthError(err))
@@ -237,7 +244,9 @@ export default function Login() {
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             {mode !== 'forgot' && <span>Dùng chung một tài khoản cho mọi đơn hàng.</span>}
-            {mode === 'forgot' && <span>Nhập email của bạn để nhận liên kết đặt lại mật khẩu.</span>}
+            {mode === 'forgot' && (
+              <span>Nhập email của bạn để nhận liên kết đặt lại mật khẩu.</span>
+            )}
           </p>
 
           {mode !== 'forgot' && (

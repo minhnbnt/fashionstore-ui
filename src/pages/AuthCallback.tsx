@@ -88,9 +88,7 @@ export default function AuthCallback() {
     <main className="mx-auto flex max-w-[1400px] flex-col items-center justify-center px-4 pt-[100px] pb-12">
       <div className="glass mx-auto w-full max-w-sm rounded-3xl p-8 text-center">
         <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
-        <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Đang xác thực…
-        </p>
+        <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">Đang xác thực…</p>
       </div>
     </main>
   )

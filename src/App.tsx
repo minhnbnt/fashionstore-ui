@@ -45,9 +45,12 @@ function ScrollToHash() {
 }
 
 function App() {
+  const location = useLocation()
+  const isShopRoute = location.pathname.startsWith('/shop')
+
   return (
     <div className="grain min-h-[100dvh]">
-      <Header />
+      {!isShopRoute && <Header />}
       <ScrollToHash />
       <Suspense fallback={<PageLoading />}>
         <Routes>
@@ -83,7 +86,7 @@ function App() {
           />
         </Routes>
       </Suspense>
-      <Footer />
+      {!isShopRoute && <Footer />}
     </div>
   )
 }
