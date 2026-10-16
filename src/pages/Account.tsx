@@ -4,23 +4,47 @@ import { useNavigate } from 'react-router'
 import {
   ArrowClockwise,
   ArrowRight,
+  Bank,
   CheckCircle,
   ClockCountdown,
+  IdentificationCard,
+  MapPin,
+  ShieldCheck,
   SignOut,
   Sparkle,
   Storefront,
+  WarningOctagon,
 } from '@phosphor-icons/react'
 
 import { useMine } from '@generated/endpoints/shops/shops'
 import { takeData } from '@/lib/apiAdapters'
 
 import ChangePasswordForm from '../components/ChangePasswordForm'
-import ShopRegistrationModal from '../components/ShopRegistrationModal'
+import ShopKycRegistrationModal from '../components/ShopKycRegistrationModal'
 import UserAvatar from '../components/UserAvatar'
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useSessionQuery } from '../hooks/useSession'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
+
+function maskId(idNum: string | null | undefined): string {
+  if (idNum === null || idNum === undefined || idNum.trim() === '') {
+    return 'Chưa cung cấp'
+  }
+  if (idNum.length <= 4) {
+    return idNum
+  }
+  const prefix = idNum.slice(0, 4)
+  const suffix = idNum.slice(-2)
+  return prefix + '******' + suffix
+}
+
+function formatSellerType(sellerType: string | null | undefined): string {
+  if (sellerType === 'CORPORATE') {
+    return 'Doanh nghiệp / Hộ kinh doanh'
+  }
+  return 'Cá nhân'
+}
 
 export default function Account() {
   const { data: session } = useSessionQuery()
@@ -205,7 +229,7 @@ export default function Account() {
                   className="flex items-center gap-1.5 rounded-full bg-amber-200/80 px-3 py-1 text-xs font-extrabold text-amber-900 dark:bg-amber-400/20 dark:text-amber-200"
                 >
                   <ClockCountdown size={14} weight="bold" />
-                  ĐANG CHỜ DUYỆT HỒ SƠ (PENDING)
+                  ĐANG CHỜ DUYỆT HỒ SƠ & eKYC (PENDING)
                 </span>
                 <button
                   type="button"
@@ -231,24 +255,78 @@ export default function Account() {
                 </p>
               )}
 
-              <div className="mt-5 rounded-2xl bg-white/80 p-4 text-xs text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-300">
-                <p className="font-bold text-amber-900 dark:text-amber-200">
-                  Hồ sơ mở gian hàng đã được tiếp nhận
-                </p>
-                <p className="mt-1 leading-relaxed">
-                  Ban quản trị nét đang tiến hành xác minh thông tin gian hàng. Sau khi được duyệt, nút
-                  truy cập Kênh Người Bán sẽ tự động kích hoạt.
-                </p>
+              {/* eKYC Anti-Fraud Details Summary */}
+              <div className="mt-5 rounded-2xl border border-amber-200/80 bg-white/90 p-4 text-xs dark:border-amber-500/20 dark:bg-zinc-900/80">
+                <div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-200">
+                  <ShieldCheck size={18} weight="fill" className="text-amber-600" />
+                  <span>Hồ sơ định danh eKYC phòng chống gian lận & hàng giả</span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  <div className="flex items-start gap-2 rounded-xl bg-amber-50/70 p-2.5 dark:bg-amber-500/5">
+                    <IdentificationCard size={18} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-400" />
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase">Chủ sở hữu & CCCD</p>
+                      <p className="font-bold text-zinc-900 dark:text-white">
+                        {currentShop.legalName || 'Chưa cập nhật'}
+                      </p>
+                      <p className="font-mono text-[11px] text-zinc-600 dark:text-zinc-300">
+                        CCCD: {maskId(currentShop.idNumber)}
+                      </p>
+                      <p className="text-[11px] text-zinc-500">
+                        {formatSellerType(currentShop.sellerType)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 rounded-xl bg-amber-50/70 p-2.5 dark:bg-amber-500/5">
+                    <Bank size={18} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-400" />
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase">Tài khoản đối soát</p>
+                      <p className="font-bold text-zinc-900 dark:text-white">
+                        {currentShop.bankName || 'Chưa cung cấp'}
+                      </p>
+                      <p className="font-mono text-[11px] text-zinc-600 dark:text-zinc-300">
+                        STK: {currentShop.bankAccount || '---'}
+                      </p>
+                      <p className="text-[11px] text-zinc-500">
+                        Chủ TK: {currentShop.bankHolder || currentShop.legalName || '---'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {currentShop.address && (
+                    <div className="flex items-start gap-2 rounded-xl bg-amber-50/70 p-2.5 sm:col-span-2 dark:bg-amber-500/5">
+                      <MapPin size={18} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-400" />
+                      <div>
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase">Kho lấy hàng & Hotline</p>
+                        <p className="text-zinc-800 dark:text-zinc-200">
+                          {currentShop.address} {currentShop.phone && <span>- Hotline: {currentShop.phone}</span>}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 rounded-xl bg-amber-100/60 p-2.5 text-[11px] leading-relaxed text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+                  <p className="font-semibold">
+                    🔒 Cảnh báo chống gian lận & rửa tiền theo chuẩn Shopee:
+                  </p>
+                  <p className="mt-0.5">
+                    Tên chủ tài khoản ngân hàng nhận tiền doanh thu được hệ thống tự động khóa cố định
+                    theo Họ tên trên Căn cước công dân. Hồ sơ đang được Ban thẩm định pháp chế nét kiểm duyệt.
+                  </p>
+                </div>
               </div>
 
               {/* Admin Approval Command Helper Box */}
               <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-100/60 p-3 text-xs text-amber-950 dark:border-amber-500/20 dark:bg-amber-950/40 dark:text-amber-200">
-                <p className="font-bold">Lệnh duyệt mở shop qua CLI (dành cho Admin):</p>
+                <p className="font-bold">Lệnh duyệt mở shop & phê duyệt eKYC qua CLI (dành cho Admin):</p>
                 <code
                   id="cmd-approve-shop"
                   className="mt-1 block overflow-x-auto rounded-lg bg-black/80 p-2 font-mono text-[11px] text-green-300"
                 >
-                  UPDATE shop SET status = 'APPROVED', approved_at = now() WHERE id = '
+                  UPDATE shop SET status = 'APPROVED', kyc_status = 'VERIFIED', approved_at = now() WHERE id = '
                   {currentShop.id}';
                 </code>
               </div>
@@ -269,6 +347,13 @@ export default function Account() {
                   <CheckCircle size={14} weight="fill" />
                   SHOP ĐÃ ĐƯỢC DUYỆT THÀNH CÔNG (APPROVED)
                 </span>
+                <span
+                  id="badge-ekyc-verified"
+                  className="flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300"
+                >
+                  <ShieldCheck size={14} weight="fill" />
+                  eKYC ĐÃ XÁC THỰC
+                </span>
               </div>
 
               <h3 className="mt-4 text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
@@ -284,8 +369,30 @@ export default function Account() {
                 </p>
               )}
 
+              {/* Verified Identity Summary */}
+              <div className="mt-4 rounded-2xl bg-white/70 p-3.5 text-xs text-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-300">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase">Chủ gian hàng:</span>{' '}
+                    <span className="font-bold text-zinc-900 dark:text-white">
+                      {currentShop.legalName || 'Chính chủ'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase">CCCD:</span>{' '}
+                    <span className="font-mono">{maskId(currentShop.idNumber)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase">Ngân hàng nhận doanh thu:</span>{' '}
+                    <span>
+                      {currentShop.bankName} - {currentShop.bankAccount}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <p className="mt-4 text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                Chúc mừng! Gian hàng của bạn đã chính thức hoạt động trên sàn nét. Hãy truy cập ngay
+                Chúc mừng! Gian hàng của bạn đã chính thức hoạt động và đạt chứng chỉ định danh an toàn trên sàn nét. Hãy truy cập ngay
                 Kênh Người Bán để đăng tải sản phẩm, quản lý kho và xử lý các đơn hàng đầu tiên.
               </p>
 
@@ -305,11 +412,54 @@ export default function Account() {
               </div>
             </div>
           )}
+
+          {/* Case 5: Shop is in REJECTED state */}
+          {mineQuery.isLoading === false && currentShop !== null && currentShop.status === 'REJECTED' && (
+            <div
+              id="card-shop-rejected"
+              className="mt-6 rounded-3xl border border-rose-300 bg-rose-50/70 p-6 dark:border-rose-500/30 dark:bg-rose-500/10"
+            >
+              <div className="flex items-center justify-between">
+                <span
+                  id="badge-shop-status-rejected"
+                  className="flex items-center gap-1.5 rounded-full bg-rose-200/80 px-3 py-1 text-xs font-extrabold text-rose-900 dark:bg-rose-400/20 dark:text-rose-200"
+                >
+                  <WarningOctagon size={14} weight="bold" />
+                  HỒ SƠ eKYC BỊ TỪ CHỐI (REJECTED)
+                </span>
+              </div>
+
+              <h3 className="mt-4 text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+                {currentShop.name}
+              </h3>
+
+              <div className="mt-3 rounded-2xl bg-white/90 p-4 text-xs text-rose-900 dark:bg-zinc-900/80 dark:text-rose-200">
+                <p className="font-bold">Lý do từ chối thẩm định danh tính:</p>
+                <p className="mt-1 leading-relaxed">
+                  {currentShop.kycRejectionReason || 'Thông tin định danh CCCD hoặc tài khoản ngân hàng không hợp lệ, hình ảnh mờ hoặc không trùng khớp với chủ tài khoản.'}
+                </p>
+              </div>
+
+              <div className="mt-5">
+                <button
+                  type="button"
+                  id="btn-reapply-shop-registration"
+                  onClick={function () {
+                    setModalOpen(true)
+                  }}
+                  className="flex items-center gap-2 rounded-full bg-rose-700 px-5 py-2.5 text-xs font-bold text-white shadow-lg transition hover:bg-rose-800"
+                >
+                  <span>Chỉnh sửa & Nộp lại hồ sơ xác thực eKYC</span>
+                  <ArrowRight size={14} weight="bold" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Shop Registration Modal */}
-      <ShopRegistrationModal
+      {/* Shop eKYC Registration Modal */}
+      <ShopKycRegistrationModal
         isOpen={modalOpen}
         userEmail={userEmail}
         onClose={function () {
