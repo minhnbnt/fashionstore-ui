@@ -26,7 +26,9 @@ describe('validatePasswordReset', () => {
   })
 
   it('tu choi mat khau xac nhan khong khop', () => {
-    expect(validatePasswordReset('password123', 'password456')).toBe('Mật khẩu xác nhận không khớp.')
+    expect(validatePasswordReset('password123', 'password456')).toBe(
+      'Mật khẩu xác nhận không khớp.',
+    )
   })
 
   it('chap nhan mat khau hop le va khop nhau', () => {
