@@ -1,0 +1,562 @@
+import { useState } from 'react'
+
+import {
+  UsersThree,
+  ShieldCheck,
+  ClockCounterClockwise,
+  UserPlus,
+  Trash,
+  CheckCircle,
+  LockKey,
+  Shield,
+  Key,
+} from '@phosphor-icons/react'
+
+import type { ShopRoleItem, ShopMemberItem, ShopAuditItem } from './sellerData'
+
+interface SellerStaffTabProps {
+  roles: ShopRoleItem[]
+  members: ShopMemberItem[]
+  auditLogs: ShopAuditItem[]
+  onAddMember: (member: ShopMemberItem) => void
+  onRemoveMember: (id: string) => void
+  onAddRole: (role: ShopRoleItem) => void
+  onAddAuditLog: (log: ShopAuditItem) => void
+}
+
+const ALL_SYSTEM_PERMISSIONS = [
+  { key: 'PRODUCT_READ', label: 'Xem danh sách sản phẩm', group: 'Sản phẩm' },
+  { key: 'PRODUCT_WRITE', label: 'Thêm, sửa, xóa sản phẩm', group: 'Sản phẩm' },
+  { key: 'INVENTORY_WRITE', label: 'Điều chỉnh tồn kho & SKU', group: 'Tồn kho' },
+  { key: 'ORDER_READ', label: 'Xem danh sách đơn hàng', group: 'Đơn hàng' },
+  { key: 'ORDER_PROCESS', label: 'Xác nhận, đóng gói & giao hàng', group: 'Đơn hàng' },
+  { key: 'ORDER_CANCEL', label: 'Hủy đơn hàng & hoàn trả kho', group: 'Đơn hàng' },
+  { key: 'RETURN_PROCESS', label: 'Xử lý khiếu nại trả hàng / hoàn tiền', group: 'Đơn hàng' },
+  { key: 'REVENUE_READ', label: 'Xem doanh thu & số dư ví shop', group: 'Tài chính' },
+  { key: 'REVENUE_WITHDRAW', label: 'Yêu cầu rút tiền về tài khoản ngân hàng', group: 'Tài chính' },
+  { key: 'REVIEW_READ', label: 'Xem đánh giá của khách hàng', group: 'CSKH' },
+  { key: 'REVIEW_REPLY', label: 'Phản hồi đánh giá & báo cáo vi phạm', group: 'CSKH' },
+  { key: 'CHAT_ACCESS', label: 'Nhắn tin trực tiếp với người mua (Shopee Chat)', group: 'CSKH' },
+  { key: 'DECORATION_WRITE', label: 'Trang trí gian hàng & xếp layout', group: 'Gian hàng' },
+]
+
+export function SellerStaffTab({
+  roles,
+  members,
+  auditLogs,
+  onAddMember,
+  onRemoveMember,
+  onAddRole,
+  onAddAuditLog,
+}: SellerStaffTabProps) {
+  const [activeSubTab, setActiveSubTab] = useState<'MEMBERS' | 'ROLES' | 'AUDIT'>('MEMBERS')
+
+  // Invite modal state
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRoleId, setInviteRoleId] = useState(roles[0]?.id || '')
+
+  // Create role modal state
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false)
+  const [newRoleName, setNewRoleName] = useState('')
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
+
+  const [notification, setNotification] = useState('')
+
+  const handleTogglePermission = (key: string) => {
+    if (selectedPermissions.includes(key)) {
+      setSelectedPermissions(selectedPermissions.filter((p) => p !== key))
+      return
+    }
+    setSelectedPermissions([...selectedPermissions, key])
+  }
+
+  const handleInviteSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!inviteEmail.trim()) return
+
+    const matchedRole = roles.find((r) => r.id === inviteRoleId)
+    let roleTitle = 'Nhân viên'
+    if (matchedRole) {
+      roleTitle = matchedRole.name
+    }
+
+    const newMember: ShopMemberItem = {
+      id: `mem-${Date.now()}`,
+      email: inviteEmail.trim(),
+      roleId: inviteRoleId,
+      roleName: roleTitle,
+      status: 'INVITED',
+      joinedAt: 'Vừa mời (Chờ kích hoạt)',
+    }
+
+    onAddMember(newMember)
+
+    const audit: ShopAuditItem = {
+      id: `aud-${Date.now()}`,
+      action: 'INVITE_STAFF',
+      targetType: 'MEMBER',
+      detail: `Mời nhân viên ${inviteEmail.trim()} vào vai trò ${roleTitle}`,
+      createdAt: 'Vừa xong',
+    }
+    onAddAuditLog(audit)
+
+    setNotification(`Đã gửi email mời nhân viên ${inviteEmail.trim()} thành công!`)
+    setInviteEmail('')
+    setIsInviteModalOpen(false)
+  }
+
+  const handleCreateRoleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newRoleName.trim() || selectedPermissions.length === 0) return
+
+    const newRole: ShopRoleItem = {
+      id: `role-${Date.now()}`,
+      name: newRoleName.trim(),
+      permissions: selectedPermissions,
+      isSystem: false,
+      memberCount: 0,
+    }
+
+    onAddRole(newRole)
+
+    const audit: ShopAuditItem = {
+      id: `aud-${Date.now()}`,
+      action: 'CREATE_ROLE',
+      targetType: 'ROLE',
+      detail: `Tạo vai trò tùy chỉnh mới "${newRoleName.trim()}" với ${selectedPermissions.length} quyền`,
+      createdAt: 'Vừa xong',
+    }
+    onAddAuditLog(audit)
+
+    setNotification(`Đã tạo vai trò tùy chỉnh "${newRoleName.trim()}" thành công!`)
+    setNewRoleName('')
+    setSelectedPermissions([])
+    setIsRoleModalOpen(false)
+  }
+
+  const handleRemove = (member: ShopMemberItem) => {
+    if (member.roleName.includes('Owner')) {
+      alert('Không thể xóa tài khoản Chủ gian hàng (Shop Owner)!')
+      return
+    }
+
+    onRemoveMember(member.id)
+
+    const audit: ShopAuditItem = {
+      id: `aud-${member.id}`,
+      action: 'REMOVE_STAFF',
+      targetType: 'MEMBER',
+      detail: `Đã thu hồi quyền và xóa nhân viên ${member.email}`,
+      createdAt: 'Vừa xong',
+    }
+    onAddAuditLog(audit)
+    setNotification(`Đã xóa nhân viên ${member.email} khỏi gian hàng!`)
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header Card */}
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm md:flex-row md:items-center">
+        <div>
+          <div className="flex items-center gap-2">
+            <UsersThree size={24} className="text-[#ee4d2d]" />
+            <h2 className="text-xl font-bold text-gray-800">
+              Quản Lý Nhân Viên & Phân Quyền Shop (RBAC)
+            </h2>
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Mời nhân viên, tạo nhóm quyền nội bộ (CSKH, Kho vận, Marketing) và theo dõi nhật ký hoạt
+            động bảo mật.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsRoleModalOpen(true)}
+            className="flex items-center gap-1.5 rounded border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            <Shield size={16} className="text-gray-500" />
+            Tạo vai trò mới
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsInviteModalOpen(true)}
+            className="flex items-center gap-1.5 rounded bg-[#ee4d2d] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#d73211]"
+          >
+            <UserPlus size={16} />
+            Mời nhân viên
+          </button>
+        </div>
+      </div>
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          <div className="flex items-center gap-2">
+            <CheckCircle size={18} className="text-green-600" />
+            <span>{notification}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNotification('')}
+            className="text-xs font-medium text-green-700 underline hover:text-green-900"
+          >
+            Đóng
+          </button>
+        </div>
+      )}
+
+      {/* Sub-tab navigation */}
+      <div className="flex rounded-t-lg border-b border-gray-200 bg-white px-4">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('MEMBERS')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-all ${
+            activeSubTab === 'MEMBERS' && 'border-[#ee4d2d] text-[#ee4d2d]'
+          } ${activeSubTab !== 'MEMBERS' && 'border-transparent text-gray-500 hover:text-gray-800'}`}
+        >
+          <UsersThree size={16} />
+          Danh sách nhân viên ({members.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('ROLES')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-all ${
+            activeSubTab === 'ROLES' && 'border-[#ee4d2d] text-[#ee4d2d]'
+          } ${activeSubTab !== 'ROLES' && 'border-transparent text-gray-500 hover:text-gray-800'}`}
+        >
+          <ShieldCheck size={16} />
+          Vai trò & Phân quyền ({roles.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('AUDIT')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-all ${
+            activeSubTab === 'AUDIT' && 'border-[#ee4d2d] text-[#ee4d2d]'
+          } ${activeSubTab !== 'AUDIT' && 'border-transparent text-gray-500 hover:text-gray-800'}`}
+        >
+          <ClockCounterClockwise size={16} />
+          Nhật ký hoạt động (Audit Trail)
+        </button>
+      </div>
+
+      {/* TAB 1: MEMBERS LIST */}
+      {activeSubTab === 'MEMBERS' && (
+        <div className="overflow-hidden rounded-b-lg border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50 font-semibold text-gray-600">
+                  <th scope="col" className="p-3 pl-4">
+                    Nhân viên / Email
+                  </th>
+                  <th scope="col" className="p-3">
+                    Vai trò phân công
+                  </th>
+                  <th scope="col" className="p-3">
+                    Trạng thái
+                  </th>
+                  <th scope="col" className="p-3">
+                    Ngày tham gia
+                  </th>
+                  <th scope="col" className="p-3 pr-4 text-right">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {members.map((member) => (
+                  <tr key={member.id} className="hover:bg-gray-50/80">
+                    <td className="p-3 pl-4" aria-label="Nhân viên">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-[#ee4d2d]">
+                          {member.email.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-800">{member.email}</div>
+                          <span className="font-mono text-[10px] text-gray-400">
+                            ID: {member.id}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                        <Key size={12} />
+                        {member.roleName}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      {member.status === 'ACTIVE' && (
+                        <span className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                          <CheckCircle size={12} />
+                          Đang hoạt động
+                        </span>
+                      )}
+                      {member.status === 'INVITED' && (
+                        <span className="inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                          <ClockCounterClockwise size={12} />
+                          Chờ chấp thuận
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-gray-500">{member.joinedAt}</td>
+                    <td className="p-3 pr-4 text-right">
+                      {!member.roleName.includes('Owner') && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(member)}
+                          className="inline-flex items-center gap-1 rounded p-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-800"
+                        >
+                          <Trash size={14} />
+                          Xóa
+                        </button>
+                      )}
+                      {member.roleName.includes('Owner') && (
+                        <span className="text-[11px] text-gray-400 italic">Chủ shop (Bảo vệ)</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: ROLES & PERMISSIONS */}
+      {activeSubTab === 'ROLES' && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {roles.map((role) => (
+            <div
+              key={role.id}
+              className="space-y-3 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-gray-800">{role.name}</h3>
+                    {role.isSystem && (
+                      <span className="flex items-center gap-1 rounded border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">
+                        <LockKey size={10} /> Mặc định hệ thống
+                      </span>
+                    )}
+                    {!role.isSystem && (
+                      <span className="rounded border border-purple-200 bg-purple-50 px-1.5 py-0.5 text-[10px] text-purple-700">
+                        Tùy chỉnh
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    Đang gán cho {role.memberCount} thành viên
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <span className="mb-1.5 block text-[11px] font-semibold text-gray-600">
+                  Quyền hạn cho phép:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {role.permissions.map((p) => (
+                    <span
+                      key={p}
+                      className="rounded border border-gray-200 bg-gray-100 px-2 py-0.5 font-mono text-[10px] text-gray-700"
+                    >
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* TAB 3: AUDIT TRAIL */}
+      {activeSubTab === 'AUDIT' && (
+        <div className="space-y-3 rounded-b-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between border-b pb-2">
+            <span className="text-xs font-bold text-gray-700">
+              Nhật ký truy vết thao tác nhân viên
+            </span>
+            <span className="text-[11px] text-gray-400">
+              Hiển thị các thao tác phân quyền & tác vụ quan trọng
+            </span>
+          </div>
+
+          <div className="divide-y divide-gray-100 text-xs">
+            {auditLogs.map((log) => (
+              <div key={log.id} className="flex items-center justify-between py-2.5">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="py-0.2 rounded border bg-gray-100 px-1.5 font-mono text-[11px] font-bold text-gray-800">
+                      {log.action}
+                    </span>
+                    <span className="text-gray-700">{log.detail}</span>
+                  </div>
+                  <span className="text-[10px] text-gray-400">Đối tượng: {log.targetType}</span>
+                </div>
+                <span className="text-[11px] text-gray-400">{log.createdAt}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: Invite Staff Modal */}
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="flex items-center gap-2 text-base font-bold text-gray-800">
+              <UserPlus size={20} className="text-[#ee4d2d]" />
+              Mời nhân viên vào gian hàng
+            </h3>
+
+            <form onSubmit={handleInviteSubmit} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="inviteEmailInput"
+                  className="mb-1 block text-xs font-semibold text-gray-700"
+                >
+                  Email nhân viên
+                </label>
+                <input
+                  id="inviteEmailInput"
+                  type="email"
+                  required
+                  placeholder="nhanvien@gmail.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                />
+                <span className="mt-1 block text-[10px] text-gray-400">
+                  Hệ thống sẽ gửi email chứa đường link kích hoạt và mã token phân quyền đến địa chỉ
+                  này.
+                </span>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="inviteRoleSelect"
+                  className="mb-1 block text-xs font-semibold text-gray-700"
+                >
+                  Gán vai trò chức danh
+                </label>
+                <select
+                  id="inviteRoleSelect"
+                  value={inviteRoleId}
+                  onChange={(e) => setInviteRoleId(e.target.value)}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                >
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-gray-100 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsInviteModalOpen(false)}
+                  className="rounded border border-gray-300 px-4 py-2 text-xs text-gray-600 hover:bg-gray-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="rounded bg-[#ee4d2d] px-4 py-2 text-xs font-semibold text-white hover:bg-[#d73211]"
+                >
+                  Gửi lời mời
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: Create Custom Role Modal */}
+      {isRoleModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="flex items-center gap-2 text-base font-bold text-gray-800">
+              <ShieldCheck size={20} className="text-[#ee4d2d]" />
+              Tạo vai trò tùy chỉnh (Custom Role)
+            </h3>
+
+            <form onSubmit={handleCreateRoleSubmit} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="newRoleNameInput"
+                  className="mb-1 block text-xs font-semibold text-gray-700"
+                >
+                  Tên vai trò mới
+                </label>
+                <input
+                  id="newRoleNameInput"
+                  type="text"
+                  required
+                  placeholder="Ví dụ: CTV Bán hàng Ca tối, Trợ lý Livestream"
+                  value={newRoleName}
+                  onChange={(e) => setNewRoleName(e.target.value)}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <span className="mb-2 block text-xs font-semibold text-gray-700">
+                  Tích chọn các quyền hạn ({selectedPermissions.length} đã chọn):
+                </span>
+                <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border bg-gray-50 p-3">
+                  {ALL_SYSTEM_PERMISSIONS.map((perm) => (
+                    <label
+                      htmlFor={`perm-chk-${perm.key}`}
+                      key={perm.key}
+                      aria-label={perm.label}
+                      className="flex cursor-pointer items-start gap-2 rounded p-1.5 text-xs transition-colors hover:bg-white"
+                    >
+                      <input
+                        id={`perm-chk-${perm.key}`}
+                        type="checkbox"
+                        checked={selectedPermissions.includes(perm.key)}
+                        onChange={() => handleTogglePermission(perm.key)}
+                        className="mt-0.5 rounded text-[#ee4d2d] focus:ring-orange-500"
+                      />
+                      <div>
+                        <span className="font-semibold text-gray-800">{perm.label}</span>
+                        <span className="block font-mono text-[10px] text-gray-400">
+                          [{perm.key}] • Nhóm: {perm.group}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-gray-100 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsRoleModalOpen(false)}
+                  className="rounded border border-gray-300 px-4 py-2 text-xs text-gray-600 hover:bg-gray-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={selectedPermissions.length === 0}
+                  className="rounded bg-[#ee4d2d] px-4 py-2 text-xs font-semibold text-white hover:bg-[#d73211] disabled:opacity-50"
+                >
+                  Tạo vai trò
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -1,0 +1,441 @@
+import { useState } from 'react'
+
+import { Wallet, Clock, Receipt, TrendUp, Bank, CheckCircle, X } from '@phosphor-icons/react'
+
+import { formatVnd } from '../../lib/format'
+
+import type { SettlementItem, WithdrawalItem } from './sellerData'
+
+interface Props {
+  settlements: SettlementItem[]
+  withdrawals: WithdrawalItem[]
+  onCreateWithdrawal: (amount: number) => void
+}
+
+export default function SellerRevenueTab({ settlements, withdrawals, onCreateWithdrawal }: Props) {
+  const [subTab, setSubTab] = useState<'SETTLEMENTS' | 'WITHDRAWALS'>('SETTLEMENTS')
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false)
+  const [withdrawAmount, setWithdrawAmount] = useState(1000000)
+  const [notification, setNotification] = useState<string | null>(null)
+
+  const walletBalance = 3840000
+  const holdingBalance = 890000
+  const totalRevenue = 4730000
+
+  function showToast(msg: string) {
+    setNotification(msg)
+    setTimeout(function () {
+      setNotification(null)
+    }, 3000)
+  }
+
+  function handleConfirmWithdraw() {
+    if (withdrawAmount < 50000) {
+      alert('Số tiền rút tối thiểu là 50.000 ₫.')
+      return
+    }
+    if (withdrawAmount > walletBalance) {
+      alert('Số tiền rút vượt quá số dư ví khả dụng hiện tại.')
+      return
+    }
+    onCreateWithdrawal(withdrawAmount)
+    setShowWithdrawModal(false)
+    showToast(`Đã tạo lệnh rút ${formatVnd(withdrawAmount)} về tài khoản Vietcombank!`)
+  }
+
+  // Dữ liệu biểu đồ 7 ngày gần nhất
+  const chartDays = [
+    { day: 'T2 (10/10)', revenue: 1200000, height: '40%' },
+    { day: 'T3 (11/10)', revenue: 1850000, height: '60%' },
+    { day: 'T4 (12/10)', revenue: 950000, height: '32%' },
+    { day: 'T5 (13/10)', revenue: 2400000, height: '80%' },
+    { day: 'T6 (14/10)', revenue: 3100000, height: '95%' },
+    { day: 'T7 (15/10)', revenue: 2150000, height: '70%' },
+    { day: 'CN (16/10)', revenue: 3720000, height: '100%' },
+  ]
+
+  const topProducts = [
+    { name: 'Áo Thun Cotton Oversize Form Rộng', sold: 1240, revenue: 234360000 },
+    { name: 'Quần Jean Ống Suông Baggy', sold: 680, revenue: 237320000 },
+    { name: 'Áo Khoác Bomber Kaki 2 Lớp', sold: 310, revenue: 139500000 },
+  ]
+
+  function renderWithdrawalBadge(status: string) {
+    if (status === 'COMPLETED') {
+      return (
+        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+          Thành công
+        </span>
+      )
+    }
+    if (status === 'PROCESSING') {
+      return (
+        <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+          Đang chuyển khoản
+        </span>
+      )
+    }
+    if (status === 'REQUESTED') {
+      return (
+        <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+          Chờ xử lý
+        </span>
+      )
+    }
+    return (
+      <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
+        Từ chối
+      </span>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Toast */}
+      {notification !== null && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
+          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
+          {notification}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="text-xl font-black text-zinc-900 dark:text-white">
+            Tài chính & Doanh thu
+          </h2>
+          <p className="text-xs text-zinc-500">
+            Quản lý dòng tiền bán hàng, các khoản quyết toán holding và rút tiền về ngân hàng
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={function () {
+            setShowWithdrawModal(true)
+          }}
+          className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700"
+        >
+          <Bank size={18} weight="bold" />
+          Yêu cầu rút tiền về ngân hàng
+        </button>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-500">Số dư ví khả dụng</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40">
+              <Wallet size={18} weight="bold" />
+            </div>
+          </div>
+          <p className="mt-3 text-2xl font-black text-emerald-600 dark:text-emerald-400">
+            {formatVnd(walletBalance)}
+          </p>
+          <p className="mt-1 text-[11px] text-zinc-400">Có thể tạo lệnh rút ngay lập tức</p>
+        </div>
+
+        <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-500">Tiền tạm giữ (Escrow)</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/40">
+              <Clock size={18} weight="bold" />
+            </div>
+          </div>
+          <p className="mt-3 text-2xl font-black text-amber-600 dark:text-amber-400">
+            {formatVnd(holdingBalance)}
+          </p>
+          <p className="mt-1 text-[11px] text-zinc-400">Tự động cộng ví sau 3 ngày giao hàng</p>
+        </div>
+
+        <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-500">Tổng doanh thu tuần</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40">
+              <TrendUp size={18} weight="bold" />
+            </div>
+          </div>
+          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white">
+            {formatVnd(totalRevenue)}
+          </p>
+          <p className="mt-1 text-[11px] text-emerald-600">+22.4% so với tuần trước</p>
+        </div>
+
+        <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-500">Giá trị đơn TB (AOV)</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/40">
+              <Receipt size={18} weight="bold" />
+            </div>
+          </div>
+          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white">
+            {formatVnd(342000)}
+          </p>
+          <p className="mt-1 text-[11px] text-zinc-400">Tổng cộng 38 đơn hoàn tất</p>
+        </div>
+      </div>
+
+      {/* Biểu đồ Doanh thu 7 ngày & Top sản phẩm */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Biểu đồ cột */}
+        <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm lg:col-span-2 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+                Biểu đồ Doanh thu (7 ngày gần nhất)
+              </h3>
+              <p className="text-xs text-zinc-500">
+                Doanh thu ghi nhận theo từng ngày sau khi trừ hoàn hủy
+              </p>
+            </div>
+            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+              Đơn vị: VNĐ
+            </span>
+          </div>
+
+          <div className="mt-8 flex h-52 items-end justify-between gap-3 border-b border-zinc-200 px-2 pb-2 dark:border-zinc-800">
+            {chartDays.map(function (d) {
+              return (
+                <div key={d.day} className="group relative flex flex-1 flex-col items-center gap-2">
+                  <div className="invisible absolute -top-8 rounded-lg bg-zinc-900 px-2 py-1 text-[10px] font-bold text-white shadow-md group-hover:visible dark:bg-white dark:text-zinc-900">
+                    {formatVnd(d.revenue)}
+                  </div>
+                  <div
+                    style={{ height: d.height }}
+                    className="w-full max-w-[36px] rounded-t-xl bg-gradient-to-t from-orange-600 to-amber-500 transition-all duration-300 hover:brightness-110"
+                  />
+                  <span className="text-[10px] font-semibold text-zinc-500">{d.day}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Top Sản Phẩm */}
+        <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+            Top Sản Phẩm Bán Chạy
+          </h3>
+          <p className="text-xs text-zinc-500">Sản phẩm tạo ra doanh số cao nhất</p>
+
+          <div className="mt-4 space-y-3">
+            {topProducts.map(function (item, idx) {
+              return (
+                <div
+                  key={idx}
+                  className="rounded-2xl border border-zinc-100 p-3 dark:border-zinc-800/80"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-[10px] font-black text-orange-600 dark:bg-orange-950/40">
+                      {idx + 1}
+                    </span>
+                    <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                      {item.name}
+                    </p>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="text-zinc-400">Đã bán: {item.sold}</span>
+                    <span className="font-bold text-zinc-900 dark:text-white">
+                      {formatVnd(item.revenue)}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs Quyết toán & Rút tiền */}
+      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex items-center gap-4 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+          <button
+            type="button"
+            onClick={function () {
+              setSubTab('SETTLEMENTS')
+            }}
+            className={`text-xs font-bold transition ${
+              subTab === 'SETTLEMENTS'
+                ? 'text-orange-600 dark:text-orange-400'
+                : 'text-zinc-400 hover:text-zinc-700'
+            }`}
+          >
+            Phiên quyết toán đơn hàng ({settlements.length})
+          </button>
+          <button
+            type="button"
+            onClick={function () {
+              setSubTab('WITHDRAWALS')
+            }}
+            className={`text-xs font-bold transition ${
+              subTab === 'WITHDRAWALS'
+                ? 'text-orange-600 dark:text-orange-400'
+                : 'text-zinc-400 hover:text-zinc-700'
+            }`}
+          >
+            Lịch sử rút tiền ({withdrawals.length})
+          </button>
+        </div>
+
+        {subTab === 'SETTLEMENTS' && (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-zinc-800">
+                  <th className="pb-3 pl-2">Mã đơn hàng</th>
+                  <th className="pb-3">Tiền đơn hàng</th>
+                  <th className="pb-3">Phí sàn (5%)</th>
+                  <th className="pb-3">Doanh thu nhận về</th>
+                  <th className="pb-3">Trạng thái</th>
+                  <th className="pr-2 pb-3 text-right">Thời gian mở khóa</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                {settlements.map(function (s) {
+                  return (
+                    <tr key={s.id}>
+                      <td className="py-3 pl-2 font-mono font-bold text-zinc-900 dark:text-white">
+                        {s.orderCode}
+                      </td>
+                      <td className="py-3 text-zinc-700 dark:text-zinc-300">
+                        {formatVnd(s.grossAmount)}
+                      </td>
+                      <td className="py-3 text-red-500">-{formatVnd(s.platformFee)}</td>
+                      <td className="py-3 font-bold text-emerald-600 dark:text-emerald-400">
+                        {formatVnd(s.netAmount)}
+                      </td>
+                      <td className="py-3">
+                        {s.status === 'HOLDING' && (
+                          <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+                            Đang giữ đối soát
+                          </span>
+                        )}
+                        {s.status === 'RELEASED' && (
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+                            Đã cộng ví
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 pr-2 text-right font-medium text-zinc-500">
+                        {s.status === 'HOLDING' && <span>Dự kiến: {s.holdUntil}</span>}
+                        {s.status === 'RELEASED' && <span>{s.releasedAt}</span>}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {subTab === 'WITHDRAWALS' && (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-zinc-800">
+                  <th className="pb-3 pl-2">Thời gian</th>
+                  <th className="pb-3">Số tiền rút</th>
+                  <th className="pb-3">Ngân hàng thụ hưởng</th>
+                  <th className="pb-3">Số tài khoản & Chủ TK</th>
+                  <th className="pr-2 pb-3 text-right">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                {withdrawals.map(function (w) {
+                  return (
+                    <tr key={w.id}>
+                      <td className="py-3 pl-2 text-zinc-500">{w.createdAt}</td>
+                      <td className="py-3 font-bold text-zinc-900 dark:text-white">
+                        {formatVnd(w.amount)}
+                      </td>
+                      <td className="py-3 text-zinc-700 dark:text-zinc-300">{w.bankName}</td>
+                      <td className="py-3 text-zinc-600 dark:text-zinc-400">
+                        {w.bankAccount} • {w.bankHolder}
+                      </td>
+                      <td className="py-3 pr-2 text-right">{renderWithdrawalBadge(w.status)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal Rút tiền */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+                Rút tiền về tài khoản ngân hàng
+              </h3>
+              <button
+                type="button"
+                onClick={function () {
+                  setShowWithdrawModal(false)
+                }}
+                className="text-zinc-400 hover:text-zinc-600"
+              >
+                <X size={18} weight="bold" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-1 rounded-2xl bg-zinc-50 p-3.5 text-xs text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300">
+              <p className="flex justify-between">
+                <span>Số dư ví khả dụng:</span>
+                <strong className="text-emerald-600">{formatVnd(walletBalance)}</strong>
+              </p>
+              <p className="flex justify-between">
+                <span>Tài khoản nhận tiền:</span>
+                <strong>Vietcombank - 0981000123456</strong>
+              </p>
+              <p className="flex justify-between">
+                <span>Chủ tài khoản:</span>
+                <strong>NGUYEN VAN CHU SHOP</strong>
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <label
+                htmlFor="withdrawAmountInput"
+                className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+              >
+                Số tiền muốn rút (VND, tối thiểu 50.000 ₫)
+              </label>
+              <input
+                id="withdrawAmountInput"
+                type="number"
+                value={withdrawAmount}
+                onChange={function (e) {
+                  setWithdrawAmount(Number(e.target.value))
+                }}
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-sm font-black outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              />
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={function () {
+                  setShowWithdrawModal(false)
+                }}
+                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmWithdraw}
+                className="rounded-2xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+              >
+                Tạo lệnh rút tiền ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
