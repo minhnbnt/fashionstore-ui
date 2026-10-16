@@ -30,6 +30,14 @@ export async function fetchSession(signal?: AbortSignal): Promise<Session | null
   return data.session
 }
 
+export async function refreshAuthSession(): Promise<Session | null> {
+  const { data, error } = await getAuthClient().refreshSession()
+  if (error !== null) {
+    throw error
+  }
+  return data.session
+}
+
 export interface Credentials {
   email: string
   password: string
