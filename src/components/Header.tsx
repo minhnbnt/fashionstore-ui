@@ -169,9 +169,7 @@ export default function Header() {
                 {isLoggedIn && session.user.email !== undefined && (
                   <UserAvatar name={session.user.email} size={28} />
                 )}
-                {(!isLoggedIn || session.user.email === undefined) && (
-                  <User size={20} />
-                )}
+                {(!isLoggedIn || session.user.email === undefined) && <User size={20} />}
               </button>
 
               {dropdownOpen && isLoggedIn && (

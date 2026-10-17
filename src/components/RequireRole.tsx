@@ -1,7 +1,9 @@
 import { Navigate, useLocation } from 'react-router'
 
 import { useMine } from '@generated/endpoints/shops/shops'
+
 import { takeData } from '@/lib/apiAdapters'
+
 import { useSessionQuery } from '../hooks/useSession'
 import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
 
