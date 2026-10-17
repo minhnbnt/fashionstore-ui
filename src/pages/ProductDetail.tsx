@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
-import { useDetail } from '@generated/endpoints/products/products'
+import { useDetail1 } from '@generated/endpoints/products/products'
 
 import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
@@ -33,7 +33,7 @@ function NotFound() {
 export default function ProductDetail() {
   const params = useParams()
   const id = params.id ?? ''
-  const detailQuery = useDetail(id, {
+  const detailQuery = useDetail1(id, {
     query: { enabled: id !== '' },
   })
   const categoriesQuery = useListCategories()
