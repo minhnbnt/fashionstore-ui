@@ -16,6 +16,7 @@ import { formatCompactVnd, trendPoints } from '@/lib/adminStats'
 import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
+import AdminNav from '../components/admin/AdminNav'
 import BreakdownCard from '../components/admin/BreakdownCard'
 import PendingShopsQueue from '../components/admin/PendingShopsQueue'
 import StatTile from '../components/admin/StatTile'
@@ -113,6 +114,8 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      <AdminNav />
 
       {statsQuery.isPending && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-busy="true">
