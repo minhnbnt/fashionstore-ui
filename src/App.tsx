@@ -13,6 +13,10 @@ const ProductDetail = lazy(() => import('./pages/ProductDetail'))
 const Search = lazy(() => import('./pages/Search'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const AdminShops = lazy(() => import('./pages/AdminShops'))
+const AdminShopDetail = lazy(() => import('./pages/AdminShopDetail'))
+const AdminUsers = lazy(() => import('./pages/AdminUsers'))
+const AdminUserDetail = lazy(() => import('./pages/AdminUserDetail'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
@@ -73,6 +77,38 @@ function App() {
             element={
               <RequireRole requiredRole="admin">
                 <AdminDashboard />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/shops"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminShops />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/shops/:id"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminShopDetail />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminUsers />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/users/:id"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminUserDetail />
               </RequireRole>
             }
           />

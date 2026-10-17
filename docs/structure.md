@@ -19,7 +19,13 @@ fashionstore-ui/
 │   ├── data/              # demoReviews.ts (TODO(mock)) + products.ts (mock cũ, chưa xóa)
 │   ├── hooks/             # useSession (queryOptions), useAuthMutations, useTheme
 │   ├── lib/               # apiFetch, apiAdapters, format, searchFilters (URL ↔ bộ lọc), variants, pagination (+test)
-│   ├── pages/             # Home, ProductDetail, Search, Login, Account
+│   ├── pages/             # Home/PDP/Search/Auth/Account + dashboard admin/shop
+│   │   ├── AdminDashboard.tsx     # tổng quan + hàng đợi duyệt
+│   │   ├── AdminShops.tsx         # tìm/lọc shop phân trang
+│   │   ├── AdminShopDetail.tsx    # hồ sơ + kiểm duyệt + audit trail
+│   │   ├── AdminUsers.tsx         # tìm/lọc tài khoản phân trang
+│   │   └── AdminUserDetail.tsx    # hồ sơ + khóa/mở khóa + audit trail
+│   ├── components/admin/  # shell, dialog kiểm duyệt, status, timeline dùng chung
 │   ├── App.tsx            # ráp Header/Routes/Footer + ScrollToHash
 │   ├── main.tsx           # providers (React Query) + import font + index.css
 │   └── index.css          # Tailwind v4 + @theme + .glass/.btn-primary/marquee

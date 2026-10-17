@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+
 import { useListAdminShops } from '@generated/endpoints/admin-shops/admin-shops'
 import { ListAdminShopsStatus } from '@generated/model/listAdminShopsStatus'
 import { HourglassMedium, Storefront } from '@phosphor-icons/react'
@@ -69,6 +71,14 @@ export default function PendingShopsQueue({ pendingCount }: { pendingCount: numb
                 <p className="shrink-0 text-right text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
                   {formatSubmittedAt(shop.submittedAt)}
                 </p>
+                {shop.id !== undefined && (
+                  <Link
+                    to={'/admin/shops/' + shop.id}
+                    className="shrink-0 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 dark:bg-indigo-400/10 dark:text-indigo-200 dark:hover:bg-indigo-400/20"
+                  >
+                    Kiểm tra
+                  </Link>
+                )}
               </li>
             )
           })}
