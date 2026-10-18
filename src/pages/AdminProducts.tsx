@@ -2,13 +2,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { useListAdminProducts } from '@generated/endpoints/admin-products/admin-products'
-import {
-  ArrowCounterClockwise,
-  MagnifyingGlass,
-  Prohibit,
-  ShieldCheck,
-  X,
-} from '@phosphor-icons/react'
+import { ArrowCounterClockwise, MagnifyingGlass, Prohibit, X } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
@@ -23,8 +17,8 @@ import {
   violationLabel,
 } from '@/lib/productModeration'
 
-import AdminNav from '../components/admin/AdminNav'
 import AdminProductDetailPanel from '../components/admin/AdminProductDetailPanel'
+import AdminShell from '../components/admin/AdminShell'
 import BanProductDialog from '../components/admin/BanProductDialog'
 import RestoreProductDialog from '../components/admin/RestoreProductDialog'
 import Pagination from '../components/search/Pagination'
@@ -241,21 +235,10 @@ export default function AdminProducts() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] shadow-lg">
-          <ShieldCheck size={22} weight="bold" className="text-white" />
-        </div>
-        <div>
-          <p className="text-xs font-bold tracking-[0.18em] text-indigo-600 uppercase dark:text-indigo-400">
-            Admin
-          </p>
-          <h1 className="text-xl font-extrabold tracking-tighter">Kiểm duyệt sản phẩm</h1>
-        </div>
-      </div>
-
-      <AdminNav />
-
+    <AdminShell
+      title="Kiểm duyệt sản phẩm"
+      description="Tìm sản phẩm toàn sàn, gỡ hàng vi phạm chính sách và khôi phục khi shop đã khắc phục."
+    >
       {notice !== null && (
         <output className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
           {notice}
@@ -265,7 +248,7 @@ export default function AdminProducts() {
         </output>
       )}
 
-      <section className="glass rounded-3xl p-5">
+      <section>
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Lọc trạng thái">
             {STATUS_TABS.map(function (tab) {
@@ -363,6 +346,6 @@ export default function AdminProducts() {
           }
         />
       )}
-    </main>
+    </AdminShell>
   )
 }

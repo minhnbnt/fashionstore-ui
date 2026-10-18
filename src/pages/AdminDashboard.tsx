@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 
 import { useGetAdminStats } from '@generated/endpoints/admin-stats/admin-stats'
 import {
   ArrowClockwise,
+  ArrowRight,
   Coins,
   Package,
   ShieldCheck,
@@ -16,7 +17,6 @@ import { formatCompactVnd, trendPoints } from '@/lib/adminStats'
 import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
-import AdminNav from '../components/admin/AdminNav'
 import BreakdownCard from '../components/admin/BreakdownCard'
 import PendingShopsQueue from '../components/admin/PendingShopsQueue'
 import StatTile from '../components/admin/StatTile'
@@ -53,14 +53,6 @@ export default function AdminDashboard() {
   const statsQuery = useGetAdminStats()
   const [metric, setMetric] = useState<TrendMetric>('orders')
 
-  function handleSignOut() {
-    signOut.mutate(undefined, {
-      onSuccess: function () {
-        void navigate('/', { replace: true })
-      },
-    })
-  }
-
   let stats: AdminStatsResponse | undefined
   let shopHighlight: string | undefined
   let orderHighlight: string | undefined
@@ -79,6 +71,14 @@ export default function AdminDashboard() {
   }
   const activeTab = TREND_TABS.find((tab) => tab.metric === metric) ?? TREND_TABS[0]
 
+  function handleSignOut() {
+    signOut.mutate(undefined, {
+      onSuccess: function () {
+        void navigate('/', { replace: true })
+      },
+    })
+  }
+
   return (
     <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -93,7 +93,6 @@ export default function AdminDashboard() {
             <h1 className="text-xl font-extrabold tracking-tighter">Tổng quan hệ thống</h1>
           </div>
         </div>
-
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -114,8 +113,6 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
-
-      <AdminNav />
 
       {statsQuery.isPending && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-busy="true">
@@ -237,6 +234,66 @@ export default function AdminDashboard() {
           <div className="mt-6">
             <PendingShopsQueue pendingCount={stats.pendingShops ?? 0} />
           </div>
+
+          <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Link
+              to="/admin/shops"
+              className="group glass flex items-start gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-300">
+                <Storefront size={22} weight="bold" />
+              </span>
+              <span>
+                <span className="block font-extrabold tracking-tight">Quản lý shop</span>
+                <span className="mt-1 block text-sm text-zinc-600 dark:text-zinc-300">
+                  Duyệt hồ sơ, tạm khóa và mở lại shop.
+                </span>
+              </span>
+              <ArrowRight
+                size={18}
+                weight="bold"
+                className="mt-1 ml-auto shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-indigo-600"
+              />
+            </Link>
+            <Link
+              to="/admin/users"
+              className="group glass flex items-start gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
+                <Users size={22} weight="bold" />
+              </span>
+              <span>
+                <span className="block font-extrabold tracking-tight">Quản lý tài khoản</span>
+                <span className="mt-1 block text-sm text-zinc-600 dark:text-zinc-300">
+                  Tra cứu lịch sử, khóa và mở khóa tài khoản.
+                </span>
+              </span>
+              <ArrowRight
+                size={18}
+                weight="bold"
+                className="mt-1 ml-auto shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-indigo-600"
+              />
+            </Link>
+            <Link
+              to="/admin/products"
+              className="group glass flex items-start gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300">
+                <Package size={22} weight="bold" />
+              </span>
+              <span>
+                <span className="block font-extrabold tracking-tight">Kiểm duyệt sản phẩm</span>
+                <span className="mt-1 block text-sm text-zinc-600 dark:text-zinc-300">
+                  Gỡ sản phẩm vi phạm và khôi phục khi shop khắc phục.
+                </span>
+              </span>
+              <ArrowRight
+                size={18}
+                weight="bold"
+                className="mt-1 ml-auto shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-indigo-600"
+              />
+            </Link>
+          </section>
         </>
       )}
 
