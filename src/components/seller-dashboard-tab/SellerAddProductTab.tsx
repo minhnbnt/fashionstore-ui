@@ -2,21 +2,11 @@ import { useState } from 'react'
 
 import { ArrowLeft, Plus, Trash, CheckCircle } from '@phosphor-icons/react'
 
-import type { ProductItem } from './sellerData'
+import type { ProductItem, VariantInput } from '@/types/seller'
 
 interface Props {
   onBack: () => void
   onAddProduct: (product: ProductItem) => void
-}
-
-interface VariantInput {
-  id: string
-  size: string
-  color: string
-  sku: string
-  price: number
-  stock: number
-  lowStockThreshold: number
 }
 
 export default function SellerAddProductTab({ onBack, onAddProduct }: Props) {

@@ -15,7 +15,7 @@ import {
 
 import { formatVnd } from '../../lib/format'
 
-import type { ProductItem } from './sellerData'
+import type { ProductItem } from '@/types/seller'
 
 interface Props {
   products: ProductItem[]

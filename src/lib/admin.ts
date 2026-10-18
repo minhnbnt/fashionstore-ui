@@ -1,9 +1,6 @@
 import { ApiError } from './apiFetch'
 
-export interface StatusMeta {
-  label: string
-  className: string
-}
+import type { StatusMeta } from '@/types/admin'
 
 export function statusMeta(status: string | null | undefined): StatusMeta {
   if (status === 'PENDING') {

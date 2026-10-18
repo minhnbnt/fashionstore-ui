@@ -22,19 +22,7 @@ import {
   ShieldCheck,
 } from '@phosphor-icons/react'
 
-export type SellerTabId =
-  | 'OVERVIEW'
-  | 'PRODUCTS'
-  | 'ADD_PRODUCT'
-  | 'INVENTORY'
-  | 'ORDERS'
-  | 'RETURNS'
-  | 'REVENUE'
-  | 'REVIEWS'
-  | 'CHAT'
-  | 'DECORATION'
-  | 'STAFF'
-  | 'PROFILE'
+import type { MenuGroup, SellerTabId } from '@/types/seller'
 
 interface SellerLayoutProps {
   activeTab: SellerTabId
@@ -45,19 +33,6 @@ interface SellerLayoutProps {
   returnRequestsCount: number
   lowStockCount: number
   unreadChatCount: number
-}
-
-interface MenuItem {
-  id: SellerTabId
-  label: string
-  icon: typeof House
-  badgeCount?: number
-  badgeColor?: string
-}
-
-interface MenuGroup {
-  groupTitle: string
-  items: MenuItem[]
 }
 
 export function SellerLayout({

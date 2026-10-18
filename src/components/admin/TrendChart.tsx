@@ -1,6 +1,6 @@
 import { formatDayLabel, niceCeiling } from '@/lib/adminStats'
 
-import type { TrendPoint } from '@/lib/adminStats'
+import type { TrendPoint } from '@/types/admin'
 
 interface Props {
   title: string

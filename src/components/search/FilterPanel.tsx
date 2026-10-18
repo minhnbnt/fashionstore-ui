@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { formatVnd } from '@/lib/format'
 import { PRICE_PRESETS } from '@/lib/searchFilters'
 
-import type { SearchFilters } from '@/lib/searchFilters'
+import type { SearchFilters } from '@/types/search'
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 import type { SearchFacetsResponse } from '@generated/model/searchFacetsResponse'
 

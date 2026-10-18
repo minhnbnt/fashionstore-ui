@@ -23,7 +23,7 @@ import FilterPanel from '../components/search/FilterPanel'
 import Pagination from '../components/search/Pagination'
 import { ProductCard } from '../components/Sections'
 
-import type { SearchFilters } from '@/lib/searchFilters'
+import type { SearchFilters } from '@/types/search'
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 import type { SearchFacetsResponse } from '@generated/model/searchFacetsResponse'

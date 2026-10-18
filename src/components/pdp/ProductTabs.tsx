@@ -8,9 +8,8 @@ import { priceInfo } from '@/lib/apiAdapters'
 
 import UserAvatar from '../UserAvatar'
 
+import type { Tab } from '@/types/product'
 import type { ProductResponse } from '@generated/model/productResponse'
-
-type Tab = 'mo-ta' | 'thong-so' | 'danh-gia'
 
 function Stars(props: { value: number; size?: number }) {
   const s = props.size || 14

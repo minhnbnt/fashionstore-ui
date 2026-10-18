@@ -17,14 +17,14 @@ import {
   X,
 } from '@phosphor-icons/react'
 
+import type { Step } from '@/types/seller'
+
 interface Props {
   isOpen: boolean
   userEmail: string
   onClose: () => void
   onSuccess: () => void
 }
-
-type Step = 1 | 2 | 3 | 4
 
 const VIETNAM_BANKS = [
   'Vietcombank (VCB)',

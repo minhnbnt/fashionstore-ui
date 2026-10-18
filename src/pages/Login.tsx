@@ -17,7 +17,7 @@ import {
   validateLoginInput,
 } from '../lib/auth'
 
-type Mode = 'login' | 'signup' | 'forgot'
+import type { Mode } from '@/types/auth'
 
 const PERKS = [
   { icon: Truck, text: 'Miễn phí vận chuyển cho đơn từ 500K' },

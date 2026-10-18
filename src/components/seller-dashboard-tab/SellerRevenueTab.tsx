@@ -4,7 +4,7 @@ import { Wallet, Clock, Receipt, TrendUp, Bank, CheckCircle, X } from '@phosphor
 
 import { formatVnd } from '../../lib/format'
 
-import type { SettlementItem, WithdrawalItem } from './sellerData'
+import type { SettlementItem, WithdrawalItem } from '@/types/seller'
 
 interface Props {
   settlements: SettlementItem[]

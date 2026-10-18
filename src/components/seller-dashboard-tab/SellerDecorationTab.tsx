@@ -19,7 +19,7 @@ import {
   VideoCamera,
 } from '@phosphor-icons/react'
 
-import type { DecorationBlock } from './sellerData'
+import type { DecorationBlock } from '@/types/seller'
 
 interface SellerDecorationTabProps {
   blocks: DecorationBlock[]

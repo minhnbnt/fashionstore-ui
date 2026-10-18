@@ -1,6 +1,6 @@
 import { breakdownRows } from '@/lib/adminStats'
 
-import type { BreakdownInput } from '@/lib/adminStats'
+import type { BreakdownInput } from '@/types/admin'
 
 interface Props {
   title: string

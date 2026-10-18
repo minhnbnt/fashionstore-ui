@@ -1,154 +1,17 @@
-export interface ProductItem {
-  id: string
-  name: string
-  slug: string
-  sku: string
-  category: string
-  price: number
-  originalPrice: number
-  stock: number
-  sold: number
-  status: 'ACTIVE' | 'INACTIVE' | 'DELETED'
-  image: string
-  variants: {
-    id: string
-    size: string
-    color: string
-    sku: string
-    price: number
-    stock: number
-    lowStockThreshold: number
-  }[]
-}
-
-export interface StockMovementItem {
-  id: string
-  variantSku: string
-  productName: string
-  changeQty: number
-  previousStock: number
-  newStock: number
-  reason: 'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL' | 'ORDER_SHIP' | 'SELLER_CANCEL'
-  note: string
-  createdBy: string
-  createdAt: string
-}
-
-export interface OrderItem {
-  id: string
-  code: string
-  buyerName: string
-  buyerPhone: string
-  shippingAddress: string
-  items: {
-    productId: string
-    productName: string
-    size: string
-    color: string
-    quantity: number
-    price: number
-  }[]
-  totalAmount: number
-  status: 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED'
-  cancelReason?: string
-  createdAt: string
-}
-
-export interface ReturnItem {
-  id: string
-  orderCode: string
-  buyerName: string
-  reason: string
-  description: string
-  evidenceImage: string
-  status: 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
-  resolution?: string
-  refundAmount?: number
-  sellerNote?: string
-  createdAt: string
-}
-
-export interface SettlementItem {
-  id: string
-  orderCode: string
-  grossAmount: number
-  platformFee: number
-  netAmount: number
-  status: 'HOLDING' | 'RELEASED'
-  holdUntil: string
-  releasedAt?: string
-}
-
-export interface WithdrawalItem {
-  id: string
-  amount: number
-  bankName: string
-  bankAccount: string
-  bankHolder: string
-  status: 'REQUESTED' | 'PROCESSING' | 'COMPLETED' | 'REJECTED'
-  createdAt: string
-}
-
-export interface ReviewItem {
-  id: string
-  buyerName: string
-  productName: string
-  rating: number
-  comment: string
-  images: string[]
-  sellerReply?: string
-  isReported: boolean
-  createdAt: string
-}
-
-export interface ChatMessageItem {
-  id: string
-  senderType: 'BUYER' | 'SELLER'
-  content: string
-  sentAt: string
-}
-
-export interface ChatConversationItem {
-  id: string
-  buyerName: string
-  buyerAvatar: string
-  lastMessage: string
-  lastMessageAt: string
-  unreadCount: number
-  messages: ChatMessageItem[]
-}
-
-export interface ShopRoleItem {
-  id: string
-  name: string
-  permissions: string[]
-  isSystem: boolean
-  memberCount: number
-}
-
-export interface ShopMemberItem {
-  id: string
-  email: string
-  roleId: string
-  roleName: string
-  status: 'ACTIVE' | 'INVITED'
-  joinedAt: string
-}
-
-export interface ShopAuditItem {
-  id: string
-  action: string
-  detail: string
-  targetType: string
-  createdAt: string
-}
-
-export interface DecorationBlock {
-  id: string
-  type: 'BANNER' | 'COLLECTION' | 'FLASH_SALE' | 'VIDEO'
-  title: string
-  enabled: boolean
-}
+import type {
+  ChatConversationItem,
+  DecorationBlock,
+  OrderItem,
+  ProductItem,
+  ReturnItem,
+  ReviewItem,
+  SettlementItem,
+  ShopAuditItem,
+  ShopMemberItem,
+  ShopProfileData,
+  ShopRoleItem,
+  WithdrawalItem,
+} from '@/types/seller'
 
 export const INITIAL_PRODUCTS: ProductItem[] = [
   {
@@ -609,27 +472,6 @@ export const INITIAL_BLOCKS: DecorationBlock[] = [
   { id: 'b-3', type: 'COLLECTION', title: 'Bộ Sưu Tập Mới Nhất 2026', enabled: true },
   { id: 'b-4', type: 'VIDEO', title: 'Video Trải Nghiệm Sản Phẩm', enabled: false },
 ]
-
-export interface ShopProfileData {
-  shopName: string
-  slug: string
-  bio: string
-  logoUrl: string
-  bannerUrl: string
-  contactName: string
-  phone: string
-  pickupAddress: string
-  city: string
-  daysToShip: number
-  businessType: 'INDIVIDUAL' | 'BUSINESS'
-  taxOrIdNumber: string
-  isVerified: boolean
-  bankName: string
-  bankAccount: string
-  bankHolder: string
-  workingHours: string
-  vacationMode: boolean
-}
 
 export const INITIAL_SHOP_PROFILE: ShopProfileData = {
   shopName: 'FashionHub Boutique Official',

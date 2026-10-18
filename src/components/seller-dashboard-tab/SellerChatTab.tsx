@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { PaperPlaneRight, MagnifyingGlass, CheckCircle, X, Robot } from '@phosphor-icons/react'
 
-import type { ChatConversationItem } from './sellerData'
+import type { ChatConversationItem } from '@/types/seller'
 
 interface Props {
   conversations: ChatConversationItem[]

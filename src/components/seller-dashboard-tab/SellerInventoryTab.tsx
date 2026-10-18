@@ -11,7 +11,7 @@ import {
   ArrowDown,
 } from '@phosphor-icons/react'
 
-import type { ProductItem, StockMovementItem } from './sellerData'
+import type { ProductItem, StockMovementItem } from '@/types/seller'
 
 interface Props {
   products: ProductItem[]

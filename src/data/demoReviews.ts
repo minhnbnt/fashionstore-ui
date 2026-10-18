@@ -1,18 +1,7 @@
 // TODO(mock): module demo, thay bằng API reviews khi backend có endpoint.
 // Mọi import từ file này đều là dữ liệu giả, grep TODO(mock) để dọn.
 
-export interface DemoReview {
-  name: string
-  rating: number
-  text: string
-  date: string
-}
-
-export interface DemoRating {
-  value: number
-  count: number
-  breakdown: number[]
-}
+import type { DemoRating, DemoReview } from '@/types/product'
 
 export const DEMO_RATING: DemoRating = {
   value: 4.8,

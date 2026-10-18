@@ -4,7 +4,7 @@ import { MagnifyingGlass, CheckCircle, Truck, X, Phone, MapPin } from '@phosphor
 
 import { formatVnd } from '../../lib/format'
 
-import type { OrderItem } from './sellerData'
+import type { OrderItem } from '@/types/seller'
 
 interface Props {
   orders: OrderItem[]

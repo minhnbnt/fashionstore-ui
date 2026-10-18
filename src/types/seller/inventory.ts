@@ -1,0 +1,45 @@
+export interface ProductItem {
+  id: string
+  name: string
+  slug: string
+  sku: string
+  category: string
+  price: number
+  originalPrice: number
+  stock: number
+  sold: number
+  status: 'ACTIVE' | 'INACTIVE' | 'DELETED'
+  image: string
+  variants: {
+    id: string
+    size: string
+    color: string
+    sku: string
+    price: number
+    stock: number
+    lowStockThreshold: number
+  }[]
+}
+
+export interface StockMovementItem {
+  id: string
+  variantSku: string
+  productName: string
+  changeQty: number
+  previousStock: number
+  newStock: number
+  reason: 'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL' | 'ORDER_SHIP' | 'SELLER_CANCEL'
+  note: string
+  createdBy: string
+  createdAt: string
+}
+
+export interface VariantInput {
+  id: string
+  size: string
+  color: string
+  sku: string
+  price: number
+  stock: number
+  lowStockThreshold: number
+}

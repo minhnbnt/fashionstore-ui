@@ -27,21 +27,25 @@ import {
   INITIAL_AUDIT,
   INITIAL_BLOCKS,
   INITIAL_SHOP_PROFILE,
-  type ShopProfileData,
-  type ProductItem,
-  type OrderItem,
-  type ReturnItem,
-  type ReviewItem,
-  type ChatConversationItem,
-  type SettlementItem,
-  type WithdrawalItem,
-  type ShopRoleItem,
-  type ShopMemberItem,
-  type ShopAuditItem,
-  type DecorationBlock,
-  type StockMovementItem,
 } from '../components/seller-dashboard-tab/sellerData'
-import { SellerLayout, type SellerTabId } from '../components/seller-dashboard-tab/SellerLayout'
+import { SellerLayout } from '../components/seller-dashboard-tab/SellerLayout'
+
+import type {
+  ChatConversationItem,
+  DecorationBlock,
+  OrderItem,
+  ProductItem,
+  ReturnItem,
+  ReviewItem,
+  SellerTabId,
+  SettlementItem,
+  ShopAuditItem,
+  ShopMemberItem,
+  ShopProfileData,
+  ShopRoleItem,
+  StockMovementItem,
+  WithdrawalItem,
+} from '@/types/seller'
 
 function TabLoading() {
   return <p className="py-24 text-center">Đang tải…</p>

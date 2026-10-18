@@ -4,7 +4,7 @@ import { CheckCircle, X } from '@phosphor-icons/react'
 
 import { formatVnd } from '../../lib/format'
 
-import type { ReturnItem } from './sellerData'
+import type { ReturnItem } from '@/types/seller'
 
 interface Props {
   returns: ReturnItem[]

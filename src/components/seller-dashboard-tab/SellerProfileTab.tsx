@@ -13,7 +13,7 @@ import {
   PlayCircle,
 } from '@phosphor-icons/react'
 
-import type { ShopProfileData } from './sellerData'
+import type { ShopProfileData } from '@/types/seller'
 
 interface SellerProfileTabProps {
   profile: ShopProfileData

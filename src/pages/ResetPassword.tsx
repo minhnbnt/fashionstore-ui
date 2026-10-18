@@ -11,7 +11,7 @@ import {
   validatePasswordReset,
 } from '../lib/auth'
 
-type PageStatus = 'checking' | 'ready' | 'success' | 'invalid'
+import type { PageStatus } from '@/types/auth'
 
 export default function ResetPassword() {
   const [status, setStatus] = useState<PageStatus>('checking')

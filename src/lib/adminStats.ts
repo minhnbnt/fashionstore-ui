@@ -1,13 +1,5 @@
+import type { BreakdownInput, BreakdownRow, TrendMetric, TrendPoint } from '@/types/admin'
 import type { AdminStatsResponse } from '@generated/model/adminStatsResponse'
-
-export interface BreakdownInput {
-  label: string
-  value: number
-}
-
-export interface BreakdownRow extends BreakdownInput {
-  share: number
-}
 
 export function breakdownRows(items: BreakdownInput[]): BreakdownRow[] {
   let total = 0
@@ -20,13 +12,6 @@ export function breakdownRows(items: BreakdownInput[]): BreakdownRow[] {
     }
     return { ...item, share: item.value / total }
   })
-}
-
-export type TrendMetric = 'orders' | 'orderValue' | 'newUsers' | 'newShops'
-
-export interface TrendPoint {
-  date: string
-  value: number
 }
 
 export function trendPoints(

@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { Star, ChatCircleDots, Flag, CheckCircle, X, PaperPlaneRight } from '@phosphor-icons/react'
 
-import type { ReviewItem } from './sellerData'
+import type { ReviewItem } from '@/types/seller'
 
 interface Props {
   reviews: ReviewItem[]

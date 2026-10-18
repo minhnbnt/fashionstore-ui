@@ -12,7 +12,7 @@ import {
   Key,
 } from '@phosphor-icons/react'
 
-import type { ShopRoleItem, ShopMemberItem, ShopAuditItem } from './sellerData'
+import type { ShopRoleItem, ShopMemberItem, ShopAuditItem } from '@/types/seller'
 
 interface SellerStaffTabProps {
   roles: ShopRoleItem[]

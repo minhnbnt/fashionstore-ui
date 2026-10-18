@@ -10,7 +10,7 @@ import {
 } from '../lib/auth'
 import { SESSION_KEY } from './useSession'
 
-import type { Credentials } from '../lib/auth'
+import type { Credentials } from '@/types/auth'
 
 export function useSignIn() {
   const queryClient = useQueryClient()

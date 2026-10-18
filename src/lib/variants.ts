@@ -1,6 +1,5 @@
+import type { OptionKind } from '@/types/product'
 import type { VariantResponse } from '@generated/model/variantResponse'
-
-export type OptionKind = 'size' | 'color'
 
 function otherKind(kind: OptionKind): OptionKind {
   if (kind === 'size') {

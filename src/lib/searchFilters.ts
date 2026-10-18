@@ -1,19 +1,9 @@
 import { SearchSort } from '@generated/model/searchSort'
 
+import type { PricePreset, SearchFilters } from '@/types/search'
 import type { SearchParams } from '@generated/model/searchParams'
 
 // Trạng thái trang tìm kiếm sống trên URL (?q=&category=...) để chia sẻ link, back/forward đúng.
-export interface SearchFilters {
-  q: string | null
-  category: string | null
-  minPrice: number | null
-  maxPrice: number | null
-  size: string | null
-  color: string | null
-  sort: SearchSort | null
-  page: number
-}
-
 export const EMPTY_FILTERS: SearchFilters = {
   q: null,
   category: null,
@@ -30,12 +20,6 @@ export const SORT_LABELS: Record<SearchSort, string> = {
   NEWEST: 'Mới nhất',
   PRICE_ASC: 'Giá thấp → cao',
   PRICE_DESC: 'Giá cao → thấp',
-}
-
-export interface PricePreset {
-  label: string
-  min: number | null
-  max: number | null
 }
 
 export const PRICE_PRESETS: PricePreset[] = [
