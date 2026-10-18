@@ -60,6 +60,10 @@
       "description": "Xin URL upload ảnh trực tiếp lên S3"
     },
     {
+      "name": "Admin - Holidays",
+      "description": "Lịch nghỉ lễ dùng cho SLA đơn hàng, đồng bộ từ Calendarific, admin sửa tay. Cần role admin."
+    },
+    {
       "name": "Admin - Orders",
       "description": "Giám sát đơn hàng toàn sàn, cảnh báo SLA, hủy can thiệp. Cần role admin."
     },
@@ -14176,6 +14180,298 @@
           }
         ]
       }
+    },
+    "/api/admin/holidays/{day}": {
+      "put": {
+        "tags": ["Admin - Holidays"],
+        "summary": "Thêm/sửa ngày lễ",
+        "description": "Ghi tay, nguồn MANUAL: đồng bộ Calendarific không bao giờ ghi đè. Ngày đã bỏ được bật lại.",
+        "operationId": "saveHoliday",
+        "parameters": [
+          {
+            "name": "day",
+            "in": "path",
+            "description": "Ngày, yyyy-MM-dd",
+            "required": true,
+            "schema": { "type": "string", "format": "date" },
+            "example": "2027-04-16"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/SaveHolidayRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ngày đã lưu",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } } }
+          },
+          "400": {
+            "description": "Thiếu tên/loại hoặc ngày sai định dạng",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "delete": {
+        "tags": ["Admin - Holidays"],
+        "summary": "Bỏ ngày lễ",
+        "description": "Không xóa hẳn: đánh dấu đã bỏ (nguồn MANUAL) để lần đồng bộ sau không thêm lại. Ngày đó tính là ngày làm việc trong SLA.",
+        "operationId": "disableHoliday",
+        "parameters": [
+          {
+            "name": "day",
+            "in": "path",
+            "description": "Ngày, yyyy-MM-dd",
+            "required": true,
+            "schema": { "type": "string", "format": "date" },
+            "example": "2026-02-14"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ngày đã bỏ",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } } }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Ngày chưa có trong lịch",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/holidays/sync": {
+      "post": {
+        "tags": ["Admin - Holidays"],
+        "summary": "Đồng bộ Calendarific ngay",
+        "description": "Lấy ngày nghỉ quốc gia + ngày đi làm bù của Việt Nam trong năm. Ngày admin sửa tay giữ nguyên, ngày đồng bộ trước mà Calendarific rút lại thì xóa. Tốn 1 lượt gọi (gói free 500 lượt/tháng).",
+        "operationId": "syncHolidays",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "description": "Năm, bỏ trống = năm nay (giờ VN)",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "maximum": 2100, "minimum": 2000 },
+            "example": 2027
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kết quả đồng bộ",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } }
+            }
+          },
+          "400": {
+            "description": "Năm ngoài 2000–2100",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "502": {
+            "description": "Calendarific lỗi hoặc hết lượt gọi",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } }
+            }
+          },
+          "503": {
+            "description": "Chưa cấu hình API key Calendarific",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/holidays": {
+      "get": {
+        "tags": ["Admin - Holidays"],
+        "summary": "Lịch nghỉ lễ theo năm",
+        "description": "Mọi ngày của năm kể cả ngày đã bỏ, lần đồng bộ gần nhất, đã cấu hình API key chưa.",
+        "operationId": "listHolidays",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "description": "Năm, bỏ trống = năm nay (giờ VN)",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "maximum": 2100, "minimum": 2000 },
+            "example": 2026
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lịch của năm",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayYearResponse" } }
+            }
+          },
+          "400": {
+            "description": "Năm ngoài 2000–2100",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayYearResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayYearResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayYearResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
     }
   },
   "components": {
@@ -18251,6 +18547,110 @@
             "type": "integer",
             "format": "int32",
             "description": "Ton hien tai de UI canh bao"
+          }
+        }
+      },
+      "SaveHolidayRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Nghỉ bù Quốc tế Lao động",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "kind": {
+            "type": "string",
+            "description": "HOLIDAY (nghỉ) | WORKING_DAY (đi làm bù)",
+            "enum": ["HOLIDAY", "WORKING_DAY"],
+            "example": "HOLIDAY"
+          }
+        },
+        "required": ["kind", "name"]
+      },
+      "HolidayResponse": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "description": "Ngày (giờ Việt Nam)",
+            "example": "2026-11-24"
+          },
+          "name": { "type": "string", "example": "Ngày Văn hóa Việt Nam" },
+          "kind": {
+            "type": "string",
+            "description": "HOLIDAY (nghỉ) | WORKING_DAY (đi làm bù)",
+            "example": "HOLIDAY"
+          },
+          "source": {
+            "type": "string",
+            "description": "SEED | CALENDARIFIC | MANUAL",
+            "example": "CALENDARIFIC"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "false = admin đã bỏ ngày này, đồng bộ không thêm lại"
+          },
+          "updatedByEmail": {
+            "type": ["string", "null"],
+            "description": "Email admin sửa gần nhất, null nếu do seed/đồng bộ"
+          },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "HolidaySyncResultResponse": {
+        "type": "object",
+        "properties": {
+          "year": { "type": "integer", "format": "int32" },
+          "added": { "type": "integer", "format": "int32", "description": "Ngày mới thêm" },
+          "updated": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Ngày seed/đồng bộ trước đó được cập nhật"
+          },
+          "removed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Ngày đồng bộ trước đó mà Calendarific đã rút lại"
+          },
+          "keptManual": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Ngày admin đã sửa tay nên giữ nguyên"
+          }
+        }
+      },
+      "HolidaySyncResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "description": "SUCCESS | FAILED", "example": "SUCCESS" },
+          "message": { "type": "string", "description": "Lý do thất bại, rỗng nếu thành công" },
+          "holidayCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số ngày Calendarific trả về sau khi lọc"
+          },
+          "syncedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "HolidayYearResponse": {
+        "type": "object",
+        "properties": {
+          "year": { "type": "integer", "format": "int32" },
+          "syncConfigured": {
+            "type": "boolean",
+            "description": "Đã cấu hình API key Calendarific chưa, false thì không đồng bộ được"
+          },
+          "lastSync": {
+            "type": "null",
+            "$ref": "#/components/schemas/HolidaySyncResponse",
+            "description": "Lần đồng bộ gần nhất của năm, null nếu chưa từng"
+          },
+          "holidays": {
+            "type": "array",
+            "description": "Mọi ngày của năm kể cả ngày đã bỏ, sớm nhất trước",
+            "items": { "$ref": "#/components/schemas/HolidayResponse" }
           }
         }
       }

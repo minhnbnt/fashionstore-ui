@@ -120,6 +120,20 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     404: 'Đơn hàng không tồn tại.',
     409: 'Đơn đã bàn giao vận chuyển, đã giao hoặc đã hủy. Tải lại danh sách để xem trạng thái mới.',
   },
+  adminHolidays: {
+    400: 'Năm không hợp lệ.',
+    403: 'Bạn không có quyền quản lý lịch nghỉ lễ.',
+  },
+  adminHolidaySave: {
+    400: 'Thiếu ngày, tên hoặc loại ngày nghỉ.',
+    403: 'Bạn không có quyền quản lý lịch nghỉ lễ.',
+    404: 'Ngày này chưa có trong lịch.',
+  },
+  adminHolidaySync: {
+    403: 'Bạn không có quyền đồng bộ lịch nghỉ lễ.',
+    502: 'Calendarific đang lỗi hoặc đã hết lượt gọi trong tháng. Thử lại sau.',
+    503: 'Server chưa cấu hình CALENDARIFIC_API_KEY.',
+  },
 }
 
 export function apiErrorMessage(endpoint: string, status: number): string {
