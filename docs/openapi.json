@@ -49,9 +49,341 @@
     {
       "name": "Admin - Shops",
       "description": "Duyệt shop mới và kiểm duyệt shop đang hoạt động. Cần role admin."
+    },
+    {
+      "name": "Admin - Products",
+      "description": "Kiểm duyệt sản phẩm toàn sàn, gỡ sản phẩm vi phạm. Cần role admin."
     }
   ],
   "paths": {
+    "/api/admin/products/{id}/restore": {
+      "patch": {
+        "tags": ["Admin - Products"],
+        "summary": "Khôi phục sản phẩm bị gỡ",
+        "description": "BANNED → HIDDEN, xóa loại vi phạm + lý do. Shop kiểm tra lại rồi tự đăng bán.",
+        "operationId": "restoreProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id sản phẩm",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sản phẩm đã khôi phục về trạng thái ẩn",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Sản phẩm không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Sản phẩm không ở trạng thái BANNED",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/products/{id}/ban": {
+      "patch": {
+        "tags": ["Admin - Products"],
+        "summary": "Gỡ sản phẩm vi phạm",
+        "description": "ACTIVE/HIDDEN → BANNED kèm loại vi phạm + lý do. Sản phẩm biến mất khỏi tìm kiếm, trang chi tiết và checkout ngay; shop thấy lý do và không tự đăng bán lại được. Đơn đang xử lý vẫn tiếp tục.",
+        "operationId": "banProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id sản phẩm",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/BanProductRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Sản phẩm đã gỡ",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } }
+            }
+          },
+          "400": {
+            "description": "Thiếu loại vi phạm/lý do hoặc không hợp lệ",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Sản phẩm không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Sản phẩm đã bị gỡ hoặc đã xóa",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/products": {
+      "get": {
+        "tags": ["Admin - Products"],
+        "summary": "Danh sách sản phẩm toàn sàn",
+        "description": "Lọc theo trạng thái, shop + tìm theo tên/slug sản phẩm, tên shop, SKU. Mới cập nhật lên đầu.",
+        "operationId": "listAdminProducts",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Trạng thái, bỏ trống = tất cả",
+            "required": false,
+            "schema": { "type": "string", "enum": ["ACTIVE", "HIDDEN", "DELETED", "BANNED"] },
+            "example": "BANNED"
+          },
+          {
+            "name": "shopId",
+            "in": "query",
+            "description": "Chỉ lấy sản phẩm của shop này",
+            "required": false,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Từ khóa: tên/slug sản phẩm, tên shop hoặc SKU",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Trang, đếm từ 0",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32", "default": 0, "minimum": 0 }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Số sản phẩm mỗi trang, tối đa 100",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trang kết quả",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PageResponseAdminProductResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Tham số lọc hoặc phân trang sai",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PageResponseAdminProductResponse" }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PageResponseAdminProductResponse" }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": { "$ref": "#/components/schemas/PageResponseAdminProductResponse" }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/products/{id}": {
+      "get": {
+        "tags": ["Admin - Products"],
+        "summary": "Chi tiết sản phẩm",
+        "description": "Thông tin + shop + biến thể + ảnh + lịch sử kiểm duyệt, kể cả sản phẩm đã ẩn/gỡ/xóa.",
+        "operationId": "getAdminProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id sản phẩm",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chi tiết sản phẩm",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductDetailResponse" } }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductDetailResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductDetailResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Sản phẩm không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductDetailResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
     "/api/users/me/addresses/{id}": {
       "put": {
         "tags": ["Addresses"],
@@ -7646,6 +7978,147 @@
   },
   "components": {
     "schemas": {
+      "AdminProductResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "shopId": { "type": "string", "format": "uuid" },
+          "shopName": { "type": "string" },
+          "shopSlug": { "type": "string" },
+          "shopStatus": {
+            "type": "string",
+            "description": "Trạng thái shop",
+            "example": "APPROVED"
+          },
+          "categoryId": { "type": ["string", "null"], "format": "uuid" },
+          "categoryName": { "type": ["string", "null"], "example": "Áo thun" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "status": {
+            "type": "string",
+            "description": "ACTIVE | HIDDEN | DELETED | BANNED",
+            "example": "BANNED"
+          },
+          "violationType": {
+            "type": ["string", "null"],
+            "description": "Loại vi phạm của lần gỡ gần nhất, null nếu không bị gỡ",
+            "example": "COUNTERFEIT"
+          },
+          "statusReason": {
+            "type": ["string", "null"],
+            "description": "Lý do gỡ gần nhất, null nếu không bị gỡ"
+          },
+          "minPrice": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Giá thấp nhất trong các biến thể (VND)",
+            "example": 199000
+          },
+          "maxPrice": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Giá cao nhất trong các biến thể (VND)",
+            "example": 259000
+          },
+          "totalStock": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng tồn kho mọi biến thể"
+          },
+          "variantCount": { "type": "integer", "format": "int64", "description": "Số biến thể" },
+          "imageKey": {
+            "type": ["string", "null"],
+            "description": "S3 key ảnh đầu tiên, frontend tự ghép base URL"
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BanProductRequest": {
+        "type": "object",
+        "properties": {
+          "violationType": {
+            "type": "string",
+            "description": "Loại vi phạm",
+            "enum": [
+              "PROHIBITED",
+              "COUNTERFEIT",
+              "IP_INFRINGEMENT",
+              "MISLEADING",
+              "WRONG_CATEGORY",
+              "SPAM",
+              "OTHER"
+            ],
+            "example": "COUNTERFEIT"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Lý do hiển thị cho shop và lưu vào lịch sử kiểm duyệt",
+            "example": "Sản phẩm sử dụng logo thương hiệu khi chưa được ủy quyền",
+            "maxLength": 500,
+            "minLength": 5
+          }
+        },
+        "required": ["reason", "violationType"]
+      },
+      "PageResponseAdminProductResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "Phần tử của trang hiện tại",
+            "items": { "$ref": "#/components/schemas/AdminProductResponse" }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng số phần tử khớp bộ lọc, không tính phân trang"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Trang hiện tại, đếm từ 0"
+          },
+          "size": { "type": "integer", "format": "int32", "description": "Số phần tử mỗi trang" }
+        }
+      },
+      "AdminProductDetailResponse": {
+        "type": "object",
+        "properties": {
+          "product": { "$ref": "#/components/schemas/AdminProductResponse" },
+          "description": { "type": "string" },
+          "variants": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/VariantResponse" }
+          },
+          "images": { "type": "array", "items": { "$ref": "#/components/schemas/ImageResponse" } },
+          "history": {
+            "type": "array",
+            "description": "Lịch sử kiểm duyệt, cũ nhất trước",
+            "items": { "$ref": "#/components/schemas/ProductModerationHistoryResponse" }
+          }
+        }
+      },
+      "ProductModerationHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "fromStatus": { "type": "string", "example": "ACTIVE" },
+          "toStatus": { "type": "string", "example": "BANNED" },
+          "violationType": {
+            "type": ["string", "null"],
+            "description": "Loại vi phạm khi gỡ, null khi khôi phục",
+            "example": "COUNTERFEIT"
+          },
+          "changedBy": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "id admin thao tác"
+          },
+          "changedByEmail": { "type": ["string", "null"], "description": "Email admin thao tác" },
+          "reason": { "type": "string", "description": "Lý do, rỗng nếu không có" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
       "ProblemDetail": {
         "properties": {
           "type": { "type": "string", "format": "uri" },
@@ -8788,7 +9261,20 @@
           "name": { "type": "string" },
           "slug": { "type": "string" },
           "description": { "type": "string" },
-          "status": { "type": "string" },
+          "status": {
+            "type": "string",
+            "description": "ACTIVE | HIDDEN | DELETED | BANNED",
+            "example": "ACTIVE"
+          },
+          "violationType": {
+            "type": ["string", "null"],
+            "description": "Loại vi phạm khi bị admin gỡ (status = BANNED), null nếu không bị gỡ",
+            "example": "COUNTERFEIT"
+          },
+          "statusReason": {
+            "type": ["string", "null"],
+            "description": "Lý do admin gỡ, null nếu không bị gỡ"
+          },
           "totalStock": { "type": "integer", "format": "int32" },
           "minPrice": { "type": "integer", "format": "int64" },
           "maxPrice": { "type": "integer", "format": "int64" },

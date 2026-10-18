@@ -17,6 +17,7 @@ const AdminShops = lazy(() => import('./pages/AdminShops'))
 const AdminShopDetail = lazy(() => import('./pages/AdminShopDetail'))
 const AdminUsers = lazy(() => import('./pages/AdminUsers'))
 const AdminUserDetail = lazy(() => import('./pages/AdminUserDetail'))
+const AdminProducts = lazy(() => import('./pages/AdminProducts'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
@@ -109,6 +110,14 @@ function App() {
             element={
               <RequireRole requiredRole="admin">
                 <AdminUserDetail />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/products"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminProducts />
               </RequireRole>
             }
           />

@@ -76,6 +76,25 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
   adminShops: {
     403: 'Bạn không có quyền xem danh sách shop.',
   },
+  adminProducts: {
+    400: 'Bộ lọc sản phẩm chưa hợp lệ.',
+    403: 'Bạn không có quyền kiểm duyệt sản phẩm.',
+  },
+  adminProductDetail: {
+    403: 'Bạn không có quyền kiểm duyệt sản phẩm.',
+    404: 'Sản phẩm không tồn tại.',
+  },
+  adminProductBan: {
+    400: 'Thiếu loại vi phạm hoặc lý do chưa hợp lệ (5–500 ký tự).',
+    403: 'Bạn không có quyền gỡ sản phẩm.',
+    404: 'Sản phẩm không tồn tại.',
+    409: 'Sản phẩm đã bị gỡ hoặc shop đã xóa. Tải lại danh sách để xem trạng thái mới.',
+  },
+  adminProductRestore: {
+    403: 'Bạn không có quyền khôi phục sản phẩm.',
+    404: 'Sản phẩm không tồn tại.',
+    409: 'Sản phẩm không còn ở trạng thái bị gỡ. Tải lại danh sách để xem trạng thái mới.',
+  },
 }
 
 export function apiErrorMessage(endpoint: string, status: number): string {

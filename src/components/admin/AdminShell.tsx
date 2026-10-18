@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router'
 
-import { ChartBar, ShieldCheck, Storefront, Users } from '@phosphor-icons/react'
+import { ChartBar, Package, ShieldCheck, Storefront, Users } from '@phosphor-icons/react'
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Tổng quan', icon: ChartBar, end: true },
   { to: '/admin/shops', label: 'Shop', icon: Storefront, end: false },
   { to: '/admin/users', label: 'Tài khoản', icon: Users, end: false },
+  { to: '/admin/products', label: 'Sản phẩm', icon: Package, end: false },
 ]
 
 function navClass(active: boolean): string {

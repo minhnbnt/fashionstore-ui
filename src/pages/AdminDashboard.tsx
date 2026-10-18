@@ -235,7 +235,7 @@ export default function AdminDashboard() {
             <PendingShopsQueue pendingCount={stats.pendingShops ?? 0} />
           </div>
 
-          <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
             <Link
               to="/admin/shops"
               className="group glass flex items-start gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5"
@@ -266,6 +266,25 @@ export default function AdminDashboard() {
                 <span className="block font-extrabold tracking-tight">Quản lý tài khoản</span>
                 <span className="mt-1 block text-sm text-zinc-600 dark:text-zinc-300">
                   Tra cứu lịch sử, khóa và mở khóa tài khoản.
+                </span>
+              </span>
+              <ArrowRight
+                size={18}
+                weight="bold"
+                className="mt-1 ml-auto shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-indigo-600"
+              />
+            </Link>
+            <Link
+              to="/admin/products"
+              className="group glass flex items-start gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300">
+                <Package size={22} weight="bold" />
+              </span>
+              <span>
+                <span className="block font-extrabold tracking-tight">Kiểm duyệt sản phẩm</span>
+                <span className="mt-1 block text-sm text-zinc-600 dark:text-zinc-300">
+                  Gỡ sản phẩm vi phạm và khôi phục khi shop khắc phục.
                 </span>
               </span>
               <ArrowRight
