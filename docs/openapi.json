@@ -9,6 +9,10 @@
       "name": "Seller - Staff & Roles",
       "description": "Xác nhận và chấp nhận lời mời tham gia quản lý shop"
     },
+    {
+      "name": "Seller - Staff & Roles",
+      "description": "Quản lý nhân viên gian hàng, phân quyền và lịch sử thao tác"
+    },
     { "name": "Addresses", "description": "So dia chi giao hang cua buyer" },
     { "name": "Search", "description": "Tìm hàng bằng BM25 + lọc theo danh mục, biến thể, giá" },
     { "name": "Categories", "description": "Danh mục public, admin seed tay bằng SQL" },
@@ -19,10 +23,6 @@
       "description": "Seller quản lý danh sách sản phẩm, tồn kho và xuất nhập dữ liệu"
     },
     { "name": "Seller - Reviews", "description": "Seller quản lý đánh giá của khách và phản hồi" },
-    {
-      "name": "Seller - Staff & Roles",
-      "description": "Quản lý nhân viên gian hàng, phân quyền và lịch sử thao tác"
-    },
     { "name": "Uploads", "description": "Xin URL upload ảnh trực tiếp lên S3" },
     {
       "name": "Admin - Products",
@@ -51,6 +51,26 @@
     {
       "name": "Admin - Shops",
       "description": "Duyệt shop mới và kiểm duyệt shop đang hoạt động. Cần role admin."
+    },
+    {
+      "name": "Admin - Pages",
+      "description": "Quản lý trang tĩnh (giới thiệu, chính sách...): soạn Markdown, nháp/xuất bản. Cần role admin."
+    },
+    {
+      "name": "Admin - FAQ",
+      "description": "Quản lý câu hỏi thường gặp theo nhóm. Cần role admin."
+    },
+    {
+      "name": "Site content",
+      "description": "Banner, popup, trang tĩnh, FAQ cho storefront. Không cần đăng nhập."
+    },
+    {
+      "name": "Admin - Popups",
+      "description": "Quản lý popup khuyến mãi trang chủ: đối tượng, tần suất, ưu tiên, lịch chạy. Cần role admin."
+    },
+    {
+      "name": "Admin - Banners",
+      "description": "Quản lý banner trang chủ theo vị trí + lịch chạy. Cần role admin."
     }
   ],
   "paths": {
@@ -80,17 +100,16 @@
             "description": "Dia chi sau khi sua",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } } }
           },
-          "401": {
-            "description": "Thieu hoac sai JWT",
+          "400": {
+            "description": "Invalid request data",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Dia chi khong ton tai hoac khong phai cua ban",
+          "401": {
+            "description": "Thieu hoac sai JWT",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } },
               "application/problem+json": {
@@ -106,9 +125,10 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Dia chi khong ton tai hoac khong phai cua ban",
             "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -141,16 +161,16 @@
         ],
         "responses": {
           "204": { "description": "Da xoa" },
-          "401": {
-            "description": "Thieu hoac sai JWT",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Dia chi khong ton tai hoac khong phai cua ban",
+          "401": {
+            "description": "Thieu hoac sai JWT",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -165,8 +185,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Dia chi khong ton tai hoac khong phai cua ban",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -205,17 +225,16 @@
             "description": "Dia chi default moi",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } } }
           },
-          "401": {
-            "description": "Thieu hoac sai JWT",
+          "400": {
+            "description": "Invalid request data",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Dia chi khong ton tai hoac khong phai cua ban",
+          "401": {
+            "description": "Thieu hoac sai JWT",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } },
               "application/problem+json": {
@@ -231,9 +250,10 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Dia chi khong ton tai hoac khong phai cua ban",
             "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -356,6 +376,14 @@
         ],
         "responses": {
           "204": { "description": "Đã xóa sản phẩm" },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -382,14 +410,6 @@
           },
           "409": {
             "description": "Còn đơn hàng đang xử lý",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -426,6 +446,14 @@
             "description": "Shop sau update",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -448,14 +476,6 @@
             "description": "Shop không tồn tại",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -579,6 +599,14 @@
         ],
         "responses": {
           "204": { "description": "Đã xóa vai trò thành công" },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -605,14 +633,6 @@
           },
           "409": {
             "description": "Không thể xóa vai trò hệ thống",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -720,6 +740,14 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/DecorationResponse" } }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -740,14 +768,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -801,16 +821,16 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "403": {
-            "description": "Forbidden",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -847,6 +867,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thieu hoac sai JWT",
             "content": {
@@ -861,14 +889,6 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -877,8 +897,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -912,18 +932,18 @@
             "description": "Dia chi vua tao",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } } }
           },
-          "401": {
-            "description": "Thieu hoac sai JWT",
+          "400": {
+            "description": "Invalid request data",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
+          "401": {
+            "description": "Thieu hoac sai JWT",
             "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/AddressResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -937,8 +957,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -992,16 +1012,16 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "403": {
-            "description": "Forbidden",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -1055,10 +1075,9 @@
               }
             }
           },
-          "409": {
-            "description": "Slug đã có người dùng",
+          "403": {
+            "description": "Forbidden",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -1072,9 +1091,10 @@
               }
             }
           },
-          "403": {
-            "description": "Forbidden",
+          "409": {
+            "description": "Slug đã có người dùng",
             "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -1289,6 +1309,14 @@
             "description": "Shop đã quay về PENDING",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -1324,14 +1352,6 @@
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
           }
         },
         "security": [{ "bearerAuth": [] }]
@@ -1354,16 +1374,16 @@
         ],
         "responses": {
           "204": { "description": "Đã theo dõi thành công" },
-          "401": {
-            "description": "Thiếu hoặc sai JWT",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Shop không tồn tại",
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -1378,8 +1398,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Shop không tồn tại",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -1413,16 +1433,16 @@
         ],
         "responses": {
           "204": { "description": "Đã hủy theo dõi" },
-          "401": {
-            "description": "Thiếu hoặc sai JWT",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Shop không tồn tại",
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -1437,8 +1457,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Shop không tồn tại",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -1484,6 +1504,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -1514,14 +1542,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -1633,6 +1653,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -1663,14 +1691,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -1742,18 +1762,18 @@
               }
             }
           },
-          "409": {
-            "description": "Tên vai trò đã tồn tại",
+          "404": {
+            "description": "Resource not found",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopRoleResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
+          "409": {
+            "description": "Tên vai trò đã tồn tại",
             "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ShopRoleResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -1939,6 +1959,14 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/DecorationResponse" } }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -1959,14 +1987,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -2174,6 +2194,14 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "404": {
             "description": "Đơn hàng không tồn tại",
             "content": {
@@ -2187,14 +2215,6 @@
             "description": "Đơn chưa giao hoặc đã được đánh giá",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/ProductReviewResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -2250,6 +2270,14 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "404": {
             "description": "Đơn không tồn tại hoặc không phải của buyer",
             "content": {
@@ -2263,14 +2291,6 @@
             "description": "Đơn chưa giao hoặc đã có yêu cầu xử lý",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/ReturnRequestResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -2313,6 +2333,14 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "404": {
             "description": "Không tìm thấy token lời mời",
             "content": {
@@ -2323,14 +2351,6 @@
           },
           "409": {
             "description": "Lời mời đã được chấp nhận trước đó",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -2362,17 +2382,16 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/ChatConversationResponse" } }
             }
           },
-          "401": {
-            "description": "Thiếu hoặc sai JWT",
+          "400": {
+            "description": "Invalid request data",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ChatConversationResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Shop không tồn tại",
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/ChatConversationResponse" } },
               "application/problem+json": {
@@ -2388,9 +2407,10 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Shop không tồn tại",
             "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ChatConversationResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -2435,6 +2455,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -2472,14 +2500,6 @@
                   "items": { "$ref": "#/components/schemas/ChatMessageResponse" }
                 }
               },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -2599,6 +2619,14 @@
             "description": "Shop sau khi cập nhật hồ sơ",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -2621,14 +2649,6 @@
             "description": "Shop không tồn tại",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -2982,6 +3002,14 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/ReturnRequestResponse" } }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -3013,14 +3041,6 @@
             "description": "Sai trạng thái",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/ReturnRequestResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -3129,6 +3149,14 @@
             "description": "Đơn sau khi ship",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -3160,14 +3188,6 @@
             "description": "Sai trạng thái",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -3197,6 +3217,14 @@
             "description": "Đơn sau khi giao",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -3232,14 +3260,6 @@
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
           }
         },
         "security": [{ "bearerAuth": [] }]
@@ -3264,6 +3284,14 @@
           "200": {
             "description": "Đơn sau xác nhận",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
@@ -3296,14 +3324,6 @@
             "description": "Hết kho hoặc sai trạng thái",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -3408,10 +3428,26 @@
             "description": "Don sau khi huy",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thieu hoac sai JWT",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -3430,22 +3466,6 @@
             "description": "Don khong còn o trang thai PENDING",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -3471,16 +3491,16 @@
         ],
         "responses": {
           "204": { "description": "Đã đánh dấu đọc" },
-          "401": {
-            "description": "Thiếu hoặc sai JWT",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Hội thoại không tồn tại",
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -3495,8 +3515,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Hội thoại không tồn tại",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -3534,6 +3554,14 @@
           "200": {
             "description": "Tài khoản hoạt động lại",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } } }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
@@ -3574,14 +3602,6 @@
           "502": {
             "description": "Cập nhật GoTrue thất bại, không có gì thay đổi",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } } }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
           }
         },
         "security": [{ "bearerAuth": [] }]
@@ -3842,6 +3862,14 @@
             "description": "Shop hoạt động lại",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -3877,14 +3905,6 @@
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
           }
         },
         "security": [{ "bearerAuth": [] }]
@@ -3909,6 +3929,14 @@
           "200": {
             "description": "Shop đã duyệt",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
@@ -3949,14 +3977,6 @@
           "502": {
             "description": "Cập nhật GoTrue thất bại, không có gì thay đổi",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
           }
         },
         "security": [{ "bearerAuth": [] }]
@@ -3982,6 +4002,14 @@
             "description": "Sản phẩm đã khôi phục về trạng thái ẩn",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
             }
           },
           "401": {
@@ -4015,14 +4043,6 @@
             "description": "Sản phẩm không ở trạng thái BANNED",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -4119,17 +4139,16 @@
             "description": "Profile hiện tại",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } } }
           },
-          "401": {
-            "description": "Thiếu hoặc sai JWT",
+          "400": {
+            "description": "Invalid request data",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Chưa mirror, gọi POST /api/users trước",
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } },
               "application/problem+json": {
@@ -4145,9 +4164,10 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Chưa mirror, gọi POST /api/users trước",
             "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/UserResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -4186,17 +4206,8 @@
             "description": "Thông tin shop",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } } }
           },
-          "404": {
-            "description": "Không có hoặc chưa duyệt",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -4211,9 +4222,18 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
             "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Không có hoặc chưa duyệt",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ShopResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -4252,16 +4272,8 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/DecorationResponse" } }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -4276,8 +4288,16 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -4312,6 +4332,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -4326,14 +4354,6 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -4342,8 +4362,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -4396,6 +4416,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -4433,14 +4461,6 @@
                   "items": { "$ref": "#/components/schemas/StockMovementResponse" }
                 }
               },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -4513,6 +4533,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -4543,14 +4571,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -4589,6 +4609,14 @@
             "description": "File CSV tải về",
             "content": { "text/csv": { "schema": { "type": "string", "format": "byte" } } }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -4609,14 +4637,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -4662,6 +4682,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -4692,14 +4720,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -4752,6 +4772,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -4782,14 +4810,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -4830,6 +4850,14 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/DecorationResponse" } }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -4850,14 +4878,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -4903,6 +4923,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -4933,14 +4961,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -4993,6 +5013,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -5023,14 +5051,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5083,6 +5103,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -5113,14 +5141,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5173,6 +5193,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -5203,14 +5231,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5251,6 +5271,14 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/RevenueSummaryResponse" } }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -5271,14 +5299,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5324,6 +5344,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -5354,14 +5382,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5414,6 +5434,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -5428,14 +5456,6 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -5444,8 +5464,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5485,6 +5505,14 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/ReturnRequestResponse" } }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -5507,14 +5535,6 @@
             "description": "Yêu cầu không tồn tại",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/ReturnRequestResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -5587,6 +5607,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -5601,14 +5629,6 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -5617,8 +5637,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5671,6 +5691,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -5701,14 +5729,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5838,8 +5858,8 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
+          "401": {
+            "description": "Missing or invalid JWT",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5854,8 +5874,8 @@
               }
             }
           },
-          "401": {
-            "description": "Missing or invalid JWT",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5904,16 +5924,8 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/SearchFacetsResponse" } }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5928,8 +5940,16 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5962,16 +5982,8 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -5986,8 +5998,16 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -6032,16 +6052,8 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -6056,8 +6068,16 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -6095,17 +6115,8 @@
             "description": "Chi tiết kèm variants và ảnh",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } } }
           },
-          "404": {
-            "description": "Không có, bị ẩn hoặc shop chưa duyệt",
-            "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -6120,9 +6131,18 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
             "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Không có, bị ẩn hoặc shop chưa duyệt",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ProductResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -6159,17 +6179,16 @@
             "description": "Chi tiet don",
             "content": { "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } }
           },
-          "401": {
-            "description": "Thieu hoac sai JWT",
+          "400": {
+            "description": "Invalid request data",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
-          "404": {
-            "description": "Don khong ton tai hoac khong phai cua ban",
+          "401": {
+            "description": "Thieu hoac sai JWT",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
               "application/problem+json": {
@@ -6185,9 +6204,10 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Don khong ton tai hoac khong phai cua ban",
             "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/OrderResponse" } },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -6222,6 +6242,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -6236,14 +6264,6 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -6252,8 +6272,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -6289,6 +6309,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thieu hoac sai JWT",
             "content": {
@@ -6303,14 +6331,6 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -6319,8 +6339,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -6356,6 +6376,14 @@
               }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -6370,14 +6398,6 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -6386,8 +6406,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -6424,16 +6444,8 @@
               }
             }
           },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -6448,8 +6460,16 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -6594,6 +6614,14 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/AdminUserDetailResponse" } }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -6616,14 +6644,6 @@
             "description": "Tài khoản không tồn tại",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/AdminUserDetailResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -6654,6 +6674,14 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/AdminStatsResponse" } }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -6674,14 +6702,6 @@
           },
           "404": {
             "description": "Resource not found",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -6822,6 +6842,14 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/AdminShopDetailResponse" } }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -6844,14 +6872,6 @@
             "description": "Shop không tồn tại",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/AdminShopDetailResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -7003,6 +7023,14 @@
               "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductDetailResponse" } }
             }
           },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -7025,14 +7053,6 @@
             "description": "Sản phẩm không tồn tại",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/AdminProductDetailResponse" } },
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -7081,6 +7101,14 @@
         ],
         "responses": {
           "204": { "description": "Đã xóa ảnh" },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -7099,14 +7127,6 @@
           },
           "404": {
             "description": "Ảnh hoặc product không tồn tại",
-            "content": {
-              "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -7149,6 +7169,14 @@
         ],
         "responses": {
           "204": { "description": "Đã xóa nhân viên" },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
@@ -7180,9 +7208,75 @@
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/popups/{id}": {
+      "put": {
+        "tags": ["Admin - Popups"],
+        "summary": "Sửa popup",
+        "description": "Thay toàn bộ nội dung, lịch chạy, bật/tắt.",
+        "operationId": "updatePopup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id popup",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PopupRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Popup sau khi sửa",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PopupResponse" } } }
           },
           "400": {
-            "description": "Invalid request data",
+            "description": "Thiếu ảnh và tiêu đề, link không hợp lệ hoặc lịch sai",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/PopupResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/PopupResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/PopupResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Popup không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/PopupResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -7191,6 +7285,1548 @@
           }
         },
         "security": [{ "bearerAuth": [] }]
+      },
+      "delete": {
+        "tags": ["Admin - Popups"],
+        "summary": "Xóa popup",
+        "description": "Xóa hẳn. Muốn tạm ẩn thì tắt active.",
+        "operationId": "deletePopup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id popup",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Đã xóa" },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Popup không tồn tại",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/pages/{id}": {
+      "get": {
+        "tags": ["Admin - Pages"],
+        "summary": "Chi tiết trang tĩnh",
+        "description": "Kèm nội dung Markdown, kể cả nháp.",
+        "operationId": "getAdminPage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id trang",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chi tiết trang",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } } }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Trang không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "put": {
+        "tags": ["Admin - Pages"],
+        "summary": "Sửa trang tĩnh",
+        "description": "Sửa trang đã xuất bản thì public thấy ngay. Đổi slug làm link cũ hết hiệu lực.",
+        "operationId": "updatePage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id trang",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/SitePageRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Trang sau khi sửa",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } } }
+          },
+          "400": {
+            "description": "Thiếu trường hoặc slug sai định dạng",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Trang không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Slug đã có trang khác dùng",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "delete": {
+        "tags": ["Admin - Pages"],
+        "summary": "Xóa trang tĩnh",
+        "description": "Chỉ xóa được trang nháp.",
+        "operationId": "deletePage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id trang",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Đã xóa" },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Trang không tồn tại",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Trang đang xuất bản, gỡ xuất bản trước",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/faqs/{id}": {
+      "put": {
+        "tags": ["Admin - FAQ"],
+        "summary": "Sửa câu hỏi",
+        "description": "Thay toàn bộ nhóm, câu hỏi, câu trả lời, thứ tự, hiển thị.",
+        "operationId": "updateFaq",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id câu hỏi",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/FaqRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Câu hỏi sau khi sửa",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/FaqResponse" } } }
+          },
+          "400": {
+            "description": "Thiếu trường hoặc quá dài",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/FaqResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/FaqResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/FaqResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Câu hỏi không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/FaqResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "delete": {
+        "tags": ["Admin - FAQ"],
+        "summary": "Xóa câu hỏi",
+        "description": "Xóa hẳn. Muốn tạm ẩn thì bỏ published.",
+        "operationId": "deleteFaq",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id câu hỏi",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Đã xóa" },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Câu hỏi không tồn tại",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/banners/{id}": {
+      "put": {
+        "tags": ["Admin - Banners"],
+        "summary": "Sửa banner",
+        "description": "Thay toàn bộ nội dung, lịch chạy, bật/tắt.",
+        "operationId": "updateBanner",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id banner",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/BannerRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Banner sau khi sửa",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/BannerResponse" } } }
+          },
+          "400": {
+            "description": "Thiếu trường, link không hợp lệ hoặc giờ kết thúc không sau giờ bắt đầu",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannerResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannerResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannerResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Banner không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannerResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "delete": {
+        "tags": ["Admin - Banners"],
+        "summary": "Xóa banner",
+        "description": "Xóa hẳn. Muốn tạm ẩn thì tắt active.",
+        "operationId": "deleteBanner",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id banner",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Đã xóa" },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Banner không tồn tại",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/popups": {
+      "get": {
+        "tags": ["Admin - Popups"],
+        "summary": "Danh sách popup",
+        "description": "Mọi popup theo ưu tiên giảm dần, kèm trạng thái lịch chạy.",
+        "operationId": "listAdminPopups",
+        "responses": {
+          "200": {
+            "description": "Danh sách popup",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PopupResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PopupResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PopupResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "post": {
+        "tags": ["Admin - Popups"],
+        "summary": "Tạo popup",
+        "description": "Cần ảnh hoặc tiêu đề. Nhiều popup cùng chạy thì trình duyệt hiện popup ưu tiên cao nhất còn hợp lệ.",
+        "operationId": "createPopup",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PopupRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Popup đã tạo",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/PopupResponse" } } }
+          },
+          "400": {
+            "description": "Thiếu ảnh và tiêu đề, link không hợp lệ hoặc lịch sai",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/PopupResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/PopupResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/PopupResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/pages": {
+      "get": {
+        "tags": ["Admin - Pages"],
+        "summary": "Danh sách trang tĩnh",
+        "description": "Mọi trang kể cả nháp, mới sửa lên đầu, không kèm nội dung.",
+        "operationId": "listAdminPages",
+        "responses": {
+          "200": {
+            "description": "Danh sách trang",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SitePageSummaryResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SitePageSummaryResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SitePageSummaryResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "post": {
+        "tags": ["Admin - Pages"],
+        "summary": "Tạo trang tĩnh",
+        "description": "Trang mới ở trạng thái nháp.",
+        "operationId": "createPage",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/SitePageRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Trang nháp đã tạo",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } } }
+          },
+          "400": {
+            "description": "Thiếu trường hoặc slug sai định dạng",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Slug đã có trang khác dùng",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/faqs": {
+      "get": {
+        "tags": ["Admin - FAQ"],
+        "summary": "Danh sách FAQ",
+        "description": "Mọi câu hỏi kể cả đang ẩn, theo nhóm rồi thứ tự.",
+        "operationId": "listAdminFaqs",
+        "responses": {
+          "200": {
+            "description": "Danh sách FAQ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/FaqResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/FaqResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/FaqResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "post": {
+        "tags": ["Admin - FAQ"],
+        "summary": "Thêm câu hỏi",
+        "description": "Câu trả lời viết Markdown.",
+        "operationId": "createFaq",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/FaqRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Câu hỏi đã thêm",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/FaqResponse" } } }
+          },
+          "400": {
+            "description": "Thiếu trường hoặc quá dài",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/FaqResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/FaqResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/FaqResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/banners": {
+      "get": {
+        "tags": ["Admin - Banners"],
+        "summary": "Danh sách banner",
+        "description": "Mọi banner kể cả đã tắt/hết hạn, theo vị trí rồi thứ tự, kèm trạng thái lịch chạy.",
+        "operationId": "listAdminBanners",
+        "parameters": [
+          {
+            "name": "placement",
+            "in": "query",
+            "description": "Chỉ lấy một vị trí, bỏ trống = tất cả",
+            "required": false,
+            "schema": { "type": "string", "enum": ["HOME_CAROUSEL", "HOME_STRIP"] },
+            "example": "HOME_CAROUSEL"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách banner",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BannerResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BannerResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BannerResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "post": {
+        "tags": ["Admin - Banners"],
+        "summary": "Tạo banner",
+        "description": "Ảnh upload trước qua /api/uploads/presign rồi gửi S3 key. Link chỉ nhận đường dẫn nội bộ hoặc http(s).",
+        "operationId": "createBanner",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/BannerRequest" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Banner đã tạo",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/BannerResponse" } } }
+          },
+          "400": {
+            "description": "Thiếu trường, link không hợp lệ hoặc giờ kết thúc không sau giờ bắt đầu",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannerResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannerResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannerResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/pages/{id}/unpublish": {
+      "patch": {
+        "tags": ["Admin - Pages"],
+        "summary": "Gỡ xuất bản trang",
+        "description": "PUBLISHED → DRAFT, public trả 404.",
+        "operationId": "unpublishPage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id trang",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trang đã về nháp",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } } }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Trang không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Trang đang là nháp",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/pages/{id}/publish": {
+      "patch": {
+        "tags": ["Admin - Pages"],
+        "summary": "Xuất bản trang",
+        "description": "DRAFT → PUBLISHED, hiện ở footer + /pages/{slug}.",
+        "operationId": "publishPage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id trang",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trang đã xuất bản",
+            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } } }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Trang không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Trang đã xuất bản",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SitePageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/public/popups": {
+      "get": {
+        "tags": ["Site content"],
+        "summary": "Popup đang chạy",
+        "description": "Theo ưu tiên giảm dần. Trình duyệt lọc theo đối tượng + tần suất rồi hiện tối đa 1 popup.",
+        "operationId": "listPopups",
+        "responses": {
+          "200": {
+            "description": "Danh sách popup, rỗng nếu không có",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PublicPopupResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/pages": {
+      "get": {
+        "tags": ["Site content"],
+        "summary": "Link trang tĩnh cho footer",
+        "description": "Trang đã xuất bản có nhóm footer, theo thứ tự admin đặt.",
+        "operationId": "listPageLinks",
+        "responses": {
+          "200": {
+            "description": "Danh sách link",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PublicPageLinkResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/pages/{slug}": {
+      "get": {
+        "tags": ["Site content"],
+        "summary": "Nội dung trang tĩnh",
+        "description": "Chỉ trang đã xuất bản.",
+        "operationId": "getPage",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "slug trang",
+            "required": true,
+            "schema": { "type": "string" },
+            "example": "chinh-sach-doi-tra"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nội dung trang",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/PublicPageResponse" } }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Không có trang hoặc trang chưa xuất bản",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/PublicPageResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/faqs": {
+      "get": {
+        "tags": ["Site content"],
+        "summary": "Câu hỏi thường gặp",
+        "description": "FAQ đang hiện, theo nhóm rồi thứ tự.",
+        "operationId": "listFaqs",
+        "responses": {
+          "200": {
+            "description": "Danh sách FAQ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PublicFaqResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/banners": {
+      "get": {
+        "tags": ["Site content"],
+        "summary": "Banner đang chạy theo vị trí",
+        "description": "Chỉ banner bật + trong khung giờ, theo thứ tự admin đặt.",
+        "operationId": "listBanners",
+        "parameters": [
+          {
+            "name": "placement",
+            "in": "query",
+            "description": "Vị trí banner",
+            "required": true,
+            "schema": { "type": "string", "enum": ["HOME_CAROUSEL", "HOME_STRIP"] },
+            "example": "HOME_CAROUSEL"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách banner, rỗng nếu không có",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PublicBannerResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Vị trí không hợp lệ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PublicBannerResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -8756,6 +10392,400 @@
           "detail": { "type": "string" },
           "instance": { "type": "string", "format": "uri" },
           "properties": { "type": "object", "additionalProperties": { "type": "object" } }
+        }
+      },
+      "PopupRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Tên nội bộ cho admin",
+            "example": "Popup 11.11",
+            "maxLength": 120,
+            "minLength": 0
+          },
+          "title": {
+            "type": "string",
+            "description": "Tiêu đề hiện trên popup. Cần tiêu đề hoặc ảnh",
+            "example": "Giảm 50% toàn sàn",
+            "maxLength": 120,
+            "minLength": 0
+          },
+          "body": {
+            "type": "string",
+            "description": "Mô tả ngắn dưới tiêu đề",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "imageKey": {
+            "type": "string",
+            "description": "S3 key ảnh popup. Cần tiêu đề hoặc ảnh",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "ctaLabel": {
+            "type": "string",
+            "description": "Chữ trên nút CTA",
+            "example": "Mua ngay",
+            "maxLength": 40,
+            "minLength": 0
+          },
+          "linkUrl": {
+            "type": "string",
+            "description": "Link nút CTA/ảnh: đường dẫn nội bộ hoặc URL http(s)",
+            "example": "/search?q=sale",
+            "maxLength": 500,
+            "minLength": 0,
+            "pattern": "^(/(?!/)\\S*|https?://\\S+)$"
+          },
+          "audience": {
+            "type": "string",
+            "description": "Ai thấy popup",
+            "enum": ["ALL", "GUEST", "MEMBER"],
+            "example": "ALL"
+          },
+          "frequency": {
+            "type": "string",
+            "description": "Tần suất hiện trên cùng trình duyệt",
+            "enum": ["EVERY_VISIT", "ONCE_PER_SESSION", "ONCE_PER_DAY", "ONCE"],
+            "example": "ONCE_PER_DAY"
+          },
+          "delaySeconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Chờ bao nhiêu giây sau khi vào trang mới hiện",
+            "example": 3,
+            "maximum": 60,
+            "minimum": 0
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Ưu tiên, lớn thắng khi nhiều popup cùng hợp lệ",
+            "example": 10,
+            "maximum": 1000,
+            "minimum": 0
+          },
+          "active": { "type": "boolean", "description": "Bật/tắt" },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Bắt đầu hiển thị, bỏ trống = ngay"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Ngừng hiển thị, bỏ trống = không hạn, phải sau startsAt"
+          }
+        },
+        "required": ["audience", "frequency", "name"]
+      },
+      "PopupResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "imageKey": { "type": "string" },
+          "ctaLabel": { "type": "string" },
+          "linkUrl": { "type": "string" },
+          "audience": { "type": "string", "enum": ["ALL", "GUEST", "MEMBER"] },
+          "frequency": {
+            "type": "string",
+            "enum": ["EVERY_VISIT", "ONCE_PER_SESSION", "ONCE_PER_DAY", "ONCE"]
+          },
+          "delaySeconds": { "type": "integer", "format": "int32" },
+          "priority": { "type": "integer", "format": "int32" },
+          "active": { "type": "boolean" },
+          "startsAt": { "type": "string", "format": "date-time" },
+          "endsAt": { "type": "string", "format": "date-time" },
+          "scheduleState": {
+            "type": "string",
+            "description": "Trạng thái lịch chạy tính tại thời điểm gọi API",
+            "enum": ["INACTIVE", "SCHEDULED", "RUNNING", "EXPIRED"]
+          },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SitePageRequest": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "Đường dẫn /pages/{slug}, chữ thường không dấu nối bằng -",
+            "example": "chinh-sach-doi-tra",
+            "maxLength": 80,
+            "minLength": 0,
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Tiêu đề trang",
+            "example": "Chính sách đổi trả",
+            "maxLength": 150,
+            "minLength": 0
+          },
+          "content": {
+            "type": "string",
+            "description": "Nội dung Markdown",
+            "maxLength": 50000,
+            "minLength": 0
+          },
+          "metaDescription": {
+            "type": "string",
+            "description": "Mô tả SEO (thẻ meta description)",
+            "example": "Đổi trả trong 30 ngày.",
+            "maxLength": 160,
+            "minLength": 0
+          },
+          "footerGroup": {
+            "type": "string",
+            "description": "Cột footer chứa link trang",
+            "enum": ["ABOUT", "POLICY", "SUPPORT", "NONE"],
+            "example": "POLICY"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Thứ tự trong cột footer, nhỏ lên trước",
+            "example": 1,
+            "maximum": 9999,
+            "minimum": 0
+          }
+        },
+        "required": ["content", "footerGroup", "slug", "title"]
+      },
+      "SitePageResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "title": { "type": "string" },
+          "content": { "type": "string", "description": "Nội dung Markdown" },
+          "metaDescription": { "type": "string" },
+          "footerGroup": { "type": "string", "enum": ["ABOUT", "POLICY", "SUPPORT", "NONE"] },
+          "sortOrder": { "type": "integer", "format": "int32" },
+          "status": { "type": "string", "enum": ["DRAFT", "PUBLISHED"] },
+          "publishedAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "FaqRequest": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "Nhóm câu hỏi",
+            "enum": ["ORDER", "PAYMENT", "SHIPPING", "RETURN", "ACCOUNT", "OTHER"],
+            "example": "RETURN"
+          },
+          "question": {
+            "type": "string",
+            "description": "Câu hỏi",
+            "example": "Tôi muốn đổi size thì làm thế nào?",
+            "maxLength": 300,
+            "minLength": 0
+          },
+          "answer": {
+            "type": "string",
+            "description": "Câu trả lời Markdown",
+            "maxLength": 5000,
+            "minLength": 0
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Thứ tự trong nhóm, nhỏ lên trước",
+            "example": 1,
+            "maximum": 9999,
+            "minimum": 0
+          },
+          "published": { "type": "boolean", "description": "Hiện trên trang FAQ" }
+        },
+        "required": ["answer", "category", "question"]
+      },
+      "FaqResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "category": {
+            "type": "string",
+            "enum": ["ORDER", "PAYMENT", "SHIPPING", "RETURN", "ACCOUNT", "OTHER"]
+          },
+          "question": { "type": "string" },
+          "answer": { "type": "string", "description": "Câu trả lời Markdown" },
+          "sortOrder": { "type": "integer", "format": "int32" },
+          "published": { "type": "boolean" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BannerRequest": {
+        "type": "object",
+        "properties": {
+          "placement": {
+            "type": "string",
+            "description": "Vị trí hiển thị",
+            "enum": ["HOME_CAROUSEL", "HOME_STRIP"],
+            "example": "HOME_CAROUSEL"
+          },
+          "title": {
+            "type": "string",
+            "description": "Tên banner, dùng làm alt ảnh",
+            "example": "Sale thu đông -50%",
+            "maxLength": 120,
+            "minLength": 0
+          },
+          "imageKey": {
+            "type": "string",
+            "description": "S3 key ảnh desktop (từ /api/uploads/presign)",
+            "example": "3f1c....webp",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "mobileImageKey": {
+            "type": "string",
+            "description": "S3 key ảnh mobile, bỏ trống thì dùng ảnh desktop",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "linkUrl": {
+            "type": "string",
+            "description": "Link khi bấm: đường dẫn nội bộ hoặc URL http(s)",
+            "example": "/search?q=ao%20khoac",
+            "maxLength": 500,
+            "minLength": 0,
+            "pattern": "^(/(?!/)\\S*|https?://\\S+)$"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Thứ tự trong vị trí, nhỏ lên trước",
+            "example": 1,
+            "maximum": 9999,
+            "minimum": 0
+          },
+          "active": { "type": "boolean", "description": "Bật/tắt hiển thị" },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Bắt đầu hiển thị, bỏ trống = ngay"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Ngừng hiển thị, bỏ trống = không hạn, phải sau startsAt"
+          }
+        },
+        "required": ["imageKey", "placement", "title"]
+      },
+      "BannerResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "placement": { "type": "string", "enum": ["HOME_CAROUSEL", "HOME_STRIP"] },
+          "title": { "type": "string" },
+          "imageKey": { "type": "string", "description": "S3 key ảnh desktop" },
+          "mobileImageKey": {
+            "type": "string",
+            "description": "S3 key ảnh mobile, null = dùng ảnh desktop"
+          },
+          "linkUrl": { "type": "string" },
+          "sortOrder": { "type": "integer", "format": "int32" },
+          "active": { "type": "boolean" },
+          "startsAt": { "type": "string", "format": "date-time" },
+          "endsAt": { "type": "string", "format": "date-time" },
+          "scheduleState": {
+            "type": "string",
+            "description": "Trạng thái lịch chạy tính tại thời điểm gọi API",
+            "enum": ["INACTIVE", "SCHEDULED", "RUNNING", "EXPIRED"]
+          },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PublicPopupResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Khóa đếm tần suất ở trình duyệt"
+          },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "imageKey": { "type": "string" },
+          "ctaLabel": { "type": "string" },
+          "linkUrl": { "type": "string" },
+          "audience": {
+            "type": "string",
+            "description": "Trình duyệt tự lọc theo trạng thái đăng nhập",
+            "enum": ["ALL", "GUEST", "MEMBER"]
+          },
+          "frequency": {
+            "type": "string",
+            "enum": ["EVERY_VISIT", "ONCE_PER_SESSION", "ONCE_PER_DAY", "ONCE"]
+          },
+          "delaySeconds": { "type": "integer", "format": "int32" }
+        }
+      },
+      "PublicPageLinkResponse": {
+        "type": "object",
+        "properties": {
+          "slug": { "type": "string" },
+          "title": { "type": "string" },
+          "footerGroup": { "type": "string", "enum": ["ABOUT", "POLICY", "SUPPORT", "NONE"] }
+        }
+      },
+      "PublicPageResponse": {
+        "type": "object",
+        "properties": {
+          "slug": { "type": "string" },
+          "title": { "type": "string" },
+          "content": {
+            "type": "string",
+            "description": "Nội dung Markdown, render không cho HTML thô"
+          },
+          "metaDescription": { "type": "string" },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Lần cập nhật cuối, hiện \"Cập nhật ngày...\" cho trang chính sách"
+          }
+        }
+      },
+      "PublicFaqResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "category": {
+            "type": "string",
+            "enum": ["ORDER", "PAYMENT", "SHIPPING", "RETURN", "ACCOUNT", "OTHER"]
+          },
+          "question": { "type": "string" },
+          "answer": { "type": "string", "description": "Câu trả lời Markdown" }
+        }
+      },
+      "PublicBannerResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string", "description": "Dùng làm alt ảnh" },
+          "imageKey": { "type": "string" },
+          "mobileImageKey": { "type": "string", "description": "null = dùng ảnh desktop" },
+          "linkUrl": { "type": "string" }
+        }
+      },
+      "SitePageSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "title": { "type": "string" },
+          "footerGroup": { "type": "string", "enum": ["ABOUT", "POLICY", "SUPPORT", "NONE"] },
+          "sortOrder": { "type": "integer", "format": "int32" },
+          "status": { "type": "string", "enum": ["DRAFT", "PUBLISHED"] },
+          "publishedAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
         }
       }
     },

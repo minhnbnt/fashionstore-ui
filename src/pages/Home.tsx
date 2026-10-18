@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import Hero from '../components/Hero'
+import { BannerCarousel, BannerStrip } from '../components/HomeBanners'
 import {
   CategoryBento,
   DealMarquee,
@@ -9,6 +10,7 @@ import {
   ProductGrid,
   Testimonials,
 } from '../components/Sections'
+import SitePopup from '../components/SitePopup'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 
@@ -17,6 +19,7 @@ export default function Home() {
   return (
     <main>
       <Hero />
+      <BannerCarousel />
       <LogoStrip />
       <CategoryBento
         onSelect={function (c) {
@@ -25,9 +28,11 @@ export default function Home() {
         }}
       />
       <ProductGrid category={category} />
+      <BannerStrip />
       <DealMarquee />
       <Editorial />
       <Testimonials />
+      <SitePopup />
     </main>
   )
 }

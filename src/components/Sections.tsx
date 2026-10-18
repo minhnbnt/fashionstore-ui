@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useSearch } from '@generated/endpoints/search/search'
+import { useListPageLinks } from '@generated/endpoints/site-content/site-content'
 import {
   Heart,
   ShoppingBag,
@@ -20,6 +21,7 @@ import UserAvatar from './UserAvatar'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
+import type { PublicPageLinkResponse } from '@generated/model/publicPageLinkResponse'
 
 function Reveal(props: { children: React.ReactNode; delay?: number }) {
   const reduce = useReducedMotion()
@@ -329,15 +331,45 @@ export function Testimonials() {
   )
 }
 
+function FooterPageLinks({ links }: { links: PublicPageLinkResponse[] }) {
+  return (
+    <>
+      {links.map(function (link) {
+        return (
+          <li key={link.slug}>
+            <Link to={`/pages/${link.slug ?? ''}`} className="hover:text-white">
+              {link.title}
+            </Link>
+          </li>
+        )
+      })}
+    </>
+  )
+}
+
 export function Footer() {
+  const pagesQuery = useListPageLinks({ query: { staleTime: 5 * 60_000 } })
+  let links: PublicPageLinkResponse[] = []
+  if (pagesQuery.isSuccess) {
+    links = takeData(pagesQuery.data)
+  }
+  const aboutLinks = links.filter((link) => link.footerGroup === 'ABOUT')
+  const supportLinks = links.filter((link) => link.footerGroup === 'SUPPORT')
+  const policyLinks = links.filter((link) => link.footerGroup === 'POLICY')
+
   return (
     <footer className="rounded-t-[2.5rem] bg-zinc-950 px-6 pt-10 pb-8 text-zinc-300 md:px-10 md:pt-12">
-      <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-8 md:grid-cols-4">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-8 md:grid-cols-5">
         <div>
           <p className="text-2xl font-extrabold text-white">
             nét<span className="text-sky-400">.</span>
           </p>
           <p className="mt-2 text-sm text-zinc-400">Mặc đẹp là nét riêng của bạn.</p>
+          {aboutLinks.length > 0 && (
+            <ul className="mt-3 space-y-2 text-sm">
+              <FooterPageLinks links={aboutLinks} />
+            </ul>
+          )}
         </div>
         <div>
           <p className="text-sm font-bold text-white">Mua sắm</p>
@@ -362,9 +394,19 @@ export function Footer() {
         <div>
           <p className="text-sm font-bold text-white">Hỗ trợ</p>
           <ul className="mt-3 space-y-2 text-sm">
-            <li>Đổi trả 30 ngày</li>
-            <li>Giao hàng toàn quốc</li>
+            <li>
+              <Link to="/faq" className="hover:text-white">
+                Câu hỏi thường gặp
+              </Link>
+            </li>
+            <FooterPageLinks links={supportLinks} />
             <li>028 3861 4613</li>
+          </ul>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-white">Chính sách</p>
+          <ul className="mt-3 space-y-2 text-sm">
+            <FooterPageLinks links={policyLinks} />
           </ul>
         </div>
         <div className="col-span-2 md:col-span-1">

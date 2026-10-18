@@ -90,6 +90,26 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     404: 'Sản phẩm không tồn tại.',
     409: 'Sản phẩm đã bị gỡ hoặc shop đã xóa. Tải lại danh sách để xem trạng thái mới.',
   },
+  adminContent: {
+    400: 'Dữ liệu chưa hợp lệ: kiểm tra trường bắt buộc, link và giờ kết thúc phải sau giờ bắt đầu.',
+    403: 'Bạn không có quyền quản lý nội dung.',
+    404: 'Nội dung không còn tồn tại. Tải lại danh sách.',
+  },
+  adminPageSave: {
+    400: 'Dữ liệu chưa hợp lệ: kiểm tra slug (chữ thường không dấu, nối bằng -) và độ dài các trường.',
+    403: 'Bạn không có quyền quản lý nội dung.',
+    404: 'Trang không còn tồn tại. Tải lại danh sách.',
+    409: 'Slug đã có trang khác dùng, hãy đổi slug.',
+  },
+  adminPageStatus: {
+    403: 'Bạn không có quyền quản lý nội dung.',
+    404: 'Trang không còn tồn tại. Tải lại danh sách.',
+    409: 'Trạng thái trang đã thay đổi. Tải lại để xem mới nhất; trang đang xuất bản phải gỡ trước khi xóa.',
+  },
+  sitePage: {
+    404: 'Trang không tồn tại hoặc chưa xuất bản.',
+  },
+  faqs: {},
   adminProductRestore: {
     403: 'Bạn không có quyền khôi phục sản phẩm.',
     404: 'Sản phẩm không tồn tại.',

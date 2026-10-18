@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router'
 
-import { ChartBar, Package } from '@phosphor-icons/react'
+import { ChartBar, Package, SquaresFour } from '@phosphor-icons/react'
 
 const LINKS = [
   { to: '/admin', label: 'Tổng quan', icon: ChartBar, end: true },
   { to: '/admin/products', label: 'Kiểm duyệt sản phẩm', icon: Package, end: false },
+  { to: '/admin/content', label: 'Nội dung', icon: SquaresFour, end: false },
 ]
 
 function linkClass({ isActive }: { isActive: boolean }): string {
