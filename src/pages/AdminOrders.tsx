@@ -408,7 +408,7 @@ export default function AdminOrders() {
         </output>
       )}
 
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-2 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {ALERT_OPTIONS.map(function (alert) {
           return (
             <AlertCard
@@ -421,6 +421,9 @@ export default function AdminOrders() {
           )
         })}
       </div>
+      <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">
+        Hạn xử lý tính theo ngày làm việc, không tính Chủ nhật và ngày lễ.
+      </p>
 
       <section className="glass rounded-3xl p-5">
         <div className="mb-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Lọc trạng thái">

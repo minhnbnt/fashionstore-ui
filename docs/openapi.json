@@ -7353,7 +7353,7 @@
       "get": {
         "tags": ["Admin - Orders"],
         "summary": "Đếm đơn theo trạng thái và cảnh báo",
-        "description": "Cùng bộ lọc với danh sách nhưng không lọc trạng thái/cảnh báo, để hiện số trên từng tab và thẻ cảnh báo: chờ xác nhận quá 24 giờ, chưa bàn giao vận chuyển sau 48 giờ, đang giao quá 7 ngày, trả hàng chưa xong.",
+        "description": "Cùng bộ lọc với danh sách nhưng không lọc trạng thái/cảnh báo, để hiện số trên từng tab và thẻ cảnh báo (tính ngày làm việc, không tính Chủ nhật/ngày lễ): chờ xác nhận quá 1 ngày, chưa bàn giao vận chuyển sau 2 ngày, đang giao quá 7 ngày, trả hàng chưa xong.",
         "operationId": "getAdminOrderSummary",
         "parameters": [
           {
@@ -9340,17 +9340,17 @@
           "confirmLate": {
             "type": "integer",
             "format": "int64",
-            "description": "Chờ xác nhận quá 24 giờ"
+            "description": "Chờ xác nhận quá 1 ngày làm việc (không tính Chủ nhật, ngày lễ)"
           },
           "handoverLate": {
             "type": "integer",
             "format": "int64",
-            "description": "Đã xác nhận nhưng chưa bàn giao vận chuyển sau 48 giờ kể từ lúc đặt"
+            "description": "Đã xác nhận nhưng chưa bàn giao vận chuyển sau 2 ngày làm việc kể từ lúc đặt"
           },
           "deliveryLate": {
             "type": "integer",
             "format": "int64",
-            "description": "Đang giao quá 7 ngày"
+            "description": "Đang giao quá 7 ngày làm việc"
           },
           "returnOpen": {
             "type": "integer",
