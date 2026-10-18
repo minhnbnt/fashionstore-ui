@@ -34,15 +34,19 @@ export interface AlertOption {
   hint: string
 }
 
-// Mốc giờ khớp backend (OrderMonitoringQueryRepository), tham khảo SLA Shopee/Lazada.
+// Mốc khớp backend (OrderSlaPolicy): ngày làm việc, không tính Chủ nhật và ngày lễ như Shopee/Lazada.
 export const ALERT_OPTIONS: AlertOption[] = [
-  { value: 'CONFIRM_LATE', label: 'Chậm xác nhận', hint: 'Chờ xác nhận quá 24 giờ' },
+  {
+    value: 'CONFIRM_LATE',
+    label: 'Chậm xác nhận',
+    hint: 'Chờ xác nhận quá 1 ngày làm việc',
+  },
   {
     value: 'HANDOVER_LATE',
     label: 'Chậm bàn giao vận chuyển',
-    hint: 'Đặt quá 48 giờ chưa giao cho vận chuyển',
+    hint: 'Đặt quá 2 ngày làm việc chưa giao cho vận chuyển',
   },
-  { value: 'DELIVERY_LATE', label: 'Giao hàng quá lâu', hint: 'Đang giao quá 7 ngày' },
+  { value: 'DELIVERY_LATE', label: 'Giao hàng quá lâu', hint: 'Đang giao quá 7 ngày làm việc' },
   { value: 'RETURN_OPEN', label: 'Trả hàng chờ xử lý', hint: 'Yêu cầu trả hàng chưa hoàn tất' },
 ]
 
