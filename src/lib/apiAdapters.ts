@@ -95,6 +95,20 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     404: 'Sản phẩm không tồn tại.',
     409: 'Sản phẩm không còn ở trạng thái bị gỡ. Tải lại danh sách để xem trạng thái mới.',
   },
+  adminOrders: {
+    400: 'Bộ lọc đơn hàng chưa hợp lệ.',
+    403: 'Bạn không có quyền giám sát đơn hàng.',
+  },
+  adminOrderDetail: {
+    403: 'Bạn không có quyền giám sát đơn hàng.',
+    404: 'Đơn hàng không tồn tại.',
+  },
+  adminOrderCancel: {
+    400: 'Thiếu lý do hoặc ghi chú chưa hợp lệ (5–500 ký tự).',
+    403: 'Bạn không có quyền hủy đơn hàng.',
+    404: 'Đơn hàng không tồn tại.',
+    409: 'Đơn đã bàn giao vận chuyển, đã giao hoặc đã hủy. Tải lại danh sách để xem trạng thái mới.',
+  },
 }
 
 export function apiErrorMessage(endpoint: string, status: number): string {

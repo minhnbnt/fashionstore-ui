@@ -14,6 +14,7 @@ const Search = lazy(() => import('./pages/Search'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const AdminProducts = lazy(() => import('./pages/AdminProducts'))
+const AdminOrders = lazy(() => import('./pages/AdminOrders'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
@@ -82,6 +83,14 @@ function App() {
             element={
               <RequireRole requiredRole="admin">
                 <AdminProducts />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminOrders />
               </RequireRole>
             }
           />
