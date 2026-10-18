@@ -85,7 +85,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
     )
   }
 
-  let deleteError: string | null = null
+  let deleteError: string | undefined = undefined
   if (remove.isError) {
     deleteError = hookErrorMessage('adminContent', remove.error)
   }
@@ -243,8 +243,9 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
 
       {deleting !== null && (
         <ConfirmDialog
+          open
           title="Xóa banner"
-          message={`Xóa hẳn banner "${deleting.title ?? ''}"? Muốn ẩn tạm thời thì bấm "Tắt" thay vì xóa.`}
+          description={`Xóa hẳn banner "${deleting.title ?? ''}"? Muốn ẩn tạm thời thì bấm "Tắt" thay vì xóa.`}
           confirmLabel="Xóa banner"
           pending={remove.isPending}
           error={deleteError}

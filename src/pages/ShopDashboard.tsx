@@ -1,7 +1,19 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
-import SellerAddProductTab from '../components/seller/SellerAddProductTab'
-import SellerChatTab from '../components/seller/SellerChatTab'
+import {
+  SellerAddProductTab,
+  SellerChatTab,
+  SellerDecorationTab,
+  SellerInventoryTab,
+  SellerOrdersTab,
+  SellerOverviewTab,
+  SellerProductsTab,
+  SellerProfileTab,
+  SellerReturnsTab,
+  SellerRevenueTab,
+  SellerReviewsTab,
+  SellerStaffTab,
+} from '../components/seller-dashboard-tab'
 import {
   INITIAL_PRODUCTS,
   INITIAL_ORDERS,
@@ -28,18 +40,12 @@ import {
   type ShopAuditItem,
   type DecorationBlock,
   type StockMovementItem,
-} from '../components/seller/sellerData'
-import { SellerDecorationTab } from '../components/seller/SellerDecorationTab'
-import SellerInventoryTab from '../components/seller/SellerInventoryTab'
-import { SellerLayout, type SellerTabId } from '../components/seller/SellerLayout'
-import SellerOrdersTab from '../components/seller/SellerOrdersTab'
-import SellerOverviewTab from '../components/seller/SellerOverviewTab'
-import SellerProductsTab from '../components/seller/SellerProductsTab'
-import { SellerProfileTab } from '../components/seller/SellerProfileTab'
-import SellerReturnsTab from '../components/seller/SellerReturnsTab'
-import SellerRevenueTab from '../components/seller/SellerRevenueTab'
-import SellerReviewsTab from '../components/seller/SellerReviewsTab'
-import { SellerStaffTab } from '../components/seller/SellerStaffTab'
+} from '../components/seller-dashboard-tab/sellerData'
+import { SellerLayout, type SellerTabId } from '../components/seller-dashboard-tab/SellerLayout'
+
+function TabLoading() {
+  return <p className="py-24 text-center">Đang tải…</p>
+}
 
 const INITIAL_STOCK_MOVEMENTS: StockMovementItem[] = [
   {
@@ -66,6 +72,20 @@ const INITIAL_STOCK_MOVEMENTS: StockMovementItem[] = [
     createdBy: 'Hệ thống tự động',
     createdAt: '14/10/2026 15:30',
   },
+]
+
+// Valid navigation targets triggered by Overview cards
+const NAVIGABLE_TABS: readonly SellerTabId[] = [
+  'ORDERS',
+  'RETURNS',
+  'INVENTORY',
+  'ADD_PRODUCT',
+  'CHAT',
+  'DECORATION',
+  'REVENUE',
+  'PRODUCTS',
+  'STAFF',
+  'PROFILE',
 ]
 
 export default function ShopDashboard() {
@@ -104,45 +124,11 @@ export default function ShopDashboard() {
   // Tab Navigation Bridge from Overview cards
   function handleOverviewNavigate(tabId: string) {
     const key = tabId.toUpperCase()
-    if (key === 'ORDERS') {
-      setActiveTab('ORDERS')
-      return
-    }
-    if (key === 'RETURNS') {
-      setActiveTab('RETURNS')
-      return
-    }
-    if (key === 'INVENTORY') {
-      setActiveTab('INVENTORY')
-      return
-    }
-    if (key === 'ADD_PRODUCT') {
-      setActiveTab('ADD_PRODUCT')
-      return
-    }
-    if (key === 'CHAT') {
-      setActiveTab('CHAT')
-      return
-    }
-    if (key === 'DECORATION') {
-      setActiveTab('DECORATION')
-      return
-    }
-    if (key === 'REVENUE') {
-      setActiveTab('REVENUE')
-      return
-    }
-    if (key === 'PRODUCTS') {
-      setActiveTab('PRODUCTS')
-      return
-    }
-    if (key === 'STAFF') {
-      setActiveTab('STAFF')
-      return
-    }
-    if (key === 'PROFILE') {
-      setActiveTab('PROFILE')
-      return
+    for (const tab of NAVIGABLE_TABS) {
+      if (key === tab) {
+        setActiveTab(tab)
+        return
+      }
     }
     setActiveTab('OVERVIEW')
   }
@@ -459,115 +445,119 @@ export default function ShopDashboard() {
       lowStockCount={lowStockCount}
       unreadChatCount={unreadChatCount}
     >
-      {/* 1. OVERVIEW TAB */}
-      {activeTab === 'OVERVIEW' && (
-        <SellerOverviewTab
-          onNavigateTab={handleOverviewNavigate}
-          pendingOrdersCount={pendingOrdersCount}
-          confirmedOrdersCount={confirmedOrdersCount}
-          pendingReturnsCount={pendingReturnsCount}
-          lowStockCount={lowStockCount}
-        />
-      )}
+      <Suspense fallback={<TabLoading />}>
+        {/* 1. OVERVIEW TAB */}
+        {activeTab === 'OVERVIEW' && (
+          <SellerOverviewTab
+            onNavigateTab={handleOverviewNavigate}
+            pendingOrdersCount={pendingOrdersCount}
+            confirmedOrdersCount={confirmedOrdersCount}
+            pendingReturnsCount={pendingReturnsCount}
+            lowStockCount={lowStockCount}
+          />
+        )}
 
-      {/* 2. PRODUCTS TAB */}
-      {activeTab === 'PRODUCTS' && (
-        <SellerProductsTab
-          products={products}
-          onToggleStatus={handleToggleProductStatus}
-          onDeleteProduct={handleDeleteProduct}
-          onBulkImport={handleBulkImport}
-          onNavigateAddProduct={() => setActiveTab('ADD_PRODUCT')}
-        />
-      )}
+        {/* 2. PRODUCTS TAB */}
+        {activeTab === 'PRODUCTS' && (
+          <SellerProductsTab
+            products={products}
+            onToggleStatus={handleToggleProductStatus}
+            onDeleteProduct={handleDeleteProduct}
+            onBulkImport={handleBulkImport}
+            onNavigateAddProduct={() => setActiveTab('ADD_PRODUCT')}
+          />
+        )}
 
-      {/* 3. ADD PRODUCT TAB */}
-      {activeTab === 'ADD_PRODUCT' && (
-        <SellerAddProductTab
-          onBack={() => setActiveTab('PRODUCTS')}
-          onAddProduct={handleAddProduct}
-        />
-      )}
+        {/* 3. ADD PRODUCT TAB */}
+        {activeTab === 'ADD_PRODUCT' && (
+          <SellerAddProductTab
+            onBack={() => setActiveTab('PRODUCTS')}
+            onAddProduct={handleAddProduct}
+          />
+        )}
 
-      {/* 4. INVENTORY TAB */}
-      {activeTab === 'INVENTORY' && (
-        <SellerInventoryTab
-          products={products}
-          movements={stockMovements}
-          onAdjustStock={handleAdjustStock}
-        />
-      )}
+        {/* 4. INVENTORY TAB */}
+        {activeTab === 'INVENTORY' && (
+          <SellerInventoryTab
+            products={products}
+            movements={stockMovements}
+            onAdjustStock={handleAdjustStock}
+          />
+        )}
 
-      {/* 5. ORDERS TAB */}
-      {activeTab === 'ORDERS' && (
-        <SellerOrdersTab
-          orders={orders}
-          onConfirmOrder={handleConfirmOrder}
-          onShipOrder={handleShipOrder}
-          onDeliverOrder={handleDeliverOrder}
-          onCancelOrder={handleCancelOrder}
-        />
-      )}
+        {/* 5. ORDERS TAB */}
+        {activeTab === 'ORDERS' && (
+          <SellerOrdersTab
+            orders={orders}
+            onConfirmOrder={handleConfirmOrder}
+            onShipOrder={handleShipOrder}
+            onDeliverOrder={handleDeliverOrder}
+            onCancelOrder={handleCancelOrder}
+          />
+        )}
 
-      {/* 6. RETURNS TAB */}
-      {activeTab === 'RETURNS' && (
-        <SellerReturnsTab
-          returns={returns}
-          onApproveReturn={handleApproveReturn}
-          onRejectReturn={handleRejectReturn}
-          onCompleteReturn={handleCompleteReturn}
-        />
-      )}
+        {/* 6. RETURNS TAB */}
+        {activeTab === 'RETURNS' && (
+          <SellerReturnsTab
+            returns={returns}
+            onApproveReturn={handleApproveReturn}
+            onRejectReturn={handleRejectReturn}
+            onCompleteReturn={handleCompleteReturn}
+          />
+        )}
 
-      {/* 7. REVENUE TAB */}
-      {activeTab === 'REVENUE' && (
-        <SellerRevenueTab
-          settlements={settlements}
-          withdrawals={withdrawals}
-          onCreateWithdrawal={handleCreateWithdrawal}
-        />
-      )}
+        {/* 7. REVENUE TAB */}
+        {activeTab === 'REVENUE' && (
+          <SellerRevenueTab
+            settlements={settlements}
+            withdrawals={withdrawals}
+            onCreateWithdrawal={handleCreateWithdrawal}
+          />
+        )}
 
-      {/* 8. REVIEWS TAB */}
-      {activeTab === 'REVIEWS' && (
-        <SellerReviewsTab
-          reviews={reviews}
-          onReplyReview={handleReplyReview}
-          onReportReview={handleReportReview}
-        />
-      )}
+        {/* 8. REVIEWS TAB */}
+        {activeTab === 'REVIEWS' && (
+          <SellerReviewsTab
+            reviews={reviews}
+            onReplyReview={handleReplyReview}
+            onReportReview={handleReportReview}
+          />
+        )}
 
-      {/* 9. CHAT TAB */}
-      {activeTab === 'CHAT' && (
-        <SellerChatTab
-          conversations={conversations}
-          onSendMessage={handleSendMessage}
-          onMarkRead={handleMarkRead}
-          autoReplyText={autoReplyText}
-          onSaveAutoReply={setAutoReplyText}
-        />
-      )}
+        {/* 9. CHAT TAB */}
+        {activeTab === 'CHAT' && (
+          <SellerChatTab
+            conversations={conversations}
+            onSendMessage={handleSendMessage}
+            onMarkRead={handleMarkRead}
+            autoReplyText={autoReplyText}
+            onSaveAutoReply={setAutoReplyText}
+          />
+        )}
 
-      {/* 10. DECORATION TAB */}
-      {activeTab === 'DECORATION' && (
-        <SellerDecorationTab blocks={blocks} onUpdateBlocks={setBlocks} />
-      )}
+        {/* 10. DECORATION TAB */}
+        {activeTab === 'DECORATION' && (
+          <SellerDecorationTab blocks={blocks} onUpdateBlocks={setBlocks} />
+        )}
 
-      {/* 11. STAFF & RBAC TAB */}
-      {activeTab === 'STAFF' && (
-        <SellerStaffTab
-          roles={roles}
-          members={members}
-          auditLogs={auditLogs}
-          onAddMember={handleAddMember}
-          onRemoveMember={handleRemoveMember}
-          onAddRole={handleAddRole}
-          onAddAuditLog={handleAddAuditLog}
-        />
-      )}
+        {/* 11. STAFF & RBAC TAB */}
+        {activeTab === 'STAFF' && (
+          <SellerStaffTab
+            roles={roles}
+            members={members}
+            auditLogs={auditLogs}
+            onAddMember={handleAddMember}
+            onRemoveMember={handleRemoveMember}
+            onAddRole={handleAddRole}
+            onAddAuditLog={handleAddAuditLog}
+          />
+        )}
 
-      {/* 12. PROFILE & KYC TAB */}
-      {activeTab === 'PROFILE' && <SellerProfileTab profile={profile} onSaveProfile={setProfile} />}
+        {/* 12. PROFILE & KYC TAB */}
+        {activeTab === 'PROFILE' && (
+          <SellerProfileTab profile={profile} onSaveProfile={setProfile} />
+        )}
+      </Suspense>
     </SellerLayout>
   )
 }

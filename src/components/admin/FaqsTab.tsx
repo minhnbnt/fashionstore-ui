@@ -40,7 +40,7 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
     })
   }
 
-  let deleteError: string | null = null
+  let deleteError: string | undefined = undefined
   if (remove.isError) {
     deleteError = hookErrorMessage('adminContent', remove.error)
   }
@@ -175,8 +175,9 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
 
       {deleting !== null && (
         <ConfirmDialog
+          open
           title="Xóa câu hỏi"
-          message={`Xóa hẳn "${deleting.question ?? ''}"? Muốn ẩn tạm thời thì bỏ chọn "Hiện trên trang FAQ".`}
+          description={`Xóa hẳn "${deleting.question ?? ''}"? Muốn ẩn tạm thời thì bỏ chọn "Hiện trên trang FAQ".`}
           confirmLabel="Xóa câu hỏi"
           pending={remove.isPending}
           error={deleteError}

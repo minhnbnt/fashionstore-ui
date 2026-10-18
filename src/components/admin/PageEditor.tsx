@@ -100,7 +100,7 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
   if (unpublish.isError) {
     error = hookErrorMessage('adminPageStatus', unpublish.error)
   }
-  let deleteError: string | null = null
+  let deleteError: string | undefined = undefined
   if (remove.isError) {
     deleteError = hookErrorMessage('adminPageStatus', remove.error)
   }
@@ -366,8 +366,9 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
 
       {confirmDelete && page?.id !== undefined && (
         <ConfirmDialog
+          open
           title="Xóa trang"
-          message={`Xóa hẳn trang nháp "${page.title ?? ''}"?`}
+          description={`Xóa hẳn trang nháp "${page.title ?? ''}"?`}
           confirmLabel="Xóa trang"
           pending={remove.isPending}
           error={deleteError}

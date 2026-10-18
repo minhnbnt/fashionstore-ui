@@ -101,9 +101,16 @@ export default function Header() {
   const isLoggedIn = session !== null && session !== undefined
   let role = 'customer'
   let dashboardPath = '/account'
+  let dashboardLabel = 'Trang cá nhân'
   if (isLoggedIn) {
     role = getRoleFromSession(session)
     dashboardPath = getDefaultPathForRole(role as 'admin' | 'shop' | 'customer')
+    if (role === 'admin') {
+      dashboardLabel = 'Bảng quản trị'
+    }
+    if (role === 'shop') {
+      dashboardLabel = 'Kênh người bán'
+    }
   }
 
   let sellerChannelPath = '/account#seller-channel'
@@ -193,8 +200,21 @@ export default function Header() {
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-indigo-50 dark:text-zinc-200 dark:hover:bg-white/10"
                   >
                     <UserCircle size={16} />
-                    Trang cá nhân
+                    {dashboardLabel}
                   </Link>
+
+                  {role !== 'customer' && (
+                    <Link
+                      to="/account"
+                      onClick={function () {
+                        setDropdownOpen(false)
+                      }}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-indigo-50 dark:text-zinc-200 dark:hover:bg-white/10"
+                    >
+                      <User size={16} />
+                      Tài khoản &amp; shop của tôi
+                    </Link>
+                  )}
 
                   {/* Sign out */}
                   <button
