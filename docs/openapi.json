@@ -8986,6 +8986,7 @@
           "id": { "type": "string", "format": "uuid" },
           "shopId": { "type": "string", "format": "uuid" },
           "buyerId": { "type": "string", "format": "uuid" },
+          "shopName": { "type": "string" },
           "lastMessageText": { "type": "string" },
           "lastMessageAt": { "type": "string", "format": "date-time" },
           "unreadCount": { "type": "integer", "format": "int32" },

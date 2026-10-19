@@ -381,15 +381,18 @@ export function DealMarquee() {
     'Flash Sale giá tốt mỗi ngày',
     'Thanh toán COD khi nhận hàng',
   ]
-  const doubled = items.concat(items)
+  const repeated = [...items, ...items, ...items, ...items]
   return (
     <section className="overflow-hidden bg-gradient-to-r from-indigo-950 via-blue-900 to-sky-900 py-3 text-white">
-      <div className="marquee-track text-xs font-bold tracking-widest uppercase">
-        {doubled.map(function (t, i) {
+      <div
+        className="flex w-max shrink-0 items-center gap-12 text-xs font-bold tracking-widest uppercase"
+        style={{ animation: 'marquee 25s linear infinite' }}
+      >
+        {repeated.map(function (t, i) {
           return (
-            <span key={i} className="flex items-center gap-8">
-              <Sparkle size={12} weight="fill" className="text-sky-300" />
-              {t}
+            <span key={i} className="inline-flex shrink-0 items-center gap-3 whitespace-nowrap">
+              <Sparkle size={12} weight="fill" className="shrink-0 text-sky-300" />
+              <span>{t}</span>
             </span>
           )
         })}

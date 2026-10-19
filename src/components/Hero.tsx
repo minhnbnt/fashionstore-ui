@@ -32,9 +32,18 @@ export default function Hero() {
 
   return (
     <section id="top" className="relative scroll-mt-24 overflow-hidden pt-32 lg:pt-36">
-      <div className="hero-blob top-24 left-[-120px] h-96 w-96 bg-indigo-900/40" />
-      <div className="hero-blob top-40 right-[-100px] h-[28rem] w-[28rem] bg-sky-400/50" />
-      <div className="hero-blob top-[420px] left-1/3 h-72 w-72 bg-blue-300/40" />
+      <div
+        className="absolute top-24 -left-28 h-96 w-96 rounded-full bg-indigo-900/40 pointer-events-none -z-10"
+        style={{ filter: 'blur(90px)', borderRadius: '9999px' }}
+      />
+      <div
+        className="absolute top-40 -right-24 h-[28rem] w-[28rem] rounded-full bg-sky-400/35 pointer-events-none -z-10"
+        style={{ filter: 'blur(90px)', borderRadius: '9999px' }}
+      />
+      <div
+        className="absolute top-[420px] left-1/3 h-72 w-72 rounded-full bg-blue-300/30 pointer-events-none -z-10"
+        style={{ filter: 'blur(90px)', borderRadius: '9999px' }}
+      />
 
       <div className="relative mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-10 px-4 pt-4 pb-8 lg:grid-cols-12 lg:pt-6">
         {/* Cột trái: Headline & Call To Action */}

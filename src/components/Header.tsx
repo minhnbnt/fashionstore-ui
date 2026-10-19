@@ -436,7 +436,7 @@ export default function Header() {
                                 </p>
                               </div>
                               <p className="font-extrabold text-blue-600 dark:text-sky-400">
-                                {formatVnd(item.lineTotal ?? (item.unitPrice ?? 0) * (item.quantity ?? 1))}
+                                {formatVnd((item.unitPrice ?? 0) * (item.quantity ?? 1))}
                               </p>
                             </div>
                           )
