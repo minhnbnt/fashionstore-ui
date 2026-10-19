@@ -112,7 +112,7 @@ export default function Account() {
   function handleTabClick(tab: AccountTab) {
     setActiveTab(tab)
     const hash = tab === 'seller' ? '#seller-channel' : `#${tab}`
-    navigate(hash, { replace: true })
+    navigate(hash, { replace: true, preventScrollReset: true })
   }
 
   const profileQuery = useMe()
@@ -404,29 +404,17 @@ export default function Account() {
         {/* Right Column: Active Tab Content */}
         <section className="glass min-w-0 rounded-3xl p-6 md:p-8 lg:col-span-9">
           {/* Tab 1: Orders */}
-          {activeTab === 'orders' && (
-            <div id="orders">
-              <OrderHistoryTab />
-            </div>
-          )}
+          {activeTab === 'orders' && <OrderHistoryTab />}
 
           {/* Tab 2: Addresses */}
-          {activeTab === 'addresses' && (
-            <div id="addresses">
-              <AddressBookTab />
-            </div>
-          )}
+          {activeTab === 'addresses' && <AddressBookTab />}
 
           {/* Tab 3: Wishlist */}
-          {activeTab === 'wishlist' && (
-            <div id="wishlist">
-              <WishlistTab />
-            </div>
-          )}
+          {activeTab === 'wishlist' && <WishlistTab />}
 
           {/* Tab 4: Profile & Password */}
           {activeTab === 'profile' && (
-            <div id="profile" className="max-w-2xl space-y-6">
+            <div className="max-w-2xl space-y-6">
               <div>
                 <h2 className="text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
                   Hồ sơ cá nhân & Bảo mật
@@ -475,7 +463,7 @@ export default function Account() {
 
           {/* Tab 5: Seller Center & Shop Management */}
           {activeTab === 'seller' && (
-            <div id="seller-channel">
+            <div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-bold tracking-[0.18em] text-blue-600 uppercase dark:text-sky-400">

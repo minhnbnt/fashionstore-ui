@@ -33,6 +33,10 @@ function ScrollToHash() {
   const location = useLocation()
   useEffect(
     function () {
+      // Do not auto-scroll on /account, where hashes represent tab states
+      if (location.pathname === '/account') {
+        return
+      }
       if (location.hash !== '' && location.hash !== '#') {
         const id = location.hash.replace(/^#/, '')
         if (id !== '') {
