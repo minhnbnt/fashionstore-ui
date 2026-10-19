@@ -22,6 +22,7 @@ const AdminUserDetail = lazy(() => import('./pages/AdminUserDetail'))
 const AdminProducts = lazy(() => import('./pages/AdminProducts'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const ShopView = lazy(() => import('./pages/ShopView'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -53,11 +54,12 @@ function ScrollToHash() {
 
 function App() {
   const location = useLocation()
-  const isShopRoute = location.pathname.startsWith('/shop')
+  const isSellerDashboard =
+    location.pathname === '/shop' || location.pathname.startsWith('/shop/')
 
   return (
     <div className="grain min-h-[100dvh]">
-      {!isShopRoute && <Header />}
+      {!isSellerDashboard && <Header />}
       <ScrollToHash />
       <Suspense fallback={<PageLoading />}>
         <Routes>
@@ -132,6 +134,7 @@ function App() {
               </RequireRole>
             }
           />
+          <Route path="/shops/:slug" element={<ShopView />} />
           <Route
             path="/shop"
             element={
@@ -142,7 +145,7 @@ function App() {
           />
         </Routes>
       </Suspense>
-      {!isShopRoute && <Footer />}
+      {!isSellerDashboard && <Footer />}
     </div>
   )
 }

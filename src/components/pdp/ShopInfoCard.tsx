@@ -1,16 +1,22 @@
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 
 import { ChatDots, CheckCircle, Clock, ShieldCheck, Star, Storefront } from '@phosphor-icons/react'
 
 import UserAvatar from '../UserAvatar'
 
 export default function ShopInfoCard(props: { shopId?: string; shopName?: string }) {
-  const navigate = useNavigate()
   const name = props.shopName ?? 'Gian Hàng nét Official'
   const shopSlug = props.shopId ?? 'net-official'
 
   function handleChatClick() {
-    void navigate('/account#chat')
+    window.dispatchEvent(
+      new CustomEvent('open-shop-chat', {
+        detail: {
+          shopId: props.shopId,
+          shopName: props.shopName,
+        },
+      }),
+    )
   }
 
   return (
