@@ -251,26 +251,26 @@ export default function Search() {
       </nav>
 
       {/* 2. Page Title Header & Subtitle */}
-      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-4 border-b border-zinc-100 pb-4 dark:border-white/10">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-zinc-900 md:text-3xl dark:text-white">
-            {filters.q !== null
-              ? `Kết quả tìm kiếm cho “${filters.q}”`
-              : currentCategory !== undefined
-                ? currentCategory.name
-                : 'Tất cả sản phẩm thời trang'}
-          </h1>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Khám phá các thiết kế thời trang hiện đại, dẫn đầu xu hướng cùng nét Marketplace
-          </p>
-        </div>
+      <div className="mt-3">
+        <h1 className="text-2xl font-black tracking-tight text-zinc-900 md:text-3xl dark:text-white">
+          {filters.q !== null
+            ? `Kết quả tìm kiếm cho “${filters.q}”`
+            : currentCategory !== undefined
+              ? currentCategory.name
+              : 'Tất cả sản phẩm thời trang'}
+        </h1>
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          Khám phá các thiết kế thời trang hiện đại, dẫn đầu xu hướng cùng nét Marketplace
+        </p>
+      </div>
 
-        {/* Hot Search Pills Bar */}
+      {/* Hot Search Pills Bar - Cố định ở dòng riêng, không bao giờ bị nhảy dòng */}
+      <div className="mt-3.5 flex flex-wrap items-center gap-2 border-b border-zinc-100 pb-3.5 dark:border-white/10">
+        <span className="flex items-center gap-1 text-[11px] font-extrabold text-blue-600 uppercase tracking-wider shrink-0 dark:text-sky-400">
+          <TrendUp size={13} weight="bold" />
+          <span>Xu hướng:</span>
+        </span>
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="flex items-center gap-1 text-[11px] font-extrabold text-blue-600 uppercase tracking-wider dark:text-sky-400">
-            <TrendUp size={13} weight="bold" />
-            <span>Xu hướng:</span>
-          </span>
           {HOT_SEARCH_TAGS.map(function (tag) {
             const isCurrent = filters.q?.toLowerCase() === tag.toLowerCase()
             return (
