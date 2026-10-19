@@ -195,7 +195,7 @@ export default function Account() {
       'w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition text-left'
     if (activeTab === tab) {
       base +=
-        ' bg-orange-600 text-white shadow-md shadow-orange-600/20 dark:bg-orange-600 dark:text-white'
+        ' bg-blue-600 text-white shadow-md shadow-blue-600/20 dark:bg-blue-600 dark:text-white'
     }
     if (activeTab !== tab) {
       base +=
@@ -205,7 +205,7 @@ export default function Account() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-16">
+    <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-16">
       {profile?.status === 'LOCKED' && (
         <section className="mb-6 rounded-3xl border border-red-200 bg-red-50 p-5 dark:border-red-400/20 dark:bg-red-500/10">
           <div className="flex items-start gap-3">

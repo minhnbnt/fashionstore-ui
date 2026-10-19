@@ -31,7 +31,7 @@ export default function Hero() {
   const subProduct = featuredProducts[1] ?? null
 
   return (
-    <section id="top" className="relative scroll-mt-24 overflow-hidden pt-[100px]">
+    <section id="top" className="relative scroll-mt-24 overflow-hidden pt-32 lg:pt-36">
       <div className="hero-blob top-24 left-[-120px] h-96 w-96 bg-indigo-900/40" />
       <div className="hero-blob top-40 right-[-100px] h-[28rem] w-[28rem] bg-sky-400/50" />
       <div className="hero-blob top-[420px] left-1/3 h-72 w-72 bg-blue-300/40" />

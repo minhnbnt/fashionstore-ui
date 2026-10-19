@@ -152,7 +152,7 @@ export default function OrderHistoryTab() {
         >
           <ArrowClockwise
             size={14}
-            className={ordersQuery.isFetching ? 'animate-spin text-orange-600' : ''}
+            className={ordersQuery.isFetching ? 'animate-spin text-blue-600' : ''}
           />
           <span>Làm mới</span>
         </button>
@@ -189,7 +189,7 @@ export default function OrderHistoryTab() {
           let tabClassName =
             'relative shrink-0 px-5 py-3 text-sm font-bold transition flex items-center gap-1.5'
           if (isActive) {
-            tabClassName += ' text-orange-600 dark:text-orange-400'
+            tabClassName += ' text-blue-600 dark:text-sky-400'
           }
           if (isActive === false) {
             tabClassName +=
@@ -212,7 +212,7 @@ export default function OrderHistoryTab() {
                 </span>
               )}
               {isActive && (
-                <span className="absolute right-0 bottom-0 left-0 h-0.5 bg-orange-600 dark:bg-orange-500" />
+                <span className="absolute right-0 bottom-0 left-0 h-0.5 bg-blue-600 dark:bg-blue-500" />
               )}
             </button>
           )
@@ -220,7 +220,7 @@ export default function OrderHistoryTab() {
       </div>
 
       {/* Search Order Bar */}
-      <div className="relative">
+      <div className="relative pt-1 pb-1">
         <label htmlFor="searchOrderInput" className="sr-only">
           Tìm kiếm đơn hàng
         </label>
@@ -236,14 +236,14 @@ export default function OrderHistoryTab() {
             setSearchCode(e.target.value)
           }}
           placeholder="Tìm đơn hàng theo Mã đơn hoặc Tên sản phẩm…"
-          className="w-full rounded-2xl border border-zinc-200 bg-white py-2.5 pr-4 pl-10 text-xs font-medium text-zinc-800 placeholder-zinc-400 transition focus:border-orange-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-100"
+          className="w-full rounded-2xl border border-zinc-200 bg-white py-2.5 pr-4 pl-10 text-xs font-medium text-zinc-800 placeholder-zinc-400 transition focus:border-blue-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-100"
         />
       </div>
 
       {/* Loading state */}
       {ordersQuery.isLoading && (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-zinc-200 bg-white py-16 dark:border-zinc-800 dark:bg-zinc-900">
-          <ArrowClockwise size={28} className="animate-spin text-orange-600" />
+          <ArrowClockwise size={28} className="animate-spin text-blue-600" />
           <p className="mt-3 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
             Đang tải dữ liệu đơn hàng từ CSDL…
           </p>
@@ -253,7 +253,7 @@ export default function OrderHistoryTab() {
       {/* Empty State */}
       {ordersQuery.isLoading === false && filteredOrders.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-200 bg-white py-16 text-center dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
             <Package size={32} weight="duotone" />
           </div>
           <h3 className="mt-4 text-base font-extrabold text-zinc-900 dark:text-white">
@@ -265,7 +265,7 @@ export default function OrderHistoryTab() {
           </p>
           <Link
             to="/search"
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-orange-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-orange-600/20 transition hover:bg-orange-700"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700"
           >
             <ShoppingBag size={15} weight="bold" />
             <span>Mua sắm ngay</span>

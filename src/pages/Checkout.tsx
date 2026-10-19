@@ -160,7 +160,7 @@ export default function Checkout() {
 
   if (!cart.isLoggedIn) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-24 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-24 text-center">
         <div className="mx-auto max-w-md rounded-3xl border border-sky-100 bg-white/80 p-8 shadow-sm dark:border-white/10 dark:bg-white/5">
           <ShoppingBag size={48} className="mx-auto text-blue-600 dark:text-sky-300" />
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight">Thanh Toán Đơn Hàng</h1>
@@ -179,7 +179,7 @@ export default function Checkout() {
 
   if (cart.items.length === 0) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-24 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-24 text-center">
         <div className="mx-auto max-w-md rounded-3xl border border-sky-100 bg-white/80 p-8 shadow-sm dark:border-white/10 dark:bg-white/5">
           <h1 className="text-2xl font-extrabold tracking-tight">Không có sản phẩm để thanh toán</h1>
           <p className="mt-2 text-sm text-zinc-500">Giỏ hàng của bạn đang trống.</p>
@@ -196,7 +196,7 @@ export default function Checkout() {
   }
 
   return (
-    <main className="mx-auto max-w-[1200px] px-4 pt-[100px] pb-24">
+    <main className="mx-auto max-w-[1200px] px-4 pt-32 md:pt-36 pb-24">
       {toast !== null && (
         <div className="glass fixed bottom-12 left-1/2 z-50 -translate-x-1/2 rounded-full px-5 py-2.5 text-sm font-bold shadow-2xl">
           {toast}

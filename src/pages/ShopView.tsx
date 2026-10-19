@@ -190,7 +190,7 @@ export default function ShopView() {
   // Loading State
   if (shopQuery.isLoading) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-[110px] pb-24 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-24 text-center">
         <div className="flex flex-col items-center justify-center py-20">
           <ArrowClockwise size={36} className="animate-spin text-orange-600" />
           <p className="mt-4 text-sm font-semibold text-zinc-500">
@@ -204,7 +204,7 @@ export default function ShopView() {
   // 404 Not Found State
   if (shop === null) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-[110px] pb-24 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-24 text-center">
         <div className="mx-auto max-w-md rounded-3xl border border-dashed border-zinc-300 bg-white p-10 dark:border-zinc-700 dark:bg-zinc-900">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-500/10">
             <Storefront size={32} weight="duotone" />
@@ -259,7 +259,7 @@ export default function ShopView() {
       )}
 
       {/* Shopee Shop Hero Header Section */}
-      <div className="relative pt-[80px]">
+      <div className="relative pt-[104px]">
         {/* Banner Background */}
         <div className="relative h-64 w-full overflow-hidden bg-gradient-to-r from-zinc-900 via-neutral-900 to-stone-900 md:h-72">
           {bannerSrc !== '' && (

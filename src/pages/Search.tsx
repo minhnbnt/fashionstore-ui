@@ -214,7 +214,7 @@ export default function Search() {
   const filterCount = activeFilterCount(filters)
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
+    <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-16">
       <p className="text-xs font-bold tracking-[0.18em] text-indigo-900 uppercase dark:text-indigo-200">
         Cửa hàng
       </p>
