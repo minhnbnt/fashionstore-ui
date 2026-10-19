@@ -206,9 +206,9 @@ export default function Cart() {
       </div>
 
       {/* Bảng Giỏ Hàng Chuẩn Shopee */}
-      <div className="dark:bg-zinc-850 mt-6 overflow-hidden rounded-3xl border border-sky-100 bg-white/90 shadow-sm dark:border-white/10">
+      <div className="mt-6 overflow-hidden rounded-3xl border border-sky-100 bg-white/90 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/90">
         {/* Table Header */}
-        <div className="hidden grid-cols-12 items-center gap-4 border-b border-sky-100 bg-sky-50/70 px-6 py-3.5 text-xs font-bold text-zinc-600 sm:grid dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
+        <div className="hidden grid-cols-12 items-center gap-4 border-b border-sky-100 bg-sky-50/70 px-6 py-3.5 text-xs font-bold text-zinc-600 sm:grid dark:border-zinc-800 dark:bg-zinc-800/60 dark:text-zinc-300">
           <div className="col-span-5 flex items-center gap-3">
             <input
               type="checkbox"

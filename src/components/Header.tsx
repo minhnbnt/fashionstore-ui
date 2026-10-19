@@ -5,6 +5,7 @@ import { useListCategories } from '@generated/endpoints/categories/categories'
 import {
   Bell,
   CaretDown,
+  DeviceMobile,
   FacebookLogo,
   Globe,
   Heart,
@@ -18,6 +19,7 @@ import {
   SignOut,
   Storefront,
   Sun,
+  TiktokLogo,
   User,
   UserCircle,
 } from '@phosphor-icons/react'
@@ -161,39 +163,41 @@ export default function Header() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 shadow-xs">
-      {/* 1. Shopee Topbar - Xanh Navy & Blue sang trọng đồng bộ */}
-      <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-700 text-white shadow-xs">
-        <div className="mx-auto flex h-8 max-w-[1400px] items-center justify-between px-4 text-xs font-semibold">
+      {/* 1. Modern Luxury E-commerce Topbar */}
+      <div className="border-b border-zinc-800/80 bg-zinc-950 text-zinc-300 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-black/95">
+        <div className="mx-auto flex h-9 max-w-[1440px] items-center justify-between px-4 text-xs font-medium">
           {/* Left Topbar Links */}
           <div className="flex items-center gap-3">
             <Link
               to={sellerChannelPath}
-              className="flex items-center gap-1.5 text-white/90 transition hover:text-white"
+              className="group flex items-center gap-1.5 font-bold text-zinc-200 transition hover:text-white"
             >
-              <Storefront size={14} weight="fill" />
+              <Storefront size={14} weight="fill" className="text-blue-400 transition group-hover:scale-110" />
               <span>Kênh Người Bán</span>
+              {role === 'shop' && (
+                <span className="rounded-full bg-blue-500/20 px-1.5 py-0.2 text-[9px] font-black text-blue-400 border border-blue-500/30">
+                  SHOP
+                </span>
+              )}
             </Link>
 
-            <span className="hidden text-white/30 sm:inline">|</span>
+            <span className="text-zinc-700">|</span>
 
-            <a
-              href="tel:19006868"
-              className="hidden items-center gap-1.5 text-white/90 transition hover:text-white sm:flex"
-            >
-              <Phone size={13} weight="fill" />
-              <span>Hotline: 1900 6868</span>
-            </a>
+            <div className="hidden items-center gap-1.5 text-zinc-400 transition hover:text-white sm:flex cursor-pointer">
+              <DeviceMobile size={13} weight="bold" />
+              <span>Tải App nét</span>
+            </div>
 
-            <span className="hidden text-white/30 md:inline">|</span>
+            <span className="hidden text-zinc-700 md:inline">|</span>
 
-            <div className="hidden items-center gap-2 text-white/90 md:flex">
-              <span className="text-[11px] font-medium text-white/80">Kết nối:</span>
+            <div className="hidden items-center gap-2 text-zinc-400 md:flex">
+              <span className="text-[11px]">Kết nối:</span>
               <a
                 href="https://facebook.com"
                 target="_blank"
                 rel="noreferrer"
                 title="Facebook"
-                className="transition hover:text-white hover:scale-110"
+                className="transition hover:scale-110 hover:text-blue-400"
               >
                 <FacebookLogo size={14} weight="fill" />
               </a>
@@ -202,82 +206,110 @@ export default function Header() {
                 target="_blank"
                 rel="noreferrer"
                 title="Instagram"
-                className="transition hover:text-white hover:scale-110"
+                className="transition hover:scale-110 hover:text-rose-400"
               >
                 <InstagramLogo size={14} weight="fill" />
               </a>
+              <a
+                href="https://tiktok.com"
+                target="_blank"
+                rel="noreferrer"
+                title="TikTok"
+                className="transition hover:scale-110 hover:text-white"
+              >
+                <TiktokLogo size={14} weight="fill" />
+              </a>
             </div>
+
+            <span className="hidden text-zinc-700 lg:inline">|</span>
+
+            <a
+              href="tel:19006868"
+              className="hidden items-center gap-1.5 text-zinc-400 transition hover:text-white lg:flex"
+            >
+              <Phone size={13} weight="fill" className="text-emerald-400" />
+              <span>Hotline: 1900 6868</span>
+            </a>
           </div>
 
           {/* Right Topbar Links */}
-          <div className="flex items-center gap-3.5">
+          <div className="flex items-center gap-3">
             <Link
               to="/account#notifications"
-              className="hidden items-center gap-1.5 text-white/90 transition hover:text-white sm:flex"
+              className="flex items-center gap-1.5 text-zinc-300 transition hover:text-white"
             >
               <div className="relative">
-                <Bell size={14} weight="fill" />
-                <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-sky-300 animate-pulse" />
+                <Bell size={14} weight="bold" />
+                <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-0.5 text-[8px] font-black text-white shadow-xs">
+                  2
+                </span>
               </div>
-              <span>Thông báo</span>
+              <span className="hidden sm:inline">Thông báo</span>
             </Link>
 
             <Link
               to="/search?q=ho-tro"
-              className="flex items-center gap-1 text-white/90 transition hover:text-white"
+              className="flex items-center gap-1 text-zinc-300 transition hover:text-white"
             >
               <Question size={14} weight="bold" />
-              <span>Hỗ trợ</span>
+              <span className="hidden sm:inline">Trợ giúp</span>
             </Link>
 
-            <div className="hidden items-center gap-1 text-white/90 md:flex cursor-pointer hover:text-white">
-              <Globe size={14} />
+            <div className="hidden items-center gap-1 text-zinc-300 md:flex cursor-pointer hover:text-white">
+              <Globe size={14} weight="bold" />
               <span>Tiếng Việt</span>
-              <CaretDown size={11} weight="bold" />
+              <CaretDown size={10} weight="bold" />
             </div>
 
+            {/* Dark / Light Mode Pill Switch */}
             <button
               type="button"
               onClick={toggle}
               aria-label="Đổi giao diện sáng tối"
-              className="flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-white/90 transition hover:bg-white/20 hover:text-white"
+              className="flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-900/90 px-2.5 py-0.5 text-[11px] font-bold text-zinc-200 shadow-inner transition hover:border-zinc-500 hover:text-white active:scale-95"
             >
-              {theme === 'dark' && <Sun size={13} weight="fill" />}
-              {theme !== 'dark' && <Moon size={13} weight="fill" />}
-              <span className="hidden md:inline text-[11px]">
-                {theme === 'dark' && 'Sáng'}
-                {theme !== 'dark' && 'Tối'}
-              </span>
+              {theme === 'dark' ? (
+                <>
+                  <Moon size={12} weight="fill" className="text-amber-400" />
+                  <span>Nền tối</span>
+                </>
+              ) : (
+                <>
+                  <Sun size={12} weight="fill" className="text-amber-400" />
+                  <span>Nền sáng</span>
+                </>
+              )}
             </button>
 
             {/* Auth Section */}
-            {!isLoggedIn && (
-              <div className="flex items-center gap-2 pl-1">
+            {!isLoggedIn ? (
+              <div className="flex items-center gap-2 pl-1 font-bold">
                 <Link
                   to="/login"
-                  className="rounded-full bg-white/15 px-2.5 py-0.5 font-bold text-white transition hover:bg-white hover:text-blue-700"
+                  className="rounded-full bg-blue-600 px-3 py-0.5 text-[11px] text-white transition hover:bg-blue-500 shadow-xs"
                 >
                   Đăng nhập
                 </Link>
-                <span className="text-white/40">/</span>
+                <span className="text-zinc-600">/</span>
                 <Link
                   to="/login"
-                  className="font-bold text-white hover:underline"
+                  className="text-[11px] text-zinc-300 transition hover:text-white hover:underline"
                 >
                   Đăng ký
                 </Link>
               </div>
-            )}
-
-            {isLoggedIn && (
+            ) : (
               <Link
                 to="/account"
-                className="flex items-center gap-1.5 font-bold text-white hover:underline"
+                className="flex items-center gap-2 rounded-full py-0.5 px-2 transition hover:bg-white/10"
               >
-                <div className="h-5 w-5 overflow-hidden rounded-full border border-white">
+                <div className="h-5 w-5 overflow-hidden rounded-full ring-1 ring-blue-500/40">
                   <UserAvatar name={userEmail || 'guest'} size={20} />
                 </div>
-                <span className="max-w-[120px] truncate sm:max-w-[180px]">{userEmail}</span>
+                <span className="max-w-[120px] truncate text-xs font-bold text-white sm:max-w-[160px]">
+                  {userEmail}
+                </span>
+                <RoleBadge role={role} />
               </Link>
             )}
           </div>
