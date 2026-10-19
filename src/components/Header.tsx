@@ -161,8 +161,8 @@ export default function Header() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 shadow-xs">
-      {/* 1. Shopee Premium Topbar - Cam Gradient ấm áp, sang trọng */}
-      <div className="border-b border-orange-400/30 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 text-white shadow-xs">
+      {/* 1. Shopee Topbar - Xanh Navy & Blue sang trọng đồng bộ */}
+      <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-700 text-white shadow-xs">
         <div className="mx-auto flex h-8 max-w-[1400px] items-center justify-between px-4 text-xs font-semibold">
           {/* Left Topbar Links */}
           <div className="flex items-center gap-3">
@@ -217,7 +217,7 @@ export default function Header() {
             >
               <div className="relative">
                 <Bell size={14} weight="fill" />
-                <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-sky-300 animate-pulse" />
               </div>
               <span>Thông báo</span>
             </Link>
@@ -255,7 +255,7 @@ export default function Header() {
               <div className="flex items-center gap-2 pl-1">
                 <Link
                   to="/login"
-                  className="rounded-full bg-white/15 px-2.5 py-0.5 font-bold text-white transition hover:bg-white hover:text-orange-600"
+                  className="rounded-full bg-white/15 px-2.5 py-0.5 font-bold text-white transition hover:bg-white hover:text-blue-700"
                 >
                   Đăng nhập
                 </Link>
@@ -288,14 +288,14 @@ export default function Header() {
       <div className="border-b border-zinc-200/80 bg-white/95 backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95">
         <div className="mx-auto flex h-[68px] max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
           {/* Logo Brand nét */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             <Link to="/" className="flex items-center gap-1.5 tracking-tighter">
               <span className="text-2xl font-black text-zinc-900 dark:text-white md:text-3xl">
                 nét
               </span>
-              <span className="h-3 w-3 rounded-full bg-orange-600 shadow-sm" />
+              <span className="h-2.5 w-2.5 rounded-full bg-blue-600 shadow-sm" />
             </Link>
-            <span className="hidden rounded-sm bg-orange-600 px-1.5 py-0.5 text-[10px] font-black text-white uppercase shadow-xs sm:inline-block">
+            <span className="hidden rounded bg-gradient-to-r from-blue-700 to-indigo-600 px-1.5 py-0.5 text-[10px] font-black text-white uppercase shadow-xs sm:inline-block">
               MALL
             </span>
           </div>
@@ -307,7 +307,7 @@ export default function Header() {
                 <Link
                   key={c.id}
                   to={'/search?category=' + encodeURIComponent(c.slug ?? '')}
-                  className="text-zinc-600 transition hover:text-orange-600 dark:text-zinc-300 dark:hover:text-orange-400"
+                  className="text-zinc-600 transition hover:text-blue-600 dark:text-zinc-300 dark:hover:text-sky-400"
                 >
                   {c.name}
                 </Link>
@@ -319,7 +319,7 @@ export default function Header() {
           <div className="mx-auto flex max-w-xl flex-1 flex-col">
             <form
               onSubmit={submitSearch}
-              className="flex items-center rounded-full border-2 border-orange-500 bg-white px-2 py-1 shadow-sm transition focus-within:ring-4 focus-within:ring-orange-500/15 dark:bg-zinc-800"
+              className="flex items-center rounded-full border-2 border-blue-600 bg-white px-2 py-1 shadow-sm transition focus-within:ring-4 focus-within:ring-blue-500/15 dark:bg-zinc-800"
             >
               <input
                 value={keyword}
@@ -332,7 +332,7 @@ export default function Header() {
               <button
                 type="submit"
                 aria-label="Tìm kiếm"
-                className="flex h-8 w-14 shrink-0 items-center justify-center rounded-full bg-orange-600 text-white shadow-xs transition hover:bg-orange-700"
+                className="flex h-8 w-14 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs transition hover:bg-blue-700"
               >
                 <MagnifyingGlass size={16} weight="bold" />
               </button>
@@ -349,7 +349,7 @@ export default function Header() {
                     onClick={function () {
                       handleQuickSearch(tag)
                     }}
-                    className="hover:text-orange-600 hover:underline dark:hover:text-orange-400"
+                    className="hover:text-blue-600 hover:underline dark:hover:text-sky-400"
                   >
                     {tag}
                   </button>
@@ -366,7 +366,7 @@ export default function Header() {
               id="header-wishlist-button"
               onClick={handleWishlistClick}
               aria-label="Sản phẩm yêu thích"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-xs transition hover:border-orange-500 hover:text-rose-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-xs transition hover:border-blue-500 hover:text-rose-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
             >
               <Heart size={18} weight={wishlist.count > 0 ? 'fill' : 'regular'} />
               {wishlist.count > 0 && (
@@ -392,12 +392,12 @@ export default function Header() {
                 id="header-cart-button"
                 onClick={handleCartClick}
                 aria-label="Giỏ hàng"
-                className="flex items-center gap-2 rounded-full bg-orange-600 px-4 py-2 text-xs font-black text-white shadow-md shadow-orange-600/25 transition hover:bg-orange-700"
+                className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-xs font-black text-white shadow-md shadow-blue-600/25 transition hover:bg-blue-700"
               >
                 <div className="relative">
                   <ShoppingBag size={18} weight="fill" />
                   {cart.totalCount > 0 && (
-                    <span className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-orange-600 shadow-xs">
+                    <span className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-blue-600 shadow-xs">
                       {cart.totalCount}
                     </span>
                   )}
@@ -435,7 +435,7 @@ export default function Header() {
                                   x{item.quantity} {item.variantLabel}
                                 </p>
                               </div>
-                              <p className="font-extrabold text-orange-600">
+                              <p className="font-extrabold text-blue-600 dark:text-sky-400">
                                 {formatVnd(item.lineTotal ?? (item.unitPrice ?? 0) * (item.quantity ?? 1))}
                               </p>
                             </div>
@@ -447,7 +447,7 @@ export default function Header() {
                     <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-semibold text-zinc-500">Tổng cộng:</span>
-                        <span className="text-sm font-black text-orange-600">
+                        <span className="text-sm font-black text-blue-600 dark:text-sky-400">
                           {formatVnd(cart.subtotal)}
                         </span>
                       </div>
@@ -456,7 +456,7 @@ export default function Header() {
                         onClick={function () {
                           setCartPreviewOpen(false)
                         }}
-                        className="mt-3 block w-full rounded-full bg-orange-600 py-2 text-center text-xs font-bold text-white shadow-xs transition hover:bg-orange-700"
+                        className="mt-3 block w-full rounded-full bg-blue-600 py-2 text-center text-xs font-bold text-white shadow-xs transition hover:bg-blue-700"
                       >
                         Xem giỏ hàng & Thanh toán
                       </Link>
