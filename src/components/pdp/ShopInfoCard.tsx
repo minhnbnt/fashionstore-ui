@@ -1,19 +1,36 @@
 import { Link } from 'react-router'
 
-import { ChatDots, CheckCircle, Clock, ShieldCheck, Star, Storefront } from '@phosphor-icons/react'
+import { useBySlug } from '@generated/endpoints/shops/shops'
+import { ChatDots, CheckCircle, Clock, MapPin, ShieldCheck, Star, Storefront } from '@phosphor-icons/react'
+
+import { takeData } from '@/lib/apiAdapters'
 
 import UserAvatar from '../UserAvatar'
 
+import type { ShopResponse } from '@generated/model/shopResponse'
+
 export default function ShopInfoCard(props: { shopId?: string; shopName?: string }) {
-  const name = props.shopName ?? 'Gian Hàng nét Official'
-  const shopSlug = props.shopId ?? 'net-official'
+  const shopQuery = useBySlug(props.shopId ?? '', {
+    query: {
+      enabled: props.shopId !== undefined && props.shopId !== '',
+    },
+  })
+
+  let shop: ShopResponse | undefined
+  if (shopQuery.data !== undefined) {
+    shop = takeData(shopQuery.data)
+  }
+
+  const name = shop?.name ?? props.shopName ?? 'Gian Hàng nét Official'
+  const shopSlug = shop?.slug ?? props.shopId ?? 'net-official'
+  const address = shop?.address ?? 'Việt Nam'
 
   function handleChatClick() {
     window.dispatchEvent(
       new CustomEvent('open-shop-chat', {
         detail: {
-          shopId: props.shopId,
-          shopName: props.shopName,
+          shopId: shop?.id ?? props.shopId,
+          shopName: name,
         },
       }),
     )
@@ -41,8 +58,8 @@ export default function ShopInfoCard(props: { shopId?: string; shopName?: string
               </span>
             </div>
             <p className="mt-1 flex items-center gap-1 text-xs text-zinc-500">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Online 10 phút trước
+              <MapPin size={12} className="text-zinc-400" />
+              <span className="truncate">{address}</span>
             </p>
 
             {/* Action buttons */}
@@ -72,27 +89,28 @@ export default function ShopInfoCard(props: { shopId?: string; shopName?: string
             <span className="text-xs text-zinc-400">Đánh giá</span>
             <p className="mt-0.5 flex items-center gap-1 text-sm font-extrabold text-blue-700 dark:text-sky-300">
               <Star size={14} weight="fill" className="text-amber-400" />
-              4.9 (1.8k)
+              <span>{shop?.rating ?? 5.0}</span>
+              <span className="text-xs font-normal text-zinc-400">({shop?.ratingCount ?? 0})</span>
             </p>
           </div>
           <div>
-            <span className="text-xs text-zinc-400">Sản phẩm</span>
+            <span className="text-xs text-zinc-400">Người theo dõi</span>
             <p className="mt-0.5 text-sm font-extrabold text-blue-700 dark:text-sky-300">
-              36 sản phẩm
+              {shop?.followerCount ?? 0} người
             </p>
           </div>
           <div>
             <span className="text-xs text-zinc-400">Tỉ lệ phản hồi</span>
             <p className="mt-0.5 flex items-center gap-1 text-sm font-extrabold text-blue-700 dark:text-sky-300">
               <CheckCircle size={14} className="text-emerald-500" />
-              98%
+              <span>100%</span>
             </p>
           </div>
           <div>
             <span className="text-xs text-zinc-400">Thời gian phản hồi</span>
             <p className="mt-0.5 flex items-center gap-1 text-sm font-extrabold text-blue-700 dark:text-sky-300">
               <Clock size={14} className="text-indigo-500" />
-              Trong vài phút
+              <span>Trong vài phút</span>
             </p>
           </div>
         </div>
