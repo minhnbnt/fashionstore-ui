@@ -4,18 +4,24 @@ import {
   ArrowBendDownLeft,
   WarningCircle,
   ChartLineUp,
-  Users,
   Percent,
   PlusCircle,
   ChatCircleDots,
   PaintBrushBroad,
   Wallet,
   CaretRight,
+  Users,
 } from '@phosphor-icons/react'
 
+import { useSummary } from '@generated/endpoints/seller-revenue-finance/seller-revenue-finance'
+import { takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '../../lib/format'
 
+import type { RevenueSummaryResponse } from '@generated/model/revenueSummaryResponse'
+
 interface Props {
+  shopId?: string
+  shopName?: string
   onNavigateTab: (tabId: string) => void
   pendingOrdersCount: number
   confirmedOrdersCount: number
@@ -24,12 +30,31 @@ interface Props {
 }
 
 export default function SellerOverviewTab({
+  shopId,
+  shopName,
   onNavigateTab,
   pendingOrdersCount,
   confirmedOrdersCount,
   pendingReturnsCount,
   lowStockCount,
 }: Props) {
+  const safeShopId = shopId ?? ''
+  const summaryQuery = useSummary(
+    { shopId: safeShopId },
+    { query: { enabled: safeShopId !== '' } },
+  )
+
+  let summary: RevenueSummaryResponse | undefined = undefined
+  if (summaryQuery.data !== undefined) {
+    summary = takeData(summaryQuery.data)
+  }
+
+  const greetingName = shopName || 'Gian Hàng nét Official'
+  const totalRev = summary?.totalRevenue ?? 0
+  const walletBal = summary?.walletBalance ?? 0
+  const avgOrder = summary?.avgOrderValue ?? 0
+  const totalOrders = summary?.totalOrders ?? (pendingOrdersCount + confirmedOrdersCount)
+
   const todoItems = [
     {
       label: 'Chờ xác nhận',
@@ -63,45 +88,45 @@ export default function SellerOverviewTab({
 
   const metrics = [
     {
-      label: 'Doanh số hôm nay',
-      value: formatVnd(3720000),
-      change: '+18.5% so với hôm qua',
+      label: 'Tổng doanh thu',
+      value: formatVnd(totalRev),
+      change: 'Theo thời gian thực CSDL',
       icon: ChartLineUp,
     },
     {
-      label: 'Đơn hàng mới',
-      value: '14 đơn',
-      change: '+4 đơn so với hôm qua',
+      label: 'Đơn hàng toàn sàn',
+      value: `${totalOrders} đơn`,
+      change: `${pendingOrdersCount} đơn đang chờ xác nhận`,
       icon: Receipt,
     },
     {
-      label: 'Lượt truy cập shop',
-      value: '1,280 lượt',
-      change: '+240 lượt',
-      icon: Users,
+      label: 'Số dư ví khả dụng',
+      value: formatVnd(walletBal),
+      change: 'Có thể tạo lệnh rút tiền',
+      icon: Wallet,
     },
     {
-      label: 'Tỉ lệ chuyển đổi',
-      value: '3.8%',
-      change: 'Mục tiêu: > 3.0%',
+      label: 'Giá trị TB / đơn',
+      value: formatVnd(avgOrder),
+      change: 'Tính trên đơn đã thanh toán',
       icon: Percent,
     },
   ]
 
   return (
     <div className="space-y-6">
-      {/* Banner Chào mừng Shopee-style */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 p-6 text-white shadow-xl">
+      {/* Banner Chào mừng phong cách nét Royal Blue */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 p-6 text-white shadow-xl">
         <div className="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold tracking-wider uppercase backdrop-blur-md">
-                Shop Yêu Thích ⭐
+                Shop Chính Hãng ⭐
               </span>
-              <span className="text-xs text-white/80">Điểm vận hành: 4.9/5.0</span>
+              <span className="text-xs text-white/80">Điểm vận hành: 5.0/5.0</span>
             </div>
             <h2 className="mt-2 text-2xl font-black tracking-tight">
-              Xin chào, FashionHub Official Store!
+              Xin chào, {greetingName}!
             </h2>
             <p className="mt-1 text-sm text-white/90">
               Hôm nay bạn có {pendingOrdersCount} đơn hàng mới cần xác nhận và {pendingReturnsCount}{' '}
@@ -114,7 +139,7 @@ export default function SellerOverviewTab({
               onClick={function () {
                 onNavigateTab('products')
               }}
-              className="flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-orange-600 shadow-md transition hover:bg-orange-50"
+              className="flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-blue-700 shadow-md transition hover:bg-blue-50"
             >
               <PlusCircle size={18} weight="bold" />
               Thêm sản phẩm mới
@@ -149,7 +174,7 @@ export default function SellerOverviewTab({
             onClick={function () {
               onNavigateTab('orders')
             }}
-            className="flex items-center gap-1 text-xs font-bold text-orange-600 hover:underline dark:text-orange-400"
+            className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline dark:text-sky-400"
           >
             Xem tất cả đơn
             <CaretRight size={12} weight="bold" />
@@ -165,14 +190,14 @@ export default function SellerOverviewTab({
                 onClick={function () {
                   onNavigateTab(item.tab)
                 }}
-                className="group flex flex-col items-center justify-center rounded-2xl border border-zinc-100 p-4 text-center transition hover:border-orange-200 hover:bg-orange-50/30 dark:border-zinc-800 dark:hover:border-orange-900/40 dark:hover:bg-orange-950/20"
+                className="group flex flex-col items-center justify-center rounded-2xl border border-zinc-100 p-4 text-center transition hover:border-blue-200 hover:bg-blue-50/30 dark:border-zinc-800 dark:hover:border-blue-900/40 dark:hover:bg-blue-950/20"
               >
                 <div
                   className={`flex h-11 w-11 items-center justify-center rounded-2xl ${item.color}`}
                 >
                   <item.icon size={22} weight="bold" />
                 </div>
-                <span className="mt-3 text-2xl font-extrabold text-zinc-900 group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400">
+                <span className="mt-3 text-2xl font-extrabold text-zinc-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-sky-400">
                   {item.count}
                 </span>
                 <span className="mt-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
@@ -184,7 +209,7 @@ export default function SellerOverviewTab({
         </div>
       </div>
 
-      {/* Chỉ số hôm nay */}
+      {/* Chỉ số tài chính & vận hành thực tế */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map(function (m) {
           return (
@@ -194,7 +219,7 @@ export default function SellerOverviewTab({
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-zinc-500">{m.label}</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-sky-400">
                   <m.icon size={18} weight="bold" />
                 </div>
               </div>
