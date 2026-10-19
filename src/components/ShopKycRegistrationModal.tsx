@@ -406,7 +406,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="VD: Nguyễn Văn A Shop, Nét Boutique, Thời Trang GenZ..."
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
               </div>
@@ -425,7 +425,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                         setSlug(slugify(e.target.value))
                       }}
                       placeholder="VD: nguyen-van-a-shop"
-                      className="w-full bg-transparent px-2 py-1.5 font-normal outline-none placeholder:italic placeholder:opacity-50"
+                      className="w-full bg-transparent px-2 py-1.5 font-normal outline-none placeholder:opacity-50"
                     />
                   </div>
                 </label>
@@ -444,7 +444,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="VD: 0912345678"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -457,7 +457,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="VD: Số 123 Đường ABC, Phường X, Quận Y, Hà Nội"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -472,7 +472,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="VD: Chuyên cung cấp thời trang nam nữ cao cấp, hàng thiết kế chính hãng 100%..."
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
               </div>
@@ -536,7 +536,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     value={legalName}
                     onChange={(e) => handleLegalNameChange(e.target.value)}
                     placeholder="VD: NGUYỄN VĂN A"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-bold uppercase outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-bold uppercase outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
                 <span className="mt-1 block text-[11px] text-zinc-400">
@@ -556,7 +556,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={idNumber}
                       onChange={(e) => setIdNumber(e.target.value.replace(/\D/g, ''))}
                       placeholder="VD: 001202001234"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-bold outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-bold outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -569,7 +569,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={taxCode}
                       onChange={(e) => setTaxCode(e.target.value)}
                       placeholder="VD: 8392019281 (nếu có)"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -585,7 +585,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={idIssuedDate}
                       onChange={(e) => setIdIssuedDate(e.target.value)}
                       placeholder="VD: 15/08/2021"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -598,7 +598,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={idIssuedPlace}
                       onChange={(e) => setIdIssuedPlace(e.target.value)}
                       placeholder="VD: Cục Cảnh sát QLHC về TTXH"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -809,7 +809,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     value={bankAccount}
                     onChange={(e) => setBankAccount(e.target.value.replace(/\s/g, ''))}
                     placeholder="VD: 1903829102838 (STK chính chủ)"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-bold outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-bold outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
               </div>
@@ -823,7 +823,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     disabled
                     value={legalName}
                     placeholder="VD: NGUYỄN VĂN A (Khóa tự động theo CCCD)"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-200/60 px-4 py-2.5 font-extrabold tracking-wider text-zinc-700 uppercase outline-none placeholder:italic placeholder:opacity-50 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-200/60 px-4 py-2.5 font-extrabold tracking-wider text-zinc-700 uppercase outline-none placeholder:opacity-50 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300"
                   />
                 </label>
                 {legalName.trim() !== '' && (
