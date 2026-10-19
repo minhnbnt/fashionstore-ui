@@ -401,7 +401,7 @@ export default function Account() {
                   </div>
                   <div className="flex items-center justify-between border-b border-zinc-100 py-2 dark:border-zinc-800">
                     <span className="font-medium text-zinc-500">Tổng đơn hàng đã mua:</span>
-                    <span className="font-bold text-orange-600">{realOrdersCount} đơn</span>
+                    <span className="font-bold text-blue-600 dark:text-sky-400">{realOrdersCount} đơn</span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="font-medium text-zinc-500">Địa chỉ giao hàng đã lưu:</span>
@@ -428,14 +428,14 @@ export default function Account() {
             <div id="seller-channel">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold tracking-[0.18em] text-orange-600 uppercase dark:text-orange-400">
+                  <p className="text-xs font-bold tracking-[0.18em] text-blue-600 uppercase dark:text-sky-400">
                     Kênh Người Bán
                   </p>
                   <h2 className="mt-1 text-2xl font-extrabold tracking-tighter">
                     Quản lý Gian Hàng & Mở Shop
                   </h2>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-300">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-sky-300">
                   <Storefront size={26} weight="bold" />
                 </div>
               </div>
@@ -452,7 +452,7 @@ export default function Account() {
               {/* Case 1: Loading state */}
               {mineQuery.isLoading && (
                 <div className="mt-6 flex items-center justify-center py-12 text-sm text-zinc-500">
-                  <ArrowClockwise size={20} className="mr-2 animate-spin text-orange-600" />
+                  <ArrowClockwise size={20} className="mr-2 animate-spin text-blue-600" />
                   <span>Đang kiểm tra hồ sơ gian hàng…</span>
                 </div>
               )}
@@ -461,14 +461,14 @@ export default function Account() {
               {mineQuery.isLoading === false && currentShop === null && (
                 <div
                   id="card-no-shop"
-                  className="mt-6 rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50/70 via-white to-amber-50/50 p-6 dark:border-orange-500/20 dark:bg-zinc-800/60"
+                  className="mt-6 rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50/70 via-white to-indigo-50/50 p-6 dark:border-blue-500/20 dark:bg-zinc-800/60"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-xs font-extrabold text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
+                    <span className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-extrabold text-blue-700 dark:bg-blue-500/20 dark:text-sky-300">
                       <Sparkle size={12} weight="fill" />
                       Miễn phí đăng ký
                     </span>
-                    <span className="text-xs text-zinc-400">Theo chuẩn Shopee</span>
+                    <span className="text-xs text-zinc-400">Tiêu chuẩn nét Store</span>
                   </div>
                   <h3 className="mt-3 text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
                     Bắt đầu kinh doanh thời trang cùng nét
@@ -485,7 +485,7 @@ export default function Account() {
                       onClick={function () {
                         setModalOpen(true)
                       }}
-                      className="btn-primary flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold shadow-lg shadow-orange-500/20"
+                      className="btn-primary flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold shadow-lg shadow-blue-500/20"
                     >
                       <Storefront size={18} weight="bold" />
                       <span>Đăng ký mở Shop ngay</span>
