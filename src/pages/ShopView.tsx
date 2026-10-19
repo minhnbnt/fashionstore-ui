@@ -192,7 +192,7 @@ export default function ShopView() {
     return (
       <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-24 text-center">
         <div className="flex flex-col items-center justify-center py-20">
-          <ArrowClockwise size={36} className="animate-spin text-orange-600" />
+          <ArrowClockwise size={36} className="animate-spin text-blue-600" />
           <p className="mt-4 text-sm font-semibold text-zinc-500">
             Đang tải dữ liệu gian hàng từ CSDL…
           </p>
@@ -206,7 +206,7 @@ export default function ShopView() {
     return (
       <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-24 text-center">
         <div className="mx-auto max-w-md rounded-3xl border border-dashed border-zinc-300 bg-white p-10 dark:border-zinc-700 dark:bg-zinc-900">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-500/10">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-500/10">
             <Storefront size={32} weight="duotone" />
           </div>
           <h1 className="mt-4 text-xl font-black text-zinc-900 dark:text-white">
@@ -219,7 +219,7 @@ export default function ShopView() {
           <div className="mt-6">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 rounded-full bg-orange-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-orange-600/20 hover:bg-orange-700"
+              className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700"
             >
               <span>Về trang chủ</span>
               <ArrowRight size={14} weight="bold" />
@@ -248,20 +248,62 @@ export default function ShopView() {
     }
   }
 
+  let followBtnClass =
+    'flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700'
+  if (isFollowing) {
+    followBtnClass =
+      'flex items-center gap-1.5 rounded-full border border-zinc-300 bg-zinc-100 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200'
+  }
+
+  let allProductsTabClass =
+    'px-6 py-4 text-sm font-bold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+  if (activeTab === 'ALL_PRODUCTS') {
+    allProductsTabClass =
+      'border-b-2 border-blue-600 px-6 py-4 text-sm font-extrabold text-blue-600 dark:text-sky-400'
+  }
+
+  let homeTabClass =
+    'px-6 py-4 text-sm font-bold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+  if (activeTab === 'HOME') {
+    homeTabClass =
+      'border-b-2 border-blue-600 px-6 py-4 text-sm font-extrabold text-blue-600 dark:text-sky-400'
+  }
+
+  let popularBtnClass =
+    'rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-200'
+  if (sortOption === 'POPULAR') {
+    popularBtnClass =
+      'rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs'
+  }
+
+  let newestBtnClass =
+    'rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-200'
+  if (sortOption === 'NEWEST') {
+    newestBtnClass =
+      'rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs'
+  }
+
+  let priceBtnClass =
+    'flex items-center gap-1 rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-200'
+  if (sortOption === 'PRICE_ASC' || sortOption === 'PRICE_DESC') {
+    priceBtnClass =
+      'flex items-center gap-1 rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs'
+  }
+
   return (
     <main className="min-h-screen pb-24">
       {/* Toast Notification */}
       {toastNotice !== null && (
         <div className="fixed top-24 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900/90 px-4 py-3 text-xs font-bold text-white shadow-xl backdrop-blur-md dark:bg-white/90 dark:text-zinc-900">
-          <CheckCircle size={16} weight="fill" className="text-orange-500" />
+          <CheckCircle size={16} weight="fill" className="text-emerald-500" />
           <span>{toastNotice}</span>
         </div>
       )}
 
-      {/* Shopee Shop Hero Header Section */}
+      {/* Shop Hero Header Section */}
       <div className="relative pt-[104px]">
         {/* Banner Background */}
-        <div className="relative h-64 w-full overflow-hidden bg-gradient-to-r from-zinc-900 via-neutral-900 to-stone-900 md:h-72">
+        <div className="relative h-64 w-full overflow-hidden bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 md:h-72">
           {bannerSrc !== '' && (
             <img
               src={bannerSrc}
@@ -278,7 +320,7 @@ export default function ShopView() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-center">
               {/* Left Column: Avatar & Basic Info */}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center lg:col-span-5">
-                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-3xl border-4 border-white bg-gradient-to-br from-orange-400 to-amber-500 shadow-md dark:border-zinc-800">
+                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-3xl border-4 border-white bg-gradient-to-br from-blue-600 to-indigo-600 shadow-md dark:border-zinc-800">
                   {logoSrc !== '' && (
                     <img
                       src={logoSrc}
@@ -299,7 +341,7 @@ export default function ShopView() {
                       {shop.name}
                     </h1>
                     {shop.status === 'APPROVED' && (
-                      <span className="flex items-center gap-1 rounded-full bg-orange-600 px-2.5 py-0.5 text-[10px] font-black text-white">
+                      <span className="flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-0.5 text-[10px] font-black text-white">
                         <ShieldCheck size={12} weight="fill" />
                         Chính hãng
                       </span>
@@ -315,11 +357,7 @@ export default function ShopView() {
                       id="btn-shop-follow"
                       onClick={handleToggleFollow}
                       disabled={followMutation.isPending || unfollowMutation.isPending}
-                      className={
-                        isFollowing
-                          ? 'flex items-center gap-1.5 rounded-full border border-zinc-300 bg-zinc-100 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200'
-                          : 'flex items-center gap-1.5 rounded-full bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-orange-600/20 hover:bg-orange-700'
-                      }
+                      className={followBtnClass}
                     >
                       <UserPlus size={15} weight="bold" />
                       {isFollowing && <span>Đang theo dõi</span>}
@@ -330,7 +368,7 @@ export default function ShopView() {
                       type="button"
                       id="btn-shop-chat"
                       onClick={handleOpenChat}
-                      className="flex items-center gap-1.5 rounded-full border border-orange-500/40 bg-orange-50/60 px-4 py-2 text-xs font-bold text-orange-600 transition hover:bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20"
+                      className="flex items-center gap-1.5 rounded-full border border-blue-500/40 bg-blue-50/60 px-4 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-100 dark:bg-blue-500/10 dark:text-sky-400 dark:hover:bg-blue-500/20"
                     >
                       <ChatCircleDots size={16} weight="bold" />
                       <span>Chat ngay</span>
@@ -339,7 +377,7 @@ export default function ShopView() {
                 </div>
               </div>
 
-              {/* Right Column: Shopee Store Statistics */}
+              {/* Right Column: Store Statistics */}
               <div className="grid grid-cols-2 gap-4 border-t border-zinc-100 pt-6 sm:grid-cols-4 lg:col-span-7 lg:border-t-0 lg:border-l lg:border-zinc-100 lg:pt-0 lg:pl-8 dark:border-zinc-800">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
@@ -386,7 +424,7 @@ export default function ShopView() {
                 {/* Additional Contact/Address info */}
                 {shop.address && (
                   <div className="col-span-2 flex items-center gap-2 text-xs text-zinc-600 sm:col-span-4 dark:text-zinc-300">
-                    <MapPin size={15} className="shrink-0 text-orange-600" />
+                    <MapPin size={15} className="shrink-0 text-blue-600 dark:text-sky-400" />
                     <span className="truncate">Kho lấy hàng: {shop.address}</span>
                     {shop.phone && (
                       <span className="ml-2 flex items-center gap-1 font-mono text-zinc-500">
@@ -401,7 +439,7 @@ export default function ShopView() {
         </div>
       </div>
 
-      {/* Shopee Shop Navigation Tabs & Product Catalog */}
+      {/* Shop Navigation Tabs & Product Catalog */}
       <div className="mx-auto mt-8 max-w-[1400px] px-4">
         {/* Navigation Tabs Bar */}
         <div className="flex items-center justify-between border-b border-zinc-200 bg-white px-2 dark:border-zinc-800 dark:bg-zinc-900">
@@ -411,11 +449,7 @@ export default function ShopView() {
               onClick={function () {
                 setActiveTab('ALL_PRODUCTS')
               }}
-              className={
-                activeTab === 'ALL_PRODUCTS'
-                  ? 'border-b-2 border-orange-600 px-6 py-4 text-sm font-extrabold text-orange-600 dark:text-orange-500'
-                  : 'px-6 py-4 text-sm font-bold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-              }
+              className={allProductsTabClass}
             >
               TẤT CẢ SẢN PHẨM ({allProducts.length})
             </button>
@@ -425,11 +459,7 @@ export default function ShopView() {
                 onClick={function () {
                   setActiveTab('HOME')
                 }}
-                className={
-                  activeTab === 'HOME'
-                    ? 'border-b-2 border-orange-600 px-6 py-4 text-sm font-extrabold text-orange-600 dark:text-orange-500'
-                    : 'px-6 py-4 text-sm font-bold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-                }
+                className={homeTabClass}
               >
                 DẠO GIAN HÀNG
               </button>
@@ -454,7 +484,7 @@ export default function ShopView() {
                       <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">
                         {block.title || block.type}
                       </h3>
-                      <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-[10px] font-black text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
+                      <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-black text-blue-700 dark:bg-blue-500/20 dark:text-sky-300">
                         {block.type}
                       </span>
                     </div>
@@ -479,11 +509,7 @@ export default function ShopView() {
                   onClick={function () {
                     setSortOption('POPULAR')
                   }}
-                  className={
-                    sortOption === 'POPULAR'
-                      ? 'rounded-xl bg-orange-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs'
-                      : 'rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-200'
-                  }
+                  className={popularBtnClass}
                 >
                   Phổ biến
                 </button>
@@ -492,11 +518,7 @@ export default function ShopView() {
                   onClick={function () {
                     setSortOption('NEWEST')
                   }}
-                  className={
-                    sortOption === 'NEWEST'
-                      ? 'rounded-xl bg-orange-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs'
-                      : 'rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-200'
-                  }
+                  className={newestBtnClass}
                 >
                   Mới nhất
                 </button>
@@ -509,11 +531,7 @@ export default function ShopView() {
                     }
                     setSortOption('PRICE_ASC')
                   }}
-                  className={
-                    sortOption === 'PRICE_ASC' || sortOption === 'PRICE_DESC'
-                      ? 'flex items-center gap-1 rounded-xl bg-orange-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs'
-                      : 'flex items-center gap-1 rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-200'
-                  }
+                  className={priceBtnClass}
                 >
                   <ArrowsDownUp size={13} />
                   {sortOption === 'PRICE_ASC' && <span>Giá: Thấp đến Cao</span>}
@@ -530,7 +548,7 @@ export default function ShopView() {
             {/* Products Empty State */}
             {sortedProducts.length === 0 && (
               <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-200 bg-white py-16 text-center dark:border-zinc-800 dark:bg-zinc-900">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 text-orange-600 dark:bg-orange-500/10">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-500/10">
                   <ShoppingBag size={32} weight="duotone" />
                 </div>
                 <h3 className="mt-4 text-base font-extrabold text-zinc-900 dark:text-white">
@@ -542,7 +560,7 @@ export default function ShopView() {
               </div>
             )}
 
-            {/* Shopee-style Products Grid */}
+            {/* Products Grid */}
             {sortedProducts.length > 0 && (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                 {sortedProducts.map(function (product) {
@@ -556,6 +574,12 @@ export default function ShopView() {
                   }
 
                   const isFav = wishlist.isFavorited(product.id)
+                  let favWeight: 'fill' | 'regular' = 'regular'
+                  let favClass = ''
+                  if (isFav) {
+                    favWeight = 'fill'
+                    favClass = 'text-rose-500'
+                  }
 
                   return (
                     <article
@@ -581,8 +605,8 @@ export default function ShopView() {
                           </div>
                         )}
 
-                        {/* Shopee Mall / Official Tag */}
-                        <div className="absolute top-2 left-2 flex items-center gap-1 rounded-sm bg-orange-600 px-1.5 py-0.5 text-[9px] font-black text-white uppercase shadow-xs">
+                        {/* Official Tag */}
+                        <div className="absolute top-2 left-2 flex items-center gap-1 rounded-sm bg-blue-600 px-1.5 py-0.5 text-[9px] font-black text-white uppercase shadow-xs">
                           Chính hãng
                         </div>
 
@@ -605,8 +629,8 @@ export default function ShopView() {
                         >
                           <Heart
                             size={14}
-                            weight={isFav ? 'fill' : 'regular'}
-                            className={isFav ? 'text-rose-500' : ''}
+                            weight={favWeight}
+                            className={favClass}
                           />
                         </button>
                       </Link>
@@ -616,13 +640,13 @@ export default function ShopView() {
                         <div>
                           <Link
                             to={`/product/${product.slug ?? product.id}`}
-                            className="line-clamp-2 text-xs font-bold text-zinc-800 transition hover:text-orange-600 dark:text-zinc-100 dark:hover:text-orange-400"
+                            className="line-clamp-2 text-xs font-bold text-zinc-800 transition hover:text-blue-600 dark:text-zinc-100 dark:hover:text-sky-400"
                           >
                             {product.name}
                           </Link>
 
                           <div className="mt-2 flex items-baseline gap-1.5">
-                            <span className="text-sm font-black text-orange-600 dark:text-orange-500">
+                            <span className="text-sm font-black text-blue-700 dark:text-sky-300">
                               {formatVnd(product.minPrice ?? 0)}
                             </span>
                           </div>
