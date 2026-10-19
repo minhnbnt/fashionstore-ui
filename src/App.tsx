@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Route, Routes, useLocation } from 'react-router'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
 
 import Header from './components/Header'
 import RequireAuth from './components/RequireAuth'
@@ -86,6 +86,14 @@ function App() {
                 <Account />
               </RequireAuth>
             }
+          />
+          <Route
+            path="/seller-channel"
+            element={<Navigate to="/account#seller-channel" replace />}
+          />
+          <Route
+            path="/seller"
+            element={<Navigate to="/account#seller-channel" replace />}
           />
           <Route
             path="/admin"

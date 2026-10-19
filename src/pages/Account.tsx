@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 
 import { useList1 } from '@generated/endpoints/addresses/addresses'
 import { useMine2 } from '@generated/endpoints/orders/orders'
@@ -45,6 +45,29 @@ import type { UserResponse } from '@generated/model/userResponse'
 
 type AccountTab = 'orders' | 'addresses' | 'wishlist' | 'profile' | 'seller'
 
+const TAB_HASH_MAP: Record<string, AccountTab> = {
+  orders: 'orders',
+  addresses: 'addresses',
+  address: 'addresses',
+  wishlist: 'wishlist',
+  profile: 'profile',
+  security: 'profile',
+  seller: 'seller',
+  'seller-channel': 'seller',
+  shop: 'seller',
+}
+
+function parseTab(hash: string, queryTab: string | null): AccountTab {
+  const cleanHash = hash.replace(/^#/, '').toLowerCase().trim()
+  if (cleanHash in TAB_HASH_MAP) {
+    return TAB_HASH_MAP[cleanHash]
+  }
+  if (queryTab && queryTab.toLowerCase().trim() in TAB_HASH_MAP) {
+    return TAB_HASH_MAP[queryTab.toLowerCase().trim()]
+  }
+  return 'orders'
+}
+
 function maskId(idNum: string | null | undefined): string {
   if (idNum === null || idNum === undefined || idNum.trim() === '') {
     return 'Chưa cung cấp'
@@ -68,14 +91,29 @@ export default function Account() {
   const { data: session } = useSessionQuery()
   const signOut = useSignOut()
   const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const wishlist = useWishlist()
 
-  const [activeTab, setActiveTab] = useState<AccountTab>('orders')
+  const [activeTab, setActiveTab] = useState<AccountTab>(() =>
+    parseTab(location.hash, searchParams.get('tab')),
+  )
   const [modalOpen, setModalOpen] = useState(false)
   const [statusNotice, setStatusNotice] = useState<string | null>(null)
   const [resubmitId, setResubmitId] = useState<string | null>(null)
   const roleRefreshAttempted = useRef(false)
+
+  useEffect(() => {
+    const tabFromUrl = parseTab(location.hash, searchParams.get('tab'))
+    setActiveTab(tabFromUrl)
+  }, [location.hash, searchParams])
+
+  function handleTabClick(tab: AccountTab) {
+    setActiveTab(tab)
+    const hash = tab === 'seller' ? '#seller-channel' : `#${tab}`
+    navigate(hash, { replace: true })
+  }
 
   const profileQuery = useMe()
   let profile: UserResponse | undefined
@@ -256,7 +294,7 @@ export default function Account() {
               type="button"
               id="tab-btn-orders"
               onClick={function () {
-                setActiveTab('orders')
+                handleTabClick('orders')
               }}
               className={getTabButtonClass('orders')}
             >
@@ -275,7 +313,7 @@ export default function Account() {
               type="button"
               id="tab-btn-addresses"
               onClick={function () {
-                setActiveTab('addresses')
+                handleTabClick('addresses')
               }}
               className={getTabButtonClass('addresses')}
             >
@@ -294,7 +332,7 @@ export default function Account() {
               type="button"
               id="tab-btn-wishlist"
               onClick={function () {
-                setActiveTab('wishlist')
+                handleTabClick('wishlist')
               }}
               className={getTabButtonClass('wishlist')}
             >
@@ -313,7 +351,7 @@ export default function Account() {
               type="button"
               id="tab-btn-profile"
               onClick={function () {
-                setActiveTab('profile')
+                handleTabClick('profile')
               }}
               className={getTabButtonClass('profile')}
             >
@@ -327,7 +365,7 @@ export default function Account() {
               type="button"
               id="tab-btn-seller"
               onClick={function () {
-                setActiveTab('seller')
+                handleTabClick('seller')
               }}
               className={getTabButtonClass('seller')}
             >
@@ -366,17 +404,29 @@ export default function Account() {
         {/* Right Column: Active Tab Content */}
         <section className="glass min-w-0 rounded-3xl p-6 md:p-8 lg:col-span-9">
           {/* Tab 1: Orders */}
-          {activeTab === 'orders' && <OrderHistoryTab />}
+          {activeTab === 'orders' && (
+            <div id="orders">
+              <OrderHistoryTab />
+            </div>
+          )}
 
           {/* Tab 2: Addresses */}
-          {activeTab === 'addresses' && <AddressBookTab />}
+          {activeTab === 'addresses' && (
+            <div id="addresses">
+              <AddressBookTab />
+            </div>
+          )}
 
           {/* Tab 3: Wishlist */}
-          {activeTab === 'wishlist' && <WishlistTab />}
+          {activeTab === 'wishlist' && (
+            <div id="wishlist">
+              <WishlistTab />
+            </div>
+          )}
 
           {/* Tab 4: Profile & Password */}
           {activeTab === 'profile' && (
-            <div className="max-w-2xl space-y-6">
+            <div id="profile" className="max-w-2xl space-y-6">
               <div>
                 <h2 className="text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
                   Hồ sơ cá nhân & Bảo mật
