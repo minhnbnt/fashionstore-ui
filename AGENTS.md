@@ -1,6 +1,6 @@
 # fashionstore-ui — AGENTS.md
 
-Shop "nét": landing thời trang, Vite + React 19 + Tailwind v4. Branch làm việc: `ui/net-glassy-purple`.
+Shop "nét": landing thời trang, Vite + React 19 + Tailwind v4.
 
 ## Đọc thêm (chi tiết chia file để khỏi phình)
 
