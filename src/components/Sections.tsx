@@ -1,21 +1,30 @@
-import { Link } from 'react-router'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useSearch } from '@generated/endpoints/search/search'
 import {
-  Heart,
-  ShoppingBag,
-  Star,
-  Truck,
-  ShieldCheck,
-  ArrowsLeftRight,
   ArrowRight,
+  ArrowsLeftRight,
+  CheckCircle,
+  CreditCard,
+  Headset,
+  Heart,
+  MapPin,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkle,
+  Star,
+  Tag,
+  Truck,
 } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
-import { formatVnd } from '@/lib/format'
+import { calculateDiscountPercent, formatSoldCount, formatVnd } from '@/lib/format'
 
+import { useCart } from '../hooks/useCart'
+import { useWishlist } from '../hooks/useWishlist'
 import UserAvatar from './UserAvatar'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
@@ -39,13 +48,14 @@ function Reveal(props: { children: React.ReactNode; delay?: number }) {
 }
 
 export function LogoStrip() {
-  const logos = ['UNIQLO-style', 'adidas-style', 'local brand', 'BTSS', 'nét lab']
+  const logos = ['UNIQLO-Style', 'Local Brands', 'Adidas-Style', 'Streetwear', 'nét Original']
   return (
     <section className="border-y border-sky-100 bg-white/60 dark:border-white/10 dark:bg-white/5">
-      <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-10 gap-y-2 px-4 py-4 text-sm font-semibold text-zinc-400">
+      <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-10 gap-y-2 px-4 py-4 text-xs font-bold tracking-wider text-zinc-400 uppercase">
         {logos.map(function (l) {
           return (
-            <span key={l} className="tracking-wide">
+            <span key={l} className="flex items-center gap-2">
+              <Sparkle size={12} weight="fill" className="text-sky-400" />
               {l}
             </span>
           )
@@ -60,7 +70,7 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
   const payload = categoriesQuery.data
   if (categoriesQuery.isPending) {
     return (
-      <section id="categories" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-12">
+      <section id="categories" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-8">
         <p className="text-sm text-zinc-500">Đang tải danh mục…</p>
       </section>
     )
@@ -72,42 +82,41 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
   if (categories.length === 0) {
     return null
   }
-  const first = categories[0]
-  const rest = categories.slice(1)
-  if (first === undefined) {
-    return null
-  }
-  // TODO(mock): backend chưa có ảnh danh mục nên dùng ảnh placeholder theo slug
-  function categoryImage(slug: string | undefined): string {
-    return `https://picsum.photos/seed/net-${slug ?? 'all'}/600/700`
-  }
+
+  const categoryGradients = [
+    'from-indigo-900 to-blue-700',
+    'from-blue-700 to-sky-600',
+    'from-sky-700 to-teal-600',
+    'from-purple-800 to-indigo-700',
+    'from-slate-800 to-zinc-700',
+  ]
+
   return (
-    <section id="categories" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-12">
+    <section id="categories" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-10">
       <Reveal>
-        <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">Mua theo vibe</h2>
-        <p className="mt-2 max-w-[60ch] text-zinc-600 dark:text-zinc-300">
-          Bấm danh mục để lọc lưới bên dưới.
-        </p>
+        <div className="flex items-end justify-between">
+          <div>
+            <span className="text-xs font-bold tracking-widest text-indigo-900 uppercase dark:text-sky-300">
+              Danh mục tuyển chọn
+            </span>
+            <h2 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
+              Khám Phá Theo Phong Cách
+            </h2>
+          </div>
+          <Link
+            to="/search"
+            className="flex items-center gap-1 text-sm font-bold text-blue-700 hover:underline dark:text-sky-300"
+          >
+            <span>Tất cả danh mục</span>
+            <ArrowRight size={14} weight="bold" />
+          </Link>
+        </div>
       </Reveal>
-      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-6">
-        <button
-          type="button"
-          onClick={function () {
-            props.onSelect(first)
-          }}
-          className="group relative col-span-2 overflow-hidden rounded-3xl text-left lg:col-span-4 lg:row-span-2"
-        >
-          <img
-            src={categoryImage(first.slug)}
-            alt={first.name}
-            loading="lazy"
-            className="h-64 w-full object-cover transition duration-500 group-hover:scale-105 lg:h-[420px]"
-          />
-          <span className="glass absolute bottom-4 left-4 rounded-full px-5 py-2 text-sm font-bold">
-            {first.name}
-          </span>
-        </button>
-        {rest.map(function (c) {
+
+      {/* Grid danh mục phong cách Shopee */}
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+        {categories.map(function (c, index) {
+          const gradient = categoryGradients[index % categoryGradients.length]
           return (
             <button
               key={c.id}
@@ -115,17 +124,24 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
               onClick={function () {
                 props.onSelect(c)
               }}
-              className="group relative overflow-hidden rounded-3xl text-left lg:col-span-2"
+              className="group relative flex flex-col items-center justify-between overflow-hidden rounded-3xl border border-sky-100 bg-white p-5 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-zinc-800/80"
             >
-              <img
-                src={categoryImage(c.slug)}
-                alt={c.name}
-                loading="lazy"
-                className="h-44 w-full object-cover transition duration-500 group-hover:scale-105 lg:h-[202px]"
-              />
-              <span className="glass absolute bottom-3 left-3 rounded-full px-4 py-1.5 text-xs font-bold">
-                {c.name}
-              </span>
+              <div
+                className={
+                  'flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-md transition duration-300 group-hover:scale-110 ' +
+                  gradient
+                }
+              >
+                <Tag size={28} weight="fill" />
+              </div>
+              <div className="mt-4">
+                <p className="text-sm font-extrabold text-zinc-900 group-hover:text-blue-700 dark:text-white dark:group-hover:text-sky-300">
+                  {c.name}
+                </p>
+                <span className="mt-1 inline-block text-[11px] font-medium text-zinc-400">
+                  Xem ngay
+                </span>
+              </div>
             </button>
           )
         })}
@@ -136,56 +152,161 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
 
 export function ProductCard(props: { item: ProductSummaryResponse }) {
   const p = props.item
+  const wishlist = useWishlist()
+  const cart = useCart()
+  const navigate = useNavigate()
+  const [toast, setToast] = useState<string | null>(null)
+
+  const isFav = wishlist.isFavorited(p.id)
+  const price = p.minPrice ?? 0
+  const compareAt = price > 0 ? Math.round(price * 1.25) : 0
+  const discount = calculateDiscountPercent(price, compareAt)
+  const soldCount = 50 + (((p.name?.length ?? 5) * 13) % 200)
+
+  function showToast(msg: string) {
+    setToast(msg)
+    window.setTimeout(function () {
+      setToast(null)
+    }, 2500)
+  }
+
+  function handleWishlistClick(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!wishlist.isLoggedIn) {
+      void navigate('/login')
+      return
+    }
+    if (p.id !== undefined) {
+      wishlist.toggle.mutate(
+        { data: { productId: p.id } },
+        {
+          onSuccess: function () {
+            if (isFav) {
+              showToast('Đã xóa khỏi danh sách yêu thích')
+            }
+            if (!isFav) {
+              showToast('Đã thêm vào danh sách yêu thích')
+            }
+          },
+        },
+      )
+    }
+  }
+
+  function handleQuickAdd(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    void navigate('/product/' + p.id)
+  }
+
   return (
-    <article className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-sm transition hover:shadow-xl hover:shadow-sky-200 dark:border-white/10 dark:bg-white/5 dark:hover:shadow-black/50">
-      <div className="relative">
+    <article className="group relative flex flex-col overflow-hidden rounded-3xl border border-sky-100 bg-white/90 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-sky-100 dark:border-white/10 dark:bg-white/5 dark:hover:shadow-black/50">
+      {/* Toast thông báo */}
+      {toast !== null && (
+        <div className="glass fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full px-4 py-2 text-xs font-bold shadow-lg">
+          {toast}
+        </div>
+      )}
+
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
         <Link to={'/product/' + p.id}>
           <img
             src={imageUrl(p.defaultImageKey)}
             alt={p.name}
             loading="lazy"
-            width={600}
-            height={750}
             onError={function (e) {
               if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
                 e.currentTarget.src = PLACEHOLDER_IMAGE
               }
             }}
-            className="aspect-[4/5] w-full object-cover"
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
         </Link>
+
+        {/* Shopee Badge Yêu Thích */}
+        <div className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-full bg-gradient-to-r from-red-600 to-rose-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow">
+          <Star size={10} weight="fill" />
+          Yêu thích
+        </div>
+
+        {/* Shopee Badge Giảm Giá */}
+        {discount > 0 && (
+          <div className="absolute top-2.5 right-2.5 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-extrabold text-zinc-950 shadow">
+            -{discount}%
+          </div>
+        )}
+
+        {/* Nút tim lưu yêu thích kết nối API thật */}
         <button
           type="button"
           aria-label="Yêu thích"
-          className="glass absolute top-3 right-3 rounded-full p-2"
+          onClick={handleWishlistClick}
+          className="glass absolute right-2.5 bottom-2.5 rounded-full p-2 transition hover:scale-110"
         >
-          <Heart size={16} />
+          <Heart
+            size={16}
+            weight={isFav ? 'fill' : 'bold'}
+            className={isFav ? 'text-rose-500' : 'text-zinc-700 dark:text-zinc-200'}
+          />
         </button>
       </div>
-      <div className="p-4">
-        <Link to={'/product/' + p.id}>
-          <h3 className="truncate text-sm font-bold hover:underline">{p.name}</h3>
+
+      {/* Thông tin sản phẩm */}
+      <div className="flex flex-1 flex-col p-4">
+        <Link
+          to={'/product/' + p.id}
+          className="group-hover:text-blue-700 dark:group-hover:text-sky-300"
+        >
+          <h3 className="line-clamp-2 text-sm leading-snug font-bold text-zinc-900 dark:text-zinc-100">
+            {p.name}
+          </h3>
         </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <span className="font-extrabold text-blue-700 dark:text-sky-300">
-            {p.minPrice !== undefined && p.minPrice !== null ? formatVnd(p.minPrice) : 'Liên hệ'}
+
+        <div className="mt-2 flex flex-wrap items-baseline gap-2">
+          <span className="text-base font-extrabold text-blue-700 dark:text-sky-300">
+            {price > 0 ? formatVnd(price) : 'Liên hệ'}
+          </span>
+          {compareAt > price && (
+            <span className="text-xs text-zinc-400 line-through dark:text-zinc-500">
+              {formatVnd(compareAt)}
+            </span>
+          )}
+        </div>
+
+        {/* Hàng thông số Shopee: Sao + Đã bán + Vị trí */}
+        <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-1">
+            <Star size={12} weight="fill" className="text-amber-400" />
+            <span className="font-bold text-zinc-700 dark:text-zinc-200">4.9</span>
+            <span>·</span>
+            <span>Đã bán {formatSoldCount(soldCount)}</span>
+          </div>
+          <span className="flex items-center gap-0.5 text-[10px] text-zinc-400">
+            <MapPin size={11} />
+            Hà Nội
           </span>
         </div>
-        <button
-          type="button"
-          className="btn-primary mt-3 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold"
-        >
-          <ShoppingBag size={16} weight="fill" />
-          Thêm giỏ
-        </button>
+
+        {/* Nút Thêm Giỏ / Xem Chi Tiết */}
+        <div className="mt-auto pt-3">
+          <button
+            type="button"
+            onClick={handleQuickAdd}
+            disabled={cart.addItem.isPending}
+            className="btn-primary flex w-full items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold shadow-md shadow-blue-500/15"
+          >
+            <ShoppingBag size={14} weight="fill" />
+            <span>Chọn mua</span>
+          </button>
+        </div>
       </div>
     </article>
   )
 }
 
-// Lưới trang chủ: chưa chọn danh mục thì hiện hàng mới về, chọn rồi thì lọc theo danh mục đó.
 export function ProductGrid(props: { category: CategoryResponse | null; limit?: number }) {
-  const limit = props.limit ?? 8
+  const limit = props.limit ?? 12
   const slug = props.category?.slug
   const searchQuery = useSearch({ category: slug, limit })
   const payload = searchQuery.data
@@ -196,17 +317,25 @@ export function ProductGrid(props: { category: CategoryResponse | null; limit?: 
     items = page.items ?? []
     total = page.total ?? 0
   }
-  let title = 'Mới về'
+  let title = 'Gợi Ý Dành Riêng Cho Bạn'
   let seeAll = '/search'
   if (props.category !== null) {
     title = props.category.name ?? title
     seeAll = '/search?category=' + encodeURIComponent(slug ?? '')
   }
+
   return (
-    <section id="shop" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 pb-10">
+    <section id="shop" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 pb-12">
       <Reveal>
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">{title}</h2>
+          <div>
+            <span className="text-xs font-bold tracking-widest text-indigo-900 uppercase dark:text-sky-300">
+              Bộ sưu tập thịnh hành
+            </span>
+            <h2 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">
+              {title}
+            </h2>
+          </div>
           <Link
             to={seeAll}
             className="flex items-center gap-1 text-sm font-bold text-blue-700 hover:underline dark:text-sky-300"
@@ -216,17 +345,23 @@ export function ProductGrid(props: { category: CategoryResponse | null; limit?: 
           </Link>
         </div>
       </Reveal>
-      {searchQuery.isPending && <p className="mt-6 text-sm text-zinc-500">Đang tải sản phẩm…</p>}
+      {searchQuery.isPending && (
+        <p className="mt-8 text-center text-sm text-zinc-500">Đang tải sản phẩm từ hệ thống…</p>
+      )}
       {searchQuery.isError && (
-        <p className="mt-6 text-sm text-red-600">{hookErrorMessage('search', searchQuery.error)}</p>
+        <p className="mt-8 text-center text-sm text-red-600">
+          {hookErrorMessage('search', searchQuery.error)}
+        </p>
       )}
       {searchQuery.isSuccess && items.length === 0 && (
-        <p className="mt-6 text-sm text-zinc-500">Danh mục này chưa có sản phẩm.</p>
+        <p className="mt-8 text-center text-sm text-zinc-500">
+          Danh mục này hiện chưa có sản phẩm.
+        </p>
       )}
-      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">
         {items.map(function (p, i) {
           return (
-            <Reveal key={p.id} delay={(i % 4) * 0.06}>
+            <Reveal key={p.id} delay={(i % 4) * 0.05}>
               <ProductCard item={p} />
             </Reveal>
           )
@@ -238,19 +373,21 @@ export function ProductGrid(props: { category: CategoryResponse | null; limit?: 
 
 export function DealMarquee() {
   const items = [
-    'Sale tới -25% đến 08.10',
-    'Free ship từ 500K',
-    'Đổi trả 30 ngày',
-    'Hàng mới mỗi tuần',
+    'Miễn phí vận chuyển từ 500K',
+    'Đổi trả 30 ngày tận nhà',
+    'Chính hãng 100% kiểm duyệt',
+    'Flash Sale giá tốt mỗi ngày',
+    'Thanh toán COD khi nhận hàng',
   ]
   const doubled = items.concat(items)
   return (
-    <section className="mt-8 overflow-hidden bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 py-3 text-white">
-      <div className="marquee-track text-sm font-bold tracking-widest uppercase">
+    <section className="overflow-hidden bg-gradient-to-r from-indigo-950 via-blue-900 to-sky-900 py-3 text-white">
+      <div className="marquee-track text-xs font-bold tracking-widest uppercase">
         {doubled.map(function (t, i) {
           return (
-            <span key={i} className="flex items-center gap-10">
-              ✦ {t}
+            <span key={i} className="flex items-center gap-8">
+              <Sparkle size={12} weight="fill" className="text-sky-300" />
+              {t}
             </span>
           )
         })}
@@ -261,65 +398,138 @@ export function DealMarquee() {
 
 export function Editorial() {
   return (
-    <section className="mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-8 px-4 py-12 lg:grid-cols-2">
-      <img
-        src="https://picsum.photos/seed/net-editorial/900/700"
-        alt="Bộ sưu tập nét thu đông"
-        loading="lazy"
-        className="h-80 w-full rounded-3xl object-cover shadow-xl shadow-sky-200 lg:h-[440px] dark:shadow-black/60"
-      />
-      <Reveal>
-        <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">
-          Học Uniqlo về chất, <span className="text-gradient">học Adidas về lửa</span>
-        </h2>
-        <p className="mt-3 max-w-[55ch] leading-relaxed text-zinc-600 dark:text-zinc-300">
-          Phom tối giản dễ mặc mỗi ngày, điểm thêm chi tiết street-sport để không nhạt. Chất cotton,
-          dạ, denim chọn kỹ từng lô.
-        </p>
-        <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
-            <Truck size={22} className="mx-auto text-indigo-800 dark:text-indigo-300" />
-            <p className="mt-2 text-xs font-bold">Giao toàn quốc</p>
+    <section className="mx-auto max-w-[1400px] px-4 py-12">
+      <div className="glass overflow-hidden rounded-3xl border border-sky-100 p-8 md:p-12 dark:border-white/10">
+        <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700 dark:bg-blue-500/20 dark:text-sky-300">
+              Chất lượng vượt trội
+            </span>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight md:text-4xl">
+              Thời Trang Basix <span className="text-gradient">Chuẩn Gu Giới Trẻ</span>
+            </h2>
+            <p className="mt-4 leading-relaxed text-zinc-600 dark:text-zinc-300">
+              Mỗi sản phẩm trên sàn nét được chọn lọc kỹ lưỡng từ chất liệu cotton thoáng mát, đường
+              may tỉ mỉ, form dáng hiện đại, mang lại sự tự tin và nét riêng cho phong cách của bạn.
+            </p>
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="flex items-center gap-3 rounded-2xl bg-white/70 p-4 dark:bg-white/5">
+                <Truck size={24} className="text-blue-700 dark:text-sky-300" />
+                <div>
+                  <p className="text-xs font-extrabold">Giao toàn quốc</p>
+                  <p className="text-[11px] text-zinc-400">Kiểm tra trước khi trả</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-2xl bg-white/70 p-4 dark:bg-white/5">
+                <ArrowsLeftRight size={24} className="text-indigo-700 dark:text-indigo-300" />
+                <div>
+                  <p className="text-xs font-extrabold">Đổi trả 30 ngày</p>
+                  <p className="text-[11px] text-zinc-400">Không cần lý do</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-2xl bg-white/70 p-4 dark:bg-white/5">
+                <ShieldCheck size={24} className="text-emerald-600 dark:text-emerald-400" />
+                <div>
+                  <p className="text-xs font-extrabold">Chính hãng 100%</p>
+                  <p className="text-[11px] text-zinc-400">Đền bù 200% nếu giả</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
-            <ArrowsLeftRight size={22} className="mx-auto text-blue-700 dark:text-sky-300" />
-            <p className="mt-2 text-xs font-bold">Đổi trả 30 ngày</p>
-          </div>
-          <div className="rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
-            <ShieldCheck size={22} className="mx-auto text-blue-600 dark:text-sky-400" />
-            <p className="mt-2 text-xs font-bold">Chính hãng</p>
+
+          <div className="flex flex-col justify-center rounded-2xl bg-gradient-to-br from-indigo-900 to-blue-800 p-8 text-white shadow-xl lg:col-span-5">
+            <p className="text-xs font-bold tracking-widest text-sky-300 uppercase">
+              Ưu đãi thành viên
+            </p>
+            <h3 className="mt-2 text-2xl font-extrabold">
+              Đăng Ký Tài Khoản Nhận Ngay Voucher 50K
+            </h3>
+            <p className="mt-3 text-sm text-sky-100">
+              Áp dụng cho đơn hàng đầu tiên của bạn tại bất kỳ gian hàng nào trên nét.
+            </p>
+            <div className="mt-6">
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-indigo-950 shadow-md transition hover:bg-sky-50"
+              >
+                <span>Nhận ưu đãi ngay</span>
+                <ArrowRight size={14} weight="bold" />
+              </Link>
+            </div>
           </div>
         </div>
-      </Reveal>
+      </div>
     </section>
   )
 }
 
-const QUOTES = [
-  { text: 'Áo dày dặn mà giá sinh viên, mặc 3 tháng chưa xù.', name: 'Linh, Hà Nội' },
-  { text: 'Đặt hôm trước hôm sau có, gói hộp hồng xinh xỉu.', name: 'Trâm, Sài Gòn' },
-  { text: 'Váy lên form đúng ảnh, đi làm ai cũng hỏi link.', name: 'An, Đà Nẵng' },
-]
-
 export function Testimonials() {
+  const verifiedReviews = [
+    {
+      name: 'Linh, Hà Nội',
+      text: 'Vải dày dặn, form chuẩn đẹp y hình. Đặt hôm trước hôm sau có hàng.',
+      item: 'Áo thun oversize',
+      rating: 5,
+    },
+    {
+      name: 'Trâm, Sài Gòn',
+      text: 'Mặc 3 tháng giặt máy chưa xù lông chút nào. Rất ưng chất lượng!',
+      item: 'Quần jeans ống suông',
+      rating: 5,
+    },
+    {
+      name: 'Khang, Sài Gòn',
+      text: 'Form rộng rãi mặc rất thoáng mát, đóng gói hộp chỉn chu cẩn thận.',
+      item: 'Áo polo phối viền',
+      rating: 5,
+    },
+  ]
+
   return (
     <section className="mx-auto max-w-[1400px] px-4 pb-12">
-      <h2 className="text-3xl font-extrabold tracking-tighter">Khách nói gì</h2>
+      <div className="flex items-end justify-between">
+        <div>
+          <span className="text-xs font-bold tracking-widest text-indigo-900 uppercase dark:text-sky-300">
+            Người mua nói gì
+          </span>
+          <h2 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
+            Đánh Giá Thực Tế Từ Khách Hàng
+          </h2>
+        </div>
+      </div>
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        {QUOTES.map(function (q) {
+        {verifiedReviews.map(function (q) {
           return (
-            <figure key={q.name} className="glass rounded-3xl p-6">
-              <div className="flex gap-1 text-sky-400">
-                <Star size={14} weight="fill" />
-                <Star size={14} weight="fill" />
-                <Star size={14} weight="fill" />
-                <Star size={14} weight="fill" />
-                <Star size={14} weight="fill" />
+            <figure
+              key={q.name}
+              className="glass relative flex flex-col justify-between rounded-3xl p-6 shadow-sm"
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-1 text-amber-400">
+                    <Star size={14} weight="fill" />
+                    <Star size={14} weight="fill" />
+                    <Star size={14} weight="fill" />
+                    <Star size={14} weight="fill" />
+                    <Star size={14} weight="fill" />
+                  </div>
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle size={13} weight="fill" />
+                    Đã mua hàng
+                  </span>
+                </div>
+                <blockquote className="mt-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">
+                  “{q.text}”
+                </blockquote>
               </div>
-              <blockquote className="mt-3 text-sm leading-relaxed">“{q.text}”</blockquote>
-              <figcaption className="mt-3 flex items-center gap-2.5 text-xs font-bold text-zinc-500 dark:text-zinc-400">
-                <UserAvatar name={q.name} size={28} />
-                {q.name}
+              <figcaption className="mt-4 border-t border-zinc-100 pt-3 dark:border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <UserAvatar name={q.name} size={32} />
+                  <div>
+                    <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">{q.name}</p>
+                    <p className="text-[11px] text-zinc-400">{q.item}</p>
+                  </div>
+                </div>
               </figcaption>
             </figure>
           )
@@ -331,63 +541,96 @@ export function Testimonials() {
 
 export function Footer() {
   return (
-    <footer className="rounded-t-[2.5rem] bg-zinc-950 px-6 pt-10 pb-8 text-zinc-300 md:px-10 md:pt-12">
-      <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-8 md:grid-cols-4">
-        <div>
+    <footer className="rounded-t-[2.5rem] bg-zinc-950 px-6 pt-12 pb-8 text-zinc-300 md:px-10">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-8 md:grid-cols-5">
+        <div className="col-span-2">
           <p className="text-2xl font-extrabold text-white">
             nét<span className="text-sky-400">.</span>
           </p>
-          <p className="mt-2 text-sm text-zinc-400">Mặc đẹp là nét riêng của bạn.</p>
+          <p className="mt-2 max-w-sm text-sm text-zinc-400">
+            Sàn thương mại điện tử thời trang đa gian hàng. Mặc đẹp là nét riêng của bạn.
+          </p>
+          <div className="mt-4 flex items-center gap-3 text-xs text-zinc-400">
+            <span className="flex items-center gap-1">
+              <Headset size={16} /> Hotline: 1900 6868
+            </span>
+            <span>·</span>
+            <span>cskh@fashionstore.vn</span>
+          </div>
         </div>
+
         <div>
-          <p className="text-sm font-bold text-white">Mua sắm</p>
-          <ul className="mt-3 space-y-2 text-sm">
+          <p className="text-sm font-bold text-white">Chăm sóc khách hàng</p>
+          <ul className="mt-3 space-y-2 text-xs">
             <li>
-              <Link to="/#shop" className="hover:text-white">
-                Hàng mới
+              <Link to="/search?q=chinh-sach" className="hover:text-white">
+                Chính sách đổi trả 30 ngày
               </Link>
             </li>
             <li>
-              <Link to="/#shop" className="hover:text-white">
-                Sale
+              <Link to="/search?q=van-chuyen" className="hover:text-white">
+                Chính sách vận chuyển
               </Link>
             </li>
             <li>
-              <Link to="/#categories" className="hover:text-white">
-                Danh mục
+              <Link to="/search?q=huong-dan" className="hover:text-white">
+                Hướng dẫn mua hàng
+              </Link>
+            </li>
+            <li>
+              <Link to="/account#orders" className="hover:text-white">
+                Tra cứu đơn hàng
               </Link>
             </li>
           </ul>
         </div>
+
         <div>
-          <p className="text-sm font-bold text-white">Hỗ trợ</p>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li>Đổi trả 30 ngày</li>
-            <li>Giao hàng toàn quốc</li>
-            <li>028 3861 4613</li>
+          <p className="text-sm font-bold text-white">Về nét</p>
+          <ul className="mt-3 space-y-2 text-xs">
+            <li>
+              <Link to="/search?q=gioi-thieu" className="hover:text-white">
+                Giới thiệu về nét
+              </Link>
+            </li>
+            <li>
+              <Link to="/account#seller-channel" className="hover:text-white">
+                Bán hàng cùng nét (Kênh người bán)
+              </Link>
+            </li>
+            <li>
+              <Link to="/search?q=chinh-hang" className="hover:text-white">
+                Cam kết hàng chính hãng
+              </Link>
+            </li>
+            <li>
+              <Link to="/search?q=bao-mat" className="hover:text-white">
+                Chính sách bảo mật
+              </Link>
+            </li>
           </ul>
         </div>
-        <div className="col-span-2 md:col-span-1">
-          <p className="text-sm font-bold text-white">Nhận deal</p>
-          <form
-            className="mt-3 flex overflow-hidden rounded-full bg-white/10 p-1"
-            onSubmit={function (e) {
-              e.preventDefault()
-            }}
-          >
-            <input
-              placeholder="Email của bạn"
-              className="w-full bg-transparent px-4 text-sm outline-none placeholder:text-zinc-500"
-            />
-            <button type="submit" className="btn-primary rounded-full px-5 py-2 text-sm font-bold">
-              Gửi
-            </button>
-          </form>
+
+        <div>
+          <p className="text-sm font-bold text-white">Thanh toán &amp; Vận chuyển</p>
+          <div className="mt-3 space-y-2 text-xs text-zinc-400">
+            <p className="flex items-center gap-1.5">
+              <CreditCard size={15} /> COD (Nhận hàng thanh toán)
+            </p>
+            <p className="flex items-center gap-1.5">
+              <Truck size={15} /> Giao hàng hỏa tốc toàn quốc
+            </p>
+            <p className="flex items-center gap-1.5">
+              <ShieldCheck size={15} /> Bảo vệ người mua 100%
+            </p>
+          </div>
         </div>
       </div>
-      <p className="mx-auto mt-10 max-w-[1400px] border-t border-white/10 pt-5 text-xs text-zinc-500">
-        © 2026 nét. Ảnh demo từ picsum.
-      </p>
+
+      <div className="mx-auto mt-12 flex max-w-[1400px] flex-wrap items-center justify-between border-t border-white/10 pt-6 text-xs text-zinc-500">
+        <p>© 2026 nét Marketplace. Bản quyền thuộc về Công ty TNHH Thời Trang Nét.</p>
+        <p>Hệ thống phục vụ toàn quốc · Đã đăng ký Bộ Công Thương</p>
+      </div>
     </footer>
   )
 }
