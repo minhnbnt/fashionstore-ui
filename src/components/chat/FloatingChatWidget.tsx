@@ -43,11 +43,16 @@ export default function FloatingChatWidget() {
   const [inputMessage, setInputMessage] = useState('')
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
+  let convInterval = 15000
+  if (isOpen) {
+    convInterval = 5000
+  }
+
   // 1. Fetch Buyer Conversations
   const convQuery = useMyConversations({
     query: {
       enabled: isLoggedIn,
-      refetchInterval: isOpen ? 5000 : 15000,
+      refetchInterval: convInterval,
     },
   })
 
@@ -69,11 +74,20 @@ export default function FloatingChatWidget() {
   }
 
   // 2. Fetch Messages for selected conversation
-  const safeConvId = selectedConversationId ?? ''
+  let safeConvId = ''
+  if (selectedConversationId !== null && selectedConversationId !== undefined) {
+    safeConvId = selectedConversationId
+  }
+
+  let msgInterval: number | false = false
+  if (isOpen) {
+    msgInterval = 3000
+  }
+
   const messagesQuery = useMessages(safeConvId, {
     query: {
       enabled: safeConvId !== '',
-      refetchInterval: isOpen ? 3000 : false,
+      refetchInterval: msgInterval,
     },
   })
 
@@ -96,6 +110,9 @@ export default function FloatingChatWidget() {
           const conv = takeData(res)
           if (conv.id !== undefined) {
             setSelectedConversationId(conv.id)
+            if (conv.shopName !== undefined && conv.shopName !== '') {
+              setSelectedShopName(conv.shopName)
+            }
             void queryClient.invalidateQueries({ queryKey: getMyConversationsQueryKey() })
           }
         } catch {
@@ -141,6 +158,9 @@ export default function FloatingChatWidget() {
       const first = conversations[0]
       if (first && first.id !== undefined) {
         setSelectedConversationId(first.id)
+        if (first.shopName !== undefined && first.shopName !== '') {
+          setSelectedShopName(first.shopName)
+        }
       }
     }
   }, [conversations, selectedConversationId])
@@ -151,7 +171,7 @@ export default function FloatingChatWidget() {
       const customEvent = e as CustomEvent<OpenChatEventDetail>
       const detail = customEvent.detail
       setIsOpen(true)
-      if (detail.shopName !== undefined) {
+      if (detail.shopName !== undefined && detail.shopName !== '') {
         setSelectedShopName(detail.shopName)
       }
       if (detail.shopId !== undefined && detail.shopId !== '') {
@@ -178,6 +198,14 @@ export default function FloatingChatWidget() {
     })
   }
 
+  let headerShopName = selectedShopName
+  const activeChatConv = conversations.find(function (c) {
+    return c.id === selectedConversationId
+  })
+  if (activeChatConv !== undefined && activeChatConv.shopName !== undefined && activeChatConv.shopName !== '') {
+    headerShopName = activeChatConv.shopName
+  }
+
   return (
     <div className="fixed right-5 bottom-5 z-50">
       {/* 1. Floating Pill Button (When closed) */}
@@ -188,28 +216,28 @@ export default function FloatingChatWidget() {
           onClick={function () {
             setIsOpen(true)
           }}
-          className="group relative flex items-center gap-2 rounded-full bg-orange-600 px-5 py-3 text-xs font-black text-white shadow-xl shadow-orange-600/30 transition duration-300 hover:scale-105 hover:bg-orange-700 focus:outline-none"
+          className="group relative flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-xs font-black text-white shadow-xl shadow-blue-600/30 transition duration-300 hover:scale-105 hover:bg-blue-700 focus:outline-none"
         >
           <ChatCircleDots size={22} weight="fill" />
           <span className="tracking-wide">Chat</span>
           {totalUnread > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-black text-orange-600 shadow-xs">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-black text-blue-600 shadow-xs">
               {totalUnread}
             </span>
           )}
         </button>
       )}
 
-      {/* 2. Expanded Shopee Chat Window */}
+      {/* 2. Expanded Chat Window */}
       {isOpen && (
         <div className="flex h-[480px] w-[350px] flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 sm:w-[580px]">
           {/* Header Bar */}
-          <div className="flex items-center justify-between border-b border-zinc-100 bg-orange-600 px-4 py-3 text-white dark:border-zinc-800">
+          <div className="flex items-center justify-between border-b border-zinc-100 bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white dark:border-zinc-800">
             <div className="flex items-center gap-2">
               <Storefront size={20} weight="fill" />
               <div className="min-w-0">
-                <p className="truncate text-xs font-extrabold">{selectedShopName}</p>
-                <p className="text-[10px] text-orange-100">Shopee Live Chat</p>
+                <p className="truncate text-xs font-extrabold">{headerShopName}</p>
+                <p className="text-[10px] text-blue-100">nét Live Chat</p>
               </div>
             </div>
 
@@ -240,7 +268,7 @@ export default function FloatingChatWidget() {
           {/* Not logged in State */}
           {isLoggedIn === false && (
             <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-50 text-orange-600 dark:bg-orange-500/10">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/40">
                 <ChatCircleDots size={28} weight="duotone" />
               </div>
               <h4 className="mt-3 text-sm font-extrabold text-zinc-900 dark:text-white">
@@ -251,17 +279,17 @@ export default function FloatingChatWidget() {
               </p>
               <Link
                 to="/login"
-                className="mt-4 rounded-full bg-orange-600 px-6 py-2 text-xs font-bold text-white shadow-md shadow-orange-600/20 hover:bg-orange-700"
+                className="mt-4 rounded-full bg-blue-600 px-6 py-2 text-xs font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700"
               >
                 Đăng nhập ngay
               </Link>
             </div>
           )}
 
-          {/* Logged in State: 2-column or 1-column layout */}
+          {/* Logged in State: 2-column layout */}
           {isLoggedIn && (
             <div className="flex flex-1 overflow-hidden">
-              {/* Left Column: Conversations List (hidden on small mobile) */}
+              {/* Left Column: Conversations List */}
               <div className="hidden w-44 flex-col border-r border-zinc-100 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-800/30 sm:flex">
                 <div className="border-b border-zinc-100 px-3 py-2 text-[10px] font-bold text-zinc-400 uppercase dark:border-zinc-800">
                   Hội thoại ({conversations.length})
@@ -277,10 +305,22 @@ export default function FloatingChatWidget() {
                     let itemClass =
                       'w-full text-left p-3 border-b border-zinc-100/60 dark:border-zinc-800/40 transition flex flex-col gap-1'
                     if (isSelected) {
-                      itemClass += ' bg-orange-50/80 dark:bg-orange-500/10'
+                      itemClass += ' bg-blue-50/80 text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
                     }
                     if (isSelected === false) {
                       itemClass += ' hover:bg-zinc-100/80 dark:hover:bg-zinc-800/60'
+                    }
+
+                    let convTitle = 'Shop'
+                    if (c.shopName !== undefined && c.shopName !== '') {
+                      convTitle = c.shopName
+                    } else if (c.shopId !== undefined && c.shopId !== '') {
+                      convTitle = 'Shop #' + c.shopId.slice(0, 6)
+                    }
+
+                    let lastMsg = 'Bắt đầu cuộc trò chuyện'
+                    if (c.lastMessageText !== undefined && c.lastMessageText !== null && c.lastMessageText !== '') {
+                      lastMsg = c.lastMessageText
                     }
 
                     return (
@@ -291,21 +331,24 @@ export default function FloatingChatWidget() {
                           if (c.id !== undefined) {
                             setSelectedConversationId(c.id)
                           }
+                          if (c.shopName !== undefined && c.shopName !== '') {
+                            setSelectedShopName(c.shopName)
+                          }
                         }}
                         className={itemClass}
                       >
                         <div className="flex items-center justify-between">
                           <span className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                            Shop #{c.shopId?.slice(0, 6) ?? '1'}
+                            {convTitle}
                           </span>
                           {c.unreadCount !== undefined && c.unreadCount > 0 && (
-                            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-600 px-1 text-[9px] font-black text-white">
+                            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-black text-white">
                               {c.unreadCount}
                             </span>
                           )}
                         </div>
                         <p className="truncate text-[10px] text-zinc-500 dark:text-zinc-400">
-                          {c.lastMessageText || 'Bắt đầu cuộc trò chuyện'}
+                          {lastMsg}
                         </p>
                       </button>
                     )
@@ -335,7 +378,7 @@ export default function FloatingChatWidget() {
 
                     if (isBuyer) {
                       bubbleClass +=
-                        ' bg-orange-600 text-white rounded-br-xs self-end font-medium'
+                        ' bg-blue-600 text-white rounded-br-xs self-end font-medium'
                       alignClass += ' items-end'
                     }
                     if (isBuyer === false) {
@@ -374,12 +417,12 @@ export default function FloatingChatWidget() {
                       setInputMessage(e.target.value)
                     }}
                     placeholder="Nhập nội dung cần tư vấn…"
-                    className="flex-1 rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-xs font-medium text-zinc-800 placeholder-zinc-400 transition focus:border-orange-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                    className="flex-1 rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-xs font-medium text-zinc-800 placeholder-zinc-400 transition focus:border-blue-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                   />
                   <button
                     type="submit"
                     disabled={sendMutation.isPending || inputMessage.trim() === ''}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-600 text-white shadow-xs transition hover:bg-orange-700 disabled:opacity-40"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs transition hover:bg-blue-700 disabled:opacity-40"
                   >
                     <PaperPlaneRight size={15} weight="fill" />
                   </button>
