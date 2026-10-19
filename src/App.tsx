@@ -23,6 +23,7 @@ const AdminProducts = lazy(() => import('./pages/AdminProducts'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const ShopView = lazy(() => import('./pages/ShopView'))
+const FloatingChatWidget = lazy(() => import('./components/chat/FloatingChatWidget'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -146,6 +147,11 @@ function App() {
         </Routes>
       </Suspense>
       {!isSellerDashboard && <Footer />}
+      {!isSellerDashboard && (
+        <Suspense fallback={null}>
+          <FloatingChatWidget />
+        </Suspense>
+      )}
     </div>
   )
 }
