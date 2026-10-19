@@ -4,9 +4,14 @@ import { Link, useNavigate } from 'react-router'
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import {
   Bell,
+  CaretDown,
+  FacebookLogo,
+  Globe,
   Heart,
+  InstagramLogo,
   MagnifyingGlass,
   Moon,
+  Phone,
   Question,
   ShieldCheck,
   ShoppingBag,
@@ -30,7 +35,7 @@ import UserAvatar from './UserAvatar'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 
-const TRENDING_KEYWORDS = ['Áo thun', 'Quần ống suông', 'Chân váy', 'Áo khoác', 'Blazer']
+const TRENDING_KEYWORDS = ['Áo thun', 'Quần ống suông', 'Chân váy chữ A', 'Áo khoác dạ', 'Blazer']
 
 function RoleBadge({ role }: { role: string }) {
   if (role === 'admin') {
@@ -155,86 +160,154 @@ export default function Header() {
   const previewItems = cart.items.slice(0, 5)
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50">
-      {/* Topbar Phong Cách Shopee */}
-      <div className="border-b border-white/20 bg-gradient-to-r from-indigo-950/90 via-indigo-900/90 to-blue-950/90 text-white backdrop-blur-md">
-        <div className="mx-auto flex h-8 max-w-[1400px] items-center justify-between px-4 text-xs font-medium">
-          <div className="flex items-center gap-4">
+    <header className="fixed inset-x-0 top-0 z-50 shadow-xs">
+      {/* 1. Shopee Premium Topbar - Cam Gradient ấm áp, sang trọng */}
+      <div className="border-b border-orange-400/30 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 text-white shadow-xs">
+        <div className="mx-auto flex h-8 max-w-[1400px] items-center justify-between px-4 text-xs font-semibold">
+          {/* Left Topbar Links */}
+          <div className="flex items-center gap-3">
             <Link
               to={sellerChannelPath}
-              className="flex items-center gap-1 text-zinc-300 transition hover:text-white"
+              className="flex items-center gap-1.5 text-white/90 transition hover:text-white"
             >
-              <Storefront size={13} weight="bold" />
+              <Storefront size={14} weight="fill" />
               <span>Kênh Người Bán</span>
             </Link>
-            <span className="hidden text-zinc-500 sm:inline">|</span>
-            <span className="hidden text-zinc-300 sm:inline">Hotline: 1900 6868</span>
+
+            <span className="hidden text-white/30 sm:inline">|</span>
+
+            <a
+              href="tel:19006868"
+              className="hidden items-center gap-1.5 text-white/90 transition hover:text-white sm:flex"
+            >
+              <Phone size={13} weight="fill" />
+              <span>Hotline: 1900 6868</span>
+            </a>
+
+            <span className="hidden text-white/30 md:inline">|</span>
+
+            <div className="hidden items-center gap-2 text-white/90 md:flex">
+              <span className="text-[11px] font-medium text-white/80">Kết nối:</span>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                title="Facebook"
+                className="transition hover:text-white hover:scale-110"
+              >
+                <FacebookLogo size={14} weight="fill" />
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                title="Instagram"
+                className="transition hover:text-white hover:scale-110"
+              >
+                <InstagramLogo size={14} weight="fill" />
+              </a>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+
+          {/* Right Topbar Links */}
+          <div className="flex items-center gap-3.5">
             <Link
               to="/account#notifications"
-              className="hidden items-center gap-1 text-zinc-300 transition hover:text-white sm:flex"
+              className="hidden items-center gap-1.5 text-white/90 transition hover:text-white sm:flex"
             >
-              <Bell size={13} />
+              <div className="relative">
+                <Bell size={14} weight="fill" />
+                <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              </div>
               <span>Thông báo</span>
             </Link>
+
             <Link
               to="/search?q=ho-tro"
-              className="flex items-center gap-1 text-zinc-300 transition hover:text-white"
+              className="flex items-center gap-1 text-white/90 transition hover:text-white"
             >
-              <Question size={13} />
-              <span>Trợ giúp</span>
+              <Question size={14} weight="bold" />
+              <span>Hỗ trợ</span>
             </Link>
+
+            <div className="hidden items-center gap-1 text-white/90 md:flex cursor-pointer hover:text-white">
+              <Globe size={14} />
+              <span>Tiếng Việt</span>
+              <CaretDown size={11} weight="bold" />
+            </div>
+
             <button
               type="button"
               onClick={toggle}
               aria-label="Đổi giao diện sáng tối"
-              className="flex items-center gap-1 text-zinc-300 transition hover:text-white"
+              className="flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-white/90 transition hover:bg-white/20 hover:text-white"
             >
-              {theme === 'dark' && <Sun size={13} />}
-              {theme !== 'dark' && <Moon size={13} />}
-              <span className="hidden md:inline">
-                {theme === 'dark' && 'Chế độ Sáng'}
-                {theme !== 'dark' && 'Chế độ Tối'}
+              {theme === 'dark' && <Sun size={13} weight="fill" />}
+              {theme !== 'dark' && <Moon size={13} weight="fill" />}
+              <span className="hidden md:inline text-[11px]">
+                {theme === 'dark' && 'Sáng'}
+                {theme !== 'dark' && 'Tối'}
               </span>
             </button>
+
+            {/* Auth Section */}
             {!isLoggedIn && (
-              <div className="flex items-center gap-2">
-                <Link to="/login" className="font-bold text-sky-300 hover:underline">
+              <div className="flex items-center gap-2 pl-1">
+                <Link
+                  to="/login"
+                  className="rounded-full bg-white/15 px-2.5 py-0.5 font-bold text-white transition hover:bg-white hover:text-orange-600"
+                >
                   Đăng nhập
                 </Link>
-                <span className="text-zinc-500">/</span>
-                <Link to="/login" className="font-bold text-white hover:underline">
+                <span className="text-white/40">/</span>
+                <Link
+                  to="/login"
+                  className="font-bold text-white hover:underline"
+                >
                   Đăng ký
                 </Link>
               </div>
             )}
+
             {isLoggedIn && (
-              <Link to="/account" className="truncate font-semibold text-sky-200 hover:underline">
-                {userEmail}
+              <Link
+                to="/account"
+                className="flex items-center gap-1.5 font-bold text-white hover:underline"
+              >
+                <div className="h-5 w-5 overflow-hidden rounded-full border border-white">
+                  <UserAvatar name={userEmail || 'guest'} size={20} />
+                </div>
+                <span className="max-w-[120px] truncate sm:max-w-[180px]">{userEmail}</span>
               </Link>
             )}
           </div>
         </div>
       </div>
 
-      {/* Main Header Bar */}
-      <div className="mx-auto max-w-[1400px] px-4">
-        <div className="glass mt-2 flex h-16 items-center gap-4 rounded-full px-4 md:px-6">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-1 text-2xl font-extrabold tracking-tighter">
-            <span>nét</span>
-            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-indigo-900 to-sky-400" />
-          </Link>
+      {/* 2. Main Header Bar - Trắng sang trọng, gắn kết đồng bộ */}
+      <div className="border-b border-zinc-200/80 bg-white/95 backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95">
+        <div className="mx-auto flex h-[68px] max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
+          {/* Logo Brand nét */}
+          <div className="flex items-center gap-3 shrink-0">
+            <Link to="/" className="flex items-center gap-1.5 tracking-tighter">
+              <span className="text-2xl font-black text-zinc-900 dark:text-white md:text-3xl">
+                nét
+              </span>
+              <span className="h-3 w-3 rounded-full bg-orange-600 shadow-sm" />
+            </Link>
+            <span className="hidden rounded-sm bg-orange-600 px-1.5 py-0.5 text-[10px] font-black text-white uppercase shadow-xs sm:inline-block">
+              MALL
+            </span>
+          </div>
 
-          {/* Danh mục menu */}
-          <nav className="ml-2 hidden items-center gap-5 text-sm font-medium xl:flex">
-            {categories.map(function (c) {
+          {/* Shopee Category Menu Links */}
+          <nav className="ml-2 hidden items-center gap-4 text-xs font-bold xl:flex">
+            {categories.slice(0, 5).map(function (c) {
               return (
                 <Link
                   key={c.id}
                   to={'/search?category=' + encodeURIComponent(c.slug ?? '')}
-                  className="text-zinc-600 transition hover:text-blue-700 dark:text-zinc-300 dark:hover:text-sky-300"
+                  className="text-zinc-600 transition hover:text-orange-600 dark:text-zinc-300 dark:hover:text-orange-400"
                 >
                   {c.name}
                 </Link>
@@ -242,31 +315,32 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Thanh tìm kiếm Shopee style */}
-          <div className="mx-auto hidden max-w-lg flex-1 flex-col md:flex">
+          {/* Thanh tìm kiếm Shopee Pill to & rõ ràng */}
+          <div className="mx-auto flex max-w-xl flex-1 flex-col">
             <form
               onSubmit={submitSearch}
-              className="flex items-center rounded-full border border-sky-200/80 bg-white/90 px-3 py-1.5 text-sm shadow-inner transition focus-within:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+              className="flex items-center rounded-full border-2 border-orange-500 bg-white px-2 py-1 shadow-sm transition focus-within:ring-4 focus-within:ring-orange-500/15 dark:bg-zinc-800"
             >
               <input
                 value={keyword}
                 onChange={function (e) {
                   setKeyword(e.target.value)
                 }}
-                className="w-full bg-transparent px-2 outline-none placeholder:text-zinc-400"
-                placeholder="Tìm áo, váy, khoác, phụ kiện..."
+                className="w-full bg-transparent px-3 text-xs font-medium text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-white"
+                placeholder="Tìm áo thun, váy hoa, blazer, đồ công sở nét…"
               />
               <button
                 type="submit"
                 aria-label="Tìm kiếm"
-                className="btn-primary flex h-8 w-10 shrink-0 items-center justify-center rounded-full text-white shadow"
+                className="flex h-8 w-14 shrink-0 items-center justify-center rounded-full bg-orange-600 text-white shadow-xs transition hover:bg-orange-700"
               >
                 <MagnifyingGlass size={16} weight="bold" />
               </button>
             </form>
+
             {/* Gợi ý từ khóa Shopee */}
-            <div className="mt-1 flex items-center gap-2 px-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-              <span className="font-semibold text-zinc-400 dark:text-zinc-500">Gợi ý:</span>
+            <div className="mt-1 flex items-center gap-2 px-2 text-[10px] text-zinc-500 dark:text-zinc-400">
+              <span className="font-semibold text-zinc-400">Gợi ý:</span>
               {TRENDING_KEYWORDS.map(function (tag) {
                 return (
                   <button
@@ -275,7 +349,7 @@ export default function Header() {
                     onClick={function () {
                       handleQuickSearch(tag)
                     }}
-                    className="hover:text-blue-600 hover:underline dark:hover:text-sky-300"
+                    className="hover:text-orange-600 hover:underline dark:hover:text-orange-400"
                   >
                     {tag}
                   </button>
@@ -284,29 +358,28 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Action icons bên phải */}
-          <div className="ml-auto flex items-center gap-2">
-            {/* Wishlist Button với số đếm live */}
+          {/* Right Action Icons: Wishlist, Cart Shopee, User Dropdown */}
+          <div className="flex items-center gap-3">
+            {/* Wishlist Button */}
             <button
               type="button"
               id="header-wishlist-button"
-              aria-label="Sản phẩm yêu thích"
               onClick={handleWishlistClick}
-              className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10"
+              aria-label="Sản phẩm yêu thích"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-xs transition hover:border-orange-500 hover:text-rose-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
             >
-              <Heart size={20} weight={wishlist.count > 0 ? 'fill' : 'regular'} className={wishlist.count > 0 ? 'text-rose-500' : ''} />
+              <Heart size={18} weight={wishlist.count > 0 ? 'fill' : 'regular'} />
               {wishlist.count > 0 && (
-                <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-extrabold text-white">
-                  {wishlist.count > 99 && '99+'}
-                  {wishlist.count <= 99 && wishlist.count}
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white shadow-xs">
+                  {wishlist.count}
                 </span>
               )}
             </button>
 
-            {/* Giỏ Hàng tương tác với Mini Cart Popover */}
+            {/* Shopee Cart Button with Mini Cart Preview Dropdown */}
             <div
-              className="relative"
               ref={cartRef}
+              className="relative"
               onMouseEnter={function () {
                 setCartPreviewOpen(true)
               }}
@@ -317,99 +390,103 @@ export default function Header() {
               <button
                 type="button"
                 id="header-cart-button"
-                aria-label="Giỏ hàng"
                 onClick={handleCartClick}
-                className="btn-primary relative flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold shadow-md shadow-blue-500/20"
+                aria-label="Giỏ hàng"
+                className="flex items-center gap-2 rounded-full bg-orange-600 px-4 py-2 text-xs font-black text-white shadow-md shadow-orange-600/25 transition hover:bg-orange-700"
               >
-                <ShoppingBag size={18} weight="fill" />
-                <span className="hidden sm:inline">Giỏ</span>
-                {cart.totalQuantity > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-xs font-extrabold text-indigo-900 shadow">
-                    {cart.totalQuantity > 99 && '99+'}
-                    {cart.totalQuantity <= 99 && cart.totalQuantity}
-                  </span>
-                )}
+                <div className="relative">
+                  <ShoppingBag size={18} weight="fill" />
+                  {cart.totalCount > 0 && (
+                    <span className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-orange-600 shadow-xs">
+                      {cart.totalCount}
+                    </span>
+                  )}
+                </div>
+                <span className="hidden sm:inline">Giỏ hàng</span>
               </button>
 
-              {/* Popover Mini Cart xem nhanh */}
+              {/* Shopee Mini Cart Preview Dropdown */}
               {cartPreviewOpen && (
-                <div className="absolute top-full right-0 mt-2 w-80 overflow-hidden rounded-2xl border border-white/30 bg-white/95 p-4 shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/95">
-                  <div className="flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-white/10">
-                    <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400">
-                      Sản phẩm mới thêm
-                    </p>
-                    <span className="text-xs font-semibold text-blue-600 dark:text-sky-300">
-                      {cart.totalQuantity} món
-                    </span>
-                  </div>
-
-                  {cart.items.length === 0 && (
-                    <div className="py-6 text-center">
-                      <ShoppingBag size={32} className="mx-auto text-zinc-300 dark:text-zinc-600" />
-                      <p className="mt-2 text-xs font-medium text-zinc-500">Giỏ hàng của bạn đang rỗng</p>
+                <div className="absolute right-0 top-full pt-2 z-50 w-80">
+                  <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="border-b border-zinc-100 pb-2 text-xs font-bold text-zinc-400 uppercase dark:border-zinc-800">
+                      Sản phẩm mới thêm ({cart.totalCount})
                     </div>
-                  )}
 
-                  {cart.items.length > 0 && (
-                    <div className="mt-2 max-h-60 divide-y divide-zinc-100 overflow-y-auto dark:divide-white/10">
-                      {previewItems.map(function (item) {
-                        return (
-                          <div key={item.variantId} className="flex items-center gap-3 py-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                                {item.productName}
-                              </p>
-                              <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                                {item.variantLabel} × {item.quantity}
+                    {cart.items.length === 0 && (
+                      <div className="py-6 text-center text-xs text-zinc-400">
+                        Chưa có sản phẩm nào trong giỏ
+                      </div>
+                    )}
+
+                    {cart.items.length > 0 && (
+                      <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        {previewItems.map(function (item, index) {
+                          return (
+                            <div
+                              key={item.variantId ?? index}
+                              className="flex items-center justify-between gap-3 py-2.5 text-xs"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate font-bold text-zinc-800 dark:text-zinc-200">
+                                  {item.productName ?? 'Sản phẩm'}
+                                </p>
+                                <p className="text-[11px] text-zinc-400">
+                                  x{item.quantity} {item.variantLabel}
+                                </p>
+                              </div>
+                              <p className="font-extrabold text-orange-600">
+                                {formatVnd(item.lineTotal ?? (item.unitPrice ?? 0) * (item.quantity ?? 1))}
                               </p>
                             </div>
-                            <span className="text-xs font-extrabold text-blue-700 dark:text-sky-300">
-                              {item.unitPrice !== undefined && item.unitPrice !== null
-                                ? formatVnd(item.unitPrice * (item.quantity ?? 1))
-                                : '0 ₫'}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
+                          )
+                        })}
+                      </div>
+                    )}
 
-                  <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-white/10">
-                    <div className="mb-2 flex items-center justify-between text-xs">
-                      <span className="text-zinc-500">Tạm tính:</span>
-                      <span className="font-extrabold text-blue-700 dark:text-sky-300">
-                        {formatVnd(cart.subtotal)}
-                      </span>
+                    <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-zinc-500">Tổng cộng:</span>
+                        <span className="text-sm font-black text-orange-600">
+                          {formatVnd(cart.subtotal)}
+                        </span>
+                      </div>
+                      <Link
+                        to="/cart"
+                        onClick={function () {
+                          setCartPreviewOpen(false)
+                        }}
+                        className="mt-3 block w-full rounded-full bg-orange-600 py-2 text-center text-xs font-bold text-white shadow-xs transition hover:bg-orange-700"
+                      >
+                        Xem giỏ hàng & Thanh toán
+                      </Link>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleCartClick}
-                      className="btn-primary w-full rounded-full py-2 text-center text-xs font-bold"
-                    >
-                      Xem Giỏ Hàng &amp; Thanh Toán
-                    </button>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* User Avatar & Menu */}
-            <div className="relative" ref={dropdownRef} onBlur={handleBlur}>
+            {/* User Dropdown Avatar */}
+            <div ref={dropdownRef} onBlur={handleBlur} className="relative">
               <button
                 type="button"
-                id="btn-user-menu"
-                aria-label="Tài khoản"
+                id="header-user-avatar-button"
                 onClick={handleAvatarClick}
-                className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-indigo-100 dark:hover:bg-white/10"
+                aria-label="Tài khoản"
+                className="flex items-center gap-1 rounded-full p-0.5 transition hover:ring-2 hover:ring-orange-500/30"
               >
-                {isLoggedIn && userEmail !== '' && <UserAvatar name={userEmail} size={28} />}
-                {(!isLoggedIn || userEmail === '') && <User size={20} />}
+                {isLoggedIn && <UserAvatar name={userEmail || 'guest'} size={38} />}
+                {!isLoggedIn && (
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                    <UserCircle size={24} weight="duotone" />
+                  </div>
+                )}
               </button>
 
               {dropdownOpen && isLoggedIn && (
-                <div className="absolute top-full right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-white/30 bg-white/90 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/90">
-                  <div className="border-b border-zinc-100 px-4 py-3 dark:border-white/10">
-                    <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-100">
+                <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-zinc-200 bg-white p-2 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+                  <div className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-800">
+                    <p className="truncate text-xs font-extrabold text-zinc-900 dark:text-white">
                       {userEmail}
                     </p>
                     <div className="mt-1">
@@ -417,52 +494,52 @@ export default function Header() {
                     </div>
                   </div>
 
-                  <Link
-                    to={dashboardPath}
-                    onClick={function () {
-                      setDropdownOpen(false)
-                    }}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-indigo-50 dark:text-zinc-200 dark:hover:bg-white/10"
-                  >
-                    <UserCircle size={16} />
-                    {dashboardLabel}
-                  </Link>
+                  <div className="py-1">
+                    <Link
+                      to={dashboardPath}
+                      onClick={function () {
+                        setDropdownOpen(false)
+                      }}
+                      className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-zinc-700 transition hover:bg-orange-50 hover:text-orange-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                    >
+                      <User size={15} weight="bold" />
+                      <span>{dashboardLabel}</span>
+                    </Link>
 
-                  <Link
-                    to="/account#orders"
-                    onClick={function () {
-                      setDropdownOpen(false)
-                    }}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-indigo-50 dark:text-zinc-200 dark:hover:bg-white/10"
-                  >
-                    <ShoppingBag size={16} />
-                    Đơn mua của tôi
-                  </Link>
-
-                  {role !== 'customer' && (
                     <Link
                       to="/account"
                       onClick={function () {
                         setDropdownOpen(false)
                       }}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-indigo-50 dark:text-zinc-200 dark:hover:bg-white/10"
+                      className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-zinc-700 transition hover:bg-orange-50 hover:text-orange-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
                     >
-                      <User size={16} />
-                      Tài khoản &amp; shop của tôi
+                      <ShoppingBag size={15} weight="bold" />
+                      <span>Đơn mua của tôi</span>
                     </Link>
-                  )}
 
-                  <button
-                    type="button"
-                    id="btn-sign-out"
-                    onClick={handleSignOut}
-                    disabled={signOut.isPending}
-                    className="flex w-full items-center gap-2.5 border-t border-zinc-100 px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-white/10 dark:text-red-400 dark:hover:bg-red-500/10"
-                  >
-                    <SignOut size={16} weight="bold" />
-                    {signOut.isPending && <span>Đang đăng xuất…</span>}
-                    {signOut.isPending === false && <span>Đăng xuất</span>}
-                  </button>
+                    <Link
+                      to={sellerChannelPath}
+                      onClick={function () {
+                        setDropdownOpen(false)
+                      }}
+                      className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-zinc-700 transition hover:bg-orange-50 hover:text-orange-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                    >
+                      <Storefront size={15} weight="bold" />
+                      <span>Kênh Người Bán</span>
+                    </Link>
+                  </div>
+
+                  <div className="border-t border-zinc-100 pt-1 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      disabled={signOut.isPending}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:hover:bg-rose-500/10"
+                    >
+                      <SignOut size={15} weight="bold" />
+                      <span>Đăng xuất</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
