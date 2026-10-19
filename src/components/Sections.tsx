@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
+import { useList } from '@generated/endpoints/reviews/reviews'
 import { useSearch } from '@generated/endpoints/search/search'
 import {
   ArrowRight,
@@ -29,6 +30,7 @@ import UserAvatar from './UserAvatar'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
+import type { ReviewResponse } from '@generated/model/reviewResponse'
 
 function Reveal(props: { children: React.ReactNode; delay?: number }) {
   const reduce = useReducedMotion()
@@ -464,26 +466,44 @@ export function Editorial() {
 }
 
 export function Testimonials() {
-  const verifiedReviews = [
-    {
-      name: 'Linh, Hà Nội',
-      text: 'Vải dày dặn, form chuẩn đẹp y hình. Đặt hôm trước hôm sau có hàng.',
-      item: 'Áo thun oversize',
-      rating: 5,
+  const searchQuery = useSearch({ limit: 4 })
+  let targetProductId = '154a782d-9b21-43ac-81c8-c47bcb8d6a62'
+  let targetProductName = 'Áo thun oversize nét'
+
+  if (searchQuery.data !== undefined) {
+    const page = takeData(searchQuery.data)
+    const items = page.items ?? []
+    if (items.length > 0) {
+      let matchedItem = items[0]
+      for (const item of items) {
+        if (item.name !== undefined && item.name.toLowerCase().includes('áo thun')) {
+          matchedItem = item
+          break
+        }
+      }
+      if (matchedItem && matchedItem.id !== undefined) {
+        targetProductId = matchedItem.id
+      }
+      if (matchedItem && matchedItem.name !== undefined) {
+        targetProductName = matchedItem.name
+      }
+    }
+  }
+
+  const reviewsQuery = useList(targetProductId, {
+    query: {
+      enabled: targetProductId !== '',
     },
-    {
-      name: 'Trâm, Sài Gòn',
-      text: 'Mặc 3 tháng giặt máy chưa xù lông chút nào. Rất ưng chất lượng!',
-      item: 'Quần jeans ống suông',
-      rating: 5,
-    },
-    {
-      name: 'Khang, Sài Gòn',
-      text: 'Form rộng rãi mặc rất thoáng mát, đóng gói hộp chỉn chu cẩn thận.',
-      item: 'Áo polo phối viền',
-      rating: 5,
-    },
-  ]
+  })
+
+  let realReviews: ReviewResponse[] = []
+  if (reviewsQuery.data !== undefined) {
+    realReviews = takeData(reviewsQuery.data)
+  }
+
+  if (realReviews.length === 0 && reviewsQuery.isPending === false) {
+    return null
+  }
 
   return (
     <section className="mx-auto max-w-[1400px] px-4 pb-12">
@@ -498,20 +518,30 @@ export function Testimonials() {
         </div>
       </div>
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        {verifiedReviews.map(function (q) {
+        {realReviews.slice(0, 3).map(function (rev) {
+          const starsCount = rev.stars ?? 5
+          const starArray = [1, 2, 3, 4, 5]
+          const buyerName = rev.buyerDisplayName ?? 'Khách hàng nét'
+          const reviewText = rev.comment ?? 'Sản phẩm chất lượng, đóng gói cẩn thận.'
+
           return (
             <figure
-              key={q.name}
+              key={rev.id}
               className="glass relative flex flex-col justify-between rounded-3xl p-6 shadow-sm"
             >
               <div>
                 <div className="flex items-center justify-between">
                   <div className="flex gap-1 text-amber-400">
-                    <Star size={14} weight="fill" />
-                    <Star size={14} weight="fill" />
-                    <Star size={14} weight="fill" />
-                    <Star size={14} weight="fill" />
-                    <Star size={14} weight="fill" />
+                    {starArray.map(function (starNum) {
+                      let isFilled = false
+                      if (starNum <= starsCount) {
+                        isFilled = true
+                      }
+                      if (isFilled) {
+                        return <Star key={starNum} size={14} weight="fill" />
+                      }
+                      return <Star key={starNum} size={14} weight="regular" className="text-zinc-300" />
+                    })}
                   </div>
                   <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                     <CheckCircle size={13} weight="fill" />
@@ -519,15 +549,15 @@ export function Testimonials() {
                   </span>
                 </div>
                 <blockquote className="mt-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">
-                  “{q.text}”
+                  “{reviewText}”
                 </blockquote>
               </div>
               <figcaption className="mt-4 border-t border-zinc-100 pt-3 dark:border-white/10">
                 <div className="flex items-center gap-2.5">
-                  <UserAvatar name={q.name} size={32} />
+                  <UserAvatar name={buyerName} size={32} />
                   <div>
-                    <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">{q.name}</p>
-                    <p className="text-[11px] text-zinc-400">{q.item}</p>
+                    <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">{buyerName}</p>
+                    <p className="text-[11px] text-zinc-400">{targetProductName}</p>
                   </div>
                 </div>
               </figcaption>
