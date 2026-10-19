@@ -10,6 +10,7 @@ import ProductGallery from '../components/pdp/ProductGallery'
 import ProductInfo from '../components/pdp/ProductInfo'
 import ProductTabs from '../components/pdp/ProductTabs'
 import RelatedProducts from '../components/pdp/RelatedProducts'
+import ShopInfoCard from '../components/pdp/ShopInfoCard'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 
@@ -97,11 +98,17 @@ export default function ProductDetail() {
         <span>/</span>
         <span className="font-bold text-zinc-900 dark:text-zinc-100">{product.name}</span>
       </nav>
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <ProductGallery images={product.images ?? []} name={product.name ?? ''} />
         <ProductInfo product={product} />
       </div>
+
+      {/* Thẻ thông tin Shop Shopee-style */}
+      <ShopInfoCard shopId={product.shopId} />
+
       <ProductTabs product={product} />
+
       <div className="mt-10">
         <RelatedProducts category={category} currentId={productId} />
       </div>
