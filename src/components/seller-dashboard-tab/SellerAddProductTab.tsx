@@ -1,6 +1,12 @@
 import { useState } from 'react'
 
+import { useListCategories } from '@generated/endpoints/categories/categories'
+import { getListProductsQueryKey } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
+import { useCreate1 } from '@generated/endpoints/shop-products/shop-products'
 import { ArrowLeft, Plus, Trash, CheckCircle } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { takeData } from '@/lib/apiAdapters'
 
 import type { CreateVariantRequest } from '@generated/model/createVariantRequest'
 
@@ -18,9 +24,8 @@ export interface CategoryOption {
 }
 
 interface Props {
-  categories: CategoryOption[]
+  shopId: string
   onBack: () => void
-  onAddProduct: (payload: AddProductPayload) => void
 }
 
 // Row nội bộ của bảng biến thể, keyId chỉ dùng cho React key + sửa/xóa hàng
@@ -44,7 +49,8 @@ function newVariantRow(sku: string, size: string, color: string): VariantRow {
   }
 }
 
-export default function SellerAddProductTab({ categories, onBack, onAddProduct }: Props) {
+export default function SellerAddProductTab({ shopId, onBack }: Props) {
+  const queryClient = useQueryClient()
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [category, setCategory] = useState('')
@@ -53,6 +59,23 @@ export default function SellerAddProductTab({ categories, onBack, onAddProduct }
     newVariantRow('NEW-WHT-M', 'M', 'Trắng'),
     newVariantRow('NEW-BLK-L', 'L', 'Đen'),
   ])
+
+  const categoriesQuery = useListCategories()
+  let categories: CategoryOption[] = []
+  if (categoriesQuery.data !== undefined) {
+    categories = takeData(categoriesQuery.data).map(function (c) {
+      return { id: c.id ?? '', name: c.name ?? '' }
+    })
+  }
+
+  const createProductMutation = useCreate1({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+        onBack()
+      },
+    },
+  })
 
   // Chưa chọn danh mục thì mặc định chọn danh mục đầu tiên nếu có
   let effectiveCategoryId = category
@@ -142,7 +165,16 @@ export default function SellerAddProductTab({ categories, onBack, onAddProduct }
       }),
     }
 
-    onAddProduct(payload)
+    createProductMutation.mutate({
+      shopId,
+      data: {
+        name: payload.name,
+        slug: payload.slug,
+        description: payload.description,
+        categoryId: payload.categoryId,
+        variants: payload.variants,
+      },
+    })
   }
 
   return (

@@ -1,6 +1,18 @@
 import { useState } from 'react'
 
 import {
+  getListAuditLogsQueryKey,
+  getListMembersQueryKey,
+  getListRolesQueryKey,
+  useChangeMemberRole,
+  useCreateRole,
+  useInviteStaff,
+  useListAuditLogs,
+  useListMembers,
+  useListRoles,
+  useRemoveMember,
+} from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
+import {
   UsersThree,
   ShieldCheck,
   ClockCounterClockwise,
@@ -11,17 +23,16 @@ import {
   Shield,
   Key,
 } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { takeData } from '@/lib/apiAdapters'
+import { auditItem, memberItem, roleItem } from '@/lib/sellerAdapters'
 
 import type { ShopRoleItem, ShopMemberItem, ShopAuditItem } from '@/types/seller'
+import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
 
 interface SellerStaffTabProps {
-  roles: ShopRoleItem[]
-  members: ShopMemberItem[]
-  auditLogs: ShopAuditItem[]
-  onInvite: (email: string, roleId: string) => void
-  onCreateRole: (name: string, permissions: string[]) => void
-  onRemoveMember: (id: string) => void
-  onChangeRole: (memberId: string, roleId: string) => void
+  shopId: string
 }
 
 const ALL_SYSTEM_PERMISSIONS = [
@@ -40,21 +51,14 @@ const ALL_SYSTEM_PERMISSIONS = [
   { key: 'DECORATION_WRITE', label: 'Trang trí gian hàng & xếp layout', group: 'Gian hàng' },
 ]
 
-export function SellerStaffTab({
-  roles,
-  members,
-  auditLogs,
-  onInvite,
-  onCreateRole,
-  onRemoveMember,
-  onChangeRole,
-}: SellerStaffTabProps) {
+export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
+  const queryClient = useQueryClient()
   const [activeSubTab, setActiveSubTab] = useState<'MEMBERS' | 'ROLES' | 'AUDIT'>('MEMBERS')
 
   // Invite modal state
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRoleId, setInviteRoleId] = useState(roles[0]?.id || '')
+  const [inviteRoleId, setInviteRoleId] = useState('')
 
   // Create role modal state
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false)
@@ -62,6 +66,61 @@ export function SellerStaffTab({
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
 
   const [notification, setNotification] = useState('')
+
+  const rolesQuery = useListRoles(shopId, { query: { enabled: shopId !== '' } })
+  const membersQuery = useListMembers(shopId, { query: { enabled: shopId !== '' } })
+  const auditQuery = useListAuditLogs(shopId, { query: { enabled: shopId !== '' } })
+
+  const createRoleMutation = useCreateRole({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListRolesQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+  const inviteStaffMutation = useInviteStaff({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+  const removeMemberMutation = useRemoveMember({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListRolesQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+  const changeMemberRoleMutation = useChangeMemberRole({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+
+  let rawMembers: ShopMemberDetailResponse[] = []
+  if (membersQuery.data !== undefined) {
+    rawMembers = takeData(membersQuery.data)
+  }
+  let roles: ShopRoleItem[] = []
+  if (rolesQuery.data !== undefined) {
+    roles = takeData(rolesQuery.data).map(function (r) {
+      return roleItem(r, rawMembers)
+    })
+  }
+  const members = rawMembers.map(memberItem)
+
+  let auditLogs: ShopAuditItem[] = []
+  if (auditQuery.data !== undefined) {
+    auditLogs = takeData(auditQuery.data).map(auditItem)
+  }
 
   const handleTogglePermission = (key: string) => {
     if (selectedPermissions.includes(key)) {
@@ -75,7 +134,10 @@ export function SellerStaffTab({
     e.preventDefault()
     if (!inviteEmail.trim()) return
 
-    onInvite(inviteEmail.trim(), inviteRoleId)
+    inviteStaffMutation.mutate({
+      shopId,
+      data: { email: inviteEmail.trim(), roleId: inviteRoleId },
+    })
 
     setNotification(`Đã gửi email mời nhân viên ${inviteEmail.trim()} thành công!`)
     setInviteEmail('')
@@ -86,7 +148,10 @@ export function SellerStaffTab({
     e.preventDefault()
     if (!newRoleName.trim() || selectedPermissions.length === 0) return
 
-    onCreateRole(newRoleName.trim(), selectedPermissions)
+    createRoleMutation.mutate({
+      shopId,
+      data: { name: newRoleName.trim(), permissions: selectedPermissions },
+    })
 
     setNotification(`Đã tạo vai trò tùy chỉnh "${newRoleName.trim()}" thành công!`)
     setNewRoleName('')
@@ -100,7 +165,7 @@ export function SellerStaffTab({
       return
     }
 
-    onRemoveMember(member.id)
+    removeMemberMutation.mutate({ shopId, memberId: member.id })
     setNotification(`Đã xóa nhân viên ${member.email} khỏi gian hàng!`)
   }
 
@@ -113,7 +178,7 @@ export function SellerStaffTab({
       return
     }
 
-    onChangeRole(member.id, roleId)
+    changeMemberRoleMutation.mutate({ shopId, memberId: member.id, data: { roleId } })
     const matchedRole = roles.find((r) => r.id === roleId)
     let roleTitle = 'vai trò mới'
     if (matchedRole) {

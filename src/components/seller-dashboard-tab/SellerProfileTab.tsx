@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { getMineQueryKey, useUpdateProfile } from '@generated/endpoints/shops/shops'
 import {
   Storefront,
   FloppyDisk,
@@ -10,21 +11,46 @@ import {
   Clock,
   ShieldCheck,
 } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import type { ShopProfileData } from '@/types/seller'
 
 interface SellerProfileTabProps {
+  shopId: string
   profile: ShopProfileData
-  onSaveProfile: (profile: ShopProfileData) => void
 }
 
-export function SellerProfileTab({ profile, onSaveProfile }: SellerProfileTabProps) {
+export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState<ShopProfileData>(profile)
   const [saveSuccess, setSaveSuccess] = useState(false)
 
+  const updateProfileMutation = useUpdateProfile({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getMineQueryKey() })
+      },
+    },
+  })
+
+  function handleSaveProfile(next: ShopProfileData) {
+    updateProfileMutation.mutate({
+      id: shopId,
+      data: {
+        phone: next.phone,
+        address: next.pickupAddress,
+        processingDays: next.daysToShip,
+        bankName: next.bankName,
+        bankAccount: next.bankAccount,
+        bankHolder: next.bankHolder,
+        workingHours: next.workingHours,
+      },
+    })
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSaveProfile(formData)
+    handleSaveProfile(formData)
     setSaveSuccess(true)
   }
 

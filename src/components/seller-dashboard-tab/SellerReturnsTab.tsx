@@ -1,29 +1,30 @@
 import { useState } from 'react'
 
+import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
+import {
+  getList4QueryKey,
+  useApprove,
+  useComplete,
+  useList4,
+  useReject,
+} from '@generated/endpoints/seller-returns/seller-returns'
 import { CheckCircle, X } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { takeData } from '@/lib/apiAdapters'
+import { returnItem } from '@/lib/sellerAdapters'
 
 import { formatVnd } from '../../lib/format'
 
 import type { ReturnItem } from '@/types/seller'
+import type { OrderResponse } from '@generated/model/orderResponse'
 
 interface Props {
-  returns: ReturnItem[]
-  onApproveReturn: (
-    returnId: string,
-    resolution: string,
-    refundAmount: number,
-    returnAddress: string,
-  ) => void
-  onRejectReturn: (returnId: string, sellerNote: string) => void
-  onCompleteReturn: (returnId: string) => void
+  shopId: string
 }
 
-export default function SellerReturnsTab({
-  returns,
-  onApproveReturn,
-  onRejectReturn,
-  onCompleteReturn,
-}: Props) {
+export default function SellerReturnsTab({ shopId }: Props) {
+  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<
     'ALL' | 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
   >('ALL')
@@ -39,6 +40,70 @@ export default function SellerReturnsTab({
   )
   const [notification, setNotification] = useState<string | null>(null)
 
+  const returnsQuery = useList4({ shopId }, { query: { enabled: shopId !== '' } })
+  // Danh mục đơn hàng để resolve mã đơn / tên người mua cho từng yêu cầu trả hàng
+  const ordersQuery = useList5({ shopId }, { query: { enabled: shopId !== '' } })
+
+  const approveMutation = useApprove({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+      },
+    },
+  })
+  const rejectMutation = useReject({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+      },
+    },
+  })
+  const completeMutation = useComplete({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+      },
+    },
+  })
+
+  const orderById = new Map<string, OrderResponse>()
+  if (ordersQuery.data !== undefined) {
+    for (const o of takeData(ordersQuery.data)) {
+      orderById.set(o.id ?? '', o)
+    }
+  }
+
+  let returns: ReturnItem[] = []
+  if (returnsQuery.data !== undefined) {
+    returns = takeData(returnsQuery.data).map(function (r) {
+      return returnItem(r, orderById)
+    })
+  }
+
+  function handleApproveReturn(
+    returnId: string,
+    nextResolution: string,
+    nextRefundAmount: number,
+    nextReturnAddress: string,
+  ) {
+    approveMutation.mutate({
+      id: returnId,
+      data: {
+        resolution: nextResolution,
+        refundAmount: nextRefundAmount,
+        sellerNote: 'Địa chỉ nhận lại: ' + nextReturnAddress,
+      },
+    })
+  }
+
+  function handleRejectReturn(returnId: string, sellerNote: string) {
+    rejectMutation.mutate({ id: returnId, data: { sellerNote } })
+  }
+
+  function handleCompleteReturn(returnId: string) {
+    completeMutation.mutate({ id: returnId })
+  }
+
   function showToast(msg: string) {
     setNotification(msg)
     setTimeout(function () {
@@ -48,7 +113,7 @@ export default function SellerReturnsTab({
 
   function handleConfirmApprove() {
     if (approveTarget !== null) {
-      onApproveReturn(approveTarget.id, resolution, refundAmount, returnAddress)
+      handleApproveReturn(approveTarget.id, resolution, refundAmount, returnAddress)
       setApproveTarget(null)
       showToast('Đã phê duyệt yêu cầu đổi trả và gửi địa chỉ kho nhận hàng cho khách!')
     }
@@ -56,7 +121,7 @@ export default function SellerReturnsTab({
 
   function handleConfirmReject() {
     if (rejectTarget !== null) {
-      onRejectReturn(rejectTarget.id, rejectNote)
+      handleRejectReturn(rejectTarget.id, rejectNote)
       setRejectTarget(null)
       showToast('Đã từ chối yêu cầu đổi trả kèm lý do!')
     }
@@ -240,7 +305,7 @@ export default function SellerReturnsTab({
                     <button
                       type="button"
                       onClick={function () {
-                        onCompleteReturn(ret.id)
+                        handleCompleteReturn(ret.id)
                         showToast('Đã xác nhận nhận lại hàng và tự động cập nhật tồn kho!')
                       }}
                       className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"

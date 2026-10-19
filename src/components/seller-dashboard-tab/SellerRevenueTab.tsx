@@ -1,39 +1,109 @@
 import { useState } from 'react'
 
+import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
+import {
+  getListWithdrawalsQueryKey,
+  getSummaryQueryKey,
+  useByDay,
+  useListWithdrawals,
+  useRequestWithdrawal,
+  useSettlements,
+  useSummary,
+  useTopProducts,
+} from '@generated/endpoints/seller-revenue-finance/seller-revenue-finance'
 import { Wallet, Clock, Receipt, TrendUp, Bank, CheckCircle, X } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
 
-import { formatVnd } from '../../lib/format'
+import { takeData } from '@/lib/apiAdapters'
+import { settlementItem, withdrawalItem } from '@/lib/sellerAdapters'
+
+import { formatDateTime, formatVnd } from '../../lib/format'
 
 import type { SettlementItem, WithdrawalItem } from '@/types/seller'
+import type { OrderResponse } from '@generated/model/orderResponse'
 import type { RevenueSummaryResponse } from '@generated/model/revenueSummaryResponse'
 
 interface Props {
-  settlements: SettlementItem[]
-  withdrawals: WithdrawalItem[]
-  summary: RevenueSummaryResponse | undefined
-  chart: { day: string; revenue: number }[]
-  topProducts: { name: string; sold: number; revenue: number }[]
+  shopId: string
   bankName: string
   bankAccount: string
   bankHolder: string
-  onCreateWithdrawal: (amount: number) => void
 }
 
-export default function SellerRevenueTab({
-  settlements,
-  withdrawals,
-  summary,
-  chart,
-  topProducts,
-  bankName,
-  bankAccount,
-  bankHolder,
-  onCreateWithdrawal,
-}: Props) {
+export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHolder }: Props) {
+  const queryClient = useQueryClient()
   const [subTab, setSubTab] = useState<'SETTLEMENTS' | 'WITHDRAWALS'>('SETTLEMENTS')
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState(1000000)
   const [notification, setNotification] = useState<string | null>(null)
+
+  const settlementsQuery = useSettlements({ shopId }, { query: { enabled: shopId !== '' } })
+  // Danh mục đơn hàng để resolve mã đơn cho từng phiên quyết toán
+  const ordersQuery = useList5({ shopId }, { query: { enabled: shopId !== '' } })
+  const withdrawalsQuery = useListWithdrawals({ shopId }, { query: { enabled: shopId !== '' } })
+  const summaryQuery = useSummary({ shopId }, { query: { enabled: shopId !== '' } })
+  const byDayQuery = useByDay({ shopId }, { query: { enabled: shopId !== '' } })
+  const topProductsQuery = useTopProducts(
+    { shopId, limit: 3 },
+    { query: { enabled: shopId !== '' } },
+  )
+
+  const requestWithdrawalMutation = useRequestWithdrawal({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListWithdrawalsQueryKey({ shopId }) })
+        void queryClient.invalidateQueries({ queryKey: getSummaryQueryKey({ shopId }) })
+      },
+    },
+  })
+
+  const orderById = new Map<string, OrderResponse>()
+  if (ordersQuery.data !== undefined) {
+    for (const o of takeData(ordersQuery.data)) {
+      orderById.set(o.id ?? '', o)
+    }
+  }
+
+  let settlements: SettlementItem[] = []
+  if (settlementsQuery.data !== undefined) {
+    settlements = takeData(settlementsQuery.data).map(function (s) {
+      return settlementItem(s, orderById)
+    })
+  }
+
+  let withdrawals: WithdrawalItem[] = []
+  if (withdrawalsQuery.data !== undefined) {
+    withdrawals = takeData(withdrawalsQuery.data).map(withdrawalItem)
+  }
+
+  let summary: RevenueSummaryResponse | undefined = undefined
+  if (summaryQuery.data !== undefined) {
+    summary = takeData(summaryQuery.data)
+  }
+
+  const chart: { day: string; revenue: number }[] = []
+  if (byDayQuery.data !== undefined) {
+    for (const d of takeData(byDayQuery.data)) {
+      chart.push({ day: formatDateTime(d.date), revenue: d.revenue ?? 0 })
+    }
+  }
+
+  const topProducts: { name: string; sold: number; revenue: number }[] = []
+  if (topProductsQuery.data !== undefined) {
+    for (const t of takeData(topProductsQuery.data)) {
+      topProducts.push({
+        name: t.productName ?? '',
+        sold: t.soldQuantity ?? 0,
+        revenue: t.totalRevenue ?? 0,
+      })
+    }
+  }
+
+  function handleCreateWithdrawal(amount: number) {
+    requestWithdrawalMutation.mutate({
+      data: { shopId, amount, bankName, bankAccount, bankHolder },
+    })
+  }
 
   const walletBalance = summary?.walletBalance ?? 0
   const holdingBalance = summary?.holdingBalance ?? 0
@@ -72,7 +142,7 @@ export default function SellerRevenueTab({
       alert('Số tiền rút vượt quá số dư ví khả dụng hiện tại.')
       return
     }
-    onCreateWithdrawal(withdrawAmount)
+    handleCreateWithdrawal(withdrawAmount)
     setShowWithdrawModal(false)
     showToast(`Đã tạo lệnh rút ${formatVnd(withdrawAmount)} về tài khoản ngân hàng!`)
   }

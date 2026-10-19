@@ -1,16 +1,26 @@
 import { useState } from 'react'
 
+import { useListProducts } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
+import {
+  getList3QueryKey,
+  useList3,
+  useReply,
+  useReport,
+} from '@generated/endpoints/seller-reviews/seller-reviews'
 import { Star, ChatCircleDots, Flag, CheckCircle, X, PaperPlaneRight } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { takeData } from '@/lib/apiAdapters'
+import { reviewItem } from '@/lib/sellerAdapters'
 
 import type { ReviewItem } from '@/types/seller'
 
 interface Props {
-  reviews: ReviewItem[]
-  onReplyReview: (reviewId: string, replyText: string) => void
-  onReportReview: (reviewId: string, reason: string) => void
+  shopId: string
 }
 
-export default function SellerReviewsTab({ reviews, onReplyReview, onReportReview }: Props) {
+export default function SellerReviewsTab({ shopId }: Props) {
+  const queryClient = useQueryClient()
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'UNREPLIED' | '5_STAR' | 'LOW_STAR'>(
     'ALL',
   )
@@ -21,6 +31,47 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
     'Đánh giá sai sự thật / Cạnh tranh không lành mạnh',
   )
   const [notification, setNotification] = useState<string | null>(null)
+
+  const reviewsQuery = useList3({ shopId }, { query: { enabled: shopId !== '' } })
+  // Tên sản phẩm hiển thị kèm từng đánh giá
+  const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopId !== '' } })
+
+  const replyMutation = useReply({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList3QueryKey() })
+      },
+    },
+  })
+  const reportMutation = useReport({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList3QueryKey() })
+      },
+    },
+  })
+
+  const productNameById = new Map<string, string>()
+  if (productsQuery.data !== undefined) {
+    for (const p of takeData(productsQuery.data)) {
+      productNameById.set(p.id ?? '', p.name ?? '')
+    }
+  }
+
+  let reviews: ReviewItem[] = []
+  if (reviewsQuery.data !== undefined) {
+    reviews = takeData(reviewsQuery.data).map(function (r) {
+      return reviewItem(r, productNameById.get(r.productId ?? ''))
+    })
+  }
+
+  function handleReplyReview(reviewId: string, replyText: string) {
+    replyMutation.mutate({ id: reviewId, data: { reply: replyText } })
+  }
+
+  function handleReportReview(reviewId: string, reason: string) {
+    reportMutation.mutate({ id: reviewId, data: { reason } })
+  }
 
   function showToast(msg: string) {
     setNotification(msg)
@@ -34,7 +85,7 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
       alert('Vui lòng nhập nội dung phản hồi.')
       return
     }
-    onReplyReview(reviewId, replyContent)
+    handleReplyReview(reviewId, replyContent)
     setReplyTargetId(null)
     setReplyContent('')
     showToast('Đã gửi phản hồi đánh giá của khách hàng!')
@@ -42,7 +93,7 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
 
   function handleConfirmReport() {
     if (reportTargetId !== null) {
-      onReportReview(reportTargetId, reportReason)
+      handleReportReview(reportTargetId, reportReason)
       setReportTargetId(null)
       showToast('Đã gửi báo cáo đánh giá lên bộ phận kiểm duyệt của sàn!')
     }

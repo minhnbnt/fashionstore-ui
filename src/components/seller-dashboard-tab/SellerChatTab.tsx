@@ -1,33 +1,111 @@
 import { useState } from 'react'
 
+import {
+  getMessagesQueryKey,
+  getSellerConversationsQueryKey,
+  useMarkRead,
+  useMessages,
+  useSendMessage,
+  useSellerConversations,
+} from '@generated/endpoints/chat/chat'
+import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
+import { getMineQueryKey, useUpdateProfile } from '@generated/endpoints/shops/shops'
 import { PaperPlaneRight, MagnifyingGlass, CheckCircle, X, Robot } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { takeData } from '@/lib/apiAdapters'
+import { chatConversationItem, chatMessageItem } from '@/lib/sellerAdapters'
 
 import type { ChatConversationItem, ChatMessageItem } from '@/types/seller'
+import type { ChatConversationResponse } from '@generated/model/chatConversationResponse'
 
 interface Props {
-  conversations: ChatConversationItem[]
-  messages: ChatMessageItem[]
-  selectedConvId: string
-  onSelectConversation: (conversationId: string) => void
-  onSendMessage: (conversationId: string, content: string) => void
+  shopId: string
   autoReplyText: string
-  onSaveAutoReply: (text: string) => void
 }
 
-export default function SellerChatTab({
-  conversations,
-  messages,
-  selectedConvId,
-  onSelectConversation,
-  onSendMessage,
-  autoReplyText,
-  onSaveAutoReply,
-}: Props) {
+export default function SellerChatTab({ shopId, autoReplyText }: Props) {
+  const queryClient = useQueryClient()
+  const [selectedConvId, setSelectedConvId] = useState('')
   const [messageInput, setMessageInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [showAutoReplyModal, setShowAutoReplyModal] = useState(false)
   const [tempAutoReply, setTempAutoReply] = useState(autoReplyText)
   const [notification, setNotification] = useState<string | null>(null)
+
+  const conversationsQuery = useSellerConversations(
+    { shopId },
+    { query: { enabled: shopId !== '' } },
+  )
+  // Danh mục đơn hàng để resolve tên người mua cho từng hội thoại
+  const ordersQuery = useList5({ shopId }, { query: { enabled: shopId !== '' } })
+
+  let rawConversations: ChatConversationResponse[] = []
+  if (conversationsQuery.data !== undefined) {
+    rawConversations = takeData(conversationsQuery.data)
+  }
+  const buyerNameByBuyerId = new Map<string, string>()
+  if (ordersQuery.data !== undefined) {
+    for (const o of takeData(ordersQuery.data)) {
+      if (o.buyerId !== undefined && o.buyerId !== null && o.buyerId !== '') {
+        buyerNameByBuyerId.set(o.buyerId, o.shippingName ?? '')
+      }
+    }
+  }
+
+  // Hội thoại đang chọn: mặc định là hội thoại đầu tiên khi data vừa load
+  let activeConvId = selectedConvId
+  if (activeConvId === '' && rawConversations.length > 0) {
+    activeConvId = rawConversations[0]?.id ?? ''
+  }
+  const messagesQuery = useMessages(activeConvId, {
+    query: { enabled: activeConvId !== '' },
+  })
+
+  const sendMessageMutation = useSendMessage({
+    mutation: {
+      onSuccess: function (_data, variables) {
+        void queryClient.invalidateQueries({ queryKey: getMessagesQueryKey(variables.id) })
+        void queryClient.invalidateQueries({ queryKey: getSellerConversationsQueryKey({ shopId }) })
+      },
+    },
+  })
+  const markReadMutation = useMarkRead({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getSellerConversationsQueryKey({ shopId }) })
+      },
+    },
+  })
+  const updateProfileMutation = useUpdateProfile({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getMineQueryKey() })
+      },
+    },
+  })
+
+  const conversations: ChatConversationItem[] = rawConversations.map(function (c) {
+    return chatConversationItem(c, buyerNameByBuyerId)
+  })
+
+  let messages: ChatMessageItem[] = []
+  if (messagesQuery.data !== undefined) {
+    messages = takeData(messagesQuery.data).map(chatMessageItem)
+  }
+
+  function handleSelectConversation(id: string) {
+    setSelectedConvId(id)
+    markReadMutation.mutate({ id })
+  }
+
+  function handleSendMessage(conversationId: string, content: string) {
+    sendMessageMutation.mutate({ id: conversationId, data: { content } })
+  }
+
+  function handleSaveAutoReply(text: string) {
+    updateProfileMutation.mutate({ id: shopId, data: { autoReplyText: text } })
+  }
 
   function showToast(msg: string) {
     setNotification(msg)
@@ -37,7 +115,7 @@ export default function SellerChatTab({
   }
 
   const selectedConv = conversations.find(function (c) {
-    return c.id === selectedConvId
+    return c.id === activeConvId
   })
 
   const filteredConversations = conversations.filter(function (c) {
@@ -51,15 +129,15 @@ export default function SellerChatTab({
     if (messageInput.trim() === '') {
       return
     }
-    if (selectedConvId === '') {
+    if (activeConvId === '') {
       return
     }
-    onSendMessage(selectedConvId, messageInput)
+    handleSendMessage(activeConvId, messageInput)
     setMessageInput('')
   }
 
   function handleSaveAutoReplyConfirm() {
-    onSaveAutoReply(tempAutoReply)
+    handleSaveAutoReply(tempAutoReply)
     setShowAutoReplyModal(false)
     showToast('Đã lưu cấu hình tin nhắn tự động!')
   }
@@ -122,13 +200,13 @@ export default function SellerChatTab({
 
           <div className="flex-1 divide-y divide-zinc-50 overflow-y-auto dark:divide-zinc-800/40">
             {filteredConversations.map(function (conv) {
-              const isCurrent = conv.id === selectedConvId
+              const isCurrent = conv.id === activeConvId
               return (
                 <button
                   key={conv.id}
                   type="button"
                   onClick={function () {
-                    onSelectConversation(conv.id)
+                    handleSelectConversation(conv.id)
                   }}
                   className={`flex w-full items-start gap-3 p-3.5 text-left transition ${
                     isCurrent
@@ -183,7 +261,7 @@ export default function SellerChatTab({
                 <button
                   type="button"
                   onClick={function () {
-                    onSelectConversation(selectedConv.id)
+                    handleSelectConversation(selectedConv.id)
                   }}
                   className="rounded-xl border border-zinc-200 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400"
                 >

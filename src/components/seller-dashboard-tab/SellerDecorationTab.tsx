@@ -1,6 +1,13 @@
 import { useState } from 'react'
 
 import {
+  getGetDecorationQueryKey,
+  useDiscardDraft,
+  useGetDecoration,
+  usePublish,
+  useSaveDraft,
+} from '@generated/endpoints/seller-decoration/seller-decoration'
+import {
   PaintBrushBroad,
   DeviceMobile,
   Desktop,
@@ -19,31 +26,67 @@ import {
   SquaresFour,
   VideoCamera,
 } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { takeData } from '@/lib/apiAdapters'
+import { decorationBlocks, decorationDraftJson } from '@/lib/sellerAdapters'
 
 import type { DecorationBlock } from '@/types/seller'
 
-interface SellerDecorationTabProps {
-  blocks: DecorationBlock[]
-  hasLocalChanges: boolean
-  onUpdateBlocks: (blocks: DecorationBlock[]) => void
-  onSaveDraft: () => void
-  onPublish: () => void
-  onDiscard: () => void
+// Id block chỉ dùng cho React key — sinh ở module-level để khỏi gọi Date.now trong render
+function newBlockId(): string {
+  return `block-${Date.now()}`
 }
 
-export function SellerDecorationTab({
-  blocks,
-  hasLocalChanges,
-  onUpdateBlocks,
-  onSaveDraft,
-  onPublish,
-  onDiscard,
-}: SellerDecorationTabProps) {
+interface SellerDecorationTabProps {
+  shopId: string
+}
+
+export function SellerDecorationTab({ shopId }: SellerDecorationTabProps) {
+  const queryClient = useQueryClient()
+  const [draftBlocks, setDraftBlocks] = useState<DecorationBlock[] | null>(null)
   const [devicePreview, setDevicePreview] = useState<'MOBILE' | 'DESKTOP'>('MOBILE')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [newBlockType, setNewBlockType] = useState<DecorationBlock['type']>('BANNER')
   const [newBlockTitle, setNewBlockTitle] = useState('')
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('')
+
+  const decorationQuery = useGetDecoration(shopId, { query: { enabled: shopId !== '' } })
+
+  const saveDraftMutation = useSaveDraft({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
+        setDraftBlocks(null)
+      },
+    },
+  })
+  const publishMutation = usePublish({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
+        setDraftBlocks(null)
+      },
+    },
+  })
+  const discardDraftMutation = useDiscardDraft({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
+        setDraftBlocks(null)
+      },
+    },
+  })
+
+  let serverBlocks: DecorationBlock[] = []
+  if (decorationQuery.data !== undefined) {
+    serverBlocks = decorationBlocks(takeData(decorationQuery.data))
+  }
+  let blocks = serverBlocks
+  if (draftBlocks !== null) {
+    blocks = draftBlocks
+  }
+  const hasLocalChanges = draftBlocks !== null
 
   const handleToggle = (id: string) => {
     const updated = blocks.map((b) => {
@@ -52,7 +95,7 @@ export function SellerDecorationTab({
       }
       return b
     })
-    onUpdateBlocks(updated)
+    setDraftBlocks(updated)
   }
 
   const handleMoveUp = (index: number) => {
@@ -63,7 +106,7 @@ export function SellerDecorationTab({
     if (temp && current) {
       updated[index - 1] = current
       updated[index] = temp
-      onUpdateBlocks(updated)
+      setDraftBlocks(updated)
     }
   }
 
@@ -75,41 +118,41 @@ export function SellerDecorationTab({
     if (temp && current) {
       updated[index + 1] = current
       updated[index] = temp
-      onUpdateBlocks(updated)
+      setDraftBlocks(updated)
     }
   }
 
   const handleDelete = (id: string) => {
     const updated = blocks.filter((b) => b.id !== id)
-    onUpdateBlocks(updated)
+    setDraftBlocks(updated)
   }
 
   const handleAddBlock = () => {
     if (!newBlockTitle.trim()) return
     const newBlock: DecorationBlock = {
-      id: `block-${Date.now()}`,
+      id: newBlockId(),
       type: newBlockType,
       title: newBlockTitle.trim(),
       enabled: true,
     }
-    onUpdateBlocks([...blocks, newBlock])
+    setDraftBlocks([...blocks, newBlock])
     setNewBlockTitle('')
     setIsAddModalOpen(false)
     setSaveSuccessMsg('Đã thêm module trang trí mới vào bố cục!')
   }
 
   const handleSaveDraft = () => {
-    onSaveDraft()
+    saveDraftMutation.mutate({ shopId, data: { layoutJson: decorationDraftJson(blocks) } })
     setSaveSuccessMsg('Đã gửi lưu bản nháp thiết kế gian hàng!')
   }
 
   const handlePublish = () => {
-    onPublish()
+    publishMutation.mutate({ shopId })
     setSaveSuccessMsg('Đã gửi xuất bản giao diện lên trang gian hàng chính thức!')
   }
 
   const handleDiscard = () => {
-    onDiscard()
+    discardDraftMutation.mutate({ shopId })
     setSaveSuccessMsg('Đã bỏ các thay đổi chưa lưu, quay lại bản nháp trên hệ thống.')
   }
 

@@ -1,26 +1,30 @@
 import { useState } from 'react'
 
+import {
+  getList5QueryKey,
+  useCancel,
+  useConfirm,
+  useDeliver,
+  useList5,
+  useShip,
+} from '@generated/endpoints/seller-orders/seller-orders'
+import { getInventoryQueryKey } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
 import { MagnifyingGlass, CheckCircle, Truck, X, Phone, MapPin } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { takeData } from '@/lib/apiAdapters'
+import { orderItem } from '@/lib/sellerAdapters'
 
 import { formatVnd } from '../../lib/format'
 
 import type { OrderItem } from '@/types/seller'
 
 interface Props {
-  orders: OrderItem[]
-  onConfirmOrder: (orderId: string) => void
-  onShipOrder: (orderId: string) => void
-  onDeliverOrder: (orderId: string) => void
-  onCancelOrder: (orderId: string, reason: string) => void
+  shopId: string
 }
 
-export default function SellerOrdersTab({
-  orders,
-  onConfirmOrder,
-  onShipOrder,
-  onDeliverOrder,
-  onCancelOrder,
-}: Props) {
+export default function SellerOrdersTab({ shopId }: Props) {
+  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<
     'ALL' | 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED'
   >('ALL')
@@ -28,6 +32,59 @@ export default function SellerOrdersTab({
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('Hết hàng trong kho')
   const [notification, setNotification] = useState<string | null>(null)
+
+  const ordersQuery = useList5({ shopId }, { query: { enabled: shopId !== '' } })
+
+  const confirmMutation = useConfirm({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+      },
+    },
+  })
+  const shipMutation = useShip({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+      },
+    },
+  })
+  const deliverMutation = useDeliver({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+      },
+    },
+  })
+  const cancelMutation = useCancel({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+        void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
+      },
+    },
+  })
+
+  let orders: OrderItem[] = []
+  if (ordersQuery.data !== undefined) {
+    orders = takeData(ordersQuery.data).map(orderItem)
+  }
+
+  function handleConfirmOrder(orderId: string) {
+    confirmMutation.mutate({ id: orderId })
+  }
+
+  function handleShipOrder(orderId: string) {
+    shipMutation.mutate({ id: orderId })
+  }
+
+  function handleDeliverOrder(orderId: string) {
+    deliverMutation.mutate({ id: orderId })
+  }
+
+  function handleCancelOrder(orderId: string, reason: string) {
+    cancelMutation.mutate({ id: orderId, data: { reason } })
+  }
 
   function showToast(msg: string) {
     setNotification(msg)
@@ -38,7 +95,7 @@ export default function SellerOrdersTab({
 
   function handleConfirmCancel() {
     if (cancelTargetId !== null) {
-      onCancelOrder(cancelTargetId, cancelReason)
+      handleCancelOrder(cancelTargetId, cancelReason)
       setCancelTargetId(null)
       showToast('Đã hủy đơn hàng và tự động hoàn trả tồn kho nguyên tử!')
     }
@@ -257,7 +314,7 @@ export default function SellerOrdersTab({
                         <button
                           type="button"
                           onClick={function () {
-                            onConfirmOrder(order.id)
+                            handleConfirmOrder(order.id)
                             showToast('Đã xác nhận đơn hàng thành công!')
                           }}
                           className="flex items-center gap-1.5 rounded-xl bg-orange-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-orange-700"
@@ -271,7 +328,7 @@ export default function SellerOrdersTab({
                         <button
                           type="button"
                           onClick={function () {
-                            onShipOrder(order.id)
+                            handleShipOrder(order.id)
                             showToast('Đã bàn giao đơn hàng cho đơn vị vận chuyển!')
                           }}
                           className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700"
@@ -285,7 +342,7 @@ export default function SellerOrdersTab({
                         <button
                           type="button"
                           onClick={function () {
-                            onDeliverOrder(order.id)
+                            handleDeliverOrder(order.id)
                             showToast('Đã giao thành công và thu tiền COD!')
                           }}
                           className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"

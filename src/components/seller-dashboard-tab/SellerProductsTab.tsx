@@ -1,5 +1,13 @@
 import { useState } from 'react'
 
+import { useListCategories } from '@generated/endpoints/categories/categories'
+import {
+  getInventoryQueryKey,
+  getListProductsQueryKey,
+  useBulkImport,
+  useListProducts,
+} from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
+import { useDeleteProduct, useUpdate1 } from '@generated/endpoints/shop-products/shop-products'
 import {
   Plus,
   DownloadSimple,
@@ -12,32 +20,96 @@ import {
   X,
   FileCsv,
 } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { takeData } from '@/lib/apiAdapters'
+import { productItem } from '@/lib/sellerAdapters'
 
 import { formatVnd } from '../../lib/format'
 
 import type { ProductItem } from '@/types/seller'
 
+// Tên file export chỉ dùng khi bấm nút — sinh ở module-level để khỏi gọi Date.now trong render
+function csvExportFileName(): string {
+  return `products_export_${Date.now()}.csv`
+}
+
 interface Props {
-  products: ProductItem[]
-  onToggleStatus: (productId: string) => void
-  onDeleteProduct: (productId: string) => void
-  onBulkImport: (csvContent: string) => void
+  shopId: string
   onNavigateAddProduct: () => void
 }
 
-export default function SellerProductsTab({
-  products,
-  onToggleStatus,
-  onDeleteProduct,
-  onBulkImport,
-  onNavigateAddProduct,
-}: Props) {
+export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Props) {
+  const queryClient = useQueryClient()
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL')
   const [searchTerm, setSearchTerm] = useState('')
   const [showImportModal, setShowImportModal] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [importText, setImportText] = useState('')
   const [notification, setNotification] = useState<string | null>(null)
+
+  const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopId !== '' } })
+  const categoriesQuery = useListCategories()
+
+  const categoryNameById = new Map<string, string>()
+  if (categoriesQuery.data !== undefined) {
+    for (const c of takeData(categoriesQuery.data)) {
+      categoryNameById.set(c.id ?? '', c.name ?? '')
+    }
+  }
+
+  let products: ProductItem[] = []
+  if (productsQuery.data !== undefined) {
+    products = takeData(productsQuery.data).map(function (p) {
+      return productItem(p, categoryNameById.get(p.categoryId ?? ''))
+    })
+  }
+
+  const updateProductMutation = useUpdate1({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+      },
+    },
+  })
+  const deleteProductMutation = useDeleteProduct({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+      },
+    },
+  })
+  const bulkImportMutation = useBulkImport({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
+      },
+    },
+  })
+
+  function handleToggleProductStatus(productId: string) {
+    const current = products.find(function (p) {
+      return p.id === productId
+    })
+    if (current === undefined) {
+      return
+    }
+    let nextStatus = 'ACTIVE'
+    if (current.status === 'ACTIVE') {
+      nextStatus = 'HIDDEN'
+    }
+    updateProductMutation.mutate({ shopId, id: productId, data: { status: nextStatus } })
+  }
+
+  function handleDeleteProduct(productId: string) {
+    deleteProductMutation.mutate({ shopId, id: productId })
+  }
+
+  function handleBulkImport(csvContent: string) {
+    const file = new File([csvContent], 'products.csv', { type: 'text/csv' })
+    bulkImportMutation.mutate({ shopId, data: { file } })
+  }
 
   function showToast(msg: string) {
     setNotification(msg)
@@ -57,7 +129,7 @@ export default function SellerProductsTab({
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `products_export_${Date.now()}.csv`)
+    link.setAttribute('download', csvExportFileName())
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -69,7 +141,7 @@ export default function SellerProductsTab({
       alert('Vui lòng nhập hoặc dán nội dung CSV.')
       return
     }
-    onBulkImport(importText)
+    handleBulkImport(importText)
     setShowImportModal(false)
     setImportText('')
     showToast('Đã nhập hàng loạt sản phẩm thành công!')
@@ -77,7 +149,7 @@ export default function SellerProductsTab({
 
   function handleConfirmDelete() {
     if (deleteTargetId !== null) {
-      onDeleteProduct(deleteTargetId)
+      handleDeleteProduct(deleteTargetId)
       setDeleteTargetId(null)
       showToast('Đã xóa mềm sản phẩm vào thùng rác (Trạng thái DELETED)')
     }
@@ -298,7 +370,7 @@ export default function SellerProductsTab({
                           <button
                             type="button"
                             onClick={function () {
-                              onToggleStatus(product.id)
+                              handleToggleProductStatus(product.id)
                             }}
                             title={
                               product.status === 'ACTIVE' ? 'Tạm ẩn sản phẩm' : 'Đăng bán sản phẩm'

@@ -1,6 +1,13 @@
 import { useState } from 'react'
 
-import { useMovements } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
+import {
+  useMovements,
+  getInventoryQueryKey,
+  getMovementsQueryKey,
+  useAdjustStock,
+  useInventory,
+  useListProducts,
+} from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
 import {
   WarningCircle,
   ClockCounterClockwise,
@@ -11,23 +18,22 @@ import {
   ArrowUp,
   ArrowDown,
 } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
-import { stockMovementItem } from '@/lib/sellerAdapters'
+import { productItem, stockMovementItem } from '@/lib/sellerAdapters'
 
 import type { ProductItem, StockMovementItem } from '@/types/seller'
 import type { InventoryItemResponse } from '@generated/model/inventoryItemResponse'
 
 interface Props {
   shopId: string
-  products: ProductItem[]
-  inventory: InventoryItemResponse[]
-  onAdjustStock: (variantId: string, changeQty: number, reason: string) => void
 }
 
 type AdjustReason = 'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL'
 
-export default function SellerInventoryTab({ shopId, products, inventory, onAdjustStock }: Props) {
+export default function SellerInventoryTab({ shopId }: Props) {
+  const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [showAdjustModal, setShowAdjustModal] = useState(false)
   const [historyVariant, setHistoryVariant] = useState<InventoryItemResponse | null>(null)
@@ -35,6 +41,33 @@ export default function SellerInventoryTab({ shopId, products, inventory, onAdju
   const [adjustQty, setAdjustQty] = useState(10)
   const [adjustReason, setAdjustReason] = useState<AdjustReason>('RESTOCK')
   const [notification, setNotification] = useState<string | null>(null)
+
+  const inventoryQuery = useInventory(shopId, undefined, { query: { enabled: shopId !== '' } })
+  // Chỉ để lấy ảnh sản phẩm cho từng dòng tồn kho
+  const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopId !== '' } })
+
+  const adjustStockMutation = useAdjustStock({
+    mutation: {
+      onSuccess: function (_data, variables) {
+        void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
+        void queryClient.invalidateQueries({
+          queryKey: getMovementsQueryKey(shopId, variables.variantId),
+        })
+      },
+    },
+  })
+
+  let inventory: InventoryItemResponse[] = []
+  if (inventoryQuery.data !== undefined) {
+    inventory = takeData(inventoryQuery.data)
+  }
+
+  let products: ProductItem[] = []
+  if (productsQuery.data !== undefined) {
+    products = takeData(productsQuery.data).map(function (p) {
+      return productItem(p, '')
+    })
+  }
 
   const movementsQuery = useMovements(shopId, historyVariant?.variantId ?? '', {
     query: { enabled: shopId !== '' && historyVariant !== null },
@@ -135,9 +168,21 @@ export default function SellerInventoryTab({ shopId, products, inventory, onAdju
       alert('Biến thể không hợp lệ.')
       return
     }
-    onAdjustStock(adjustVariant.variantId ?? '', adjustQty, adjustReason)
+    handleAdjustStock(adjustVariant.variantId ?? '', adjustQty, adjustReason)
     setShowAdjustModal(false)
     showToast(`Đã ghi nhận điều chỉnh kho cho SKU ${adjustVariant.sku ?? ''}`)
+  }
+
+  function handleAdjustStock(variantId: string, changeQty: number, reason: string) {
+    const current = inventory.find(function (i) {
+      return i.variantId === variantId
+    })
+    if (current === undefined) {
+      return
+    }
+    const stock = current.stockQuantity ?? 0
+    const newStock = Math.max(0, stock + changeQty)
+    adjustStockMutation.mutate({ shopId, variantId, data: { newStock, reason } })
   }
 
   function renderStockState(stock: number, threshold: number, isLow: boolean) {
