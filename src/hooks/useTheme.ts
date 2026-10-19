@@ -6,13 +6,16 @@ const STORAGE_KEY = 'net:theme'
 
 function initialTheme(): Theme {
   if (typeof window === 'undefined') {
-    return 'dark'
+    return 'light'
   }
   const saved = window.localStorage.getItem(STORAGE_KEY)
   if (saved === 'light' || saved === 'dark') {
     return saved
   }
-  return 'dark'
+  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark'
+  }
+  return 'light'
 }
 
 export function useTheme() {
