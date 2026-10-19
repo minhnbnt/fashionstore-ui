@@ -31,7 +31,6 @@ export interface ShopProfileData {
   bankAccount: string
   bankHolder: string
   workingHours: string
-  vacationMode: boolean
 }
 
 export type Step = 1 | 2 | 3 | 4

@@ -1,4 +1,99 @@
-import { Suspense, useState } from 'react'
+import { useState } from 'react'
+
+import { useListCategories } from '@generated/endpoints/categories/categories'
+import {
+  getMessagesQueryKey,
+  getSellerConversationsQueryKey,
+  useMarkRead,
+  useMessages,
+  useSendMessage,
+  useSellerConversations,
+} from '@generated/endpoints/chat/chat'
+import {
+  getGetDecorationQueryKey,
+  useDiscardDraft,
+  useGetDecoration,
+  usePublish,
+  useSaveDraft,
+} from '@generated/endpoints/seller-decoration/seller-decoration'
+import {
+  getList5QueryKey,
+  useCancel,
+  useConfirm,
+  useDeliver,
+  useList5,
+  useShip,
+} from '@generated/endpoints/seller-orders/seller-orders'
+import {
+  getInventoryQueryKey,
+  getListProductsQueryKey,
+  getMovementsQueryKey,
+  useAdjustStock,
+  useBulkImport,
+  useInventory,
+  useListProducts,
+} from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
+import {
+  getList4QueryKey,
+  useApprove,
+  useComplete,
+  useList4,
+  useReject,
+} from '@generated/endpoints/seller-returns/seller-returns'
+import {
+  getListWithdrawalsQueryKey,
+  getSummaryQueryKey,
+  useByDay,
+  useListWithdrawals,
+  useRequestWithdrawal,
+  useSettlements,
+  useSummary,
+  useTopProducts,
+} from '@generated/endpoints/seller-revenue-finance/seller-revenue-finance'
+import {
+  getList3QueryKey,
+  useList3,
+  useReply,
+  useReport,
+} from '@generated/endpoints/seller-reviews/seller-reviews'
+import {
+  getListAuditLogsQueryKey,
+  getListMembersQueryKey,
+  getListRolesQueryKey,
+  useChangeMemberRole,
+  useCreateRole,
+  useInviteStaff,
+  useListAuditLogs,
+  useListMembers,
+  useListRoles,
+  useRemoveMember,
+} from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
+import {
+  useCreate1,
+  useDeleteProduct,
+  useUpdate1,
+} from '@generated/endpoints/shop-products/shop-products'
+import { getMineQueryKey, useMine, useUpdateProfile } from '@generated/endpoints/shops/shops'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
+import { formatDateTime } from '@/lib/format'
+import {
+  auditItem,
+  chatConversationItem,
+  chatMessageItem,
+  decorationBlocks,
+  decorationDraftJson,
+  memberItem,
+  orderItem,
+  productItem,
+  returnItem,
+  reviewItem,
+  roleItem,
+  settlementItem,
+  shopProfile,
+  withdrawalItem,
+} from '@/lib/sellerAdapters'
 
 import {
   SellerAddProductTab,
@@ -14,24 +109,12 @@ import {
   SellerReviewsTab,
   SellerStaffTab,
 } from '../components/seller-dashboard-tab'
-import {
-  INITIAL_PRODUCTS,
-  INITIAL_ORDERS,
-  INITIAL_RETURNS,
-  INITIAL_REVIEWS,
-  INITIAL_CONVERSATIONS,
-  INITIAL_SETTLEMENTS,
-  INITIAL_WITHDRAWALS,
-  INITIAL_ROLES,
-  INITIAL_MEMBERS,
-  INITIAL_AUDIT,
-  INITIAL_BLOCKS,
-  INITIAL_SHOP_PROFILE,
-} from '../components/seller-dashboard-tab/sellerData'
 import { SellerLayout } from '../components/seller-dashboard-tab/SellerLayout'
 
+import type { AddProductPayload } from '../components/seller-dashboard-tab/SellerAddProductTab'
 import type {
   ChatConversationItem,
+  ChatMessageItem,
   DecorationBlock,
   OrderItem,
   ProductItem,
@@ -40,43 +123,43 @@ import type {
   SellerTabId,
   SettlementItem,
   ShopAuditItem,
-  ShopMemberItem,
   ShopProfileData,
   ShopRoleItem,
-  StockMovementItem,
   WithdrawalItem,
 } from '@/types/seller'
+import type { CategoryResponse } from '@generated/model/categoryResponse'
+import type { ChatConversationResponse } from '@generated/model/chatConversationResponse'
+import type { InventoryItemResponse } from '@generated/model/inventoryItemResponse'
+import type { OrderResponse } from '@generated/model/orderResponse'
+import type { RevenueSummaryResponse } from '@generated/model/revenueSummaryResponse'
+import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
+import type { ShopResponse } from '@generated/model/shopResponse'
 
 function TabLoading() {
-  return <p className="py-24 text-center">Đang tải…</p>
+  return (
+    <main className="py-24 text-center">
+      <p className="text-sm text-zinc-500">Đang tải gian hàng…</p>
+    </main>
+  )
 }
 
-const INITIAL_STOCK_MOVEMENTS: StockMovementItem[] = [
-  {
-    id: 'mov-1',
-    variantSku: 'TS-WHT-M',
-    productName: 'Áo Thun Cotton Oversize Form Rộng',
-    changeQty: 50,
-    previousStock: 0,
-    newStock: 50,
-    reason: 'RESTOCK',
-    note: 'Nhập lô hàng may xưởng đợt 1',
-    createdBy: 'kho.tuan@fashionhub.vn',
-    createdAt: '10/10/2026 10:00',
-  },
-  {
-    id: 'mov-2',
-    variantSku: 'TS-WHT-M',
-    productName: 'Áo Thun Cotton Oversize Form Rộng',
-    changeQty: -5,
-    previousStock: 50,
-    newStock: 45,
-    reason: 'ORDER_SHIP',
-    note: 'Xuất đóng gói cho các đơn ORD-982104,...',
-    createdBy: 'Hệ thống tự động',
-    createdAt: '14/10/2026 15:30',
-  },
-]
+function ShopError(props: { status: number }) {
+  return (
+    <main className="mx-auto max-w-[1400px] px-4 py-24 text-center">
+      <p className="text-sm text-red-600">{apiErrorMessage('shops', props.status)}</p>
+    </main>
+  )
+}
+
+function errorStatus(error: unknown): number {
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+    const status = (error as { status: unknown }).status
+    if (typeof status === 'number') {
+      return status
+    }
+  }
+  return 0
+}
 
 // Valid navigation targets triggered by Overview cards
 const NAVIGABLE_TABS: readonly SellerTabId[] = [
@@ -92,38 +175,412 @@ const NAVIGABLE_TABS: readonly SellerTabId[] = [
   'PROFILE',
 ]
 
+const FALLBACK_AUTO_REPLY =
+  'Chào bạn! Shop đã nhận được tin nhắn và sẽ phản hồi trong giây lát. Chúc bạn một ngày mua sắm vui vẻ!'
+
+function emptyProfile(shopName: string): ShopProfileData {
+  return {
+    shopName,
+    slug: '',
+    bio: '',
+    logoUrl: '',
+    bannerUrl: '',
+    contactName: '',
+    phone: '',
+    pickupAddress: '',
+    city: '',
+    daysToShip: 2,
+    businessType: 'INDIVIDUAL',
+    taxOrIdNumber: '',
+    isVerified: false,
+    bankName: '',
+    bankAccount: '',
+    bankHolder: '',
+    workingHours: '',
+  }
+}
+
 export default function ShopDashboard() {
   const [activeTab, setActiveTab] = useState<SellerTabId>('OVERVIEW')
+  const [selectedConvId, setSelectedConvId] = useState('')
+  const [draftBlocks, setDraftBlocks] = useState<DecorationBlock[] | null>(null)
+  const queryClient = useQueryClient()
 
-  // Global Interactive States
-  const [products, setProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS)
-  const [stockMovements, setStockMovements] = useState<StockMovementItem[]>(INITIAL_STOCK_MOVEMENTS)
-  const [orders, setOrders] = useState<OrderItem[]>(INITIAL_ORDERS)
-  const [returns, setReturns] = useState<ReturnItem[]>(INITIAL_RETURNS)
-  const [settlements] = useState<SettlementItem[]>(INITIAL_SETTLEMENTS)
-  const [withdrawals, setWithdrawals] = useState<WithdrawalItem[]>(INITIAL_WITHDRAWALS)
-  const [reviews, setReviews] = useState<ReviewItem[]>(INITIAL_REVIEWS)
-  const [conversations, setConversations] = useState<ChatConversationItem[]>(INITIAL_CONVERSATIONS)
-  const [autoReplyText, setAutoReplyText] = useState(
-    'Chào bạn! Shop đã nhận được tin nhắn và sẽ phản hồi trong giây lát. Chúc bạn một ngày mua sắm vui vẻ!',
-  )
-  const [roles, setRoles] = useState<ShopRoleItem[]>(INITIAL_ROLES)
-  const [members, setMembers] = useState<ShopMemberItem[]>(INITIAL_MEMBERS)
-  const [auditLogs, setAuditLogs] = useState<ShopAuditItem[]>(INITIAL_AUDIT)
-  const [blocks, setBlocks] = useState<DecorationBlock[]>(INITIAL_BLOCKS)
-  const [profile, setProfile] = useState<ShopProfileData>(INITIAL_SHOP_PROFILE)
+  const mineQuery = useMine()
+  const categoriesQuery = useListCategories()
+
+  let shopId = ''
+  let shopName = ''
+  let autoReplyText = FALLBACK_AUTO_REPLY
+  let shopReady = false
+  let currentShop: ShopResponse | null = null
+  if (mineQuery.data !== undefined) {
+    currentShop = takeData(mineQuery.data)[0] ?? null
+    if (currentShop !== null) {
+      shopId = currentShop.id ?? ''
+      shopName = currentShop.name ?? ''
+      if (
+        currentShop.autoReplyText !== null &&
+        currentShop.autoReplyText !== undefined &&
+        currentShop.autoReplyText !== ''
+      ) {
+        autoReplyText = currentShop.autoReplyText
+      }
+      shopReady = true
+    }
+  }
+
+  const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopReady } })
+  const inventoryQuery = useInventory(shopId, undefined, { query: { enabled: shopReady } })
+  const ordersQuery = useList5({ shopId }, { query: { enabled: shopReady } })
+  const returnsQuery = useList4({ shopId }, { query: { enabled: shopReady } })
+  const settlementsQuery = useSettlements({ shopId }, { query: { enabled: shopReady } })
+  const withdrawalsQuery = useListWithdrawals({ shopId }, { query: { enabled: shopReady } })
+  const summaryQuery = useSummary({ shopId }, { query: { enabled: shopReady } })
+  const byDayQuery = useByDay({ shopId }, { query: { enabled: shopReady } })
+  const topProductsQuery = useTopProducts({ shopId, limit: 3 }, { query: { enabled: shopReady } })
+  const reviewsQuery = useList3({ shopId }, { query: { enabled: shopReady } })
+  const conversationsQuery = useSellerConversations({ shopId }, { query: { enabled: shopReady } })
+
+  // Hội thoại đang chọn: mặc định là hội thoại đầu tiên khi data vừa load
+  let rawConversations: ChatConversationResponse[] = []
+  if (conversationsQuery.data !== undefined) {
+    rawConversations = takeData(conversationsQuery.data)
+  }
+  let activeConvId = selectedConvId
+  if (activeConvId === '' && rawConversations.length > 0) {
+    activeConvId = rawConversations[0]?.id ?? ''
+  }
+  const messagesQuery = useMessages(activeConvId, {
+    query: { enabled: activeConvId !== '' },
+  })
+
+  const decorationQuery = useGetDecoration(shopId, { query: { enabled: shopReady } })
+  const rolesQuery = useListRoles(shopId, { query: { enabled: shopReady } })
+  const membersQuery = useListMembers(shopId, { query: { enabled: shopReady } })
+  const auditQuery = useListAuditLogs(shopId, { query: { enabled: shopReady } })
+
+  let categories: CategoryResponse[] = []
+  if (categoriesQuery.data !== undefined) {
+    categories = takeData(categoriesQuery.data)
+  }
+  const categoryNameById = new Map<string, string>()
+  for (const c of categories) {
+    categoryNameById.set(c.id ?? '', c.name ?? '')
+  }
+
+  let rawOrders: OrderResponse[] = []
+  if (ordersQuery.data !== undefined) {
+    rawOrders = takeData(ordersQuery.data)
+  }
+  const orderById = new Map<string, OrderResponse>()
+  const buyerNameByBuyerId = new Map<string, string>()
+  for (const o of rawOrders) {
+    orderById.set(o.id ?? '', o)
+    if (o.buyerId !== undefined && o.buyerId !== null && o.buyerId !== '') {
+      buyerNameByBuyerId.set(o.buyerId, o.shippingName ?? '')
+    }
+  }
+
+  let rawInventory: InventoryItemResponse[] = []
+  if (inventoryQuery.data !== undefined) {
+    rawInventory = takeData(inventoryQuery.data)
+  }
+  const skuByVariantId = new Map<string, string>()
+  const productNameByVariantId = new Map<string, string>()
+  for (const inv of rawInventory) {
+    const variantId = inv.variantId ?? ''
+    skuByVariantId.set(variantId, inv.sku ?? '')
+    productNameByVariantId.set(variantId, inv.productName ?? '')
+  }
+
+  const orders: OrderItem[] = rawOrders.map(orderItem)
+
+  let returns: ReturnItem[] = []
+  if (returnsQuery.data !== undefined) {
+    returns = takeData(returnsQuery.data).map(function (r) {
+      return returnItem(r, orderById)
+    })
+  }
+
+  let products: ProductItem[] = []
+  if (productsQuery.data !== undefined) {
+    products = takeData(productsQuery.data).map(function (p) {
+      return productItem(p, categoryNameById.get(p.categoryId ?? ''))
+    })
+  }
+  const productNameById = new Map<string, string>()
+  for (const p of products) {
+    productNameById.set(p.id, p.name)
+  }
+
+  let settlements: SettlementItem[] = []
+  if (settlementsQuery.data !== undefined) {
+    settlements = takeData(settlementsQuery.data).map(function (s) {
+      return settlementItem(s, orderById)
+    })
+  }
+
+  let withdrawals: WithdrawalItem[] = []
+  if (withdrawalsQuery.data !== undefined) {
+    withdrawals = takeData(withdrawalsQuery.data).map(withdrawalItem)
+  }
+
+  let reviews: ReviewItem[] = []
+  if (reviewsQuery.data !== undefined) {
+    reviews = takeData(reviewsQuery.data).map(function (r) {
+      return reviewItem(r, productNameById.get(r.productId ?? ''))
+    })
+  }
+
+  const conversations: ChatConversationItem[] = rawConversations.map(function (c) {
+    return chatConversationItem(c, buyerNameByBuyerId)
+  })
+
+  let messages: ChatMessageItem[] = []
+  if (messagesQuery.data !== undefined) {
+    messages = takeData(messagesQuery.data).map(chatMessageItem)
+  }
+
+  let rawMembers: ShopMemberDetailResponse[] = []
+  if (membersQuery.data !== undefined) {
+    rawMembers = takeData(membersQuery.data)
+  }
+  let roles: ShopRoleItem[] = []
+  if (rolesQuery.data !== undefined) {
+    roles = takeData(rolesQuery.data).map(function (r) {
+      return roleItem(r, rawMembers)
+    })
+  }
+  const members = rawMembers.map(memberItem)
+
+  let auditLogs: ShopAuditItem[] = []
+  if (auditQuery.data !== undefined) {
+    auditLogs = takeData(auditQuery.data).map(auditItem)
+  }
+
+  let serverBlocks: DecorationBlock[] = []
+  if (decorationQuery.data !== undefined) {
+    serverBlocks = decorationBlocks(takeData(decorationQuery.data))
+  }
+  let blocks: DecorationBlock[] = serverBlocks
+  if (draftBlocks !== null) {
+    blocks = draftBlocks
+  }
+
+  const profile: ShopProfileData = emptyProfile(shopName)
+  if (currentShop !== null) {
+    Object.assign(profile, shopProfile(currentShop))
+  }
 
   // Computed Badge Counts
-  const pendingOrdersCount = orders.filter((o) => o.status === 'PENDING').length
-  const confirmedOrdersCount = orders.filter((o) => o.status === 'CONFIRMED').length
-  const pendingReturnsCount = returns.filter((r) => r.status === 'REQUESTED').length
-  const unreadChatCount = conversations.reduce((acc, conv) => acc + conv.unreadCount, 0)
-
-  // Low stock variants count across all active products
-  const lowStockCount = products.reduce((acc, p) => {
-    const lowVariants = p.variants.filter((v) => v.stock <= v.lowStockThreshold)
-    return acc + lowVariants.length
+  const pendingOrdersCount = rawOrders.filter(function (o) {
+    return o.status === 'PENDING'
+  }).length
+  const confirmedOrdersCount = rawOrders.filter(function (o) {
+    return o.status === 'CONFIRMED'
+  }).length
+  const pendingReturnsCount = returns.filter(function (r) {
+    return r.status === 'REQUESTED'
+  }).length
+  const unreadChatCount = conversations.reduce(function (acc, conv) {
+    return acc + conv.unreadCount
   }, 0)
+  const lowStockCount = rawInventory.filter(function (i) {
+    return i.isLowStock === true
+  }).length
+
+  // --- Mutations ---
+  const confirmMutation = useConfirm({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+      },
+    },
+  })
+  const shipMutation = useShip({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+      },
+    },
+  })
+  const deliverMutation = useDeliver({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+      },
+    },
+  })
+  const cancelMutation = useCancel({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+        void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
+      },
+    },
+  })
+  const approveMutation = useApprove({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+      },
+    },
+  })
+  const rejectMutation = useReject({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+      },
+    },
+  })
+  const completeMutation = useComplete({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+      },
+    },
+  })
+  const requestWithdrawalMutation = useRequestWithdrawal({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListWithdrawalsQueryKey({ shopId }) })
+        void queryClient.invalidateQueries({ queryKey: getSummaryQueryKey({ shopId }) })
+      },
+    },
+  })
+  const replyMutation = useReply({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList3QueryKey() })
+      },
+    },
+  })
+  const reportMutation = useReport({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList3QueryKey() })
+      },
+    },
+  })
+  const sendMessageMutation = useSendMessage({
+    mutation: {
+      onSuccess: function (_data, variables) {
+        void queryClient.invalidateQueries({ queryKey: getMessagesQueryKey(variables.id) })
+        void queryClient.invalidateQueries({ queryKey: getSellerConversationsQueryKey({ shopId }) })
+      },
+    },
+  })
+  const markReadMutation = useMarkRead({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getSellerConversationsQueryKey({ shopId }) })
+      },
+    },
+  })
+  const saveDraftMutation = useSaveDraft({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
+        setDraftBlocks(null)
+      },
+    },
+  })
+  const publishMutation = usePublish({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
+        setDraftBlocks(null)
+      },
+    },
+  })
+  const discardDraftMutation = useDiscardDraft({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
+        setDraftBlocks(null)
+      },
+    },
+  })
+  const createRoleMutation = useCreateRole({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListRolesQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+  const inviteStaffMutation = useInviteStaff({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+  const removeMemberMutation = useRemoveMember({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListRolesQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+  const changeMemberRoleMutation = useChangeMemberRole({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+  const updateProductMutation = useUpdate1({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+      },
+    },
+  })
+  const deleteProductMutation = useDeleteProduct({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+      },
+    },
+  })
+  const createProductMutation = useCreate1({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+      },
+    },
+  })
+  const bulkImportMutation = useBulkImport({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
+      },
+    },
+  })
+  const adjustStockMutation = useAdjustStock({
+    mutation: {
+      onSuccess: function (_data, variables) {
+        void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
+        void queryClient.invalidateQueries({
+          queryKey: getMovementsQueryKey(shopId, variables.variantId),
+        })
+      },
+    },
+  })
+  const updateProfileMutation = useUpdateProfile({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getMineQueryKey() })
+      },
+    },
+  })
 
   // Tab Navigation Bridge from Overview cards
   function handleOverviewNavigate(tabId: string) {
@@ -137,306 +594,203 @@ export default function ShopDashboard() {
     setActiveTab('OVERVIEW')
   }
 
-  // --- Product Management Handlers ---
+  // --- Handlers (giữ signature cũ của tab, bên dưới gọi mutation thật) ---
   function handleToggleProductStatus(productId: string) {
-    setProducts((prev) =>
-      prev.map((p) => {
-        if (p.id !== productId) return p
-        let nextStatus: 'ACTIVE' | 'INACTIVE' = 'ACTIVE'
-        if (p.status === 'ACTIVE') {
-          nextStatus = 'INACTIVE'
-        }
-        return { ...p, status: nextStatus }
-      }),
-    )
+    const current = products.find(function (p) {
+      return p.id === productId
+    })
+    if (current === undefined) {
+      return
+    }
+    let nextStatus = 'ACTIVE'
+    if (current.status === 'ACTIVE') {
+      nextStatus = 'HIDDEN'
+    }
+    updateProductMutation.mutate({ shopId, id: productId, data: { status: nextStatus } })
   }
 
   function handleDeleteProduct(productId: string) {
-    setProducts((prev) =>
-      prev.map((p) => {
-        if (p.id !== productId) return p
-        return { ...p, status: 'DELETED' }
-      }),
-    )
+    deleteProductMutation.mutate({ shopId, id: productId })
   }
 
-  function handleAddProduct(newProduct: ProductItem) {
-    setProducts((prev) => [newProduct, ...prev])
-    const newAudit: ShopAuditItem = {
-      id: `aud-${Date.now()}`,
-      action: 'ADD_PRODUCT',
-      targetType: 'PRODUCT',
-      detail: `Thêm sản phẩm mới "${newProduct.name}" (Mã SKU: ${newProduct.sku})`,
-      createdAt: 'Vừa xong',
-    }
-    setAuditLogs((prev) => [newAudit, ...prev])
-    setActiveTab('PRODUCTS')
+  function handleAddProduct(payload: AddProductPayload) {
+    createProductMutation.mutate(
+      {
+        shopId,
+        data: {
+          name: payload.name,
+          slug: payload.slug,
+          description: payload.description,
+          categoryId: payload.categoryId,
+          variants: payload.variants,
+        },
+      },
+      {
+        onSuccess: function () {
+          setActiveTab('PRODUCTS')
+        },
+      },
+    )
   }
 
   function handleBulkImport(csvContent: string) {
-    const lines = csvContent.split('\n').filter((l) => l.trim() !== '')
-    const newItems: ProductItem[] = []
-
-    for (let i = 1; i < lines.length; i += 1) {
-      const line = lines[i]
-      if (line) {
-        const parts = line.split(',')
-        if (parts.length >= 5) {
-          const name = parts[0]?.trim() || `Sản phẩm ${Date.now()}`
-          const sku = parts[1]?.trim() || `SKU-${Date.now()}`
-          const category = parts[2]?.trim() || 'Thời trang'
-          const price = Number(parts[3]) || 150000
-          const stock = Number(parts[4]) || 50
-
-          newItems.push({
-            id: `prod-${Date.now()}-${i}`,
-            name,
-            slug: name.toLowerCase().replace(/\s+/g, '-'),
-            sku,
-            category,
-            price,
-            originalPrice: Math.round(price * 1.2),
-            stock,
-            sold: 0,
-            status: 'ACTIVE',
-            image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300&q=80',
-            variants: [
-              {
-                id: `v-bulk-${i}-1`,
-                size: 'Freesize',
-                color: 'Tiêu chuẩn',
-                sku: `${sku}-STD`,
-                price,
-                stock,
-                lowStockThreshold: 10,
-              },
-            ],
-          })
-        }
-      }
-    }
-
-    if (newItems.length > 0) {
-      setProducts((prev) => [...newItems, ...prev])
-      const newAudit: ShopAuditItem = {
-        id: `aud-${Date.now()}`,
-        action: 'BULK_IMPORT',
-        targetType: 'PRODUCT',
-        detail: `Nhập nhanh ${newItems.length} sản phẩm từ tập tin CSV`,
-        createdAt: 'Vừa xong',
-      }
-      setAuditLogs((prev) => [newAudit, ...prev])
-    }
+    const file = new File([csvContent], 'products.csv', { type: 'text/csv' })
+    bulkImportMutation.mutate({ shopId, data: { file } })
   }
 
-  // --- Inventory & Stock Adjustment Handlers ---
-  function handleAdjustStock(
-    variantSku: string,
-    changeQty: number,
-    reason: 'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL',
-    note: string,
-  ) {
-    let affectedProductName = ''
-    let prevStockVal = 0
-    let newStockVal = 0
-
-    setProducts((prev) =>
-      prev.map((p) => {
-        const hasVariant = p.variants.some((v) => v.sku === variantSku)
-        if (!hasVariant) return p
-
-        affectedProductName = p.name
-        const updatedVariants = p.variants.map((v) => {
-          if (v.sku !== variantSku) return v
-          prevStockVal = v.stock
-          const nextStock = Math.max(0, v.stock + changeQty)
-          newStockVal = nextStock
-          return { ...v, stock: nextStock }
-        })
-
-        const totalStock = updatedVariants.reduce((sum, v) => sum + v.stock, 0)
-        return { ...p, stock: totalStock, variants: updatedVariants }
-      }),
-    )
-
-    const movement: StockMovementItem = {
-      id: `mov-${Date.now()}`,
-      variantSku,
-      productName: affectedProductName,
-      changeQty,
-      previousStock: prevStockVal,
-      newStock: newStockVal,
-      reason,
-      note,
-      createdBy: 'Chủ shop',
-      createdAt: 'Vừa xong',
+  function handleAdjustStock(variantId: string, changeQty: number, reason: string) {
+    const current = rawInventory.find(function (i) {
+      return i.variantId === variantId
+    })
+    if (current === undefined) {
+      return
     }
-
-    setStockMovements((prev) => [movement, ...prev])
+    const stock = current.stockQuantity ?? 0
+    const newStock = Math.max(0, stock + changeQty)
+    adjustStockMutation.mutate({ shopId, variantId, data: { newStock, reason } })
   }
 
-  // --- Order Workflow Handlers ---
   function handleConfirmOrder(orderId: string) {
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id !== orderId) return o
-        return { ...o, status: 'CONFIRMED' }
-      }),
-    )
+    confirmMutation.mutate({ id: orderId })
   }
 
   function handleShipOrder(orderId: string) {
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id !== orderId) return o
-        return { ...o, status: 'SHIPPING' }
-      }),
-    )
+    shipMutation.mutate({ id: orderId })
   }
 
   function handleDeliverOrder(orderId: string) {
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id !== orderId) return o
-        return { ...o, status: 'DELIVERED' }
-      }),
-    )
+    deliverMutation.mutate({ id: orderId })
   }
 
   function handleCancelOrder(orderId: string, reason: string) {
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id !== orderId) return o
-        return { ...o, status: 'CANCELLED', cancelReason: reason }
-      }),
-    )
+    cancelMutation.mutate({ id: orderId, data: { reason } })
   }
 
-  // --- Returns & Refunds Handlers ---
   function handleApproveReturn(
     returnId: string,
     resolution: string,
     refundAmount: number,
     returnAddress: string,
   ) {
-    setReturns((prev) =>
-      prev.map((r) => {
-        if (r.id !== returnId) return r
-        return {
-          ...r,
-          status: 'APPROVED',
-          resolution,
-          refundAmount,
-          sellerNote: `Địa chỉ nhận lại: ${returnAddress}`,
-        }
-      }),
-    )
+    approveMutation.mutate({
+      id: returnId,
+      data: { resolution, refundAmount, sellerNote: 'Địa chỉ nhận lại: ' + returnAddress },
+    })
   }
 
   function handleRejectReturn(returnId: string, sellerNote: string) {
-    setReturns((prev) =>
-      prev.map((r) => {
-        if (r.id !== returnId) return r
-        return { ...r, status: 'REJECTED', sellerNote }
-      }),
-    )
+    rejectMutation.mutate({ id: returnId, data: { sellerNote } })
   }
 
   function handleCompleteReturn(returnId: string) {
-    setReturns((prev) =>
-      prev.map((r) => {
-        if (r.id !== returnId) return r
-        return { ...r, status: 'COMPLETED' }
-      }),
-    )
+    completeMutation.mutate({ id: returnId })
   }
 
-  // --- Revenue & Wallet Handlers ---
   function handleCreateWithdrawal(amount: number) {
-    const newWithdrawal: WithdrawalItem = {
-      id: `w-${Date.now()}`,
-      amount,
-      bankName: profile.bankName,
-      bankAccount: profile.bankAccount,
-      bankHolder: profile.bankHolder,
-      status: 'PROCESSING',
-      createdAt: 'Vừa xong',
-    }
-    setWithdrawals((prev) => [newWithdrawal, ...prev])
+    requestWithdrawalMutation.mutate({
+      data: {
+        shopId,
+        amount,
+        bankName: profile.bankName,
+        bankAccount: profile.bankAccount,
+        bankHolder: profile.bankHolder,
+      },
+    })
   }
 
-  // --- Reviews Handlers ---
   function handleReplyReview(reviewId: string, replyText: string) {
-    setReviews((prev) =>
-      prev.map((rev) => {
-        if (rev.id !== reviewId) return rev
-        return { ...rev, sellerReply: replyText }
-      }),
-    )
+    replyMutation.mutate({ id: reviewId, data: { reply: replyText } })
   }
 
   function handleReportReview(reviewId: string, reason: string) {
-    setReviews((prev) =>
-      prev.map((rev) => {
-        if (rev.id !== reviewId) return rev
-        return { ...rev, isReported: true }
-      }),
-    )
-    const audit: ShopAuditItem = {
-      id: `aud-${Date.now()}`,
-      action: 'REPORT_REVIEW',
-      targetType: 'REVIEW',
-      detail: `Báo cáo đánh giá ID: ${reviewId}. Lý do: ${reason}`,
-      createdAt: 'Vừa xong',
-    }
-    setAuditLogs((prev) => [audit, ...prev])
+    reportMutation.mutate({ id: reviewId, data: { reason } })
   }
 
-  // --- Chat Handlers ---
+  function handleSelectConversation(id: string) {
+    setSelectedConvId(id)
+    markReadMutation.mutate({ id })
+  }
+
   function handleSendMessage(conversationId: string, content: string) {
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id !== conversationId) return c
-        const newMsg = {
-          id: `m-${Date.now()}`,
-          senderType: 'SELLER' as const,
-          content,
-          sentAt: 'Vừa xong',
-        }
-        return {
-          ...c,
-          lastMessage: content,
-          lastMessageAt: 'Vừa xong',
-          messages: [...c.messages, newMsg],
-        }
-      }),
-    )
+    sendMessageMutation.mutate({ id: conversationId, data: { content } })
   }
 
-  function handleMarkRead(conversationId: string) {
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id !== conversationId) return c
-        return { ...c, unreadCount: 0 }
-      }),
-    )
+  function handleSaveAutoReply(text: string) {
+    updateProfileMutation.mutate({ id: shopId, data: { autoReplyText: text } })
   }
 
-  // --- Staff & Permissions Handlers ---
-  function handleAddMember(newMember: ShopMemberItem) {
-    setMembers((prev) => [...prev, newMember])
+  function handleSaveDecorationDraft() {
+    saveDraftMutation.mutate({ shopId, data: { layoutJson: decorationDraftJson(blocks) } })
+  }
+
+  function handlePublishDecoration() {
+    publishMutation.mutate({ shopId })
+  }
+
+  function handleDiscardDecoration() {
+    discardDraftMutation.mutate({ shopId })
+  }
+
+  function handleInviteStaff(email: string, roleId: string) {
+    inviteStaffMutation.mutate({ shopId, data: { email, roleId } })
+  }
+
+  function handleCreateRole(name: string, permissions: string[]) {
+    createRoleMutation.mutate({ shopId, data: { name, permissions } })
   }
 
   function handleRemoveMember(id: string) {
-    setMembers((prev) => prev.filter((m) => m.id !== id))
+    removeMemberMutation.mutate({ shopId, memberId: id })
   }
 
-  function handleAddRole(newRole: ShopRoleItem) {
-    setRoles((prev) => [...prev, newRole])
+  function handleChangeMemberRole(memberId: string, roleId: string) {
+    changeMemberRoleMutation.mutate({ shopId, memberId, data: { roleId } })
   }
 
-  function handleAddAuditLog(log: ShopAuditItem) {
-    setAuditLogs((prev) => [log, ...prev])
+  function handleSaveProfile(next: ShopProfileData) {
+    updateProfileMutation.mutate({
+      id: shopId,
+      data: {
+        phone: next.phone,
+        address: next.pickupAddress,
+        processingDays: next.daysToShip,
+        bankName: next.bankName,
+        bankAccount: next.bankAccount,
+        bankHolder: next.bankHolder,
+        workingHours: next.workingHours,
+      },
+    })
+  }
+
+  if (mineQuery.isPending) {
+    return <TabLoading />
+  }
+
+  if (mineQuery.isError) {
+    return <ShopError status={errorStatus(mineQuery.error)} />
+  }
+
+  let summary: RevenueSummaryResponse | undefined = undefined
+  if (summaryQuery.data !== undefined) {
+    summary = takeData(summaryQuery.data)
+  }
+
+  const chart: { day: string; revenue: number }[] = []
+  if (byDayQuery.data !== undefined) {
+    for (const d of takeData(byDayQuery.data)) {
+      chart.push({ day: formatDateTime(d.date), revenue: d.revenue ?? 0 })
+    }
+  }
+
+  const topProducts: { name: string; sold: number; revenue: number }[] = []
+  if (topProductsQuery.data !== undefined) {
+    for (const t of takeData(topProductsQuery.data)) {
+      topProducts.push({
+        name: t.productName ?? '',
+        sold: t.soldQuantity ?? 0,
+        revenue: t.totalRevenue ?? 0,
+      })
+    }
   }
 
   return (
@@ -449,119 +803,128 @@ export default function ShopDashboard() {
       lowStockCount={lowStockCount}
       unreadChatCount={unreadChatCount}
     >
-      <Suspense fallback={<TabLoading />}>
-        {/* 1. OVERVIEW TAB */}
-        {activeTab === 'OVERVIEW' && (
-          <SellerOverviewTab
-            onNavigateTab={handleOverviewNavigate}
-            pendingOrdersCount={pendingOrdersCount}
-            confirmedOrdersCount={confirmedOrdersCount}
-            pendingReturnsCount={pendingReturnsCount}
-            lowStockCount={lowStockCount}
-          />
-        )}
+      {activeTab === 'OVERVIEW' && (
+        <SellerOverviewTab
+          onNavigateTab={handleOverviewNavigate}
+          pendingOrdersCount={pendingOrdersCount}
+          confirmedOrdersCount={confirmedOrdersCount}
+          pendingReturnsCount={pendingReturnsCount}
+          lowStockCount={lowStockCount}
+        />
+      )}
 
-        {/* 2. PRODUCTS TAB */}
-        {activeTab === 'PRODUCTS' && (
-          <SellerProductsTab
-            products={products}
-            onToggleStatus={handleToggleProductStatus}
-            onDeleteProduct={handleDeleteProduct}
-            onBulkImport={handleBulkImport}
-            onNavigateAddProduct={() => setActiveTab('ADD_PRODUCT')}
-          />
-        )}
+      {activeTab === 'PRODUCTS' && (
+        <SellerProductsTab
+          products={products}
+          onToggleStatus={handleToggleProductStatus}
+          onDeleteProduct={handleDeleteProduct}
+          onBulkImport={handleBulkImport}
+          onNavigateAddProduct={function () {
+            setActiveTab('ADD_PRODUCT')
+          }}
+        />
+      )}
 
-        {/* 3. ADD PRODUCT TAB */}
-        {activeTab === 'ADD_PRODUCT' && (
-          <SellerAddProductTab
-            onBack={() => setActiveTab('PRODUCTS')}
-            onAddProduct={handleAddProduct}
-          />
-        )}
+      {activeTab === 'ADD_PRODUCT' && (
+        <SellerAddProductTab
+          categories={categories.map(function (c) {
+            return { id: c.id ?? '', name: c.name ?? '' }
+          })}
+          onBack={function () {
+            setActiveTab('PRODUCTS')
+          }}
+          onAddProduct={handleAddProduct}
+        />
+      )}
 
-        {/* 4. INVENTORY TAB */}
-        {activeTab === 'INVENTORY' && (
-          <SellerInventoryTab
-            products={products}
-            movements={stockMovements}
-            onAdjustStock={handleAdjustStock}
-          />
-        )}
+      {activeTab === 'INVENTORY' && (
+        <SellerInventoryTab
+          shopId={shopId}
+          products={products}
+          inventory={rawInventory}
+          onAdjustStock={handleAdjustStock}
+        />
+      )}
 
-        {/* 5. ORDERS TAB */}
-        {activeTab === 'ORDERS' && (
-          <SellerOrdersTab
-            orders={orders}
-            onConfirmOrder={handleConfirmOrder}
-            onShipOrder={handleShipOrder}
-            onDeliverOrder={handleDeliverOrder}
-            onCancelOrder={handleCancelOrder}
-          />
-        )}
+      {activeTab === 'ORDERS' && (
+        <SellerOrdersTab
+          orders={orders}
+          onConfirmOrder={handleConfirmOrder}
+          onShipOrder={handleShipOrder}
+          onDeliverOrder={handleDeliverOrder}
+          onCancelOrder={handleCancelOrder}
+        />
+      )}
 
-        {/* 6. RETURNS TAB */}
-        {activeTab === 'RETURNS' && (
-          <SellerReturnsTab
-            returns={returns}
-            onApproveReturn={handleApproveReturn}
-            onRejectReturn={handleRejectReturn}
-            onCompleteReturn={handleCompleteReturn}
-          />
-        )}
+      {activeTab === 'RETURNS' && (
+        <SellerReturnsTab
+          returns={returns}
+          onApproveReturn={handleApproveReturn}
+          onRejectReturn={handleRejectReturn}
+          onCompleteReturn={handleCompleteReturn}
+        />
+      )}
 
-        {/* 7. REVENUE TAB */}
-        {activeTab === 'REVENUE' && (
-          <SellerRevenueTab
-            settlements={settlements}
-            withdrawals={withdrawals}
-            onCreateWithdrawal={handleCreateWithdrawal}
-          />
-        )}
+      {activeTab === 'REVENUE' && (
+        <SellerRevenueTab
+          settlements={settlements}
+          withdrawals={withdrawals}
+          summary={summary}
+          chart={chart}
+          topProducts={topProducts}
+          bankName={profile.bankName}
+          bankAccount={profile.bankAccount}
+          bankHolder={profile.bankHolder}
+          onCreateWithdrawal={handleCreateWithdrawal}
+        />
+      )}
 
-        {/* 8. REVIEWS TAB */}
-        {activeTab === 'REVIEWS' && (
-          <SellerReviewsTab
-            reviews={reviews}
-            onReplyReview={handleReplyReview}
-            onReportReview={handleReportReview}
-          />
-        )}
+      {activeTab === 'REVIEWS' && (
+        <SellerReviewsTab
+          reviews={reviews}
+          onReplyReview={handleReplyReview}
+          onReportReview={handleReportReview}
+        />
+      )}
 
-        {/* 9. CHAT TAB */}
-        {activeTab === 'CHAT' && (
-          <SellerChatTab
-            conversations={conversations}
-            onSendMessage={handleSendMessage}
-            onMarkRead={handleMarkRead}
-            autoReplyText={autoReplyText}
-            onSaveAutoReply={setAutoReplyText}
-          />
-        )}
+      {activeTab === 'CHAT' && (
+        <SellerChatTab
+          conversations={conversations}
+          messages={messages}
+          selectedConvId={activeConvId}
+          onSelectConversation={handleSelectConversation}
+          onSendMessage={handleSendMessage}
+          autoReplyText={autoReplyText}
+          onSaveAutoReply={handleSaveAutoReply}
+        />
+      )}
 
-        {/* 10. DECORATION TAB */}
-        {activeTab === 'DECORATION' && (
-          <SellerDecorationTab blocks={blocks} onUpdateBlocks={setBlocks} />
-        )}
+      {activeTab === 'DECORATION' && (
+        <SellerDecorationTab
+          blocks={blocks}
+          hasLocalChanges={draftBlocks !== null}
+          onUpdateBlocks={setDraftBlocks}
+          onSaveDraft={handleSaveDecorationDraft}
+          onPublish={handlePublishDecoration}
+          onDiscard={handleDiscardDecoration}
+        />
+      )}
 
-        {/* 11. STAFF & RBAC TAB */}
-        {activeTab === 'STAFF' && (
-          <SellerStaffTab
-            roles={roles}
-            members={members}
-            auditLogs={auditLogs}
-            onAddMember={handleAddMember}
-            onRemoveMember={handleRemoveMember}
-            onAddRole={handleAddRole}
-            onAddAuditLog={handleAddAuditLog}
-          />
-        )}
+      {activeTab === 'STAFF' && (
+        <SellerStaffTab
+          roles={roles}
+          members={members}
+          auditLogs={auditLogs}
+          onInvite={handleInviteStaff}
+          onCreateRole={handleCreateRole}
+          onRemoveMember={handleRemoveMember}
+          onChangeRole={handleChangeMemberRole}
+        />
+      )}
 
-        {/* 12. PROFILE & KYC TAB */}
-        {activeTab === 'PROFILE' && (
-          <SellerProfileTab profile={profile} onSaveProfile={setProfile} />
-        )}
-      </Suspense>
+      {activeTab === 'PROFILE' && (
+        <SellerProfileTab key={shopId} profile={profile} onSaveProfile={handleSaveProfile} />
+      )}
     </SellerLayout>
   )
 }

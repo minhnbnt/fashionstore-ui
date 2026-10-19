@@ -2,8 +2,6 @@ import { useState } from 'react'
 
 import { Minus, Plus, ShoppingBag, Star } from '@phosphor-icons/react'
 
-// TODO(mock): điểm và lượt đánh giá là demo, thay bằng API reviews khi backend có endpoint
-import { DEMO_RATING } from '@/data/demoReviews'
 import { priceInfo } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import { findVariant, isOptionAvailable } from '@/lib/variants'
@@ -102,7 +100,14 @@ export default function ProductInfo(props: { product: ProductResponse }) {
       <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">{p.name}</h1>
       <p className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
         <Star size={16} weight="fill" className="text-sky-400" />
-        {DEMO_RATING.value} · {DEMO_RATING.count} đánh giá
+        {p.averageRating !== null && p.averageRating !== undefined && (
+          <span>
+            {p.averageRating} · {p.reviewCount ?? 0} đánh giá
+          </span>
+        )}
+        {(p.averageRating === null || p.averageRating === undefined) && (
+          <span>Chưa có đánh giá</span>
+        )}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="text-2xl font-extrabold text-blue-700 dark:text-sky-300">

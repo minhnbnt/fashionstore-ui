@@ -26,8 +26,9 @@ export interface StockMovementItem {
   variantSku: string
   productName: string
   changeQty: number
-  previousStock: number
-  newStock: number
+  /** API khong luu stock truoc/sau, chi co voi du lieu local */
+  previousStock: number | null
+  newStock: number | null
   reason: 'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL' | 'ORDER_SHIP' | 'SELLER_CANCEL'
   note: string
   createdBy: string

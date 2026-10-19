@@ -9,8 +9,6 @@ import {
   IdentificationBadge,
   Clock,
   ShieldCheck,
-  PauseCircle,
-  PlayCircle,
 } from '@phosphor-icons/react'
 
 import type { ShopProfileData } from '@/types/seller'
@@ -28,10 +26,6 @@ export function SellerProfileTab({ profile, onSaveProfile }: SellerProfileTabPro
     e.preventDefault()
     onSaveProfile(formData)
     setSaveSuccess(true)
-  }
-
-  const handleToggleVacation = () => {
-    setFormData({ ...formData, vacationMode: !formData.vacationMode })
   }
 
   return (
@@ -52,19 +46,6 @@ export function SellerProfileTab({ profile, onSaveProfile }: SellerProfileTabPro
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleToggleVacation}
-            className={`flex items-center gap-1.5 rounded border px-3 py-2 text-xs font-semibold transition-colors ${
-              formData.vacationMode && 'border-amber-300 bg-amber-50 text-amber-800'
-            } ${!formData.vacationMode && 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
-          >
-            {formData.vacationMode && <PlayCircle size={16} className="text-amber-600" />}
-            {formData.vacationMode && <span>Tắt Chế độ Tạm nghỉ</span>}
-            {!formData.vacationMode && <PauseCircle size={16} className="text-gray-500" />}
-            {!formData.vacationMode && <span>Bật Chế độ Tạm nghỉ</span>}
-          </button>
-
           <button
             type="submit"
             className="flex items-center gap-1.5 rounded bg-[#ee4d2d] px-5 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#d73211]"
@@ -89,20 +70,6 @@ export function SellerProfileTab({ profile, onSaveProfile }: SellerProfileTabPro
           >
             Đóng
           </button>
-        </div>
-      )}
-
-      {/* Vacation Mode Warning */}
-      {formData.vacationMode && (
-        <div className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
-          <div className="flex items-center gap-1.5 text-sm font-bold">
-            <PauseCircle size={18} className="text-amber-600" />
-            Chế độ tạm nghỉ (Vacation Mode) đang BẬT
-          </div>
-          <p>
-            Tất cả sản phẩm của bạn sẽ tạm thời ẩn nút &quot;Mua ngay&quot; trên ứng dụng Shopee.
-            Bạn vẫn có thể xử lý các đơn hàng đã tạo trước đó.
-          </p>
         </div>
       )}
 

@@ -18,10 +18,10 @@ interface SellerStaffTabProps {
   roles: ShopRoleItem[]
   members: ShopMemberItem[]
   auditLogs: ShopAuditItem[]
-  onAddMember: (member: ShopMemberItem) => void
+  onInvite: (email: string, roleId: string) => void
+  onCreateRole: (name: string, permissions: string[]) => void
   onRemoveMember: (id: string) => void
-  onAddRole: (role: ShopRoleItem) => void
-  onAddAuditLog: (log: ShopAuditItem) => void
+  onChangeRole: (memberId: string, roleId: string) => void
 }
 
 const ALL_SYSTEM_PERMISSIONS = [
@@ -44,10 +44,10 @@ export function SellerStaffTab({
   roles,
   members,
   auditLogs,
-  onAddMember,
+  onInvite,
+  onCreateRole,
   onRemoveMember,
-  onAddRole,
-  onAddAuditLog,
+  onChangeRole,
 }: SellerStaffTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<'MEMBERS' | 'ROLES' | 'AUDIT'>('MEMBERS')
 
@@ -75,31 +75,7 @@ export function SellerStaffTab({
     e.preventDefault()
     if (!inviteEmail.trim()) return
 
-    const matchedRole = roles.find((r) => r.id === inviteRoleId)
-    let roleTitle = 'Nhân viên'
-    if (matchedRole) {
-      roleTitle = matchedRole.name
-    }
-
-    const newMember: ShopMemberItem = {
-      id: `mem-${Date.now()}`,
-      email: inviteEmail.trim(),
-      roleId: inviteRoleId,
-      roleName: roleTitle,
-      status: 'INVITED',
-      joinedAt: 'Vừa mời (Chờ kích hoạt)',
-    }
-
-    onAddMember(newMember)
-
-    const audit: ShopAuditItem = {
-      id: `aud-${Date.now()}`,
-      action: 'INVITE_STAFF',
-      targetType: 'MEMBER',
-      detail: `Mời nhân viên ${inviteEmail.trim()} vào vai trò ${roleTitle}`,
-      createdAt: 'Vừa xong',
-    }
-    onAddAuditLog(audit)
+    onInvite(inviteEmail.trim(), inviteRoleId)
 
     setNotification(`Đã gửi email mời nhân viên ${inviteEmail.trim()} thành công!`)
     setInviteEmail('')
@@ -110,24 +86,7 @@ export function SellerStaffTab({
     e.preventDefault()
     if (!newRoleName.trim() || selectedPermissions.length === 0) return
 
-    const newRole: ShopRoleItem = {
-      id: `role-${Date.now()}`,
-      name: newRoleName.trim(),
-      permissions: selectedPermissions,
-      isSystem: false,
-      memberCount: 0,
-    }
-
-    onAddRole(newRole)
-
-    const audit: ShopAuditItem = {
-      id: `aud-${Date.now()}`,
-      action: 'CREATE_ROLE',
-      targetType: 'ROLE',
-      detail: `Tạo vai trò tùy chỉnh mới "${newRoleName.trim()}" với ${selectedPermissions.length} quyền`,
-      createdAt: 'Vừa xong',
-    }
-    onAddAuditLog(audit)
+    onCreateRole(newRoleName.trim(), selectedPermissions)
 
     setNotification(`Đã tạo vai trò tùy chỉnh "${newRoleName.trim()}" thành công!`)
     setNewRoleName('')
@@ -142,16 +101,25 @@ export function SellerStaffTab({
     }
 
     onRemoveMember(member.id)
-
-    const audit: ShopAuditItem = {
-      id: `aud-${member.id}`,
-      action: 'REMOVE_STAFF',
-      targetType: 'MEMBER',
-      detail: `Đã thu hồi quyền và xóa nhân viên ${member.email}`,
-      createdAt: 'Vừa xong',
-    }
-    onAddAuditLog(audit)
     setNotification(`Đã xóa nhân viên ${member.email} khỏi gian hàng!`)
+  }
+
+  const handleChangeRole = (member: ShopMemberItem, roleId: string) => {
+    if (member.roleName.includes('Owner')) {
+      alert('Không thể đổi vai trò của Chủ gian hàng (Shop Owner)!')
+      return
+    }
+    if (roleId === member.roleId) {
+      return
+    }
+
+    onChangeRole(member.id, roleId)
+    const matchedRole = roles.find((r) => r.id === roleId)
+    let roleTitle = 'vai trò mới'
+    if (matchedRole) {
+      roleTitle = matchedRole.name
+    }
+    setNotification(`Đã chuyển ${member.email} sang vai trò ${roleTitle}!`)
   }
 
   return (
@@ -283,10 +251,26 @@ export function SellerStaffTab({
                       </div>
                     </td>
                     <td className="p-3">
-                      <span className="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-                        <Key size={12} />
-                        {member.roleName}
-                      </span>
+                      {member.roleName.includes('Owner') && (
+                        <span className="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                          <Key size={12} />
+                          {member.roleName}
+                        </span>
+                      )}
+                      {!member.roleName.includes('Owner') && (
+                        <select
+                          aria-label={`Đổi vai trò cho ${member.email}`}
+                          value={member.roleId}
+                          onChange={(e) => handleChangeRole(member, e.target.value)}
+                          className="w-44 rounded border border-gray-300 bg-white px-2 py-1.5 text-[11px] font-medium text-gray-700 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                        >
+                          {roles.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </td>
                     <td className="p-3">
                       {member.status === 'ACTIVE' && (

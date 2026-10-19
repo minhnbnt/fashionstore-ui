@@ -7,7 +7,7 @@ export const PLACEHOLDER_IMAGE = 'https://picsum.photos/seed/net-noimage/600/750
 
 export function imageUrl(s3Key: string | null | undefined): string {
   if (s3Key === null || s3Key === undefined || s3Key === '') {
-    // TODO(mock): backend chưa có ảnh thì dùng placeholder; có ảnh đầy đủ thì bỏ nhánh này
+    // backend chưa có ảnh thì dùng placeholder; có ảnh đầy đủ thì bỏ nhánh này
     return PLACEHOLDER_IMAGE
   }
   const base = import.meta.env.VITE_ASSETS_URL as string | undefined

@@ -2,24 +2,27 @@ import { useState } from 'react'
 
 import { PaperPlaneRight, MagnifyingGlass, CheckCircle, X, Robot } from '@phosphor-icons/react'
 
-import type { ChatConversationItem } from '@/types/seller'
+import type { ChatConversationItem, ChatMessageItem } from '@/types/seller'
 
 interface Props {
   conversations: ChatConversationItem[]
+  messages: ChatMessageItem[]
+  selectedConvId: string
+  onSelectConversation: (conversationId: string) => void
   onSendMessage: (conversationId: string, content: string) => void
-  onMarkRead: (conversationId: string) => void
   autoReplyText: string
   onSaveAutoReply: (text: string) => void
 }
 
 export default function SellerChatTab({
   conversations,
+  messages,
+  selectedConvId,
+  onSelectConversation,
   onSendMessage,
-  onMarkRead,
   autoReplyText,
   onSaveAutoReply,
 }: Props) {
-  const [selectedConvId, setSelectedConvId] = useState(conversations[0]?.id || '')
   const [messageInput, setMessageInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [showAutoReplyModal, setShowAutoReplyModal] = useState(false)
@@ -44,13 +47,11 @@ export default function SellerChatTab({
     return true
   })
 
-  function handleSelectConversation(id: string) {
-    setSelectedConvId(id)
-    onMarkRead(id)
-  }
-
   function handleSend() {
     if (messageInput.trim() === '') {
+      return
+    }
+    if (selectedConvId === '') {
       return
     }
     onSendMessage(selectedConvId, messageInput)
@@ -127,7 +128,7 @@ export default function SellerChatTab({
                   key={conv.id}
                   type="button"
                   onClick={function () {
-                    handleSelectConversation(conv.id)
+                    onSelectConversation(conv.id)
                   }}
                   className={`flex w-full items-start gap-3 p-3.5 text-left transition ${
                     isCurrent
@@ -182,7 +183,7 @@ export default function SellerChatTab({
                 <button
                   type="button"
                   onClick={function () {
-                    onMarkRead(selectedConv.id)
+                    onSelectConversation(selectedConv.id)
                   }}
                   className="rounded-xl border border-zinc-200 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400"
                 >
@@ -192,7 +193,7 @@ export default function SellerChatTab({
 
               {/* Vùng tin nhắn dạng bong bóng */}
               <div className="flex-1 space-y-3 overflow-y-auto p-4">
-                {selectedConv.messages.map(function (msg) {
+                {messages.map(function (msg) {
                   const isMe = msg.senderType === 'SELLER'
                   return (
                     <div

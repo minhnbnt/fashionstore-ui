@@ -8,6 +8,7 @@ import {
   Trash,
   ArrowUp,
   ArrowDown,
+  ArrowClockwise,
   Eye,
   EyeSlash,
   CheckCircle,
@@ -23,10 +24,21 @@ import type { DecorationBlock } from '@/types/seller'
 
 interface SellerDecorationTabProps {
   blocks: DecorationBlock[]
+  hasLocalChanges: boolean
   onUpdateBlocks: (blocks: DecorationBlock[]) => void
+  onSaveDraft: () => void
+  onPublish: () => void
+  onDiscard: () => void
 }
 
-export function SellerDecorationTab({ blocks, onUpdateBlocks }: SellerDecorationTabProps) {
+export function SellerDecorationTab({
+  blocks,
+  hasLocalChanges,
+  onUpdateBlocks,
+  onSaveDraft,
+  onPublish,
+  onDiscard,
+}: SellerDecorationTabProps) {
   const [devicePreview, setDevicePreview] = useState<'MOBILE' | 'DESKTOP'>('MOBILE')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [newBlockType, setNewBlockType] = useState<DecorationBlock['type']>('BANNER')
@@ -87,11 +99,18 @@ export function SellerDecorationTab({ blocks, onUpdateBlocks }: SellerDecoration
   }
 
   const handleSaveDraft = () => {
-    setSaveSuccessMsg('Đã lưu bản nháp thiết kế gian hàng thành công!')
+    onSaveDraft()
+    setSaveSuccessMsg('Đã gửi lưu bản nháp thiết kế gian hàng!')
   }
 
   const handlePublish = () => {
-    setSaveSuccessMsg('Đã xuất bản giao diện mới lên trang gian hàng chính thức!')
+    onPublish()
+    setSaveSuccessMsg('Đã gửi xuất bản giao diện lên trang gian hàng chính thức!')
+  }
+
+  const handleDiscard = () => {
+    onDiscard()
+    setSaveSuccessMsg('Đã bỏ các thay đổi chưa lưu, quay lại bản nháp trên hệ thống.')
   }
 
   return (
@@ -112,6 +131,21 @@ export function SellerDecorationTab({ blocks, onUpdateBlocks }: SellerDecoration
         </div>
 
         <div className="flex items-center gap-2">
+          {hasLocalChanges && (
+            <span className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
+              Có thay đổi chưa lưu
+            </span>
+          )}
+          {hasLocalChanges && (
+            <button
+              type="button"
+              onClick={handleDiscard}
+              className="flex items-center gap-1.5 rounded border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              <ArrowClockwise size={16} />
+              Bỏ thay đổi
+            </button>
+          )}
           <button
             type="button"
             onClick={handleSaveDraft}
