@@ -21,9 +21,10 @@ import type { OrderResponse } from '@generated/model/orderResponse'
 
 interface Props {
   shopId: string
+  pickupAddress?: string
 }
 
-export default function SellerReturnsTab({ shopId }: Props) {
+export default function SellerReturnsTab({ shopId, pickupAddress }: Props) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<
     'ALL' | 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
@@ -33,7 +34,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
   const [resolution, setResolution] = useState('REFUND')
   const [refundAmount, setRefundAmount] = useState(378000)
   const [returnAddress, setReturnAddress] = useState(
-    'Kho hàng FashionHub, 45 Kim Mã, Ba Đình, Hà Nội',
+    pickupAddress || 'Kho trung tâm nét, 12 Nguyễn Trãi, Thanh Xuân, Hà Nội',
   )
   const [rejectNote, setRejectNote] = useState(
     'Sản phẩm đã qua sử dụng quá 30 ngày hoặc không có video bóc hàng',
@@ -194,6 +195,12 @@ export default function SellerReturnsTab({ shopId }: Props) {
             { id: 'REJECTED', label: 'Đã từ chối' },
           ].map(function (tab) {
             const isCurrent = activeTab === tab.id
+            let tabClass =
+              'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+            if (isCurrent) {
+              tabClass =
+                'rounded-2xl px-4 py-2 text-xs font-bold transition bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
+            }
             return (
               <button
                 key={tab.id}
@@ -203,11 +210,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                     tab.id as 'ALL' | 'REQUESTED' | 'APPROVED' | 'COMPLETED' | 'REJECTED',
                   )
                 }}
-                className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
-                  isCurrent
-                    ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
-                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                }`}
+                className={tabClass}
               >
                 {tab.label}
               </button>
@@ -296,7 +299,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                       onClick={function () {
                         setApproveTarget(ret)
                       }}
-                      className="rounded-xl bg-orange-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-orange-700"
+                      className="rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700"
                     >
                       Phê duyệt phương án
                     </button>
@@ -360,7 +363,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                   onChange={function (e) {
                     setResolution(e.target.value)
                   }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 >
                   <option value="REFUND">Hoàn tiền 100% khi nhận lại hàng</option>
                   <option value="EXCHANGE">Đổi sản phẩm mới cho khách</option>
@@ -382,7 +385,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                   onChange={function (e) {
                     setRefundAmount(Number(e.target.value))
                   }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs font-bold outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 />
               </div>
 
@@ -400,7 +403,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                   onChange={function (e) {
                     setReturnAddress(e.target.value)
                   }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 />
               </div>
             </div>
@@ -418,7 +421,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
               <button
                 type="button"
                 onClick={handleConfirmApprove}
-                className="rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white hover:bg-orange-700"
+                className="rounded-2xl bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700"
               >
                 Xác nhận phê duyệt
               </button>
@@ -460,7 +463,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                 onChange={function (e) {
                   setRejectNote(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               />
             </div>
 

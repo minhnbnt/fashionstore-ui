@@ -236,7 +236,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
           <button
             type="button"
             onClick={onNavigateAddProduct}
-            className="flex items-center gap-2 rounded-2xl bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-md transition hover:bg-orange-700"
+            className="flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md transition hover:bg-blue-700"
           >
             <Plus size={16} weight="bold" />
             Thêm 1 sản phẩm mới
@@ -255,6 +255,12 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
               { id: 'DELETED', label: 'Đã xóa' },
             ].map(function (tab) {
               const isCurrent = activeFilter === tab.id
+              let btnClass =
+                'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              if (isCurrent) {
+                btnClass =
+                  'rounded-2xl px-4 py-2 text-xs font-bold transition bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
+              }
               return (
                 <button
                   key={tab.id}
@@ -262,11 +268,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                   onClick={function () {
                     setActiveFilter(tab.id as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED')
                   }}
-                  className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
-                    isCurrent
-                      ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
-                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                  }`}
+                  className={btnClass}
                 >
                   {tab.label}
                 </button>
@@ -287,7 +289,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                 setSearchTerm(e.target.value)
               }}
               placeholder="Tìm theo tên sản phẩm, SKU..."
-              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
         </div>
@@ -449,7 +451,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
           <div className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileCsv size={24} weight="bold" className="text-orange-600" />
+                <FileCsv size={24} weight="bold" className="text-blue-600" />
                 <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
                   Nhập hàng loạt sản phẩm bằng file CSV
                 </h3>
@@ -465,7 +467,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
               </button>
             </div>
 
-            <div className="mt-4 rounded-2xl bg-orange-50 p-3.5 text-xs text-orange-900 dark:bg-orange-950/40 dark:text-orange-200">
+            <div className="mt-4 rounded-2xl bg-blue-50 p-3.5 text-xs text-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
               <p className="font-bold">Định dạng 8 cột bắt buộc (theo dòng):</p>
               <code className="mt-1 block font-mono text-[11px]">
                 name,slug,description,categoryId,sku,size,color,stock,price
@@ -487,7 +489,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                   setImportText(e.target.value)
                 }}
                 placeholder="Áo Polo Nam,ao-polo-nam,Mo ta,uuid-cat,POLO-01,L,Trắng,50,220000"
-                className="mt-2 w-full rounded-2xl border border-zinc-200 p-3 font-mono text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-2 w-full rounded-2xl border border-zinc-200 p-3 font-mono text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               />
             </div>
 
@@ -504,7 +506,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
               <button
                 type="button"
                 onClick={handleConfirmImport}
-                className="rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white hover:bg-orange-700"
+                className="rounded-2xl bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700"
               >
                 Bắt đầu nhập
               </button>

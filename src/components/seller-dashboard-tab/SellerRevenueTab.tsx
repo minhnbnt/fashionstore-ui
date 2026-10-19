@@ -290,7 +290,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
                   </div>
                   <div
                     style={{ height: d.height + '%' }}
-                    className="w-full max-w-[36px] rounded-t-xl bg-gradient-to-t from-orange-600 to-amber-500 transition-all duration-300 hover:brightness-110"
+                    className="w-full max-w-[36px] rounded-t-xl bg-gradient-to-t from-blue-600 to-indigo-500 transition-all duration-300 hover:brightness-110"
                   />
                   <span className="text-[10px] font-semibold text-zinc-500">{d.day}</span>
                 </div>
@@ -320,7 +320,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
                   className="rounded-2xl border border-zinc-100 p-3 dark:border-zinc-800/80"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-[10px] font-black text-orange-600 dark:bg-orange-950/40">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[10px] font-black text-blue-600 dark:bg-blue-950/40 dark:text-sky-400">
                       {idx + 1}
                     </span>
                     <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-200">
@@ -349,32 +349,38 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
       {/* Tabs Quyết toán & Rút tiền */}
       <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center gap-4 border-b border-zinc-100 pb-3 dark:border-zinc-800">
-          <button
-            type="button"
-            onClick={function () {
-              setSubTab('SETTLEMENTS')
-            }}
-            className={`text-xs font-bold transition ${
-              subTab === 'SETTLEMENTS'
-                ? 'text-orange-600 dark:text-orange-400'
-                : 'text-zinc-400 hover:text-zinc-700'
-            }`}
-          >
-            Phiên quyết toán đơn hàng ({settlements.length})
-          </button>
-          <button
-            type="button"
-            onClick={function () {
-              setSubTab('WITHDRAWALS')
-            }}
-            className={`text-xs font-bold transition ${
-              subTab === 'WITHDRAWALS'
-                ? 'text-orange-600 dark:text-orange-400'
-                : 'text-zinc-400 hover:text-zinc-700'
-            }`}
-          >
-            Lịch sử rút tiền ({withdrawals.length})
-          </button>
+          {(() => {
+            let tab1Class = 'text-xs font-bold transition text-zinc-400 hover:text-zinc-700 dark:hover:text-white'
+            if (subTab === 'SETTLEMENTS') {
+              tab1Class = 'text-xs font-bold transition text-blue-600 dark:text-sky-400'
+            }
+            let tab2Class = 'text-xs font-bold transition text-zinc-400 hover:text-zinc-700 dark:hover:text-white'
+            if (subTab === 'WITHDRAWALS') {
+              tab2Class = 'text-xs font-bold transition text-blue-600 dark:text-sky-400'
+            }
+            return (
+              <>
+                <button
+                  type="button"
+                  onClick={function () {
+                    setSubTab('SETTLEMENTS')
+                  }}
+                  className={tab1Class}
+                >
+                  Phiên quyết toán đơn hàng ({settlements.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={function () {
+                    setSubTab('WITHDRAWALS')
+                  }}
+                  className={tab2Class}
+                >
+                  Lịch sử rút tiền ({withdrawals.length})
+                </button>
+              </>
+            )
+          })()}
         </div>
 
         {subTab === 'SETTLEMENTS' && (
@@ -512,7 +518,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
                 onChange={function (e) {
                   setWithdrawAmount(Number(e.target.value))
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-sm font-black outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-sm font-black outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               />
             </div>
 

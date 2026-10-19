@@ -200,7 +200,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           <button
             type="button"
             onClick={handleSubmit}
-            className="flex items-center gap-2 rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-orange-700"
+            className="flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-blue-700"
           >
             <CheckCircle size={16} weight="bold" />
             Lưu & Đăng bán ngay
@@ -229,7 +229,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                 handleNameChange(e.target.value)
               }}
               placeholder="VD: Áo Sơ Mi Lụa Dài Tay Cao Cấp Chống Nhăn"
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
 
@@ -262,7 +262,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                 onChange={function (e) {
                   setCategory(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               >
                 {categories.length === 0 && <option value="">Đang tải danh mục…</option>}
                 {categories.map(function (c) {
@@ -291,7 +291,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                 setDescription(e.target.value)
               }}
               placeholder="Mô tả chất liệu, bảng size, hướng dẫn giặt là và bảo quản..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
         </div>
@@ -311,7 +311,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           <button
             type="button"
             onClick={handleAddVariant}
-            className="flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-600 hover:bg-orange-100 dark:border-orange-900/40 dark:bg-orange-950/40 dark:text-orange-400"
+            className="flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-100 dark:border-blue-900/40 dark:bg-blue-950/40 dark:text-sky-400"
           >
             <Plus size={14} weight="bold" />
             Thêm biến thể
@@ -354,7 +354,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         onChange={function (e) {
                           handleUpdateVariant(v.keyId, 'color', e.target.value)
                         }}
-                        className="w-24 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-24 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5">
@@ -365,7 +365,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         onChange={function (e) {
                           handleUpdateVariant(v.keyId, 'size', e.target.value)
                         }}
-                        className="w-16 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-16 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5">
@@ -376,7 +376,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         onChange={function (e) {
                           handleUpdateVariant(v.keyId, 'sku', e.target.value)
                         }}
-                        className="w-28 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-28 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5">
@@ -387,7 +387,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         onChange={function (e) {
                           handleUpdateVariant(v.keyId, 'price', Number(e.target.value))
                         }}
-                        className="w-28 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-28 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5">
@@ -398,7 +398,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         onChange={function (e) {
                           handleUpdateVariant(v.keyId, 'stockQuantity', Number(e.target.value))
                         }}
-                        className="w-20 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-20 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5 pr-2 text-right">

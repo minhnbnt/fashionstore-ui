@@ -285,7 +285,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
                 setSearchTerm(e.target.value)
               }}
               placeholder="Tìm theo SKU hoặc tên..."
-              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
         </div>
@@ -427,7 +427,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
                   onChange={function (e) {
                     setAdjustReason(e.target.value as AdjustReason)
                   }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 >
                   <option value="RESTOCK">Nhập thêm hàng vào kho (RESTOCK)</option>
                   <option value="DAMAGE">Xuất bỏ hàng lỗi / hư hỏng (DAMAGE)</option>
@@ -451,7 +451,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
                   onChange={function (e) {
                     setAdjustQty(Number(e.target.value))
                   }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs font-bold outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 />
               </div>
             </div>
@@ -469,7 +469,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
               <button
                 type="button"
                 onClick={handleConfirmAdjust}
-                className="rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white hover:bg-orange-700"
+                className="rounded-2xl bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700"
               >
                 Xác nhận lưu vào sổ kho
               </button>

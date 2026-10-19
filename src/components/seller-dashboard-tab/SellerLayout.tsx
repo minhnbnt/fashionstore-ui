@@ -66,7 +66,7 @@ export function SellerLayout({
           label: 'Quản lý đơn hàng',
           icon: ShoppingCart,
           badgeCount: pendingOrdersCount,
-          badgeColor: 'bg-[#ee4d2d]',
+          badgeColor: 'bg-blue-600',
         },
         {
           id: 'RETURNS',
@@ -122,7 +122,7 @@ export function SellerLayout({
           label: 'Tin nhắn CSKH',
           icon: ChatCircleDots,
           badgeCount: unreadChatCount,
-          badgeColor: 'bg-[#ee4d2d]',
+          badgeColor: 'bg-blue-600',
         },
       ],
     },
@@ -167,17 +167,17 @@ export function SellerLayout({
               <List size={22} />
             </button>
 
-            {/* Shopee Seller Branding */}
+            {/* Seller Branding */}
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ee4d2d] text-lg font-black text-white shadow-sm">
-                S
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-lg font-black text-white shadow-sm">
+                n
               </div>
               <div className="flex flex-col">
                 <span className="text-sm leading-tight font-bold tracking-tight text-gray-900">
                   Kênh Người Bán
                 </span>
-                <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-                  Shopee Seller Centre
+                <span className="text-[10px] font-semibold tracking-wider text-blue-600 uppercase">
+                  nét Seller Hub
                 </span>
               </div>
             </div>
@@ -189,12 +189,12 @@ export function SellerLayout({
             <button
               type="button"
               onClick={() => handleSelectTab('CHAT')}
-              className="relative rounded-lg p-2 text-gray-600 transition-colors hover:bg-orange-50 hover:text-[#ee4d2d]"
+              className="relative rounded-lg p-2 text-gray-600 transition-colors hover:bg-blue-50 hover:text-blue-600"
               title="Tin nhắn CSKH"
             >
               <ChatCircleDots size={20} />
               {unreadChatCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#ee4d2d] text-[10px] font-bold text-white">
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
                   {unreadChatCount}
                 </span>
               )}
@@ -207,13 +207,13 @@ export function SellerLayout({
               title="Thông báo"
             >
               <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#ee4d2d]" />
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-600" />
             </button>
 
             {/* Back to Marketplace Link */}
             <Link
               to="/"
-              className="hidden items-center gap-1.5 rounded border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-[#ee4d2d] hover:text-[#ee4d2d] sm:flex"
+              className="hidden items-center gap-1.5 rounded border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-blue-600 hover:text-blue-600 sm:flex"
             >
               <span>Xem trang mua sắm</span>
               <ArrowSquareOut size={14} />
@@ -225,17 +225,17 @@ export function SellerLayout({
               onClick={() => handleSelectTab('PROFILE')}
               className="group flex cursor-pointer items-center gap-2 border-l border-gray-200 pl-2 text-left"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-orange-400 to-[#ee4d2d] text-xs font-bold text-white shadow-sm">
-                FH
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-sm">
+                {shopName ? shopName.slice(0, 2).toUpperCase() : 'NS'}
               </div>
               <div className="hidden flex-col text-left md:flex">
                 <div className="flex items-center gap-1">
-                  <span className="max-w-[140px] truncate text-xs font-bold text-gray-800 transition-colors group-hover:text-[#ee4d2d]">
-                    {shopName}
+                  <span className="max-w-[140px] truncate text-xs font-bold text-gray-800 transition-colors group-hover:text-blue-600">
+                    {shopName || 'Gian Hàng nét'}
                   </span>
                   <ShieldCheck size={14} className="text-blue-500" weight="fill" />
                 </div>
-                <span className="text-[10px] text-gray-400">Shopee Mall • 4.9 ⭐</span>
+                <span className="text-[10px] text-gray-400">nét Mall • 5.0 ⭐</span>
               </div>
             </button>
           </div>
@@ -261,13 +261,13 @@ export function SellerLayout({
                       type="button"
                       onClick={() => handleSelectTab(item.id)}
                       className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                        isActive && 'bg-orange-50 font-bold text-[#ee4d2d] shadow-xs'
+                        isActive && 'bg-blue-50 font-bold text-blue-600 shadow-xs dark:bg-blue-950/40 dark:text-sky-400'
                       } ${!isActive && 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
                     >
                       <div className="flex items-center gap-2.5">
                         <Icon
                           size={16}
-                          className={`${isActive && 'text-[#ee4d2d]'} ${!isActive && 'text-gray-500'}`}
+                          className={`${isActive && 'text-blue-600 dark:text-sky-400'} ${!isActive && 'text-gray-500'}`}
                         />
                         <span>{item.label}</span>
                       </div>
@@ -323,13 +323,13 @@ export function SellerLayout({
                           type="button"
                           onClick={() => handleSelectTab(item.id)}
                           className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                            isActive && 'bg-orange-50 font-bold text-[#ee4d2d]'
+                            isActive && 'bg-blue-50 font-bold text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
                           } ${!isActive && 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
                         >
                           <div className="flex items-center gap-2.5">
                             <Icon
                               size={16}
-                              className={`${isActive && 'text-[#ee4d2d]'} ${!isActive && 'text-gray-500'}`}
+                              className={`${isActive && 'text-blue-600 dark:text-sky-400'} ${!isActive && 'text-gray-500'}`}
                             />
                             <span>{item.label}</span>
                           </div>
@@ -355,7 +355,7 @@ export function SellerLayout({
         <main className="min-w-0 flex-1 space-y-4">
           {/* Breadcrumb Bar */}
           <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-xs text-gray-500 shadow-xs">
-            <Link to="/shop" className="flex items-center gap-1 hover:text-[#ee4d2d]">
+            <Link to="/shop" className="flex items-center gap-1 hover:text-blue-600">
               <House size={14} />
               <span>Kênh Người Bán</span>
             </Link>
@@ -367,9 +367,9 @@ export function SellerLayout({
               {activeTab === 'INVENTORY' && 'Quản lý tồn kho & Biến thể'}
               {activeTab === 'ORDERS' && 'Quản lý đơn hàng'}
               {activeTab === 'RETURNS' && 'Yêu cầu trả hàng & Hoàn tiền'}
-              {activeTab === 'REVENUE' && 'Doanh thu & Ví Shopee'}
+              {activeTab === 'REVENUE' && 'Doanh thu & Ví Shop'}
               {activeTab === 'REVIEWS' && 'Đánh giá từ khách hàng'}
-              {activeTab === 'CHAT' && 'Tin nhắn khách hàng (Shopee Chat)'}
+              {activeTab === 'CHAT' && 'Tin nhắn khách hàng (nét Chat)'}
               {activeTab === 'DECORATION' && 'Trang trí gian hàng'}
               {activeTab === 'STAFF' && 'Phân quyền & Quản lý nhân viên'}
               {activeTab === 'PROFILE' && 'Hồ sơ Shop & KYC'}
