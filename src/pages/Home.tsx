@@ -2,7 +2,6 @@ import { useState } from 'react'
 
 import FlashSale from '../components/FlashSale'
 import Hero from '../components/Hero'
-import QuickServices from '../components/QuickServices'
 import {
   CategoryBento,
   DealMarquee,
@@ -20,7 +19,6 @@ export default function Home() {
   return (
     <main>
       <Hero />
-      <QuickServices />
       <FlashSale />
       <LogoStrip />
       <CategoryBento

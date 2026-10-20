@@ -137,7 +137,7 @@ export default function ResetPassword() {
 
   if (status === 'checking') {
     return (
-      <main className="mx-auto flex max-w-[1400px] flex-col items-center justify-center px-4 pt-32 md:pt-36 pb-12">
+      <main className="mx-auto flex max-w-[1400px] flex-col items-center justify-center px-4 pt-32 pb-12 md:pt-36">
         <div className="glass mx-auto w-full max-w-md rounded-3xl p-8 text-center">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
           <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">
@@ -150,7 +150,7 @@ export default function ResetPassword() {
 
   if (status === 'invalid') {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-12 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-12 text-center md:pt-36">
         <div className="glass mx-auto w-full max-w-md rounded-3xl p-8">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400">
             <WarningCircle size={28} weight="bold" />
@@ -175,7 +175,7 @@ export default function ResetPassword() {
 
   if (status === 'success') {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-12 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-12 text-center md:pt-36">
         <div className="glass mx-auto w-full max-w-md rounded-3xl p-8">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
             <CheckCircle size={28} weight="bold" />
@@ -199,7 +199,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-12">
+    <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-12 md:pt-36">
       <div className="glass mx-auto w-full max-w-md rounded-3xl p-6 md:p-8">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">

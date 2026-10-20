@@ -4,14 +4,9 @@ import { Link, useNavigate } from 'react-router'
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import {
   Bell,
-  CaretDown,
-  FacebookLogo,
-  Globe,
   Heart,
-  InstagramLogo,
   MagnifyingGlass,
   Moon,
-  Phone,
   Question,
   ShieldCheck,
   ShoppingBag,
@@ -163,52 +158,7 @@ export default function Header() {
     <header className="fixed inset-x-0 top-0 z-50 shadow-xs">
       {/* 1. Shopee Topbar - Xanh Navy & Blue sang trọng đồng bộ */}
       <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-700 text-white shadow-xs">
-        <div className="mx-auto flex h-8 max-w-[1400px] items-center justify-between px-4 text-xs font-semibold">
-          {/* Left Topbar Links */}
-          <div className="flex items-center gap-3">
-            <Link
-              to={sellerChannelPath}
-              className="flex items-center gap-1.5 text-white/90 transition hover:text-white"
-            >
-              <Storefront size={14} weight="fill" />
-              <span>Kênh Người Bán</span>
-            </Link>
-
-            <span className="hidden text-white/30 sm:inline">|</span>
-
-            <a
-              href="tel:19006868"
-              className="hidden items-center gap-1.5 text-white/90 transition hover:text-white sm:flex"
-            >
-              <Phone size={13} weight="fill" />
-              <span>Hotline: 1900 6868</span>
-            </a>
-
-            <span className="hidden text-white/30 md:inline">|</span>
-
-            <div className="hidden items-center gap-2 text-white/90 md:flex">
-              <span className="text-[11px] font-medium text-white/80">Kết nối:</span>
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noreferrer"
-                title="Facebook"
-                className="transition hover:text-white hover:scale-110"
-              >
-                <FacebookLogo size={14} weight="fill" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noreferrer"
-                title="Instagram"
-                className="transition hover:text-white hover:scale-110"
-              >
-                <InstagramLogo size={14} weight="fill" />
-              </a>
-            </div>
-          </div>
-
+        <div className="mx-auto flex h-8 max-w-[1400px] items-center justify-end px-4 text-xs font-semibold">
           {/* Right Topbar Links */}
           <div className="flex items-center gap-3.5">
             <Link
@@ -217,7 +167,7 @@ export default function Header() {
             >
               <div className="relative">
                 <Bell size={14} weight="fill" />
-                <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-sky-300 animate-pulse" />
+                <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 animate-pulse rounded-full bg-sky-300" />
               </div>
               <span>Thông báo</span>
             </Link>
@@ -230,12 +180,6 @@ export default function Header() {
               <span>Hỗ trợ</span>
             </Link>
 
-            <div className="hidden items-center gap-1 text-white/90 md:flex cursor-pointer hover:text-white">
-              <Globe size={14} />
-              <span>Tiếng Việt</span>
-              <CaretDown size={11} weight="bold" />
-            </div>
-
             <button
               type="button"
               onClick={toggle}
@@ -244,7 +188,7 @@ export default function Header() {
             >
               {theme === 'dark' && <Sun size={13} weight="fill" />}
               {theme !== 'dark' && <Moon size={13} weight="fill" />}
-              <span className="hidden md:inline text-[11px]">
+              <span className="hidden text-[11px] md:inline">
                 {theme === 'dark' && 'Sáng'}
                 {theme !== 'dark' && 'Tối'}
               </span>
@@ -260,10 +204,7 @@ export default function Header() {
                   Đăng nhập
                 </Link>
                 <span className="text-white/40">/</span>
-                <Link
-                  to="/login"
-                  className="font-bold text-white hover:underline"
-                >
+                <Link to="/login" className="font-bold text-white hover:underline">
                   Đăng ký
                 </Link>
               </div>
@@ -288,9 +229,9 @@ export default function Header() {
       <div className="border-b border-zinc-200/80 bg-white/95 backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95">
         <div className="mx-auto flex h-[68px] max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
           {/* Logo Brand nét */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex shrink-0 items-center gap-2.5">
             <Link to="/" className="flex items-center gap-1.5 tracking-tighter">
-              <span className="text-2xl font-black text-zinc-900 dark:text-white md:text-3xl">
+              <span className="text-2xl font-black text-zinc-900 md:text-3xl dark:text-white">
                 nét
               </span>
               <span className="h-2.5 w-2.5 rounded-full bg-blue-600 shadow-sm" />
@@ -407,7 +348,7 @@ export default function Header() {
 
               {/* Shopee Mini Cart Preview Dropdown */}
               {cartPreviewOpen && (
-                <div className="absolute right-0 top-full pt-2 z-50 w-80">
+                <div className="absolute top-full right-0 z-50 w-80 pt-2">
                   <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
                     <div className="border-b border-zinc-100 pb-2 text-xs font-bold text-zinc-400 uppercase dark:border-zinc-800">
                       Sản phẩm mới thêm ({cart.totalCount})
@@ -484,7 +425,7 @@ export default function Header() {
               </button>
 
               {dropdownOpen && isLoggedIn && (
-                <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-zinc-200 bg-white p-2 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+                <div className="absolute top-full right-0 mt-2 w-56 rounded-2xl border border-zinc-200 bg-white p-2 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
                   <div className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-800">
                     <p className="truncate text-xs font-extrabold text-zinc-900 dark:text-white">
                       {userEmail}

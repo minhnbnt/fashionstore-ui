@@ -1,3 +1,4 @@
+import { useSummary } from '@generated/endpoints/seller-revenue-finance/seller-revenue-finance'
 import {
   Package,
   Receipt,
@@ -13,8 +14,8 @@ import {
   Users,
 } from '@phosphor-icons/react'
 
-import { useSummary } from '@generated/endpoints/seller-revenue-finance/seller-revenue-finance'
 import { takeData } from '@/lib/apiAdapters'
+
 import { formatVnd } from '../../lib/format'
 
 import type { RevenueSummaryResponse } from '@generated/model/revenueSummaryResponse'
@@ -39,10 +40,7 @@ export default function SellerOverviewTab({
   lowStockCount,
 }: Props) {
   const safeShopId = shopId ?? ''
-  const summaryQuery = useSummary(
-    { shopId: safeShopId },
-    { query: { enabled: safeShopId !== '' } },
-  )
+  const summaryQuery = useSummary({ shopId: safeShopId }, { query: { enabled: safeShopId !== '' } })
 
   let summary: RevenueSummaryResponse | undefined = undefined
   if (summaryQuery.data !== undefined) {
@@ -53,7 +51,7 @@ export default function SellerOverviewTab({
   const totalRev = summary?.totalRevenue ?? 0
   const walletBal = summary?.walletBalance ?? 0
   const avgOrder = summary?.avgOrderValue ?? 0
-  const totalOrders = summary?.totalOrders ?? (pendingOrdersCount + confirmedOrdersCount)
+  const totalOrders = summary?.totalOrders ?? pendingOrdersCount + confirmedOrdersCount
 
   const todoItems = [
     {
@@ -125,9 +123,7 @@ export default function SellerOverviewTab({
               </span>
               <span className="text-xs text-white/80">Điểm vận hành: 5.0/5.0</span>
             </div>
-            <h2 className="mt-2 text-2xl font-black tracking-tight">
-              Xin chào, {greetingName}!
-            </h2>
+            <h2 className="mt-2 text-2xl font-black tracking-tight">Xin chào, {greetingName}!</h2>
             <p className="mt-1 text-sm text-white/90">
               Hôm nay bạn có {pendingOrdersCount} đơn hàng mới cần xác nhận và {pendingReturnsCount}{' '}
               yêu cầu đổi trả cần xử lý.

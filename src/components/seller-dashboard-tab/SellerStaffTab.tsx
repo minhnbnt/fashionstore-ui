@@ -308,7 +308,9 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                           {member.email.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-800 dark:text-zinc-200">{member.email}</div>
+                          <div className="font-semibold text-gray-800 dark:text-zinc-200">
+                            {member.email}
+                          </div>
                           <span className="font-mono text-[10px] text-gray-400">
                             ID: {member.id}
                           </span>
@@ -576,7 +578,9 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                         className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
                       />
                       <div>
-                        <span className="font-semibold text-gray-800 dark:text-zinc-200">{perm.label}</span>
+                        <span className="font-semibold text-gray-800 dark:text-zinc-200">
+                          {perm.label}
+                        </span>
                         <span className="block font-mono text-[10px] text-gray-400">
                           [{perm.key}] • Nhóm: {perm.group}
                         </span>

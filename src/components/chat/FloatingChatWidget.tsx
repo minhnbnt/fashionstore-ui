@@ -202,7 +202,11 @@ export default function FloatingChatWidget() {
   const activeChatConv = conversations.find(function (c) {
     return c.id === selectedConversationId
   })
-  if (activeChatConv !== undefined && activeChatConv.shopName !== undefined && activeChatConv.shopName !== '') {
+  if (
+    activeChatConv !== undefined &&
+    activeChatConv.shopName !== undefined &&
+    activeChatConv.shopName !== ''
+  ) {
     headerShopName = activeChatConv.shopName
   }
 
@@ -230,7 +234,7 @@ export default function FloatingChatWidget() {
 
       {/* 2. Expanded Chat Window */}
       {isOpen && (
-        <div className="flex h-[480px] w-[350px] flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 sm:w-[580px]">
+        <div className="flex h-[480px] w-[350px] flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl sm:w-[580px] dark:border-zinc-800 dark:bg-zinc-900">
           {/* Header Bar */}
           <div className="flex items-center justify-between border-b border-zinc-100 bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white dark:border-zinc-800">
             <div className="flex items-center gap-2">
@@ -290,11 +294,11 @@ export default function FloatingChatWidget() {
           {isLoggedIn && (
             <div className="flex flex-1 overflow-hidden">
               {/* Left Column: Conversations List */}
-              <div className="hidden w-44 flex-col border-r border-zinc-100 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-800/30 sm:flex">
+              <div className="hidden w-44 flex-col border-r border-zinc-100 bg-zinc-50/60 sm:flex dark:border-zinc-800 dark:bg-zinc-800/30">
                 <div className="border-b border-zinc-100 px-3 py-2 text-[10px] font-bold text-zinc-400 uppercase dark:border-zinc-800">
                   Hội thoại ({conversations.length})
                 </div>
-                <div className="flex-1 overflow-y-auto no-scrollbar">
+                <div className="no-scrollbar flex-1 overflow-y-auto">
                   {conversations.length === 0 && (
                     <div className="p-4 text-center text-[11px] text-zinc-400">
                       Chưa có hội thoại
@@ -305,7 +309,8 @@ export default function FloatingChatWidget() {
                     let itemClass =
                       'w-full text-left p-3 border-b border-zinc-100/60 dark:border-zinc-800/40 transition flex flex-col gap-1'
                     if (isSelected) {
-                      itemClass += ' bg-blue-50/80 text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
+                      itemClass +=
+                        ' bg-blue-50/80 text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
                     }
                     if (isSelected === false) {
                       itemClass += ' hover:bg-zinc-100/80 dark:hover:bg-zinc-800/60'
@@ -319,7 +324,11 @@ export default function FloatingChatWidget() {
                     }
 
                     let lastMsg = 'Bắt đầu cuộc trò chuyện'
-                    if (c.lastMessageText !== undefined && c.lastMessageText !== null && c.lastMessageText !== '') {
+                    if (
+                      c.lastMessageText !== undefined &&
+                      c.lastMessageText !== null &&
+                      c.lastMessageText !== ''
+                    ) {
                       lastMsg = c.lastMessageText
                     }
 
@@ -359,7 +368,7 @@ export default function FloatingChatWidget() {
               {/* Right Column: Active Conversation Messages & Input */}
               <div className="flex flex-1 flex-col overflow-hidden bg-white dark:bg-zinc-900">
                 {/* Messages Feed */}
-                <div className="flex-1 space-y-3 overflow-y-auto p-4 no-scrollbar">
+                <div className="no-scrollbar flex-1 space-y-3 overflow-y-auto p-4">
                   {messagesQuery.isLoading && (
                     <div className="py-8 text-center text-xs text-zinc-400">Đang tải tin nhắn…</div>
                   )}
@@ -377,8 +386,7 @@ export default function FloatingChatWidget() {
                     let alignClass = 'flex flex-col'
 
                     if (isBuyer) {
-                      bubbleClass +=
-                        ' bg-blue-600 text-white rounded-br-xs self-end font-medium'
+                      bubbleClass += ' bg-blue-600 text-white rounded-br-xs self-end font-medium'
                       alignClass += ' items-end'
                     }
                     if (isBuyer === false) {

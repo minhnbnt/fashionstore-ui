@@ -201,9 +201,11 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
           <div className="flex-1 divide-y divide-zinc-50 overflow-y-auto dark:divide-zinc-800/40">
             {filteredConversations.map(function (conv) {
               const isCurrent = conv.id === activeConvId
-              let itemClass = 'flex w-full items-start gap-3 p-3.5 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
+              let itemClass =
+                'flex w-full items-start gap-3 p-3.5 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
               if (isCurrent) {
-                itemClass = 'flex w-full items-start gap-3 p-3.5 text-left transition bg-blue-50/80 dark:bg-blue-950/40'
+                itemClass =
+                  'flex w-full items-start gap-3 p-3.5 text-left transition bg-blue-50/80 dark:bg-blue-950/40'
               }
               return (
                 <button
@@ -274,19 +276,16 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                 {messages.map(function (msg) {
                   const isMe = msg.senderType === 'SELLER'
                   let alignClass = 'flex flex-col items-start'
-                  let bubbleClass = 'max-w-[70%] rounded-2xl p-3 text-xs leading-relaxed rounded-tl-xs bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
+                  let bubbleClass =
+                    'max-w-[70%] rounded-2xl p-3 text-xs leading-relaxed rounded-tl-xs bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
                   if (isMe) {
                     alignClass = 'flex flex-col items-end'
-                    bubbleClass = 'max-w-[70%] rounded-2xl p-3 text-xs leading-relaxed rounded-tr-xs bg-blue-600 text-white'
+                    bubbleClass =
+                      'max-w-[70%] rounded-2xl p-3 text-xs leading-relaxed rounded-tr-xs bg-blue-600 text-white'
                   }
                   return (
-                    <div
-                      key={msg.id}
-                      className={alignClass}
-                    >
-                      <div className={bubbleClass}>
-                        {msg.content}
-                      </div>
+                    <div key={msg.id} className={alignClass}>
+                      <div className={bubbleClass}>{msg.content}</div>
                       <span className="mt-1 text-[9px] text-zinc-400">{msg.sentAt}</span>
                     </div>
                   )

@@ -134,7 +134,10 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
           </div>
 
           <div>
-            <label htmlFor="slugField" className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300">
+            <label
+              htmlFor="slugField"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300"
+            >
               Đường dẫn Shop URL (Slug) *
             </label>
             <div className="flex items-center overflow-hidden rounded-xl border border-gray-300 dark:border-zinc-700">
@@ -156,7 +159,10 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
           </div>
 
           <div className="md:col-span-2">
-            <label htmlFor="bioField" className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300">
+            <label
+              htmlFor="bioField"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300"
+            >
               Mô tả Shop & Giới thiệu
             </label>
             <textarea
@@ -210,7 +216,8 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
             2. Địa chỉ lấy hàng & Thời gian chuẩn bị hàng (Warehouse & DTS)
           </h3>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
-            Đơn vị vận chuyển đối tác (nét Express, SPX Express, ViettelPost) sẽ đến địa chỉ này để lấy kiện hàng.
+            Đơn vị vận chuyển đối tác (nét Express, SPX Express, ViettelPost) sẽ đến địa chỉ này để
+            lấy kiện hàng.
           </p>
         </div>
 
@@ -232,7 +239,10 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
           </div>
 
           <div>
-            <label htmlFor="phoneField" className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300">
+            <label
+              htmlFor="phoneField"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300"
+            >
               Số điện thoại liên hệ nhận hàng *
             </label>
             <input
@@ -263,7 +273,10 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
           </div>
 
           <div>
-            <label htmlFor="cityField" className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300">
+            <label
+              htmlFor="cityField"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300"
+            >
               Tỉnh / Thành phố
             </label>
             <input
@@ -425,7 +438,9 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
       <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center gap-2 border-b border-gray-100 pb-2 dark:border-zinc-800">
           <Clock size={18} className="text-blue-600" />
-          <h3 className="text-sm font-bold text-gray-800 dark:text-white">5. Khung giờ làm việc & CSKH</h3>
+          <h3 className="text-sm font-bold text-gray-800 dark:text-white">
+            5. Khung giờ làm việc & CSKH
+          </h3>
         </div>
         <div>
           <label

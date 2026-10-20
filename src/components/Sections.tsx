@@ -543,7 +543,9 @@ export function Testimonials() {
                       if (isFilled) {
                         return <Star key={starNum} size={14} weight="fill" />
                       }
-                      return <Star key={starNum} size={14} weight="regular" className="text-zinc-300" />
+                      return (
+                        <Star key={starNum} size={14} weight="regular" className="text-zinc-300" />
+                      )
                     })}
                   </div>
                   <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
@@ -559,7 +561,9 @@ export function Testimonials() {
                 <div className="flex items-center gap-2.5">
                   <UserAvatar name={buyerName} size={32} />
                   <div>
-                    <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">{buyerName}</p>
+                    <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
+                      {buyerName}
+                    </p>
                     <p className="text-[11px] text-zinc-400">{targetProductName}</p>
                   </div>
                 </div>

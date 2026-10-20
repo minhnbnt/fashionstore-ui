@@ -59,8 +59,7 @@ function ScrollToHash() {
 
 function App() {
   const location = useLocation()
-  const isSellerDashboard =
-    location.pathname === '/shop' || location.pathname.startsWith('/shop/')
+  const isSellerDashboard = location.pathname === '/shop' || location.pathname.startsWith('/shop/')
 
   return (
     <div className="grain min-h-[100dvh]">
@@ -95,10 +94,7 @@ function App() {
             path="/seller-channel"
             element={<Navigate to="/account#seller-channel" replace />}
           />
-          <Route
-            path="/seller"
-            element={<Navigate to="/account#seller-channel" replace />}
-          />
+          <Route path="/seller" element={<Navigate to="/account#seller-channel" replace />} />
           <Route
             path="/admin"
             element={

@@ -110,7 +110,7 @@ function ActiveChips(props: {
             onClick={function () {
               props.onChange(chip.patch)
             }}
-            className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800 transition hover:bg-blue-100 hover:border-blue-300 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-sky-300 dark:hover:bg-blue-500/20"
+            className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-800 transition hover:border-blue-300 hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-sky-300 dark:hover:bg-blue-500/20"
           >
             <span>{chip.label}</span>
             <X size={12} weight="bold" />
@@ -210,7 +210,7 @@ export default function Search() {
   const filterCount = activeFilterCount(filters)
 
   return (
-    <main className="mx-auto max-w-[1440px] px-4 pt-28 md:pt-32 pb-20">
+    <main className="mx-auto max-w-[1440px] px-4 pt-28 pb-20 md:pt-32">
       {/* 1. Breadcrumb navigation */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-zinc-500">
         <Link
@@ -243,7 +243,7 @@ export default function Search() {
         {filters.q && (
           <>
             <CaretRight size={12} weight="bold" className="text-zinc-400" />
-            <span className="font-bold text-blue-700 dark:text-sky-300 truncate max-w-xs">
+            <span className="max-w-xs truncate font-bold text-blue-700 dark:text-sky-300">
               “{filters.q}”
             </span>
           </>
@@ -266,7 +266,7 @@ export default function Search() {
 
       {/* Hot Search Pills Bar - Cố định ở dòng riêng, không bao giờ bị nhảy dòng */}
       <div className="mt-3.5 flex flex-wrap items-center gap-2 border-b border-zinc-100 pb-3.5 dark:border-white/10">
-        <span className="flex items-center gap-1 text-[11px] font-extrabold text-blue-600 uppercase tracking-wider shrink-0 dark:text-sky-400">
+        <span className="flex shrink-0 items-center gap-1 text-[11px] font-extrabold tracking-wider text-blue-600 uppercase dark:text-sky-400">
           <TrendUp size={13} weight="bold" />
           <span>Xu hướng:</span>
         </span>
@@ -353,7 +353,7 @@ export default function Search() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               {/* Sort Tabs Shopee Style */}
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="mr-1 text-xs font-extrabold text-zinc-500 uppercase tracking-wider dark:text-zinc-400">
+                <span className="mr-1 text-xs font-extrabold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                   Sắp xếp theo:
                 </span>
 
@@ -412,7 +412,7 @@ export default function Search() {
                 </p>
 
                 {/* Grid Density Switcher (4 cols vs 3 cols) */}
-                <div className="hidden sm:flex items-center rounded-xl border border-zinc-200 bg-white p-0.5 dark:border-white/10 dark:bg-zinc-900">
+                <div className="hidden items-center rounded-xl border border-zinc-200 bg-white p-0.5 sm:flex dark:border-white/10 dark:bg-zinc-900">
                   <button
                     type="button"
                     title="Chế độ 4 cột (mặc định)"
@@ -486,16 +486,16 @@ export default function Search() {
                   <h2 className="mt-4 text-xl font-black text-zinc-900 dark:text-white">
                     Rất tiếc, nét không tìm thấy sản phẩm phù hợp
                   </h2>
-                  <p className="mt-2 max-w-md mx-auto text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="mx-auto mt-2 max-w-md text-xs text-zinc-500 dark:text-zinc-400">
                     Không có sản phẩm nào khớp với từ khóa hoặc tổ hợp bộ lọc bạn đã chọn.
                   </p>
 
                   {/* Search Advice / Tips */}
-                  <div className="mt-6 inline-flex flex-col items-start gap-1.5 rounded-2xl bg-white p-4 text-left text-xs text-zinc-600 shadow-xs border border-zinc-100 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300">
+                  <div className="mt-6 inline-flex flex-col items-start gap-1.5 rounded-2xl border border-zinc-100 bg-white p-4 text-left text-xs text-zinc-600 shadow-xs dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300">
                     <p className="font-bold text-zinc-800 dark:text-zinc-100">
                       💡 Mẹo tìm kiếm hiệu quả:
                     </p>
-                    <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                    <ul className="list-disc space-y-0.5 pl-4 text-[11px] text-zinc-500 dark:text-zinc-400">
                       <li>Kiểm tra lại chính tả của từ khóa đã nhập</li>
                       <li>Sử dụng các từ khóa ngắn gọn, chung hơn (ví dụ: "áo", "váy", "quần")</li>
                       <li>Nới lỏng khoảng giá hoặc bỏ bớt các bộ lọc màu sắc, kích cỡ</li>
@@ -530,7 +530,7 @@ export default function Search() {
                 {/* RECOMMENDED PRODUCTS SECTION WHEN EMPTY: KEEP CUSTOMER SHOPPING */}
                 {recommendedItems.length > 0 && (
                   <div className="border-t border-zinc-100 pt-8 dark:border-white/10">
-                    <div className="flex items-center gap-2 mb-5">
+                    <div className="mb-5 flex items-center gap-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
                         <Sparkle size={18} weight="fill" />
                       </div>
@@ -558,7 +558,7 @@ export default function Search() {
             {items.length > 0 && (
               <div
                 className={
-                  'grid gap-4 xl:gap-5 transition-opacity ' +
+                  'grid gap-4 transition-opacity xl:gap-5 ' +
                   (viewMode === 'grid4'
                     ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4'
                     : 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3') +

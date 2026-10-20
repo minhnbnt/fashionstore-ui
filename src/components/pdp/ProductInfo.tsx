@@ -6,7 +6,6 @@ import {
   Heart,
   Minus,
   Plus,
-  ShieldCheck,
   ShoppingBag,
   Star,
   Truck,
@@ -213,7 +212,7 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         <div className="flex items-center gap-1 text-amber-500">
           <Star size={16} weight="fill" />
           <span className="font-extrabold text-zinc-900 dark:text-white">
-            {p.averageRating !== null && p.averageRating !== undefined ? p.averageRating : '4.9'}
+            {p.averageRating ?? '4.9'}
           </span>
         </div>
         <span className="text-zinc-300 dark:text-zinc-600">|</span>
@@ -226,7 +225,8 @@ export default function ProductInfo(props: { product: ProductResponse }) {
       <div className="mt-4 rounded-3xl border border-sky-100 bg-sky-50/50 p-5 dark:border-white/10 dark:bg-white/5">
         <div className="flex flex-wrap items-baseline gap-3">
           <span className="text-3xl font-extrabold text-blue-700 dark:text-sky-300">
-            {price !== null && price !== undefined ? formatVnd(price) : 'Liên hệ'}
+            {price !== null && price !== undefined && formatVnd(price)}
+            {(price === null || price === undefined) && 'Liên hệ'}
           </span>
           {compareAt !== null && compareAt !== undefined && compareAt > (price ?? 0) && (
             <span className="text-base text-zinc-400 line-through dark:text-zinc-500">
@@ -238,10 +238,6 @@ export default function ProductInfo(props: { product: ProductResponse }) {
               -{discount}% GIẢM
             </span>
           )}
-        </div>
-        <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-blue-700 dark:text-sky-300">
-          <ShieldCheck size={16} weight="bold" />
-          <span>Cam kết giá tốt nhất thị trường cùng chính sách bảo vệ người mua</span>
         </div>
       </div>
 
@@ -370,11 +366,8 @@ export default function ProductInfo(props: { product: ProductResponse }) {
           aria-label="Yêu thích"
           className="glass flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition hover:scale-105"
         >
-          <Heart
-            size={20}
-            weight={isFav ? 'fill' : 'bold'}
-            className={isFav ? 'text-rose-500' : 'text-zinc-700 dark:text-zinc-200'}
-          />
+          {isFav && <Heart size={20} weight="fill" className="text-rose-500" />}
+          {!isFav && <Heart size={20} weight="bold" className="text-zinc-700 dark:text-zinc-200" />}
         </button>
       </div>
 

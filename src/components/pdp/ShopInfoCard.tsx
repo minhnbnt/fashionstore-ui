@@ -1,7 +1,15 @@
 import { Link } from 'react-router'
 
 import { useBySlug } from '@generated/endpoints/shops/shops'
-import { ChatDots, CheckCircle, Clock, MapPin, ShieldCheck, Star, Storefront } from '@phosphor-icons/react'
+import {
+  ChatDots,
+  CheckCircle,
+  Clock,
+  MapPin,
+  ShieldCheck,
+  Star,
+  Storefront,
+} from '@phosphor-icons/react'
 
 import { takeData } from '@/lib/apiAdapters'
 

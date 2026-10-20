@@ -350,11 +350,13 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
       <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center gap-4 border-b border-zinc-100 pb-3 dark:border-zinc-800">
           {(() => {
-            let tab1Class = 'text-xs font-bold transition text-zinc-400 hover:text-zinc-700 dark:hover:text-white'
+            let tab1Class =
+              'text-xs font-bold transition text-zinc-400 hover:text-zinc-700 dark:hover:text-white'
             if (subTab === 'SETTLEMENTS') {
               tab1Class = 'text-xs font-bold transition text-blue-600 dark:text-sky-400'
             }
-            let tab2Class = 'text-xs font-bold transition text-zinc-400 hover:text-zinc-700 dark:hover:text-white'
+            let tab2Class =
+              'text-xs font-bold transition text-zinc-400 hover:text-zinc-700 dark:hover:text-white'
             if (subTab === 'WITHDRAWALS') {
               tab2Class = 'text-xs font-bold transition text-blue-600 dark:text-sky-400'
             }

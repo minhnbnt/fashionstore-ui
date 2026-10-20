@@ -110,9 +110,11 @@ export default function Account() {
   }, [location.hash, searchParams])
 
   function handleTabClick(tab: AccountTab) {
-    setActiveTab(tab)
-    const hash = tab === 'seller' ? '#seller-channel' : `#${tab}`
-    navigate(hash, { replace: true, preventScrollReset: true })
+    let hash = `#${tab}`
+    if (tab === 'seller') {
+      hash = '#seller-channel'
+    }
+    void navigate(hash, { replace: true, preventScrollReset: true })
   }
 
   const profileQuery = useMe()
@@ -243,7 +245,7 @@ export default function Account() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-16">
+    <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-16 md:pt-36">
       {profile?.status === 'LOCKED' && (
         <section className="mb-6 rounded-3xl border border-red-200 bg-red-50 p-5 dark:border-red-400/20 dark:bg-red-500/10">
           <div className="flex items-start gap-3">
@@ -439,7 +441,9 @@ export default function Account() {
                   </div>
                   <div className="flex items-center justify-between border-b border-zinc-100 py-2 dark:border-zinc-800">
                     <span className="font-medium text-zinc-500">Tổng đơn hàng đã mua:</span>
-                    <span className="font-bold text-blue-600 dark:text-sky-400">{realOrdersCount} đơn</span>
+                    <span className="font-bold text-blue-600 dark:text-sky-400">
+                      {realOrdersCount} đơn
+                    </span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="font-medium text-zinc-500">Địa chỉ giao hàng đã lưu:</span>
@@ -737,9 +741,9 @@ export default function Account() {
                     </div>
 
                     <p className="mt-4 text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                      Chúc mừng! Gian hàng của bạn đã chính thức hoạt động và đạt chứng chỉ định danh
-                      an toàn trên sàn nét. Hãy truy cập ngay Kênh Người Bán để đăng tải sản phẩm,
-                      quản lý kho và xử lý các đơn hàng đầu tiên.
+                      Chúc mừng! Gian hàng của bạn đã chính thức hoạt động và đạt chứng chỉ định
+                      danh an toàn trên sàn nét. Hãy truy cập ngay Kênh Người Bán để đăng tải sản
+                      phẩm, quản lý kho và xử lý các đơn hàng đầu tiên.
                     </p>
 
                     <div className="mt-6">

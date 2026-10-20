@@ -1,11 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
-import {
-  getList1QueryKey,
-  useAdd,
-  useList1,
-} from '@generated/endpoints/addresses/addresses'
+import { getList1QueryKey, useAdd, useList1 } from '@generated/endpoints/addresses/addresses'
 import {
   ArrowLeft,
   ArrowRight,
@@ -160,7 +156,7 @@ export default function Checkout() {
 
   if (!cart.isLoggedIn) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-24 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-24 text-center md:pt-36">
         <div className="mx-auto max-w-md rounded-3xl border border-sky-100 bg-white/80 p-8 shadow-sm dark:border-white/10 dark:bg-white/5">
           <ShoppingBag size={48} className="mx-auto text-blue-600 dark:text-sky-300" />
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight">Thanh Toán Đơn Hàng</h1>
@@ -179,9 +175,11 @@ export default function Checkout() {
 
   if (cart.items.length === 0) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-24 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-24 text-center md:pt-36">
         <div className="mx-auto max-w-md rounded-3xl border border-sky-100 bg-white/80 p-8 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <h1 className="text-2xl font-extrabold tracking-tight">Không có sản phẩm để thanh toán</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight">
+            Không có sản phẩm để thanh toán
+          </h1>
           <p className="mt-2 text-sm text-zinc-500">Giỏ hàng của bạn đang trống.</p>
           <Link
             to="/cart"
@@ -196,7 +194,7 @@ export default function Checkout() {
   }
 
   return (
-    <main className="mx-auto max-w-[1200px] px-4 pt-32 md:pt-36 pb-24">
+    <main className="mx-auto max-w-[1200px] px-4 pt-32 pb-24 md:pt-36">
       {toast !== null && (
         <div className="glass fixed bottom-12 left-1/2 z-50 -translate-x-1/2 rounded-full px-5 py-2.5 text-sm font-bold shadow-2xl">
           {toast}
@@ -261,7 +259,9 @@ export default function Checkout() {
 
             {currentAddress === null && (
               <div className="mt-4 rounded-2xl bg-sky-50/50 p-4 text-center dark:bg-white/5">
-                <p className="text-xs text-zinc-500">Bạn chưa có địa chỉ nhận hàng nào trong sổ địa chỉ.</p>
+                <p className="text-xs text-zinc-500">
+                  Bạn chưa có địa chỉ nhận hàng nào trong sổ địa chỉ.
+                </p>
                 <button
                   type="button"
                   onClick={function () {
@@ -334,7 +334,9 @@ export default function Checkout() {
                     <p className="font-extrabold text-emerald-900 dark:text-emerald-200">
                       Vận chuyển Tiêu chuẩn (Toàn quốc)
                     </p>
-                    <p className="text-zinc-500 dark:text-zinc-400">Dự kiến nhận hàng trong 2-3 ngày</p>
+                    <p className="text-zinc-500 dark:text-zinc-400">
+                      Dự kiến nhận hàng trong 2-3 ngày
+                    </p>
                   </div>
                 </div>
                 <span className="font-extrabold text-emerald-700 dark:text-emerald-300">
@@ -427,9 +429,11 @@ export default function Checkout() {
             <div className="mt-4 max-h-72 space-y-3 overflow-y-auto">
               {addresses.map(function (a) {
                 const isSelected = (selectedAddressId ?? currentAddress?.id) === a.id
-                let itemClass = 'flex w-full cursor-pointer items-start gap-3 rounded-2xl border p-4 text-left text-xs transition border-zinc-200 hover:border-zinc-400 dark:border-white/10'
+                let itemClass =
+                  'flex w-full cursor-pointer items-start gap-3 rounded-2xl border p-4 text-left text-xs transition border-zinc-200 hover:border-zinc-400 dark:border-white/10'
                 if (isSelected) {
-                  itemClass = 'flex w-full cursor-pointer items-start gap-3 rounded-2xl border p-4 text-left text-xs transition border-blue-600 bg-blue-50/50 dark:border-sky-400 dark:bg-sky-500/10'
+                  itemClass =
+                    'flex w-full cursor-pointer items-start gap-3 rounded-2xl border p-4 text-left text-xs transition border-blue-600 bg-blue-50/50 dark:border-sky-400 dark:bg-sky-500/10'
                 }
                 return (
                   <button
@@ -447,7 +451,7 @@ export default function Checkout() {
                       type="radio"
                       checked={isSelected}
                       readOnly
-                      className="mt-0.5 accent-blue-600 cursor-pointer"
+                      className="mt-0.5 cursor-pointer accent-blue-600"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-zinc-900 dark:text-white">
@@ -500,7 +504,10 @@ export default function Checkout() {
 
             <form onSubmit={handleCreateAddress} className="mt-4 space-y-3 text-xs">
               <div>
-                <label htmlFor="address-house-number" className="font-bold text-zinc-500 dark:text-zinc-400">
+                <label
+                  htmlFor="address-house-number"
+                  className="font-bold text-zinc-500 dark:text-zinc-400"
+                >
                   Số nhà
                 </label>
                 <input
@@ -515,7 +522,10 @@ export default function Checkout() {
               </div>
 
               <div>
-                <label htmlFor="address-street" className="font-bold text-zinc-500 dark:text-zinc-400">
+                <label
+                  htmlFor="address-street"
+                  className="font-bold text-zinc-500 dark:text-zinc-400"
+                >
                   Tên đường *
                 </label>
                 <input
@@ -532,7 +542,10 @@ export default function Checkout() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="address-ward" className="font-bold text-zinc-500 dark:text-zinc-400">
+                  <label
+                    htmlFor="address-ward"
+                    className="font-bold text-zinc-500 dark:text-zinc-400"
+                  >
                     Phường / Xã
                   </label>
                   <input
@@ -546,7 +559,10 @@ export default function Checkout() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="address-district" className="font-bold text-zinc-500 dark:text-zinc-400">
+                  <label
+                    htmlFor="address-district"
+                    className="font-bold text-zinc-500 dark:text-zinc-400"
+                  >
                     Quận / Huyện
                   </label>
                   <input
@@ -562,7 +578,10 @@ export default function Checkout() {
               </div>
 
               <div>
-                <label htmlFor="address-city" className="font-bold text-zinc-500 dark:text-zinc-400">
+                <label
+                  htmlFor="address-city"
+                  className="font-bold text-zinc-500 dark:text-zinc-400"
+                >
                   Tỉnh / Thành phố *
                 </label>
                 <input

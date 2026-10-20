@@ -152,14 +152,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
             starWeight = 'fill'
             starClass = 'text-amber-400'
           }
-          return (
-            <Star
-              key={star}
-              size={14}
-              weight={starWeight}
-              className={starClass}
-            />
-          )
+          return <Star key={star} size={14} weight={starWeight} className={starClass} />
         })}
       </div>
     )

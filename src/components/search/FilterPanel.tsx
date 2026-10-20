@@ -24,19 +24,19 @@ import type { SearchFacetsResponse } from '@generated/model/searchFacetsResponse
 
 // Color map for realistic visual swatches
 const COLOR_SWATCH_MAP: Record<string, string> = {
-  'đen': '#18181b',
-  'trắng': '#ffffff',
-  'be': '#e4d5b7',
-  'hồng': '#f472b6',
+  đen: '#18181b',
+  trắng: '#ffffff',
+  be: '#e4d5b7',
+  hồng: '#f472b6',
   'hoa vàng': '#fbbf24',
   'hoa xanh': '#38bdf8',
-  'kem': '#fef3c7',
-  'rêu': '#4d7c0f',
-  'xám': '#9ca3af',
+  kem: '#fef3c7',
+  rêu: '#4d7c0f',
+  xám: '#9ca3af',
   'xanh đậm': '#1e3a8a',
   'xanh nhạt': '#7dd3fc',
-  'đỏ': '#dc2626',
-  'nâu': '#78350f',
+  đỏ: '#dc2626',
+  nâu: '#78350f',
 }
 
 const COMMON_SIZES = ['S', 'M', 'L', 'XL', 'Freesize']
@@ -59,7 +59,7 @@ function AccordionGroup(props: {
         onClick={function () {
           setOpen(!open)
         }}
-        className="flex w-full items-center justify-between text-left group"
+        className="group flex w-full items-center justify-between text-left"
       >
         <div className="flex items-center gap-2">
           {props.icon && <span className="text-blue-600 dark:text-sky-400">{props.icon}</span>}
@@ -210,7 +210,7 @@ export default function FilterPanel(props: {
         icon={<Tag size={15} weight="bold" />}
         badge={props.categories.length > 0 ? props.categories.length : undefined}
       >
-        <ul className="space-y-1 max-h-56 overflow-y-auto pr-1">
+        <ul className="max-h-56 space-y-1 overflow-y-auto pr-1">
           <li>
             <button
               type="button"
@@ -247,7 +247,7 @@ export default function FilterPanel(props: {
       {/* 2. Dịch vụ & Ưu đãi Shopee Style */}
       <AccordionGroup title="Dịch vụ & Khuyến mãi" icon={<Sparkle size={15} weight="bold" />}>
         <div className="space-y-2 text-xs">
-          <label className="flex items-center gap-2.5 cursor-pointer rounded-xl p-1.5 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-xl p-1.5 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
             <input
               type="checkbox"
               className="h-4 w-4 rounded-md border-zinc-300 text-blue-600 focus:ring-blue-500"
@@ -257,7 +257,7 @@ export default function FilterPanel(props: {
               <span>Freeship Xtra</span>
             </span>
           </label>
-          <label className="flex items-center gap-2.5 cursor-pointer rounded-xl p-1.5 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-xl p-1.5 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
             <input
               type="checkbox"
               className="h-4 w-4 rounded-md border-zinc-300 text-blue-600 focus:ring-blue-500"
@@ -267,7 +267,7 @@ export default function FilterPanel(props: {
               <span>Chính hãng Nét Mall</span>
             </span>
           </label>
-          <label className="flex items-center gap-2.5 cursor-pointer rounded-xl p-1.5 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-xl p-1.5 transition hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
             <input
               type="checkbox"
               className="h-4 w-4 rounded-md border-zinc-300 text-blue-600 focus:ring-blue-500"
@@ -385,7 +385,7 @@ export default function FilterPanel(props: {
       {/* 6. Màu sắc với Color Swatches */}
       {allColors.length > 0 && (
         <AccordionGroup title="Màu sắc">
-          <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
+          <div className="flex max-h-48 flex-wrap gap-1.5 overflow-y-auto pr-1">
             {allColors.map(function (c) {
               const selected = f.color === c
               const hex = COLOR_SWATCH_MAP[c.toLowerCase()] ?? '#cbd5e1'
@@ -404,7 +404,7 @@ export default function FilterPanel(props: {
                   className={colorPillClass(selected)}
                 >
                   <span
-                    className="h-3 w-3 rounded-full border border-black/10 shrink-0 shadow-xs"
+                    className="h-3 w-3 shrink-0 rounded-full border border-black/10 shadow-xs"
                     style={{ backgroundColor: hex }}
                   />
                   <span className="truncate">{c}</span>
@@ -426,7 +426,7 @@ export default function FilterPanel(props: {
             return (
               <label
                 key={loc}
-                className="flex items-center gap-2 cursor-pointer rounded-xl px-2 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-800/60"
+                className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-800/60"
               >
                 <input
                   type="checkbox"

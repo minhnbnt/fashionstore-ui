@@ -231,7 +231,9 @@ export function SellerDecorationTab({ shopId }: SellerDecorationTabProps) {
         <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-5 dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-zinc-800">
             <div>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-white">Bố cục các module trang chủ</h3>
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-white">
+                Bố cục các module trang chủ
+              </h3>
               <span className="text-xs text-gray-500 dark:text-zinc-400">
                 {blocks.length} khối nội dung đang cấu hình
               </span>
@@ -323,9 +325,9 @@ export function SellerDecorationTab({ shopId }: SellerDecorationTabProps) {
           </div>
 
           <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3.5 text-[11px] leading-relaxed text-blue-900 dark:border-blue-800 dark:bg-blue-950/40 dark:text-sky-300">
-            💡 <strong>Mẹo gian hàng chuẩn nét Official:</strong> Đặt <em>Banner Khuyến Mãi</em> ở vị trí
-            đầu tiên, tiếp theo là <em>Flash Sale Giờ Vàng</em> để tối ưu tỷ lệ chuyển đổi đơn hàng
-            lên tới +35%.
+            💡 <strong>Mẹo gian hàng chuẩn nét Official:</strong> Đặt <em>Banner Khuyến Mãi</em> ở
+            vị trí đầu tiên, tiếp theo là <em>Flash Sale Giờ Vàng</em> để tối ưu tỷ lệ chuyển đổi
+            đơn hàng lên tới +35%.
           </div>
         </div>
 
@@ -436,20 +438,29 @@ export function SellerDecorationTab({ shopId }: SellerDecorationTabProps) {
 
                   if (b.type === 'COLLECTION') {
                     return (
-                      <div key={b.id} className="rounded-xl bg-white p-2.5 shadow-sm dark:bg-zinc-900">
+                      <div
+                        key={b.id}
+                        className="rounded-xl bg-white p-2.5 shadow-sm dark:bg-zinc-900"
+                      >
                         <div className="mb-2 flex items-center justify-between">
-                          <span className="text-xs font-bold text-gray-800 dark:text-white">{b.title}</span>
+                          <span className="text-xs font-bold text-gray-800 dark:text-white">
+                            {b.title}
+                          </span>
                           <span className="text-[10px] text-blue-600">Xem tất cả &gt;</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="rounded-lg border border-gray-100 p-1.5 dark:border-zinc-800">
                             <div className="mb-1 h-16 rounded bg-gray-200 dark:bg-zinc-700" />
-                            <p className="truncate text-[10px] font-medium dark:text-zinc-200">Áo thun Oversize</p>
+                            <p className="truncate text-[10px] font-medium dark:text-zinc-200">
+                              Áo thun Oversize
+                            </p>
                             <span className="text-[10px] font-bold text-blue-600">189.000đ</span>
                           </div>
                           <div className="rounded-lg border border-gray-100 p-1.5 dark:border-zinc-800">
                             <div className="mb-1 h-16 rounded bg-gray-200 dark:bg-zinc-700" />
-                            <p className="truncate text-[10px] font-medium dark:text-zinc-200">Quần Jeans Baggy</p>
+                            <p className="truncate text-[10px] font-medium dark:text-zinc-200">
+                              Quần Jeans Baggy
+                            </p>
                             <span className="text-[10px] font-bold text-blue-600">349.000đ</span>
                           </div>
                         </div>
@@ -517,7 +528,9 @@ export function SellerDecorationTab({ shopId }: SellerDecorationTabProps) {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
-            <h3 className="text-base font-bold text-gray-800 dark:text-white">Thêm module trang trí mới</h3>
+            <h3 className="text-base font-bold text-gray-800 dark:text-white">
+              Thêm module trang trí mới
+            </h3>
 
             <div className="space-y-3">
               <div>

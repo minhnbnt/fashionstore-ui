@@ -173,7 +173,7 @@ export default function OrderHistoryTab() {
       )}
 
       {/* Shopee-style Status Filter Tabs */}
-      <div className="flex overflow-x-auto border-b border-zinc-200 bg-white no-scrollbar dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="no-scrollbar flex overflow-x-auto border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         {TABS.map(function (tab) {
           const isActive = activeTab === tab.key
           let count = 0
@@ -260,8 +260,8 @@ export default function OrderHistoryTab() {
             Chưa có đơn hàng nào
           </h3>
           <p className="mt-1 max-w-sm text-xs text-zinc-500 dark:text-zinc-400">
-            Bạn chưa có đơn hàng nào trong mục này. Hãy dạo quanh nét để khám phá những sản phẩm thời
-            trang hot nhất!
+            Bạn chưa có đơn hàng nào trong mục này. Hãy dạo quanh nét để khám phá những sản phẩm
+            thời trang hot nhất!
           </p>
           <Link
             to="/search"
@@ -332,10 +332,7 @@ export default function OrderHistoryTab() {
                 <div className="divide-y divide-zinc-100 px-5 dark:divide-zinc-800">
                   {(order.items ?? []).map(function (item) {
                     return (
-                      <div
-                        key={item.id ?? item.productId}
-                        className="flex items-center gap-4 py-4"
-                      >
+                      <div key={item.id ?? item.productId} className="flex items-center gap-4 py-4">
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
                           <ShoppingBag size={24} weight="duotone" />
                         </div>

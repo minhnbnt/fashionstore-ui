@@ -857,7 +857,9 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                   </div>
                   <div>
                     <span className="text-zinc-400">Đường dẫn:</span>{' '}
-                    <span className="font-mono text-blue-600 dark:text-sky-400">net.vn/shop/{slug}</span>
+                    <span className="font-mono text-blue-600 dark:text-sky-400">
+                      net.vn/shop/{slug}
+                    </span>
                   </div>
                   <div>
                     <span className="text-zinc-400">Chủ shop:</span>{' '}

@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { useSearch } from '@generated/endpoints/search/search'
+import { useGetPublishedLayout } from '@generated/endpoints/shops-decoration/shops-decoration'
 import {
   getBySlugQueryKey,
   useBySlug,
   useFollow,
   useUnfollow,
 } from '@generated/endpoints/shops/shops'
-import { useGetPublishedLayout } from '@generated/endpoints/shops-decoration/shops-decoration'
 import {
   ArrowClockwise,
   ArrowRight,
@@ -35,9 +35,9 @@ import { imageUrl, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import { decorationBlocks } from '@/lib/sellerAdapters'
 
+import type { DecorationBlock } from '@/types/seller'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 import type { ShopResponse } from '@generated/model/shopResponse'
-import type { DecorationBlock } from '@/types/seller'
 
 type SortOption = 'POPULAR' | 'NEWEST' | 'PRICE_ASC' | 'PRICE_DESC'
 
@@ -190,7 +190,7 @@ export default function ShopView() {
   // Loading State
   if (shopQuery.isLoading) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-24 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-24 text-center md:pt-36">
         <div className="flex flex-col items-center justify-center py-20">
           <ArrowClockwise size={36} className="animate-spin text-blue-600" />
           <p className="mt-4 text-sm font-semibold text-zinc-500">
@@ -204,7 +204,7 @@ export default function ShopView() {
   // 404 Not Found State
   if (shop === null) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-32 md:pt-36 pb-24 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-24 text-center md:pt-36">
         <div className="mx-auto max-w-md rounded-3xl border border-dashed border-zinc-300 bg-white p-10 dark:border-zinc-700 dark:bg-zinc-900">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-500/10">
             <Storefront size={32} weight="duotone" />
@@ -272,15 +272,13 @@ export default function ShopView() {
   let popularBtnClass =
     'rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-200'
   if (sortOption === 'POPULAR') {
-    popularBtnClass =
-      'rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs'
+    popularBtnClass = 'rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs'
   }
 
   let newestBtnClass =
     'rounded-xl bg-white px-4 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-200'
   if (sortOption === 'NEWEST') {
-    newestBtnClass =
-      'rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs'
+    newestBtnClass = 'rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-xs'
   }
 
   let priceBtnClass =
@@ -316,7 +314,7 @@ export default function ShopView() {
 
         {/* Shop Profile Floating Card */}
         <div className="mx-auto max-w-[1400px] px-4">
-          <div className="-mt-32 relative z-10 rounded-3xl border border-white/20 bg-white/95 p-6 shadow-2xl backdrop-blur-md dark:border-zinc-700/60 dark:bg-zinc-900/95 md:p-8">
+          <div className="relative z-10 -mt-32 rounded-3xl border border-white/20 bg-white/95 p-6 shadow-2xl backdrop-blur-md md:p-8 dark:border-zinc-700/60 dark:bg-zinc-900/95">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-center">
               {/* Left Column: Avatar & Basic Info */}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center lg:col-span-5">
@@ -337,7 +335,7 @@ export default function ShopView() {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="truncate text-xl font-black text-zinc-900 dark:text-white md:text-2xl">
+                    <h1 className="truncate text-xl font-black text-zinc-900 md:text-2xl dark:text-white">
                       {shop.name}
                     </h1>
                     {shop.status === 'APPROVED' && (
@@ -627,11 +625,7 @@ export default function ShopView() {
                           }}
                           className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-zinc-400 shadow-md backdrop-blur-xs transition hover:text-rose-500 dark:bg-zinc-800/90"
                         >
-                          <Heart
-                            size={14}
-                            weight={favWeight}
-                            className={favClass}
-                          />
+                          <Heart size={14} weight={favWeight} className={favClass} />
                         </button>
                       </Link>
 
@@ -654,7 +648,7 @@ export default function ShopView() {
 
                         {/* Sold & Rating footer */}
                         <div className="mt-2.5 flex items-center justify-between border-t border-zinc-100 pt-2 text-[11px] text-zinc-400 dark:border-zinc-800">
-                          <div className="flex items-center gap-0.5 text-amber-500 font-bold">
+                          <div className="flex items-center gap-0.5 font-bold text-amber-500">
                             <Star size={12} weight="fill" />
                             <span>5.0</span>
                           </div>

@@ -261,7 +261,8 @@ export function SellerLayout({
                       type="button"
                       onClick={() => handleSelectTab(item.id)}
                       className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                        isActive && 'bg-blue-50 font-bold text-blue-600 shadow-xs dark:bg-blue-950/40 dark:text-sky-400'
+                        isActive &&
+                        'bg-blue-50 font-bold text-blue-600 shadow-xs dark:bg-blue-950/40 dark:text-sky-400'
                       } ${!isActive && 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
                     >
                       <div className="flex items-center gap-2.5">
@@ -323,7 +324,8 @@ export function SellerLayout({
                           type="button"
                           onClick={() => handleSelectTab(item.id)}
                           className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                            isActive && 'bg-blue-50 font-bold text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
+                            isActive &&
+                            'bg-blue-50 font-bold text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
                           } ${!isActive && 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
                         >
                           <div className="flex items-center gap-2.5">

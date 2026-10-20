@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 import { useList } from '@generated/endpoints/reviews/reviews'
 import { Package, Ruler, Star } from '@phosphor-icons/react'
 
@@ -10,9 +8,22 @@ import { ratingSummary } from '@/lib/ratingSummary'
 
 import UserAvatar from '../UserAvatar'
 
-import type { Tab } from '@/types/product'
 import type { ProductResponse } from '@generated/model/productResponse'
 import type { ReviewResponse } from '@generated/model/reviewResponse'
+
+function starWeight(index: number, val: number): 'fill' | 'regular' {
+  if (index <= Math.round(val)) {
+    return 'fill'
+  }
+  return 'regular'
+}
+
+function starClass(index: number, val: number): string {
+  if (index <= Math.round(val)) {
+    return ''
+  }
+  return 'opacity-40'
+}
 
 function Stars(props: { value: number; size?: number }) {
   const s = props.size || 14
@@ -23,8 +34,8 @@ function Stars(props: { value: number; size?: number }) {
           <Star
             key={i}
             size={s}
-            weight={i <= Math.round(props.value) ? 'fill' : 'regular'}
-            className={i <= Math.round(props.value) ? '' : 'opacity-40'}
+            weight={starWeight(i, props.value)}
+            className={starClass(i, props.value)}
           />
         )
       })}
@@ -40,7 +51,6 @@ function reviewsErrorStatus(error: unknown): number {
 }
 
 export default function ProductTabs(props: { product: ProductResponse }) {
-  const [tab, setTab] = useState<Tab>('mo-ta')
   const p = props.product
   const info = priceInfo(p)
 
@@ -54,45 +64,23 @@ export default function ProductTabs(props: { product: ProductResponse }) {
   const summary = ratingSummary(reviews)
 
   return (
-    <section className="mt-10 rounded-3xl border border-sky-100 bg-white/80 p-6 dark:border-white/10 dark:bg-white/5">
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={function () {
-            setTab('mo-ta')
-          }}
-          className="rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10"
-        >
-          Mô tả
-        </button>
-        <button
-          type="button"
-          onClick={function () {
-            setTab('thong-so')
-          }}
-          className="rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10"
-        >
-          Thông số
-        </button>
-        <button
-          type="button"
-          onClick={function () {
-            setTab('danh-gia')
-          }}
-          className="rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10"
-        >
-          Đánh giá ({summary.count})
-        </button>
-      </div>
-      {tab === 'mo-ta' && (
-        <div className="mt-5">
-          <p className="max-w-[65ch] text-lg leading-relaxed font-semibold tracking-tight">
+    <section className="mt-10 space-y-8 rounded-3xl border border-sky-100 bg-white/80 p-6 sm:p-8 dark:border-white/10 dark:bg-white/5">
+      {/* 1. Mô tả sản phẩm */}
+      <div>
+        <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Mô tả sản phẩm</h3>
+        <div className="mt-4 rounded-2xl bg-sky-50/50 p-5 dark:bg-white/5">
+          <p className="max-w-[75ch] text-base leading-relaxed font-medium text-zinc-700 dark:text-zinc-300">
             “{p.description ?? p.name}”
           </p>
         </div>
-      )}
-      {tab === 'thong-so' && (
-        <div className="mt-5 overflow-hidden rounded-3xl border border-sky-100 dark:border-white/10">
+      </div>
+
+      <div className="border-t border-sky-100 dark:border-white/10" />
+
+      {/* 2. Thông số chi tiết */}
+      <div>
+        <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Thông số chi tiết</h3>
+        <div className="mt-4 overflow-hidden rounded-2xl border border-sky-100 dark:border-white/10">
           <div className="flex items-center gap-3 bg-sky-50/70 px-5 py-3 text-sm font-bold dark:bg-white/5">
             <Ruler size={16} className="text-sky-500" />
             Kích cỡ có sẵn
@@ -124,9 +112,16 @@ export default function ProductTabs(props: { product: ProductResponse }) {
             </div>
           </dl>
         </div>
-      )}
-      {tab === 'danh-gia' && (
-        <div className="mt-5">
+      </div>
+
+      <div className="border-t border-sky-100 dark:border-white/10" />
+
+      {/* 3. Đánh giá sản phẩm */}
+      <div>
+        <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
+          Đánh giá sản phẩm ({summary.count})
+        </h3>
+        <div className="mt-4">
           {reviewsQuery.isPending && (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">Đang tải đánh giá…</p>
           )}
@@ -200,7 +195,7 @@ export default function ProductTabs(props: { product: ProductResponse }) {
             </>
           )}
         </div>
-      )}
+      </div>
     </section>
   )
 }
