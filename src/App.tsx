@@ -73,89 +73,89 @@ function App() {
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/search" element={<Search />} />
             <Route path="/cart" element={<Cart />} />
-          <Route
-            path="/checkout"
-            element={
-              <RequireAuth>
-                <Checkout />
-              </RequireAuth>
-            }
-          />
-          <Route path="/login" element={<Login />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route
-            path="/account"
-            element={
-              <RequireAuth>
-                <Account />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/seller-channel"
-            element={<Navigate to="/account#seller-channel" replace />}
-          />
-          <Route path="/seller" element={<Navigate to="/account#seller-channel" replace />} />
-          <Route
-            path="/admin"
-            element={
-              <RequireRole requiredRole="admin">
-                <AdminDashboard />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/shops"
-            element={
-              <RequireRole requiredRole="admin">
-                <AdminShops />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/shops/:id"
-            element={
-              <RequireRole requiredRole="admin">
-                <AdminShopDetail />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/users"
-            element={
-              <RequireRole requiredRole="admin">
-                <AdminUsers />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/users/:id"
-            element={
-              <RequireRole requiredRole="admin">
-                <AdminUserDetail />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/products"
-            element={
-              <RequireRole requiredRole="admin">
-                <AdminProducts />
-              </RequireRole>
-            }
-          />
-          <Route path="/shops/:slug" element={<ShopView />} />
-          <Route
-            path="/shop"
-            element={
-              <RequireRole requiredRole="shop">
-                <ShopDashboard />
-              </RequireRole>
-            }
-          />
-        </Routes>
-      </Suspense>
+            <Route
+              path="/checkout"
+              element={
+                <RequireAuth>
+                  <Checkout />
+                </RequireAuth>
+              }
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route
+              path="/account"
+              element={
+                <RequireAuth>
+                  <Account />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/seller-channel"
+              element={<Navigate to="/account#seller-channel" replace />}
+            />
+            <Route path="/seller" element={<Navigate to="/account#seller-channel" replace />} />
+            <Route
+              path="/admin"
+              element={
+                <RequireRole requiredRole="admin">
+                  <AdminDashboard />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/shops"
+              element={
+                <RequireRole requiredRole="admin">
+                  <AdminShops />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/shops/:id"
+              element={
+                <RequireRole requiredRole="admin">
+                  <AdminShopDetail />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RequireRole requiredRole="admin">
+                  <AdminUsers />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/users/:id"
+              element={
+                <RequireRole requiredRole="admin">
+                  <AdminUserDetail />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/products"
+              element={
+                <RequireRole requiredRole="admin">
+                  <AdminProducts />
+                </RequireRole>
+              }
+            />
+            <Route path="/shops/:slug" element={<ShopView />} />
+            <Route
+              path="/shop"
+              element={
+                <RequireRole requiredRole="shop">
+                  <ShopDashboard />
+                </RequireRole>
+              }
+            />
+          </Routes>
+        </Suspense>
       </div>
       {!isSellerDashboard && <Footer />}
       {!isSellerDashboard && (

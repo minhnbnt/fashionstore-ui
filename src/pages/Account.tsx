@@ -245,7 +245,7 @@ export default function Account() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-16 md:pt-36">
+    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-16">
       {profile?.status === 'LOCKED' && (
         <section className="mb-6 rounded-3xl border border-red-200 bg-red-50 p-5 dark:border-red-400/20 dark:bg-red-500/10">
           <div className="flex items-start gap-3">

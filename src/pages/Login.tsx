@@ -176,7 +176,7 @@ export default function Login() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-16 md:pt-36">
+    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
       <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
         <aside className="relative hidden overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-blue-700 to-sky-400 p-8 text-white lg:flex lg:flex-col">
           <div className="hero-blob top-[-80px] right-[-80px] h-64 w-64 bg-white/20" />

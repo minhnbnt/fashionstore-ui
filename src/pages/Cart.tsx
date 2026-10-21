@@ -124,7 +124,7 @@ export default function Cart() {
 
   if (!cart.isLoggedIn) {
     return (
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pt-32 pb-24 text-center md:pt-36 min-h-[calc(100vh-100px)]">
+      <main className="mx-auto flex min-h-[calc(100vh-76px)] w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pt-[100px] pb-24 text-center">
         <div className="mx-auto max-w-md rounded-3xl border border-sky-100 bg-white/80 p-8 shadow-sm dark:border-white/10 dark:bg-white/5">
           <ShoppingBag size={48} className="mx-auto text-blue-600 dark:text-sky-300" />
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight">Giỏ Hàng Của Bạn</h1>
@@ -145,7 +145,7 @@ export default function Cart() {
 
   if (cart.items.length === 0) {
     return (
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pt-32 pb-24 text-center md:pt-36 min-h-[calc(100vh-100px)]">
+      <main className="mx-auto flex min-h-[calc(100vh-76px)] w-full max-w-[1400px] flex-1 flex-col justify-center px-4 pt-[100px] pb-24 text-center">
         <div className="mx-auto max-w-md rounded-3xl border border-sky-100 bg-white/80 p-10 shadow-sm dark:border-white/10 dark:bg-white/5">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-sky-50 text-blue-600 dark:bg-white/10 dark:text-sky-300">
             <ShoppingBag size={38} weight="fill" />
@@ -170,7 +170,7 @@ export default function Cart() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col px-4 pt-32 pb-44 md:pt-36 min-h-[calc(100vh-100px)]">
+    <main className="mx-auto flex min-h-[calc(100vh-76px)] w-full max-w-[1400px] flex-1 flex-col px-4 pt-[100px] pb-44">
       {toast !== null && (
         <div className="glass fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full px-5 py-2.5 text-sm font-bold shadow-2xl">
           {toast}

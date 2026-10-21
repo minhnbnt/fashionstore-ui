@@ -220,7 +220,7 @@ export default function OrderHistoryTab() {
       </div>
 
       {/* Search Order Bar */}
-      <div className="relative pt-1 pb-1">
+      <div className="relative">
         <label htmlFor="searchOrderInput" className="sr-only">
           Tìm kiếm đơn hàng
         </label>

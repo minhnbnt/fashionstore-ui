@@ -75,8 +75,8 @@ export default function ProductDetail() {
   })
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-16 md:pt-36">
-      <nav aria-label="Breadcrumb" className="flex flex-wrap gap-2 py-4 text-sm text-zinc-500">
+    <main className="mx-auto max-w-[1400px] px-4 pt-[76px] pb-12">
+      <nav aria-label="Breadcrumb" className="flex flex-wrap gap-2 py-6 text-sm text-zinc-500">
         <Link to="/" className="hover:text-zinc-900 dark:hover:text-white">
           Trang chủ
         </Link>

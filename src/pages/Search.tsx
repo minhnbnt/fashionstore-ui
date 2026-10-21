@@ -210,7 +210,7 @@ export default function Search() {
   const filterCount = activeFilterCount(filters)
 
   return (
-    <main className="mx-auto max-w-[1440px] px-4 pt-28 pb-20 md:pt-32">
+    <main className="mx-auto max-w-[1440px] px-4 pt-[100px] pb-20">
       {/* 1. Breadcrumb navigation */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-zinc-500">
         <Link

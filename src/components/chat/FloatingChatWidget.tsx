@@ -213,7 +213,9 @@ export default function FloatingChatWidget() {
   }
 
   return (
-    <div className={`fixed right-5 z-50 transition-all duration-300 ${isCartPage ? 'bottom-24 sm:bottom-28' : 'bottom-5'}`}>
+    <div
+      className={`fixed right-5 z-50 transition-all duration-300 ${isCartPage ? 'bottom-24 sm:bottom-28' : 'bottom-5'}`}
+    >
       {/* 1. Floating Pill Button (When closed) */}
       {isOpen === false && (
         <button

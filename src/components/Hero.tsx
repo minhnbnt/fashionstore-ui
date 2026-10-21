@@ -31,7 +31,7 @@ export default function Hero() {
   const subProduct = featuredProducts[1] ?? null
 
   return (
-    <section id="top" className="relative scroll-mt-24 overflow-hidden pt-32 lg:pt-36">
+    <section id="top" className="relative scroll-mt-24 overflow-hidden pt-[76px]">
       <div
         className="pointer-events-none absolute top-24 -left-28 -z-10 h-96 w-96 rounded-full bg-indigo-900/40"
         style={{ filter: 'blur(90px)', borderRadius: '9999px' }}
