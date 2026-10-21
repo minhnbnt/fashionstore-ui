@@ -1,16 +1,29 @@
-import { useState } from 'react'
-
+import { useList } from '@generated/endpoints/reviews/reviews'
 import { Package, Ruler, Star } from '@phosphor-icons/react'
 
-// TODO(mock): đánh giá là demo, thay bằng API reviews khi backend có endpoint
-import { DEMO_RATING, DEMO_REVIEWS } from '@/data/demoReviews'
-import { priceInfo } from '@/lib/apiAdapters'
+import { apiErrorMessage, priceInfo, takeData } from '@/lib/apiAdapters'
+import { ApiError } from '@/lib/apiFetch'
+import { formatDateTime } from '@/lib/format'
+import { ratingSummary } from '@/lib/ratingSummary'
 
 import UserAvatar from '../UserAvatar'
 
 import type { ProductResponse } from '@generated/model/productResponse'
+import type { ReviewResponse } from '@generated/model/reviewResponse'
 
-type Tab = 'mo-ta' | 'thong-so' | 'danh-gia'
+function starWeight(index: number, val: number): 'fill' | 'regular' {
+  if (index <= Math.round(val)) {
+    return 'fill'
+  }
+  return 'regular'
+}
+
+function starClass(index: number, val: number): string {
+  if (index <= Math.round(val)) {
+    return ''
+  }
+  return 'opacity-40'
+}
 
 function Stars(props: { value: number; size?: number }) {
   const s = props.size || 14
@@ -21,8 +34,8 @@ function Stars(props: { value: number; size?: number }) {
           <Star
             key={i}
             size={s}
-            weight={i <= Math.round(props.value) ? 'fill' : 'regular'}
-            className={i <= Math.round(props.value) ? '' : 'opacity-40'}
+            weight={starWeight(i, props.value)}
+            className={starClass(i, props.value)}
           />
         )
       })}
@@ -30,50 +43,44 @@ function Stars(props: { value: number; size?: number }) {
   )
 }
 
+function reviewsErrorStatus(error: unknown): number {
+  if (error instanceof ApiError) {
+    return error.status
+  }
+  return 0
+}
+
 export default function ProductTabs(props: { product: ProductResponse }) {
-  const [tab, setTab] = useState<Tab>('mo-ta')
   const p = props.product
   const info = priceInfo(p)
+
+  const reviewsQuery = useList(p.id ?? '', {
+    query: { enabled: p.id !== undefined },
+  })
+  let reviews: ReviewResponse[] = []
+  if (reviewsQuery.data !== undefined) {
+    reviews = takeData(reviewsQuery.data)
+  }
+  const summary = ratingSummary(reviews)
+
   return (
-    <section className="mt-10 rounded-3xl border border-sky-100 bg-white/80 p-6 dark:border-white/10 dark:bg-white/5">
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={function () {
-            setTab('mo-ta')
-          }}
-          className="rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10"
-        >
-          Mô tả
-        </button>
-        <button
-          type="button"
-          onClick={function () {
-            setTab('thong-so')
-          }}
-          className="rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10"
-        >
-          Thông số
-        </button>
-        <button
-          type="button"
-          onClick={function () {
-            setTab('danh-gia')
-          }}
-          className="rounded-full border border-sky-100 px-4 py-2 text-sm font-bold dark:border-white/10"
-        >
-          Đánh giá ({DEMO_RATING.count})
-        </button>
-      </div>
-      {tab === 'mo-ta' && (
-        <div className="mt-5">
-          <p className="max-w-[65ch] text-lg leading-relaxed font-semibold tracking-tight">
+    <section className="mt-10 space-y-8 rounded-3xl border border-sky-100 bg-white/80 p-6 sm:p-8 dark:border-white/10 dark:bg-white/5">
+      {/* 1. Mô tả sản phẩm */}
+      <div>
+        <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Mô tả sản phẩm</h3>
+        <div className="mt-4 rounded-2xl bg-sky-50/50 p-5 dark:bg-white/5">
+          <p className="max-w-[75ch] text-base leading-relaxed font-medium text-zinc-700 dark:text-zinc-300">
             “{p.description ?? p.name}”
           </p>
         </div>
-      )}
-      {tab === 'thong-so' && (
-        <div className="mt-5 overflow-hidden rounded-3xl border border-sky-100 dark:border-white/10">
+      </div>
+
+      <div className="border-t border-sky-100 dark:border-white/10" />
+
+      {/* 2. Thông số chi tiết */}
+      <div>
+        <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Thông số chi tiết</h3>
+        <div className="mt-4 overflow-hidden rounded-2xl border border-sky-100 dark:border-white/10">
           <div className="flex items-center gap-3 bg-sky-50/70 px-5 py-3 text-sm font-bold dark:bg-white/5">
             <Ruler size={16} className="text-sky-500" />
             Kích cỡ có sẵn
@@ -105,62 +112,90 @@ export default function ProductTabs(props: { product: ProductResponse }) {
             </div>
           </dl>
         </div>
-      )}
-      {tab === 'danh-gia' && (
-        <div className="mt-5">
-          <div className="grid grid-cols-1 gap-5 rounded-3xl bg-sky-50/70 p-5 md:grid-cols-[auto_1fr] dark:bg-white/5">
-            <div className="text-center md:min-w-36">
-              <p className="text-5xl font-extrabold tracking-tight">{DEMO_RATING.value}</p>
-              <div className="mt-2 flex justify-center">
-                <Stars value={DEMO_RATING.value} size={16} />
-              </div>
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                {DEMO_RATING.count} đánh giá
+      </div>
+
+      <div className="border-t border-sky-100 dark:border-white/10" />
+
+      {/* 3. Đánh giá sản phẩm */}
+      <div>
+        <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
+          Đánh giá sản phẩm ({summary.count})
+        </h3>
+        <div className="mt-4">
+          {reviewsQuery.isPending && (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">Đang tải đánh giá…</p>
+          )}
+          {reviewsQuery.isPending === false && reviewsQuery.isError && (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {apiErrorMessage('productDetail', reviewsErrorStatus(reviewsQuery.error))}
+            </p>
+          )}
+          {reviewsQuery.isPending === false &&
+            reviewsQuery.isError === false &&
+            reviews.length === 0 && (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Chưa có đánh giá nào cho sản phẩm này.
               </p>
-            </div>
-            <div className="space-y-1.5">
-              {DEMO_RATING.breakdown.map(function (pct, i) {
-                return (
-                  <div key={i} className="flex items-center gap-2 text-xs font-bold">
-                    <span className="w-6 text-zinc-500">{5 - i}★</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-sky-100 dark:bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-indigo-900 to-sky-400"
-                        style={{ width: pct + '%' }}
-                      />
-                    </div>
-                    <span className="w-9 text-right text-zinc-500">{pct}%</span>
+            )}
+          {reviews.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 gap-5 rounded-3xl bg-sky-50/70 p-5 md:grid-cols-[auto_1fr] dark:bg-white/5">
+                <div className="text-center md:min-w-36">
+                  <p className="text-5xl font-extrabold tracking-tight">{summary.value ?? 0}</p>
+                  <div className="mt-2 flex justify-center">
+                    <Stars value={summary.value ?? 0} size={16} />
                   </div>
-                )
-              })}
-            </div>
-          </div>
-          <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-            {DEMO_REVIEWS.map(function (r) {
-              return (
-                <article
-                  key={r.name}
-                  className="rounded-3xl border border-sky-100 bg-white p-4 dark:border-white/10 dark:bg-white/5"
-                >
-                  <div className="flex items-center gap-3">
-                    <UserAvatar name={r.name} />
-                    <div>
-                      <p className="text-sm font-bold">{r.name}</p>
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <Stars value={r.rating} />
-                        <span className="text-xs text-zinc-400">{r.date}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                    “{r.text}”
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    {summary.count} đánh giá
                   </p>
-                </article>
-              )
-            })}
-          </div>
+                </div>
+                <div className="space-y-1.5">
+                  {summary.breakdown.map(function (pct, i) {
+                    return (
+                      <div key={i} className="flex items-center gap-2 text-xs font-bold">
+                        <span className="w-6 text-zinc-500">{5 - i}★</span>
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-sky-100 dark:bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-indigo-900 to-sky-400"
+                            style={{ width: pct + '%' }}
+                          />
+                        </div>
+                        <span className="w-9 text-right text-zinc-500">{pct}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+                {reviews.map(function (r) {
+                  return (
+                    <article
+                      key={r.id ?? r.buyerDisplayName}
+                      className="rounded-3xl border border-sky-100 bg-white p-4 dark:border-white/10 dark:bg-white/5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <UserAvatar name={r.buyerDisplayName ?? 'Người mua'} />
+                        <div>
+                          <p className="text-sm font-bold">{r.buyerDisplayName ?? 'Người mua'}</p>
+                          <div className="mt-0.5 flex items-center gap-2">
+                            <Stars value={r.stars ?? 0} />
+                            <span className="text-xs text-zinc-400">
+                              {formatDateTime(r.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                        “{r.comment}”
+                      </p>
+                    </article>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </section>
   )
 }

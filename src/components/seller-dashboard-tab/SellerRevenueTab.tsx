@@ -1,26 +1,130 @@
 import { useState } from 'react'
 
+import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
+import {
+  getListWithdrawalsQueryKey,
+  getSummaryQueryKey,
+  useByDay,
+  useListWithdrawals,
+  useRequestWithdrawal,
+  useSettlements,
+  useSummary,
+  useTopProducts,
+} from '@generated/endpoints/seller-revenue-finance/seller-revenue-finance'
 import { Wallet, Clock, Receipt, TrendUp, Bank, CheckCircle, X } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
 
-import { formatVnd } from '../../lib/format'
+import { takeData } from '@/lib/apiAdapters'
+import { settlementItem, withdrawalItem } from '@/lib/sellerAdapters'
 
-import type { SettlementItem, WithdrawalItem } from './sellerData'
+import { formatDateTime, formatVnd } from '../../lib/format'
+
+import type { SettlementItem, WithdrawalItem } from '@/types/seller'
+import type { OrderResponse } from '@generated/model/orderResponse'
+import type { RevenueSummaryResponse } from '@generated/model/revenueSummaryResponse'
 
 interface Props {
-  settlements: SettlementItem[]
-  withdrawals: WithdrawalItem[]
-  onCreateWithdrawal: (amount: number) => void
+  shopId: string
+  bankName: string
+  bankAccount: string
+  bankHolder: string
 }
 
-export default function SellerRevenueTab({ settlements, withdrawals, onCreateWithdrawal }: Props) {
+export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHolder }: Props) {
+  const queryClient = useQueryClient()
   const [subTab, setSubTab] = useState<'SETTLEMENTS' | 'WITHDRAWALS'>('SETTLEMENTS')
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState(1000000)
   const [notification, setNotification] = useState<string | null>(null)
 
-  const walletBalance = 3840000
-  const holdingBalance = 890000
-  const totalRevenue = 4730000
+  const settlementsQuery = useSettlements({ shopId }, { query: { enabled: shopId !== '' } })
+  // Danh mục đơn hàng để resolve mã đơn cho từng phiên quyết toán
+  const ordersQuery = useList5({ shopId }, { query: { enabled: shopId !== '' } })
+  const withdrawalsQuery = useListWithdrawals({ shopId }, { query: { enabled: shopId !== '' } })
+  const summaryQuery = useSummary({ shopId }, { query: { enabled: shopId !== '' } })
+  const byDayQuery = useByDay({ shopId }, { query: { enabled: shopId !== '' } })
+  const topProductsQuery = useTopProducts(
+    { shopId, limit: 3 },
+    { query: { enabled: shopId !== '' } },
+  )
+
+  const requestWithdrawalMutation = useRequestWithdrawal({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListWithdrawalsQueryKey({ shopId }) })
+        void queryClient.invalidateQueries({ queryKey: getSummaryQueryKey({ shopId }) })
+      },
+    },
+  })
+
+  const orderById = new Map<string, OrderResponse>()
+  if (ordersQuery.data !== undefined) {
+    for (const o of takeData(ordersQuery.data)) {
+      orderById.set(o.id ?? '', o)
+    }
+  }
+
+  let settlements: SettlementItem[] = []
+  if (settlementsQuery.data !== undefined) {
+    settlements = takeData(settlementsQuery.data).map(function (s) {
+      return settlementItem(s, orderById)
+    })
+  }
+
+  let withdrawals: WithdrawalItem[] = []
+  if (withdrawalsQuery.data !== undefined) {
+    withdrawals = takeData(withdrawalsQuery.data).map(withdrawalItem)
+  }
+
+  let summary: RevenueSummaryResponse | undefined = undefined
+  if (summaryQuery.data !== undefined) {
+    summary = takeData(summaryQuery.data)
+  }
+
+  const chart: { day: string; revenue: number }[] = []
+  if (byDayQuery.data !== undefined) {
+    for (const d of takeData(byDayQuery.data)) {
+      chart.push({ day: formatDateTime(d.date), revenue: d.revenue ?? 0 })
+    }
+  }
+
+  const topProducts: { name: string; sold: number; revenue: number }[] = []
+  if (topProductsQuery.data !== undefined) {
+    for (const t of takeData(topProductsQuery.data)) {
+      topProducts.push({
+        name: t.productName ?? '',
+        sold: t.soldQuantity ?? 0,
+        revenue: t.totalRevenue ?? 0,
+      })
+    }
+  }
+
+  function handleCreateWithdrawal(amount: number) {
+    requestWithdrawalMutation.mutate({
+      data: { shopId, amount, bankName, bankAccount, bankHolder },
+    })
+  }
+
+  const walletBalance = summary?.walletBalance ?? 0
+  const holdingBalance = summary?.holdingBalance ?? 0
+  const totalRevenue = summary?.totalRevenue ?? 0
+  const avgOrderValue = summary?.avgOrderValue ?? 0
+  const totalOrders = summary?.totalOrders ?? 0
+
+  // Chiều cao cột biểu đồ tính theo % so với ngày cao nhất
+  let maxRevenue = 0
+  for (const d of chart) {
+    if (d.revenue > maxRevenue) {
+      maxRevenue = d.revenue
+    }
+  }
+  const chartBars = chart.map(function (d) {
+    let height = 4
+    if (maxRevenue > 0) {
+      height = Math.max(4, Math.round((d.revenue / maxRevenue) * 100))
+    }
+    return { ...d, height }
+  })
 
   function showToast(msg: string) {
     setNotification(msg)
@@ -38,27 +142,10 @@ export default function SellerRevenueTab({ settlements, withdrawals, onCreateWit
       alert('Số tiền rút vượt quá số dư ví khả dụng hiện tại.')
       return
     }
-    onCreateWithdrawal(withdrawAmount)
+    handleCreateWithdrawal(withdrawAmount)
     setShowWithdrawModal(false)
-    showToast(`Đã tạo lệnh rút ${formatVnd(withdrawAmount)} về tài khoản Vietcombank!`)
+    showToast(`Đã tạo lệnh rút ${formatVnd(withdrawAmount)} về tài khoản ngân hàng!`)
   }
-
-  // Dữ liệu biểu đồ 7 ngày gần nhất
-  const chartDays = [
-    { day: 'T2 (10/10)', revenue: 1200000, height: '40%' },
-    { day: 'T3 (11/10)', revenue: 1850000, height: '60%' },
-    { day: 'T4 (12/10)', revenue: 950000, height: '32%' },
-    { day: 'T5 (13/10)', revenue: 2400000, height: '80%' },
-    { day: 'T6 (14/10)', revenue: 3100000, height: '95%' },
-    { day: 'T7 (15/10)', revenue: 2150000, height: '70%' },
-    { day: 'CN (16/10)', revenue: 3720000, height: '100%' },
-  ]
-
-  const topProducts = [
-    { name: 'Áo Thun Cotton Oversize Form Rộng', sold: 1240, revenue: 234360000 },
-    { name: 'Quần Jean Ống Suông Baggy', sold: 680, revenue: 237320000 },
-    { name: 'Áo Khoác Bomber Kaki 2 Lớp', sold: 310, revenue: 139500000 },
-  ]
 
   function renderWithdrawalBadge(status: string) {
     if (status === 'COMPLETED') {
@@ -159,7 +246,7 @@ export default function SellerRevenueTab({ settlements, withdrawals, onCreateWit
           <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white">
             {formatVnd(totalRevenue)}
           </p>
-          <p className="mt-1 text-[11px] text-emerald-600">+22.4% so với tuần trước</p>
+          <p className="mt-1 text-[11px] text-zinc-400">Tổng doanh thu ghi nhận được</p>
         </div>
 
         <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -170,9 +257,9 @@ export default function SellerRevenueTab({ settlements, withdrawals, onCreateWit
             </div>
           </div>
           <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white">
-            {formatVnd(342000)}
+            {formatVnd(avgOrderValue)}
           </p>
-          <p className="mt-1 text-[11px] text-zinc-400">Tổng cộng 38 đơn hoàn tất</p>
+          <p className="mt-1 text-[11px] text-zinc-400">Tổng cộng {totalOrders} đơn hoàn tất</p>
         </div>
       </div>
 
@@ -195,21 +282,27 @@ export default function SellerRevenueTab({ settlements, withdrawals, onCreateWit
           </div>
 
           <div className="mt-8 flex h-52 items-end justify-between gap-3 border-b border-zinc-200 px-2 pb-2 dark:border-zinc-800">
-            {chartDays.map(function (d) {
+            {chartBars.map(function (d) {
               return (
                 <div key={d.day} className="group relative flex flex-1 flex-col items-center gap-2">
                   <div className="invisible absolute -top-8 rounded-lg bg-zinc-900 px-2 py-1 text-[10px] font-bold text-white shadow-md group-hover:visible dark:bg-white dark:text-zinc-900">
                     {formatVnd(d.revenue)}
                   </div>
                   <div
-                    style={{ height: d.height }}
-                    className="w-full max-w-[36px] rounded-t-xl bg-gradient-to-t from-orange-600 to-amber-500 transition-all duration-300 hover:brightness-110"
+                    style={{ height: d.height + '%' }}
+                    className="w-full max-w-[36px] rounded-t-xl bg-gradient-to-t from-blue-600 to-indigo-500 transition-all duration-300 hover:brightness-110"
                   />
                   <span className="text-[10px] font-semibold text-zinc-500">{d.day}</span>
                 </div>
               )
             })}
           </div>
+
+          {chartBars.length === 0 && (
+            <p className="py-10 text-center text-sm text-zinc-400">
+              Chưa có doanh thu nào được ghi nhận gần đây.
+            </p>
+          )}
         </div>
 
         {/* Top Sản Phẩm */}
@@ -227,7 +320,7 @@ export default function SellerRevenueTab({ settlements, withdrawals, onCreateWit
                   className="rounded-2xl border border-zinc-100 p-3 dark:border-zinc-800/80"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-[10px] font-black text-orange-600 dark:bg-orange-950/40">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[10px] font-black text-blue-600 dark:bg-blue-950/40 dark:text-sky-400">
                       {idx + 1}
                     </span>
                     <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-200">
@@ -243,6 +336,12 @@ export default function SellerRevenueTab({ settlements, withdrawals, onCreateWit
                 </div>
               )
             })}
+
+            {topProducts.length === 0 && (
+              <p className="py-6 text-center text-sm text-zinc-400">
+                Chưa có dữ liệu sản phẩm bán chạy.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -250,32 +349,40 @@ export default function SellerRevenueTab({ settlements, withdrawals, onCreateWit
       {/* Tabs Quyết toán & Rút tiền */}
       <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center gap-4 border-b border-zinc-100 pb-3 dark:border-zinc-800">
-          <button
-            type="button"
-            onClick={function () {
-              setSubTab('SETTLEMENTS')
-            }}
-            className={`text-xs font-bold transition ${
-              subTab === 'SETTLEMENTS'
-                ? 'text-orange-600 dark:text-orange-400'
-                : 'text-zinc-400 hover:text-zinc-700'
-            }`}
-          >
-            Phiên quyết toán đơn hàng ({settlements.length})
-          </button>
-          <button
-            type="button"
-            onClick={function () {
-              setSubTab('WITHDRAWALS')
-            }}
-            className={`text-xs font-bold transition ${
-              subTab === 'WITHDRAWALS'
-                ? 'text-orange-600 dark:text-orange-400'
-                : 'text-zinc-400 hover:text-zinc-700'
-            }`}
-          >
-            Lịch sử rút tiền ({withdrawals.length})
-          </button>
+          {(() => {
+            let tab1Class =
+              'text-xs font-bold transition text-zinc-400 hover:text-zinc-700 dark:hover:text-white'
+            if (subTab === 'SETTLEMENTS') {
+              tab1Class = 'text-xs font-bold transition text-blue-600 dark:text-sky-400'
+            }
+            let tab2Class =
+              'text-xs font-bold transition text-zinc-400 hover:text-zinc-700 dark:hover:text-white'
+            if (subTab === 'WITHDRAWALS') {
+              tab2Class = 'text-xs font-bold transition text-blue-600 dark:text-sky-400'
+            }
+            return (
+              <>
+                <button
+                  type="button"
+                  onClick={function () {
+                    setSubTab('SETTLEMENTS')
+                  }}
+                  className={tab1Class}
+                >
+                  Phiên quyết toán đơn hàng ({settlements.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={function () {
+                    setSubTab('WITHDRAWALS')
+                  }}
+                  className={tab2Class}
+                >
+                  Lịch sử rút tiền ({withdrawals.length})
+                </button>
+              </>
+            )
+          })()}
         </div>
 
         {subTab === 'SETTLEMENTS' && (
@@ -389,11 +496,13 @@ export default function SellerRevenueTab({ settlements, withdrawals, onCreateWit
               </p>
               <p className="flex justify-between">
                 <span>Tài khoản nhận tiền:</span>
-                <strong>Vietcombank - 0981000123456</strong>
+                <strong>
+                  {bankName} - {bankAccount}
+                </strong>
               </p>
               <p className="flex justify-between">
                 <span>Chủ tài khoản:</span>
-                <strong>NGUYEN VAN CHU SHOP</strong>
+                <strong>{bankHolder}</strong>
               </p>
             </div>
 
@@ -411,7 +520,7 @@ export default function SellerRevenueTab({ settlements, withdrawals, onCreateWit
                 onChange={function (e) {
                   setWithdrawAmount(Number(e.target.value))
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-sm font-black outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-sm font-black outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               />
             </div>
 

@@ -1,29 +1,31 @@
 import { useState } from 'react'
 
+import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
+import {
+  getList4QueryKey,
+  useApprove,
+  useComplete,
+  useList4,
+  useReject,
+} from '@generated/endpoints/seller-returns/seller-returns'
 import { CheckCircle, X } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { takeData } from '@/lib/apiAdapters'
+import { returnItem } from '@/lib/sellerAdapters'
 
 import { formatVnd } from '../../lib/format'
 
-import type { ReturnItem } from './sellerData'
+import type { ReturnItem } from '@/types/seller'
+import type { OrderResponse } from '@generated/model/orderResponse'
 
 interface Props {
-  returns: ReturnItem[]
-  onApproveReturn: (
-    returnId: string,
-    resolution: string,
-    refundAmount: number,
-    returnAddress: string,
-  ) => void
-  onRejectReturn: (returnId: string, sellerNote: string) => void
-  onCompleteReturn: (returnId: string) => void
+  shopId: string
+  pickupAddress?: string
 }
 
-export default function SellerReturnsTab({
-  returns,
-  onApproveReturn,
-  onRejectReturn,
-  onCompleteReturn,
-}: Props) {
+export default function SellerReturnsTab({ shopId, pickupAddress }: Props) {
+  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<
     'ALL' | 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
   >('ALL')
@@ -32,12 +34,76 @@ export default function SellerReturnsTab({
   const [resolution, setResolution] = useState('REFUND')
   const [refundAmount, setRefundAmount] = useState(378000)
   const [returnAddress, setReturnAddress] = useState(
-    'Kho hàng FashionHub, 45 Kim Mã, Ba Đình, Hà Nội',
+    pickupAddress || 'Kho trung tâm nét, 12 Nguyễn Trãi, Thanh Xuân, Hà Nội',
   )
   const [rejectNote, setRejectNote] = useState(
     'Sản phẩm đã qua sử dụng quá 30 ngày hoặc không có video bóc hàng',
   )
   const [notification, setNotification] = useState<string | null>(null)
+
+  const returnsQuery = useList4({ shopId }, { query: { enabled: shopId !== '' } })
+  // Danh mục đơn hàng để resolve mã đơn / tên người mua cho từng yêu cầu trả hàng
+  const ordersQuery = useList5({ shopId }, { query: { enabled: shopId !== '' } })
+
+  const approveMutation = useApprove({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+      },
+    },
+  })
+  const rejectMutation = useReject({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+      },
+    },
+  })
+  const completeMutation = useComplete({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+      },
+    },
+  })
+
+  const orderById = new Map<string, OrderResponse>()
+  if (ordersQuery.data !== undefined) {
+    for (const o of takeData(ordersQuery.data)) {
+      orderById.set(o.id ?? '', o)
+    }
+  }
+
+  let returns: ReturnItem[] = []
+  if (returnsQuery.data !== undefined) {
+    returns = takeData(returnsQuery.data).map(function (r) {
+      return returnItem(r, orderById)
+    })
+  }
+
+  function handleApproveReturn(
+    returnId: string,
+    nextResolution: string,
+    nextRefundAmount: number,
+    nextReturnAddress: string,
+  ) {
+    approveMutation.mutate({
+      id: returnId,
+      data: {
+        resolution: nextResolution,
+        refundAmount: nextRefundAmount,
+        sellerNote: 'Địa chỉ nhận lại: ' + nextReturnAddress,
+      },
+    })
+  }
+
+  function handleRejectReturn(returnId: string, sellerNote: string) {
+    rejectMutation.mutate({ id: returnId, data: { sellerNote } })
+  }
+
+  function handleCompleteReturn(returnId: string) {
+    completeMutation.mutate({ id: returnId })
+  }
 
   function showToast(msg: string) {
     setNotification(msg)
@@ -48,7 +114,7 @@ export default function SellerReturnsTab({
 
   function handleConfirmApprove() {
     if (approveTarget !== null) {
-      onApproveReturn(approveTarget.id, resolution, refundAmount, returnAddress)
+      handleApproveReturn(approveTarget.id, resolution, refundAmount, returnAddress)
       setApproveTarget(null)
       showToast('Đã phê duyệt yêu cầu đổi trả và gửi địa chỉ kho nhận hàng cho khách!')
     }
@@ -56,7 +122,7 @@ export default function SellerReturnsTab({
 
   function handleConfirmReject() {
     if (rejectTarget !== null) {
-      onRejectReturn(rejectTarget.id, rejectNote)
+      handleRejectReturn(rejectTarget.id, rejectNote)
       setRejectTarget(null)
       showToast('Đã từ chối yêu cầu đổi trả kèm lý do!')
     }
@@ -129,6 +195,12 @@ export default function SellerReturnsTab({
             { id: 'REJECTED', label: 'Đã từ chối' },
           ].map(function (tab) {
             const isCurrent = activeTab === tab.id
+            let tabClass =
+              'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+            if (isCurrent) {
+              tabClass =
+                'rounded-2xl px-4 py-2 text-xs font-bold transition bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
+            }
             return (
               <button
                 key={tab.id}
@@ -138,11 +210,7 @@ export default function SellerReturnsTab({
                     tab.id as 'ALL' | 'REQUESTED' | 'APPROVED' | 'COMPLETED' | 'REJECTED',
                   )
                 }}
-                className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
-                  isCurrent
-                    ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
-                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                }`}
+                className={tabClass}
               >
                 {tab.label}
               </button>
@@ -231,7 +299,7 @@ export default function SellerReturnsTab({
                       onClick={function () {
                         setApproveTarget(ret)
                       }}
-                      className="rounded-xl bg-orange-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-orange-700"
+                      className="rounded-xl bg-blue-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700"
                     >
                       Phê duyệt phương án
                     </button>
@@ -240,7 +308,7 @@ export default function SellerReturnsTab({
                     <button
                       type="button"
                       onClick={function () {
-                        onCompleteReturn(ret.id)
+                        handleCompleteReturn(ret.id)
                         showToast('Đã xác nhận nhận lại hàng và tự động cập nhật tồn kho!')
                       }}
                       className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
@@ -295,7 +363,7 @@ export default function SellerReturnsTab({
                   onChange={function (e) {
                     setResolution(e.target.value)
                   }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 >
                   <option value="REFUND">Hoàn tiền 100% khi nhận lại hàng</option>
                   <option value="EXCHANGE">Đổi sản phẩm mới cho khách</option>
@@ -317,7 +385,7 @@ export default function SellerReturnsTab({
                   onChange={function (e) {
                     setRefundAmount(Number(e.target.value))
                   }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs font-bold outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 />
               </div>
 
@@ -335,7 +403,7 @@ export default function SellerReturnsTab({
                   onChange={function (e) {
                     setReturnAddress(e.target.value)
                   }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 />
               </div>
             </div>
@@ -353,7 +421,7 @@ export default function SellerReturnsTab({
               <button
                 type="button"
                 onClick={handleConfirmApprove}
-                className="rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white hover:bg-orange-700"
+                className="rounded-2xl bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700"
               >
                 Xác nhận phê duyệt
               </button>
@@ -395,7 +463,7 @@ export default function SellerReturnsTab({
                 onChange={function (e) {
                   setRejectNote(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               />
             </div>
 

@@ -35,10 +35,8 @@ import StatusBadge from '@/components/admin/StatusBadge'
 import { adminErrorMessage, formatDateTime } from '@/lib/admin'
 import { takeData } from '@/lib/apiAdapters'
 
+import type { ConfirmAction, ReasonAction } from '@/types/admin'
 import type { AdminShopDetailResponse } from '@generated/model/adminShopDetailResponse'
-
-type ConfirmAction = 'approve' | 'reinstate'
-type ReasonAction = 'reject' | 'suspend'
 
 const REJECT_REASONS = [
   'Thông tin shop chưa đầy đủ, vui lòng bổ sung mô tả và logo',

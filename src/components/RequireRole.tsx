@@ -7,7 +7,7 @@ import { takeData } from '@/lib/apiAdapters'
 import { useSessionQuery } from '../hooks/useSession'
 import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
 
-import type { UserRole } from '../lib/auth'
+import type { UserRole } from '@/types/auth'
 import type { ShopResponse } from '@generated/model/shopResponse'
 
 interface Props {

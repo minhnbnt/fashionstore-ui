@@ -17,14 +17,14 @@ import {
   X,
 } from '@phosphor-icons/react'
 
+import type { Step } from '@/types/seller'
+
 interface Props {
   isOpen: boolean
   userEmail: string
   onClose: () => void
   onSuccess: () => void
 }
-
-type Step = 1 | 2 | 3 | 4
 
 const VIETNAM_BANKS = [
   'Vietcombank (VCB)',
@@ -53,7 +53,7 @@ function slugify(text: string): string {
 
 function getStepClass(stepNumber: number, activeStep: number): string {
   if (stepNumber === activeStep) {
-    return 'flex items-center gap-2 rounded-xl p-2 bg-orange-50 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
+    return 'flex items-center gap-2 rounded-xl p-2 bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-sky-300'
   }
   if (activeStep > stepNumber) {
     return 'flex items-center gap-2 rounded-xl p-2 text-emerald-600 dark:text-emerald-400'
@@ -310,14 +310,14 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
     'flex-1 rounded-2xl border p-3 text-left transition border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-white/10 dark:bg-zinc-800'
   if (sellerType === 'INDIVIDUAL') {
     individualBtnClass =
-      'flex-1 rounded-2xl border p-3 text-left transition border-orange-500 bg-orange-50/60 text-orange-950 font-bold dark:bg-orange-500/20 dark:text-white'
+      'flex-1 rounded-2xl border p-3 text-left transition border-blue-500 bg-blue-50/60 text-blue-950 font-bold dark:bg-blue-500/20 dark:text-white'
   }
 
   let corporateBtnClass =
     'flex-1 rounded-2xl border p-3 text-left transition border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-white/10 dark:bg-zinc-800'
   if (sellerType === 'CORPORATE') {
     corporateBtnClass =
-      'flex-1 rounded-2xl border p-3 text-left transition border-orange-500 bg-orange-50/60 text-orange-950 font-bold dark:bg-orange-500/20 dark:text-white'
+      'flex-1 rounded-2xl border p-3 text-left transition border-blue-500 bg-blue-50/60 text-blue-950 font-bold dark:bg-blue-500/20 dark:text-white'
   }
 
   return (
@@ -332,7 +332,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/80 px-6 py-4 dark:border-white/10 dark:bg-zinc-800/50">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-md shadow-orange-500/20">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/20">
               <Storefront size={24} weight="bold" />
             </div>
             <div>
@@ -406,7 +406,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="VD: Nguyễn Văn A Shop, Nét Boutique, Thời Trang GenZ..."
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
               </div>
@@ -425,7 +425,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                         setSlug(slugify(e.target.value))
                       }}
                       placeholder="VD: nguyen-van-a-shop"
-                      className="w-full bg-transparent px-2 py-1.5 font-normal outline-none placeholder:italic placeholder:opacity-50"
+                      className="w-full bg-transparent px-2 py-1.5 font-normal outline-none placeholder:opacity-50"
                     />
                   </div>
                 </label>
@@ -444,7 +444,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="VD: 0912345678"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -457,7 +457,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="VD: Số 123 Đường ABC, Phường X, Quận Y, Hà Nội"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -472,7 +472,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="VD: Chuyên cung cấp thời trang nam nữ cao cấp, hàng thiết kế chính hãng 100%..."
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
               </div>
@@ -505,7 +505,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     onClick={() => setSellerType('INDIVIDUAL')}
                     className={individualBtnClass}
                   >
-                    <IdentificationCard size={18} className="mb-1 text-orange-600" weight="bold" />
+                    <IdentificationCard size={18} className="mb-1 text-blue-600" weight="bold" />
                     <div>Cá nhân kinh doanh</div>
                     <div className="text-[11px] font-normal text-zinc-500">
                       Xác thực qua CCCD gắn chip
@@ -517,7 +517,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     onClick={() => setSellerType('CORPORATE')}
                     className={corporateBtnClass}
                   >
-                    <FileText size={18} className="mb-1 text-orange-600" weight="bold" />
+                    <FileText size={18} className="mb-1 text-blue-600" weight="bold" />
                     <div>Công ty / Hộ KD</div>
                     <div className="text-[11px] font-normal text-zinc-500">
                       Xác thực qua Giấy phép ĐKKD
@@ -536,7 +536,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     value={legalName}
                     onChange={(e) => handleLegalNameChange(e.target.value)}
                     placeholder="VD: NGUYỄN VĂN A"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-bold uppercase outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-bold uppercase outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
                 <span className="mt-1 block text-[11px] text-zinc-400">
@@ -556,7 +556,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={idNumber}
                       onChange={(e) => setIdNumber(e.target.value.replace(/\D/g, ''))}
                       placeholder="VD: 001202001234"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-bold outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-bold outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -569,7 +569,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={taxCode}
                       onChange={(e) => setTaxCode(e.target.value)}
                       placeholder="VD: 8392019281 (nếu có)"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -585,7 +585,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={idIssuedDate}
                       onChange={(e) => setIdIssuedDate(e.target.value)}
                       placeholder="VD: 15/08/2021"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -598,7 +598,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       value={idIssuedPlace}
                       onChange={(e) => setIdIssuedPlace(e.target.value)}
                       placeholder="VD: Cục Cảnh sát QLHC về TTXH"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                      className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
                 </div>
@@ -616,7 +616,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                   {/* Mặt trước CCCD */}
                   <label
                     htmlFor="upload-id-front"
-                    className="group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50/80 p-3 text-center transition hover:border-orange-500 hover:bg-orange-50/20 dark:border-white/20 dark:bg-zinc-800/80"
+                    className="group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50/80 p-3 text-center transition hover:border-blue-500 hover:bg-blue-50/20 dark:border-white/20 dark:bg-zinc-800/80"
                   >
                     <input
                       id="upload-id-front"
@@ -631,7 +631,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       <div className="py-2 text-center">
                         <UploadSimple
                           size={24}
-                          className="mx-auto text-orange-600 transition group-hover:scale-110"
+                          className="mx-auto text-blue-600 transition group-hover:scale-110"
                         />
                         <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-200">
                           Mặt trước CCCD
@@ -666,7 +666,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                   {/* Mặt sau CCCD */}
                   <label
                     htmlFor="upload-id-back"
-                    className="group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50/80 p-3 text-center transition hover:border-orange-500 hover:bg-orange-50/20 dark:border-white/20 dark:bg-zinc-800/80"
+                    className="group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50/80 p-3 text-center transition hover:border-blue-500 hover:bg-blue-50/20 dark:border-white/20 dark:bg-zinc-800/80"
                   >
                     <input
                       id="upload-id-back"
@@ -681,7 +681,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       <div className="py-2 text-center">
                         <UploadSimple
                           size={24}
-                          className="mx-auto text-orange-600 transition group-hover:scale-110"
+                          className="mx-auto text-blue-600 transition group-hover:scale-110"
                         />
                         <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-200">
                           Mặt sau CCCD
@@ -716,7 +716,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                   {/* Selfie cầm CCCD */}
                   <label
                     htmlFor="upload-id-selfie"
-                    className="group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50/80 p-3 text-center transition hover:border-orange-500 hover:bg-orange-50/20 dark:border-white/20 dark:bg-zinc-800/80"
+                    className="group relative flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50/80 p-3 text-center transition hover:border-blue-500 hover:bg-blue-50/20 dark:border-white/20 dark:bg-zinc-800/80"
                   >
                     <input
                       id="upload-id-selfie"
@@ -731,7 +731,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       <div className="py-2 text-center">
                         <UploadSimple
                           size={24}
-                          className="mx-auto text-orange-600 transition group-hover:scale-110"
+                          className="mx-auto text-blue-600 transition group-hover:scale-110"
                         />
                         <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-200">
                           Ảnh Selfie cầm CCCD
@@ -789,7 +789,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     id="select-bank-name"
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-bold outline-none focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-bold outline-none focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   >
                     {VIETNAM_BANKS.map((b) => (
                       <option key={b} value={b}>
@@ -809,7 +809,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     value={bankAccount}
                     onChange={(e) => setBankAccount(e.target.value.replace(/\s/g, ''))}
                     placeholder="VD: 1903829102838 (STK chính chủ)"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-bold outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-mono font-bold outline-none placeholder:opacity-50 focus:border-blue-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
               </div>
@@ -823,7 +823,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     disabled
                     value={legalName}
                     placeholder="VD: NGUYỄN VĂN A (Khóa tự động theo CCCD)"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-200/60 px-4 py-2.5 font-extrabold tracking-wider text-zinc-700 uppercase outline-none placeholder:italic placeholder:opacity-50 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-200/60 px-4 py-2.5 font-extrabold tracking-wider text-zinc-700 uppercase outline-none placeholder:opacity-50 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300"
                   />
                 </label>
                 {legalName.trim() !== '' && (
@@ -857,7 +857,9 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                   </div>
                   <div>
                     <span className="text-zinc-400">Đường dẫn:</span>{' '}
-                    <span className="font-mono text-orange-600">net.vn/shop/{slug}</span>
+                    <span className="font-mono text-blue-600 dark:text-sky-400">
+                      net.vn/shop/{slug}
+                    </span>
                   </div>
                   <div>
                     <span className="text-zinc-400">Chủ shop:</span>{' '}
@@ -877,8 +879,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
               </div>
 
               {/* Cam kết tuân thủ chính sách Shopee */}
-              <div className="space-y-2.5 rounded-2xl bg-orange-50/70 p-4 dark:bg-orange-500/10">
-                <p className="text-xs font-extrabold tracking-wider text-orange-900 uppercase dark:text-orange-200">
+              <div className="space-y-2.5 rounded-2xl bg-blue-50/70 p-4 dark:bg-blue-500/10">
+                <p className="text-xs font-extrabold tracking-wider text-blue-900 uppercase dark:text-sky-200">
                   Cam kết người bán & Trách nhiệm pháp lý:
                 </p>
 
@@ -888,7 +890,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     type="checkbox"
                     checked={pledgeGenuine}
                     onChange={(e) => setPledgeGenuine(e.target.checked)}
-                    className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
+                    className="mt-0.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span>
                     Tôi cam kết chỉ bán sản phẩm thời trang chính hãng, có nguồn gốc xuất xứ rõ
@@ -902,7 +904,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     type="checkbox"
                     checked={pledgeLegal}
                     onChange={(e) => setPledgeLegal(e.target.checked)}
-                    className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
+                    className="mt-0.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span>
                     Tôi hoàn toàn chịu trách nhiệm trước pháp luật và bồi thường 100% thiệt hại phát
@@ -916,7 +918,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     type="checkbox"
                     checked={pledgeTax}
                     onChange={(e) => setPledgeTax(e.target.checked)}
-                    className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
+                    className="mt-0.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span>
                     Tôi đồng ý để sàn nét lưu trữ dữ liệu định danh eKYC và cung cấp số liệu doanh

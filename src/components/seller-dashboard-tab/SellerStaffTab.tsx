@@ -1,6 +1,18 @@
 import { useState } from 'react'
 
 import {
+  getListAuditLogsQueryKey,
+  getListMembersQueryKey,
+  getListRolesQueryKey,
+  useChangeMemberRole,
+  useCreateRole,
+  useInviteStaff,
+  useListAuditLogs,
+  useListMembers,
+  useListRoles,
+  useRemoveMember,
+} from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
+import {
   UsersThree,
   ShieldCheck,
   ClockCounterClockwise,
@@ -11,17 +23,16 @@ import {
   Shield,
   Key,
 } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
 
-import type { ShopRoleItem, ShopMemberItem, ShopAuditItem } from './sellerData'
+import { takeData } from '@/lib/apiAdapters'
+import { auditItem, memberItem, roleItem } from '@/lib/sellerAdapters'
+
+import type { ShopRoleItem, ShopMemberItem, ShopAuditItem } from '@/types/seller'
+import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
 
 interface SellerStaffTabProps {
-  roles: ShopRoleItem[]
-  members: ShopMemberItem[]
-  auditLogs: ShopAuditItem[]
-  onAddMember: (member: ShopMemberItem) => void
-  onRemoveMember: (id: string) => void
-  onAddRole: (role: ShopRoleItem) => void
-  onAddAuditLog: (log: ShopAuditItem) => void
+  shopId: string
 }
 
 const ALL_SYSTEM_PERMISSIONS = [
@@ -36,25 +47,18 @@ const ALL_SYSTEM_PERMISSIONS = [
   { key: 'REVENUE_WITHDRAW', label: 'Yêu cầu rút tiền về tài khoản ngân hàng', group: 'Tài chính' },
   { key: 'REVIEW_READ', label: 'Xem đánh giá của khách hàng', group: 'CSKH' },
   { key: 'REVIEW_REPLY', label: 'Phản hồi đánh giá & báo cáo vi phạm', group: 'CSKH' },
-  { key: 'CHAT_ACCESS', label: 'Nhắn tin trực tiếp với người mua (Shopee Chat)', group: 'CSKH' },
+  { key: 'CHAT_ACCESS', label: 'Nhắn tin trực tiếp với người mua (nét Chat)', group: 'CSKH' },
   { key: 'DECORATION_WRITE', label: 'Trang trí gian hàng & xếp layout', group: 'Gian hàng' },
 ]
 
-export function SellerStaffTab({
-  roles,
-  members,
-  auditLogs,
-  onAddMember,
-  onRemoveMember,
-  onAddRole,
-  onAddAuditLog,
-}: SellerStaffTabProps) {
+export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
+  const queryClient = useQueryClient()
   const [activeSubTab, setActiveSubTab] = useState<'MEMBERS' | 'ROLES' | 'AUDIT'>('MEMBERS')
 
   // Invite modal state
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRoleId, setInviteRoleId] = useState(roles[0]?.id || '')
+  const [inviteRoleId, setInviteRoleId] = useState('')
 
   // Create role modal state
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false)
@@ -62,6 +66,61 @@ export function SellerStaffTab({
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
 
   const [notification, setNotification] = useState('')
+
+  const rolesQuery = useListRoles(shopId, { query: { enabled: shopId !== '' } })
+  const membersQuery = useListMembers(shopId, { query: { enabled: shopId !== '' } })
+  const auditQuery = useListAuditLogs(shopId, { query: { enabled: shopId !== '' } })
+
+  const createRoleMutation = useCreateRole({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListRolesQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+  const inviteStaffMutation = useInviteStaff({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+  const removeMemberMutation = useRemoveMember({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListRolesQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+  const changeMemberRoleMutation = useChangeMemberRole({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey(shopId) })
+      },
+    },
+  })
+
+  let rawMembers: ShopMemberDetailResponse[] = []
+  if (membersQuery.data !== undefined) {
+    rawMembers = takeData(membersQuery.data)
+  }
+  let roles: ShopRoleItem[] = []
+  if (rolesQuery.data !== undefined) {
+    roles = takeData(rolesQuery.data).map(function (r) {
+      return roleItem(r, rawMembers)
+    })
+  }
+  const members = rawMembers.map(memberItem)
+
+  let auditLogs: ShopAuditItem[] = []
+  if (auditQuery.data !== undefined) {
+    auditLogs = takeData(auditQuery.data).map(auditItem)
+  }
 
   const handleTogglePermission = (key: string) => {
     if (selectedPermissions.includes(key)) {
@@ -75,31 +134,10 @@ export function SellerStaffTab({
     e.preventDefault()
     if (!inviteEmail.trim()) return
 
-    const matchedRole = roles.find((r) => r.id === inviteRoleId)
-    let roleTitle = 'Nhân viên'
-    if (matchedRole) {
-      roleTitle = matchedRole.name
-    }
-
-    const newMember: ShopMemberItem = {
-      id: `mem-${Date.now()}`,
-      email: inviteEmail.trim(),
-      roleId: inviteRoleId,
-      roleName: roleTitle,
-      status: 'INVITED',
-      joinedAt: 'Vừa mời (Chờ kích hoạt)',
-    }
-
-    onAddMember(newMember)
-
-    const audit: ShopAuditItem = {
-      id: `aud-${Date.now()}`,
-      action: 'INVITE_STAFF',
-      targetType: 'MEMBER',
-      detail: `Mời nhân viên ${inviteEmail.trim()} vào vai trò ${roleTitle}`,
-      createdAt: 'Vừa xong',
-    }
-    onAddAuditLog(audit)
+    inviteStaffMutation.mutate({
+      shopId,
+      data: { email: inviteEmail.trim(), roleId: inviteRoleId },
+    })
 
     setNotification(`Đã gửi email mời nhân viên ${inviteEmail.trim()} thành công!`)
     setInviteEmail('')
@@ -110,24 +148,10 @@ export function SellerStaffTab({
     e.preventDefault()
     if (!newRoleName.trim() || selectedPermissions.length === 0) return
 
-    const newRole: ShopRoleItem = {
-      id: `role-${Date.now()}`,
-      name: newRoleName.trim(),
-      permissions: selectedPermissions,
-      isSystem: false,
-      memberCount: 0,
-    }
-
-    onAddRole(newRole)
-
-    const audit: ShopAuditItem = {
-      id: `aud-${Date.now()}`,
-      action: 'CREATE_ROLE',
-      targetType: 'ROLE',
-      detail: `Tạo vai trò tùy chỉnh mới "${newRoleName.trim()}" với ${selectedPermissions.length} quyền`,
-      createdAt: 'Vừa xong',
-    }
-    onAddAuditLog(audit)
+    createRoleMutation.mutate({
+      shopId,
+      data: { name: newRoleName.trim(), permissions: selectedPermissions },
+    })
 
     setNotification(`Đã tạo vai trò tùy chỉnh "${newRoleName.trim()}" thành công!`)
     setNewRoleName('')
@@ -141,31 +165,40 @@ export function SellerStaffTab({
       return
     }
 
-    onRemoveMember(member.id)
-
-    const audit: ShopAuditItem = {
-      id: `aud-${member.id}`,
-      action: 'REMOVE_STAFF',
-      targetType: 'MEMBER',
-      detail: `Đã thu hồi quyền và xóa nhân viên ${member.email}`,
-      createdAt: 'Vừa xong',
-    }
-    onAddAuditLog(audit)
+    removeMemberMutation.mutate({ shopId, memberId: member.id })
     setNotification(`Đã xóa nhân viên ${member.email} khỏi gian hàng!`)
+  }
+
+  const handleChangeRole = (member: ShopMemberItem, roleId: string) => {
+    if (member.roleName.includes('Owner')) {
+      alert('Không thể đổi vai trò của Chủ gian hàng (Shop Owner)!')
+      return
+    }
+    if (roleId === member.roleId) {
+      return
+    }
+
+    changeMemberRoleMutation.mutate({ shopId, memberId: member.id, data: { roleId } })
+    const matchedRole = roles.find((r) => r.id === roleId)
+    let roleTitle = 'vai trò mới'
+    if (matchedRole) {
+      roleTitle = matchedRole.name
+    }
+    setNotification(`Đã chuyển ${member.email} sang vai trò ${roleTitle}!`)
   }
 
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="flex flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:flex-row md:items-center dark:border-zinc-800 dark:bg-zinc-900">
         <div>
           <div className="flex items-center gap-2">
-            <UsersThree size={24} className="text-[#ee4d2d]" />
-            <h2 className="text-xl font-bold text-gray-800">
+            <UsersThree size={24} className="text-blue-600" />
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white">
               Quản Lý Nhân Viên & Phân Quyền Shop (RBAC)
             </h2>
           </div>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-gray-500 dark:text-zinc-400">
             Mời nhân viên, tạo nhóm quyền nội bộ (CSKH, Kho vận, Marketing) và theo dõi nhật ký hoạt
             động bảo mật.
           </p>
@@ -175,7 +208,7 @@ export function SellerStaffTab({
           <button
             type="button"
             onClick={() => setIsRoleModalOpen(true)}
-            className="flex items-center gap-1.5 rounded border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="flex items-center gap-1.5 rounded-2xl border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             <Shield size={16} className="text-gray-500" />
             Tạo vai trò mới
@@ -183,7 +216,7 @@ export function SellerStaffTab({
           <button
             type="button"
             onClick={() => setIsInviteModalOpen(true)}
-            className="flex items-center gap-1.5 rounded bg-[#ee4d2d] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#d73211]"
+            className="flex items-center gap-1.5 rounded-2xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
           >
             <UserPlus size={16} />
             Mời nhân viên
@@ -193,7 +226,7 @@ export function SellerStaffTab({
 
       {/* Notification Toast */}
       {notification && (
-        <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+        <div className="flex items-center justify-between rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-300">
           <div className="flex items-center gap-2">
             <CheckCircle size={18} className="text-green-600" />
             <span>{notification}</span>
@@ -209,13 +242,13 @@ export function SellerStaffTab({
       )}
 
       {/* Sub-tab navigation */}
-      <div className="flex rounded-t-lg border-b border-gray-200 bg-white px-4">
+      <div className="flex rounded-t-2xl border-b border-gray-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-900">
         <button
           type="button"
           onClick={() => setActiveSubTab('MEMBERS')}
           className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-all ${
-            activeSubTab === 'MEMBERS' && 'border-[#ee4d2d] text-[#ee4d2d]'
-          } ${activeSubTab !== 'MEMBERS' && 'border-transparent text-gray-500 hover:text-gray-800'}`}
+            activeSubTab === 'MEMBERS' && 'border-blue-600 text-blue-600'
+          } ${activeSubTab !== 'MEMBERS' && 'border-transparent text-gray-500 hover:text-gray-800 dark:text-zinc-400 dark:hover:text-white'}`}
         >
           <UsersThree size={16} />
           Danh sách nhân viên ({members.length})
@@ -224,8 +257,8 @@ export function SellerStaffTab({
           type="button"
           onClick={() => setActiveSubTab('ROLES')}
           className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-all ${
-            activeSubTab === 'ROLES' && 'border-[#ee4d2d] text-[#ee4d2d]'
-          } ${activeSubTab !== 'ROLES' && 'border-transparent text-gray-500 hover:text-gray-800'}`}
+            activeSubTab === 'ROLES' && 'border-blue-600 text-blue-600'
+          } ${activeSubTab !== 'ROLES' && 'border-transparent text-gray-500 hover:text-gray-800 dark:text-zinc-400 dark:hover:text-white'}`}
         >
           <ShieldCheck size={16} />
           Vai trò & Phân quyền ({roles.length})
@@ -234,8 +267,8 @@ export function SellerStaffTab({
           type="button"
           onClick={() => setActiveSubTab('AUDIT')}
           className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-all ${
-            activeSubTab === 'AUDIT' && 'border-[#ee4d2d] text-[#ee4d2d]'
-          } ${activeSubTab !== 'AUDIT' && 'border-transparent text-gray-500 hover:text-gray-800'}`}
+            activeSubTab === 'AUDIT' && 'border-blue-600 text-blue-600'
+          } ${activeSubTab !== 'AUDIT' && 'border-transparent text-gray-500 hover:text-gray-800 dark:text-zinc-400 dark:hover:text-white'}`}
         >
           <ClockCounterClockwise size={16} />
           Nhật ký hoạt động (Audit Trail)
@@ -271,11 +304,13 @@ export function SellerStaffTab({
                   <tr key={member.id} className="hover:bg-gray-50/80">
                     <td className="p-3 pl-4" aria-label="Nhân viên">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-[#ee4d2d]">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600 dark:bg-blue-950/60 dark:text-sky-400">
                           {member.email.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-800">{member.email}</div>
+                          <div className="font-semibold text-gray-800 dark:text-zinc-200">
+                            {member.email}
+                          </div>
                           <span className="font-mono text-[10px] text-gray-400">
                             ID: {member.id}
                           </span>
@@ -283,10 +318,26 @@ export function SellerStaffTab({
                       </div>
                     </td>
                     <td className="p-3">
-                      <span className="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-                        <Key size={12} />
-                        {member.roleName}
-                      </span>
+                      {member.roleName.includes('Owner') && (
+                        <span className="inline-flex items-center gap-1 rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-sky-300">
+                          <Key size={12} />
+                          {member.roleName}
+                        </span>
+                      )}
+                      {!member.roleName.includes('Owner') && (
+                        <select
+                          aria-label={`Đổi vai trò cho ${member.email}`}
+                          value={member.roleId}
+                          onChange={(e) => handleChangeRole(member, e.target.value)}
+                          className="w-44 rounded-xl border border-gray-300 bg-white px-2 py-1.5 text-[11px] font-medium text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                        >
+                          {roles.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </td>
                     <td className="p-3">
                       {member.status === 'ACTIVE' && (
@@ -409,9 +460,9 @@ export function SellerStaffTab({
       {/* MODAL 1: Invite Staff Modal */}
       {isInviteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="flex items-center gap-2 text-base font-bold text-gray-800">
-              <UserPlus size={20} className="text-[#ee4d2d]" />
+          <div className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
+            <h3 className="flex items-center gap-2 text-base font-bold text-gray-800 dark:text-white">
+              <UserPlus size={20} className="text-blue-600" />
               Mời nhân viên vào gian hàng
             </h3>
 
@@ -419,7 +470,7 @@ export function SellerStaffTab({
               <div>
                 <label
                   htmlFor="inviteEmailInput"
-                  className="mb-1 block text-xs font-semibold text-gray-700"
+                  className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300"
                 >
                   Email nhân viên
                 </label>
@@ -430,7 +481,7 @@ export function SellerStaffTab({
                   placeholder="nhanvien@gmail.com"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 />
                 <span className="mt-1 block text-[10px] text-gray-400">
                   Hệ thống sẽ gửi email chứa đường link kích hoạt và mã token phân quyền đến địa chỉ
@@ -441,7 +492,7 @@ export function SellerStaffTab({
               <div>
                 <label
                   htmlFor="inviteRoleSelect"
-                  className="mb-1 block text-xs font-semibold text-gray-700"
+                  className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300"
                 >
                   Gán vai trò chức danh
                 </label>
@@ -449,7 +500,7 @@ export function SellerStaffTab({
                   id="inviteRoleSelect"
                   value={inviteRoleId}
                   onChange={(e) => setInviteRoleId(e.target.value)}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 >
                   {roles.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -459,17 +510,17 @@ export function SellerStaffTab({
                 </select>
               </div>
 
-              <div className="flex justify-end gap-2 border-t border-gray-100 pt-2">
+              <div className="flex justify-end gap-2 border-t border-gray-100 pt-2 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setIsInviteModalOpen(false)}
-                  className="rounded border border-gray-300 px-4 py-2 text-xs text-gray-600 hover:bg-gray-50"
+                  className="rounded-xl border border-gray-300 px-4 py-2 text-xs text-gray-600 hover:bg-gray-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="rounded bg-[#ee4d2d] px-4 py-2 text-xs font-semibold text-white hover:bg-[#d73211]"
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700"
                 >
                   Gửi lời mời
                 </button>
@@ -482,9 +533,9 @@ export function SellerStaffTab({
       {/* MODAL 2: Create Custom Role Modal */}
       {isRoleModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="flex items-center gap-2 text-base font-bold text-gray-800">
-              <ShieldCheck size={20} className="text-[#ee4d2d]" />
+          <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
+            <h3 className="flex items-center gap-2 text-base font-bold text-gray-800 dark:text-white">
+              <ShieldCheck size={20} className="text-blue-600" />
               Tạo vai trò tùy chỉnh (Custom Role)
             </h3>
 
@@ -492,7 +543,7 @@ export function SellerStaffTab({
               <div>
                 <label
                   htmlFor="newRoleNameInput"
-                  className="mb-1 block text-xs font-semibold text-gray-700"
+                  className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-300"
                 >
                   Tên vai trò mới
                 </label>
@@ -503,31 +554,33 @@ export function SellerStaffTab({
                   placeholder="Ví dụ: CTV Bán hàng Ca tối, Trợ lý Livestream"
                   value={newRoleName}
                   onChange={(e) => setNewRoleName(e.target.value)}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <span className="mb-2 block text-xs font-semibold text-gray-700">
+                <span className="mb-2 block text-xs font-semibold text-gray-700 dark:text-zinc-300">
                   Tích chọn các quyền hạn ({selectedPermissions.length} đã chọn):
                 </span>
-                <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border bg-gray-50 p-3">
+                <div className="max-h-56 space-y-2 overflow-y-auto rounded-xl border bg-gray-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
                   {ALL_SYSTEM_PERMISSIONS.map((perm) => (
                     <label
                       htmlFor={`perm-chk-${perm.key}`}
                       key={perm.key}
                       aria-label={perm.label}
-                      className="flex cursor-pointer items-start gap-2 rounded p-1.5 text-xs transition-colors hover:bg-white"
+                      className="flex cursor-pointer items-start gap-2 rounded-lg p-1.5 text-xs transition-colors hover:bg-white dark:hover:bg-zinc-900"
                     >
                       <input
                         id={`perm-chk-${perm.key}`}
                         type="checkbox"
                         checked={selectedPermissions.includes(perm.key)}
                         onChange={() => handleTogglePermission(perm.key)}
-                        className="mt-0.5 rounded text-[#ee4d2d] focus:ring-orange-500"
+                        className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
                       />
                       <div>
-                        <span className="font-semibold text-gray-800">{perm.label}</span>
+                        <span className="font-semibold text-gray-800 dark:text-zinc-200">
+                          {perm.label}
+                        </span>
                         <span className="block font-mono text-[10px] text-gray-400">
                           [{perm.key}] • Nhóm: {perm.group}
                         </span>
@@ -537,18 +590,18 @@ export function SellerStaffTab({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 border-t border-gray-100 pt-2">
+              <div className="flex justify-end gap-2 border-t border-gray-100 pt-2 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setIsRoleModalOpen(false)}
-                  className="rounded border border-gray-300 px-4 py-2 text-xs text-gray-600 hover:bg-gray-50"
+                  className="rounded-xl border border-gray-300 px-4 py-2 text-xs text-gray-600 hover:bg-gray-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={selectedPermissions.length === 0}
-                  className="rounded bg-[#ee4d2d] px-4 py-2 text-xs font-semibold text-white hover:bg-[#d73211] disabled:opacity-50"
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                 >
                   Tạo vai trò
                 </button>

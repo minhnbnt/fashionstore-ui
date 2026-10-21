@@ -1,30 +1,111 @@
 import { useState } from 'react'
 
+import {
+  getMessagesQueryKey,
+  getSellerConversationsQueryKey,
+  useMarkRead,
+  useMessages,
+  useSendMessage,
+  useSellerConversations,
+} from '@generated/endpoints/chat/chat'
+import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
+import { getMineQueryKey, useUpdateProfile } from '@generated/endpoints/shops/shops'
 import { PaperPlaneRight, MagnifyingGlass, CheckCircle, X, Robot } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
 
-import type { ChatConversationItem } from './sellerData'
+import { takeData } from '@/lib/apiAdapters'
+import { chatConversationItem, chatMessageItem } from '@/lib/sellerAdapters'
+
+import type { ChatConversationItem, ChatMessageItem } from '@/types/seller'
+import type { ChatConversationResponse } from '@generated/model/chatConversationResponse'
 
 interface Props {
-  conversations: ChatConversationItem[]
-  onSendMessage: (conversationId: string, content: string) => void
-  onMarkRead: (conversationId: string) => void
+  shopId: string
   autoReplyText: string
-  onSaveAutoReply: (text: string) => void
 }
 
-export default function SellerChatTab({
-  conversations,
-  onSendMessage,
-  onMarkRead,
-  autoReplyText,
-  onSaveAutoReply,
-}: Props) {
-  const [selectedConvId, setSelectedConvId] = useState(conversations[0]?.id || '')
+export default function SellerChatTab({ shopId, autoReplyText }: Props) {
+  const queryClient = useQueryClient()
+  const [selectedConvId, setSelectedConvId] = useState('')
   const [messageInput, setMessageInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [showAutoReplyModal, setShowAutoReplyModal] = useState(false)
   const [tempAutoReply, setTempAutoReply] = useState(autoReplyText)
   const [notification, setNotification] = useState<string | null>(null)
+
+  const conversationsQuery = useSellerConversations(
+    { shopId },
+    { query: { enabled: shopId !== '' } },
+  )
+  // Danh mục đơn hàng để resolve tên người mua cho từng hội thoại
+  const ordersQuery = useList5({ shopId }, { query: { enabled: shopId !== '' } })
+
+  let rawConversations: ChatConversationResponse[] = []
+  if (conversationsQuery.data !== undefined) {
+    rawConversations = takeData(conversationsQuery.data)
+  }
+  const buyerNameByBuyerId = new Map<string, string>()
+  if (ordersQuery.data !== undefined) {
+    for (const o of takeData(ordersQuery.data)) {
+      if (o.buyerId !== undefined && o.buyerId !== null && o.buyerId !== '') {
+        buyerNameByBuyerId.set(o.buyerId, o.shippingName ?? '')
+      }
+    }
+  }
+
+  // Hội thoại đang chọn: mặc định là hội thoại đầu tiên khi data vừa load
+  let activeConvId = selectedConvId
+  if (activeConvId === '' && rawConversations.length > 0) {
+    activeConvId = rawConversations[0]?.id ?? ''
+  }
+  const messagesQuery = useMessages(activeConvId, {
+    query: { enabled: activeConvId !== '' },
+  })
+
+  const sendMessageMutation = useSendMessage({
+    mutation: {
+      onSuccess: function (_data, variables) {
+        void queryClient.invalidateQueries({ queryKey: getMessagesQueryKey(variables.id) })
+        void queryClient.invalidateQueries({ queryKey: getSellerConversationsQueryKey({ shopId }) })
+      },
+    },
+  })
+  const markReadMutation = useMarkRead({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getSellerConversationsQueryKey({ shopId }) })
+      },
+    },
+  })
+  const updateProfileMutation = useUpdateProfile({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getMineQueryKey() })
+      },
+    },
+  })
+
+  const conversations: ChatConversationItem[] = rawConversations.map(function (c) {
+    return chatConversationItem(c, buyerNameByBuyerId)
+  })
+
+  let messages: ChatMessageItem[] = []
+  if (messagesQuery.data !== undefined) {
+    messages = takeData(messagesQuery.data).map(chatMessageItem)
+  }
+
+  function handleSelectConversation(id: string) {
+    setSelectedConvId(id)
+    markReadMutation.mutate({ id })
+  }
+
+  function handleSendMessage(conversationId: string, content: string) {
+    sendMessageMutation.mutate({ id: conversationId, data: { content } })
+  }
+
+  function handleSaveAutoReply(text: string) {
+    updateProfileMutation.mutate({ id: shopId, data: { autoReplyText: text } })
+  }
 
   function showToast(msg: string) {
     setNotification(msg)
@@ -34,7 +115,7 @@ export default function SellerChatTab({
   }
 
   const selectedConv = conversations.find(function (c) {
-    return c.id === selectedConvId
+    return c.id === activeConvId
   })
 
   const filteredConversations = conversations.filter(function (c) {
@@ -44,21 +125,19 @@ export default function SellerChatTab({
     return true
   })
 
-  function handleSelectConversation(id: string) {
-    setSelectedConvId(id)
-    onMarkRead(id)
-  }
-
   function handleSend() {
     if (messageInput.trim() === '') {
       return
     }
-    onSendMessage(selectedConvId, messageInput)
+    if (activeConvId === '') {
+      return
+    }
+    handleSendMessage(activeConvId, messageInput)
     setMessageInput('')
   }
 
   function handleSaveAutoReplyConfirm() {
-    onSaveAutoReply(tempAutoReply)
+    handleSaveAutoReply(tempAutoReply)
     setShowAutoReplyModal(false)
     showToast('Đã lưu cấu hình tin nhắn tự động!')
   }
@@ -91,12 +170,12 @@ export default function SellerChatTab({
           }}
           className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
         >
-          <Robot size={16} weight="bold" className="text-orange-600" />
+          <Robot size={16} weight="bold" className="text-blue-600" />
           Cài đặt Tin nhắn Tự động (Auto-reply)
         </button>
       </div>
 
-      {/* Cửa sổ Chat 2 cột Shopee Web Chat */}
+      {/* Cửa sổ Chat 2 cột */}
       <div className="grid h-[620px] grid-cols-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm md:grid-cols-3 dark:border-zinc-800 dark:bg-zinc-900">
         {/* Cột trái: Danh sách hội thoại */}
         <div className="flex flex-col border-r border-zinc-100 md:col-span-1 dark:border-zinc-800">
@@ -114,14 +193,20 @@ export default function SellerChatTab({
                   setSearchTerm(e.target.value)
                 }}
                 placeholder="Tìm khách hàng..."
-                className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-1.5 pr-3 pl-8 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-1.5 pr-3 pl-8 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               />
             </div>
           </div>
 
           <div className="flex-1 divide-y divide-zinc-50 overflow-y-auto dark:divide-zinc-800/40">
             {filteredConversations.map(function (conv) {
-              const isCurrent = conv.id === selectedConvId
+              const isCurrent = conv.id === activeConvId
+              let itemClass =
+                'flex w-full items-start gap-3 p-3.5 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
+              if (isCurrent) {
+                itemClass =
+                  'flex w-full items-start gap-3 p-3.5 text-left transition bg-blue-50/80 dark:bg-blue-950/40'
+              }
               return (
                 <button
                   key={conv.id}
@@ -129,13 +214,9 @@ export default function SellerChatTab({
                   onClick={function () {
                     handleSelectConversation(conv.id)
                   }}
-                  className={`flex w-full items-start gap-3 p-3.5 text-left transition ${
-                    isCurrent
-                      ? 'bg-orange-50/70 dark:bg-orange-950/30'
-                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
-                  }`}
+                  className={itemClass}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-xs font-bold text-white uppercase">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white uppercase">
                     {conv.buyerName.slice(0, 2)}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -148,7 +229,7 @@ export default function SellerChatTab({
                     <p className="mt-0.5 truncate text-[11px] text-zinc-500">{conv.lastMessage}</p>
                   </div>
                   {conv.unreadCount > 0 && (
-                    <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-orange-600 px-1 text-[9px] font-bold text-white">
+                    <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-bold text-white">
                       {conv.unreadCount}
                     </span>
                   )}
@@ -165,7 +246,7 @@ export default function SellerChatTab({
               {/* Header khung chat */}
               <div className="flex items-center justify-between border-b border-zinc-100 p-3.5 dark:border-zinc-800">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-[11px] font-bold text-white uppercase">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-[11px] font-bold text-white uppercase">
                     {selectedConv.buyerName.slice(0, 2)}
                   </div>
                   <div>
@@ -182,7 +263,7 @@ export default function SellerChatTab({
                 <button
                   type="button"
                   onClick={function () {
-                    onMarkRead(selectedConv.id)
+                    handleSelectConversation(selectedConv.id)
                   }}
                   className="rounded-xl border border-zinc-200 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400"
                 >
@@ -192,22 +273,19 @@ export default function SellerChatTab({
 
               {/* Vùng tin nhắn dạng bong bóng */}
               <div className="flex-1 space-y-3 overflow-y-auto p-4">
-                {selectedConv.messages.map(function (msg) {
+                {messages.map(function (msg) {
                   const isMe = msg.senderType === 'SELLER'
+                  let alignClass = 'flex flex-col items-start'
+                  let bubbleClass =
+                    'max-w-[70%] rounded-2xl p-3 text-xs leading-relaxed rounded-tl-xs bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
+                  if (isMe) {
+                    alignClass = 'flex flex-col items-end'
+                    bubbleClass =
+                      'max-w-[70%] rounded-2xl p-3 text-xs leading-relaxed rounded-tr-xs bg-blue-600 text-white'
+                  }
                   return (
-                    <div
-                      key={msg.id}
-                      className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                    >
-                      <div
-                        className={`max-w-[70%] rounded-2xl p-3 text-xs leading-relaxed ${
-                          isMe
-                            ? 'rounded-tr-xs bg-orange-600 text-white'
-                            : 'rounded-tl-xs bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
-                        }`}
-                      >
-                        {msg.content}
-                      </div>
+                    <div key={msg.id} className={alignClass}>
+                      <div className={bubbleClass}>{msg.content}</div>
                       <span className="mt-1 text-[9px] text-zinc-400">{msg.sentAt}</span>
                     </div>
                   )
@@ -229,12 +307,12 @@ export default function SellerChatTab({
                       }
                     }}
                     placeholder="Nhập tin nhắn trả lời khách hàng (Enter để gửi)..."
-                    className="flex-1 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                    className="flex-1 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                   />
                   <button
                     type="button"
                     onClick={handleSend}
-                    className="flex h-9 w-9 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-sm hover:bg-orange-700"
+                    className="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm hover:bg-blue-700"
                   >
                     <PaperPlaneRight size={16} weight="bold" />
                   </button>
@@ -257,7 +335,7 @@ export default function SellerChatTab({
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Robot size={22} weight="bold" className="text-orange-600" />
+                <Robot size={22} weight="bold" className="text-blue-600" />
                 <h3 className="text-base font-bold text-zinc-900 dark:text-white">
                   Cấu hình Tin nhắn Tự động
                 </h3>
@@ -273,7 +351,7 @@ export default function SellerChatTab({
               </button>
             </div>
 
-            <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+            <p className="mt-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
               Tin nhắn này sẽ tự động được gửi ngay lập tức khi khách hàng mở cuộc hội thoại đầu
               tiên hoặc nhắn tin ngoài giờ làm việc.
             </p>
@@ -292,8 +370,8 @@ export default function SellerChatTab({
                 onChange={function (e) {
                   setTempAutoReply(e.target.value)
                 }}
-                placeholder="VD: Cảm ơn bạn đã ghé thăm FashionHub! Chúng tôi sẽ phản hồi trong ít phút..."
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                placeholder="VD: Cảm ơn bạn đã ghé thăm gian hàng nét! Chúng tôi sẽ phản hồi trong ít phút..."
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               />
             </div>
 
@@ -310,7 +388,7 @@ export default function SellerChatTab({
               <button
                 type="button"
                 onClick={handleSaveAutoReplyConfirm}
-                className="rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white hover:bg-orange-700"
+                className="rounded-2xl bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700"
               >
                 Lưu cấu hình
               </button>

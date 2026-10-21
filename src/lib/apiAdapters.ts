@@ -1,12 +1,13 @@
 import { ApiError } from './apiFetch'
 
+import type { PriceInfo, SuccessStatus } from '@/types/product'
 import type { ProductResponse } from '@generated/model/productResponse'
 
 export const PLACEHOLDER_IMAGE = 'https://picsum.photos/seed/net-noimage/600/750'
 
 export function imageUrl(s3Key: string | null | undefined): string {
   if (s3Key === null || s3Key === undefined || s3Key === '') {
-    // TODO(mock): backend chưa có ảnh thì dùng placeholder; có ảnh đầy đủ thì bỏ nhánh này
+    // backend chưa có ảnh thì dùng placeholder; có ảnh đầy đủ thì bỏ nhánh này
     return PLACEHOLDER_IMAGE
   }
   const base = import.meta.env.VITE_ASSETS_URL as string | undefined
@@ -14,14 +15,6 @@ export function imageUrl(s3Key: string | null | undefined): string {
     throw new Error('Thiếu VITE_ASSETS_URL trong .env')
   }
   return `${base}/${s3Key}`
-}
-
-export interface PriceInfo {
-  minPrice: number | null
-  maxCompareAt: number | null
-  sizes: string[]
-  colors: string[]
-  totalStock: number
 }
 
 export function priceInfo(product: ProductResponse): PriceInfo {
@@ -50,8 +43,6 @@ export function priceInfo(product: ProductResponse): PriceInfo {
   }
   return { minPrice, maxCompareAt, sizes, colors, totalStock }
 }
-
-type SuccessStatus = 200 | 201
 
 export function takeData<U extends { data: unknown; status: number }>(
   response: U,

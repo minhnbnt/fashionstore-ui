@@ -1,5 +1,13 @@
 import { useState } from 'react'
 
+import { useListCategories } from '@generated/endpoints/categories/categories'
+import {
+  getInventoryQueryKey,
+  getListProductsQueryKey,
+  useBulkImport,
+  useListProducts,
+} from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
+import { useDeleteProduct, useUpdate1 } from '@generated/endpoints/shop-products/shop-products'
 import {
   Plus,
   DownloadSimple,
@@ -12,32 +20,96 @@ import {
   X,
   FileCsv,
 } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
+
+import { takeData } from '@/lib/apiAdapters'
+import { productItem } from '@/lib/sellerAdapters'
 
 import { formatVnd } from '../../lib/format'
 
-import type { ProductItem } from './sellerData'
+import type { ProductItem } from '@/types/seller'
+
+// Tên file export chỉ dùng khi bấm nút — sinh ở module-level để khỏi gọi Date.now trong render
+function csvExportFileName(): string {
+  return `products_export_${Date.now()}.csv`
+}
 
 interface Props {
-  products: ProductItem[]
-  onToggleStatus: (productId: string) => void
-  onDeleteProduct: (productId: string) => void
-  onBulkImport: (csvContent: string) => void
+  shopId: string
   onNavigateAddProduct: () => void
 }
 
-export default function SellerProductsTab({
-  products,
-  onToggleStatus,
-  onDeleteProduct,
-  onBulkImport,
-  onNavigateAddProduct,
-}: Props) {
+export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Props) {
+  const queryClient = useQueryClient()
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL')
   const [searchTerm, setSearchTerm] = useState('')
   const [showImportModal, setShowImportModal] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [importText, setImportText] = useState('')
   const [notification, setNotification] = useState<string | null>(null)
+
+  const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopId !== '' } })
+  const categoriesQuery = useListCategories()
+
+  const categoryNameById = new Map<string, string>()
+  if (categoriesQuery.data !== undefined) {
+    for (const c of takeData(categoriesQuery.data)) {
+      categoryNameById.set(c.id ?? '', c.name ?? '')
+    }
+  }
+
+  let products: ProductItem[] = []
+  if (productsQuery.data !== undefined) {
+    products = takeData(productsQuery.data).map(function (p) {
+      return productItem(p, categoryNameById.get(p.categoryId ?? ''))
+    })
+  }
+
+  const updateProductMutation = useUpdate1({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+      },
+    },
+  })
+  const deleteProductMutation = useDeleteProduct({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+      },
+    },
+  })
+  const bulkImportMutation = useBulkImport({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+        void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
+      },
+    },
+  })
+
+  function handleToggleProductStatus(productId: string) {
+    const current = products.find(function (p) {
+      return p.id === productId
+    })
+    if (current === undefined) {
+      return
+    }
+    let nextStatus = 'ACTIVE'
+    if (current.status === 'ACTIVE') {
+      nextStatus = 'HIDDEN'
+    }
+    updateProductMutation.mutate({ shopId, id: productId, data: { status: nextStatus } })
+  }
+
+  function handleDeleteProduct(productId: string) {
+    deleteProductMutation.mutate({ shopId, id: productId })
+  }
+
+  function handleBulkImport(csvContent: string) {
+    const file = new File([csvContent], 'products.csv', { type: 'text/csv' })
+    bulkImportMutation.mutate({ shopId, data: { file } })
+  }
 
   function showToast(msg: string) {
     setNotification(msg)
@@ -57,7 +129,7 @@ export default function SellerProductsTab({
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `products_export_${Date.now()}.csv`)
+    link.setAttribute('download', csvExportFileName())
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -69,7 +141,7 @@ export default function SellerProductsTab({
       alert('Vui lòng nhập hoặc dán nội dung CSV.')
       return
     }
-    onBulkImport(importText)
+    handleBulkImport(importText)
     setShowImportModal(false)
     setImportText('')
     showToast('Đã nhập hàng loạt sản phẩm thành công!')
@@ -77,7 +149,7 @@ export default function SellerProductsTab({
 
   function handleConfirmDelete() {
     if (deleteTargetId !== null) {
-      onDeleteProduct(deleteTargetId)
+      handleDeleteProduct(deleteTargetId)
       setDeleteTargetId(null)
       showToast('Đã xóa mềm sản phẩm vào thùng rác (Trạng thái DELETED)')
     }
@@ -164,7 +236,7 @@ export default function SellerProductsTab({
           <button
             type="button"
             onClick={onNavigateAddProduct}
-            className="flex items-center gap-2 rounded-2xl bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-md transition hover:bg-orange-700"
+            className="flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md transition hover:bg-blue-700"
           >
             <Plus size={16} weight="bold" />
             Thêm 1 sản phẩm mới
@@ -183,6 +255,12 @@ export default function SellerProductsTab({
               { id: 'DELETED', label: 'Đã xóa' },
             ].map(function (tab) {
               const isCurrent = activeFilter === tab.id
+              let btnClass =
+                'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              if (isCurrent) {
+                btnClass =
+                  'rounded-2xl px-4 py-2 text-xs font-bold transition bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
+              }
               return (
                 <button
                   key={tab.id}
@@ -190,11 +268,7 @@ export default function SellerProductsTab({
                   onClick={function () {
                     setActiveFilter(tab.id as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED')
                   }}
-                  className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
-                    isCurrent
-                      ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
-                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                  }`}
+                  className={btnClass}
                 >
                   {tab.label}
                 </button>
@@ -215,7 +289,7 @@ export default function SellerProductsTab({
                 setSearchTerm(e.target.value)
               }}
               placeholder="Tìm theo tên sản phẩm, SKU..."
-              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
         </div>
@@ -298,7 +372,7 @@ export default function SellerProductsTab({
                           <button
                             type="button"
                             onClick={function () {
-                              onToggleStatus(product.id)
+                              handleToggleProductStatus(product.id)
                             }}
                             title={
                               product.status === 'ACTIVE' ? 'Tạm ẩn sản phẩm' : 'Đăng bán sản phẩm'
@@ -377,7 +451,7 @@ export default function SellerProductsTab({
           <div className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileCsv size={24} weight="bold" className="text-orange-600" />
+                <FileCsv size={24} weight="bold" className="text-blue-600" />
                 <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
                   Nhập hàng loạt sản phẩm bằng file CSV
                 </h3>
@@ -393,7 +467,7 @@ export default function SellerProductsTab({
               </button>
             </div>
 
-            <div className="mt-4 rounded-2xl bg-orange-50 p-3.5 text-xs text-orange-900 dark:bg-orange-950/40 dark:text-orange-200">
+            <div className="mt-4 rounded-2xl bg-blue-50 p-3.5 text-xs text-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
               <p className="font-bold">Định dạng 8 cột bắt buộc (theo dòng):</p>
               <code className="mt-1 block font-mono text-[11px]">
                 name,slug,description,categoryId,sku,size,color,stock,price
@@ -415,7 +489,7 @@ export default function SellerProductsTab({
                   setImportText(e.target.value)
                 }}
                 placeholder="Áo Polo Nam,ao-polo-nam,Mo ta,uuid-cat,POLO-01,L,Trắng,50,220000"
-                className="mt-2 w-full rounded-2xl border border-zinc-200 p-3 font-mono text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-2 w-full rounded-2xl border border-zinc-200 p-3 font-mono text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               />
             </div>
 
@@ -432,7 +506,7 @@ export default function SellerProductsTab({
               <button
                 type="button"
                 onClick={handleConfirmImport}
-                className="rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white hover:bg-orange-700"
+                className="rounded-2xl bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700"
               >
                 Bắt đầu nhập
               </button>

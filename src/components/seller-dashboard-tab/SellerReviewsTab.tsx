@@ -1,16 +1,26 @@
 import { useState } from 'react'
 
+import { useListProducts } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
+import {
+  getList3QueryKey,
+  useList3,
+  useReply,
+  useReport,
+} from '@generated/endpoints/seller-reviews/seller-reviews'
 import { Star, ChatCircleDots, Flag, CheckCircle, X, PaperPlaneRight } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
 
-import type { ReviewItem } from './sellerData'
+import { takeData } from '@/lib/apiAdapters'
+import { reviewItem } from '@/lib/sellerAdapters'
+
+import type { ReviewItem } from '@/types/seller'
 
 interface Props {
-  reviews: ReviewItem[]
-  onReplyReview: (reviewId: string, replyText: string) => void
-  onReportReview: (reviewId: string, reason: string) => void
+  shopId: string
 }
 
-export default function SellerReviewsTab({ reviews, onReplyReview, onReportReview }: Props) {
+export default function SellerReviewsTab({ shopId }: Props) {
+  const queryClient = useQueryClient()
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'UNREPLIED' | '5_STAR' | 'LOW_STAR'>(
     'ALL',
   )
@@ -21,6 +31,76 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
     'Đánh giá sai sự thật / Cạnh tranh không lành mạnh',
   )
   const [notification, setNotification] = useState<string | null>(null)
+
+  const reviewsQuery = useList3({ shopId }, { query: { enabled: shopId !== '' } })
+  // Tên sản phẩm hiển thị kèm từng đánh giá
+  const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopId !== '' } })
+
+  const replyMutation = useReply({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList3QueryKey() })
+      },
+    },
+  })
+  const reportMutation = useReport({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getList3QueryKey() })
+      },
+    },
+  })
+
+  const productNameById = new Map<string, string>()
+  if (productsQuery.data !== undefined) {
+    for (const p of takeData(productsQuery.data)) {
+      productNameById.set(p.id ?? '', p.name ?? '')
+    }
+  }
+
+  let reviews: ReviewItem[] = []
+  if (reviewsQuery.data !== undefined) {
+    reviews = takeData(reviewsQuery.data).map(function (r) {
+      return reviewItem(r, productNameById.get(r.productId ?? ''))
+    })
+  }
+
+  let averageRating = 5.0
+  let count5Star = 0
+  let count4Star = 0
+  let countLowStar = 0
+
+  if (reviews.length > 0) {
+    let totalRating = 0
+    for (const r of reviews) {
+      totalRating += r.rating
+      if (r.rating === 5) {
+        count5Star += 1
+      } else if (r.rating === 4) {
+        count4Star += 1
+      } else {
+        countLowStar += 1
+      }
+    }
+    averageRating = Math.round((totalRating / reviews.length) * 10) / 10
+  }
+
+  let pct5 = 100
+  let pct4 = 0
+  let pctLow = 0
+  if (reviews.length > 0) {
+    pct5 = Math.round((count5Star / reviews.length) * 100)
+    pct4 = Math.round((count4Star / reviews.length) * 100)
+    pctLow = Math.round((countLowStar / reviews.length) * 100)
+  }
+
+  function handleReplyReview(reviewId: string, replyText: string) {
+    replyMutation.mutate({ id: reviewId, data: { reply: replyText } })
+  }
+
+  function handleReportReview(reviewId: string, reason: string) {
+    reportMutation.mutate({ id: reviewId, data: { reason } })
+  }
 
   function showToast(msg: string) {
     setNotification(msg)
@@ -34,7 +114,7 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
       alert('Vui lòng nhập nội dung phản hồi.')
       return
     }
-    onReplyReview(reviewId, replyContent)
+    handleReplyReview(reviewId, replyContent)
     setReplyTargetId(null)
     setReplyContent('')
     showToast('Đã gửi phản hồi đánh giá của khách hàng!')
@@ -42,7 +122,7 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
 
   function handleConfirmReport() {
     if (reportTargetId !== null) {
-      onReportReview(reportTargetId, reportReason)
+      handleReportReview(reportTargetId, reportReason)
       setReportTargetId(null)
       showToast('Đã gửi báo cáo đánh giá lên bộ phận kiểm duyệt của sàn!')
     }
@@ -66,14 +146,13 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
       <div className="flex items-center gap-0.5 text-amber-400">
         {[1, 2, 3, 4, 5].map(function (star) {
           const isFilled = star <= rating
-          return (
-            <Star
-              key={star}
-              size={14}
-              weight={isFilled ? 'fill' : 'regular'}
-              className={isFilled ? 'text-amber-400' : 'text-zinc-300 dark:text-zinc-600'}
-            />
-          )
+          let starWeight: 'fill' | 'regular' = 'regular'
+          let starClass = 'text-zinc-300 dark:text-zinc-600'
+          if (isFilled) {
+            starWeight = 'fill'
+            starClass = 'text-amber-400'
+          }
+          return <Star key={star} size={14} weight={starWeight} className={starClass} />
         })}
       </div>
     )
@@ -99,12 +178,14 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
         </p>
       </div>
 
-      {/* Thống kê đánh giá */}
+      {/* Thống kê đánh giá thực tế từ CSDL */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <span className="text-xs font-semibold text-zinc-500">Đánh giá trung bình</span>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-4xl font-black text-orange-600 dark:text-orange-400">4.9</span>
+            <span className="text-4xl font-black text-blue-700 dark:text-sky-300">
+              {averageRating.toFixed(1)}
+            </span>
             <span className="text-xs text-zinc-400">/ 5.0 sao</span>
           </div>
           <div className="mt-2 flex items-center gap-1 text-amber-400">
@@ -112,7 +193,9 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
               return <Star key={s} size={16} weight="fill" />
             })}
           </div>
-          <p className="mt-2 text-xs text-zinc-500">Dựa trên 1,248 lượt đánh giá</p>
+          <p className="mt-2 text-xs text-zinc-500">
+            Dựa trên {reviews.length} lượt đánh giá thực tế
+          </p>
         </div>
 
         <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm sm:col-span-2 dark:border-zinc-800 dark:bg-zinc-900">
@@ -121,23 +204,23 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
             <div className="flex items-center gap-3">
               <span className="w-12 font-bold text-zinc-700 dark:text-zinc-300">5 sao</span>
               <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <div className="h-full rounded-full bg-amber-400" style={{ width: '92%' }} />
+                <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct5}%` }} />
               </div>
-              <span className="w-10 text-right font-medium text-zinc-500">92%</span>
+              <span className="w-10 text-right font-medium text-zinc-500">{pct5}%</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="w-12 font-bold text-zinc-700 dark:text-zinc-300">4 sao</span>
               <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <div className="h-full rounded-full bg-amber-400" style={{ width: '6%' }} />
+                <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct4}%` }} />
               </div>
-              <span className="w-10 text-right font-medium text-zinc-500">6%</span>
+              <span className="w-10 text-right font-medium text-zinc-500">{pct4}%</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="w-12 font-bold text-zinc-700 dark:text-zinc-300">1-3 sao</span>
               <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <div className="h-full rounded-full bg-red-400" style={{ width: '2%' }} />
+                <div className="h-full rounded-full bg-rose-400" style={{ width: `${pctLow}%` }} />
               </div>
-              <span className="w-10 text-right font-medium text-zinc-500">2%</span>
+              <span className="w-10 text-right font-medium text-zinc-500">{pctLow}%</span>
             </div>
           </div>
         </div>
@@ -153,6 +236,12 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
             { id: 'LOW_STAR', label: '1 - 3 sao cần chú ý' },
           ].map(function (tab) {
             const isCurrent = activeFilter === tab.id
+            let btnClass =
+              'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+            if (isCurrent) {
+              btnClass =
+                'rounded-2xl px-4 py-2 text-xs font-bold transition bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-sky-400'
+            }
             return (
               <button
                 key={tab.id}
@@ -160,11 +249,7 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
                 onClick={function () {
                   setActiveFilter(tab.id as 'ALL' | 'UNREPLIED' | '5_STAR' | 'LOW_STAR')
                 }}
-                className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
-                  isCurrent
-                    ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
-                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                }`}
+                className={btnClass}
               >
                 {tab.label}
               </button>
@@ -239,9 +324,9 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
 
                   {/* Phản hồi của shop */}
                   {rev.sellerReply !== undefined && (
-                    <div className="mt-3 rounded-2xl bg-orange-50/80 p-3 text-xs text-orange-900 dark:bg-orange-950/30 dark:text-orange-200">
+                    <div className="mt-3 rounded-2xl bg-blue-50/80 p-3 text-xs text-blue-900 dark:bg-blue-950/30 dark:text-sky-200">
                       <p className="flex items-center gap-1.5 font-bold">
-                        <ChatCircleDots size={14} weight="bold" className="text-orange-600" />
+                        <ChatCircleDots size={14} weight="bold" className="text-blue-600" />
                         Phản hồi của Người bán:
                       </p>
                       <p className="mt-1 leading-relaxed text-zinc-700 dark:text-zinc-300">
@@ -252,7 +337,7 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
 
                   {/* Form trả lời */}
                   {isReplying && (
-                    <div className="mt-3 rounded-2xl border border-orange-200 bg-white p-3 dark:border-orange-900/40 dark:bg-zinc-900">
+                    <div className="mt-3 rounded-2xl border border-blue-200 bg-white p-3 dark:border-blue-900/40 dark:bg-zinc-900">
                       <textarea
                         rows={2}
                         value={replyContent}
@@ -277,7 +362,7 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
                           onClick={function () {
                             handleSendReply(rev.id)
                           }}
-                          className="flex items-center gap-1 rounded-xl bg-orange-600 px-3.5 py-1 text-[11px] font-bold text-white hover:bg-orange-700"
+                          className="flex items-center gap-1 rounded-xl bg-blue-600 px-3.5 py-1 text-[11px] font-bold text-white hover:bg-blue-700"
                         >
                           <PaperPlaneRight size={12} weight="bold" />
                           Gửi phản hồi
@@ -293,7 +378,7 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
                         setReplyTargetId(rev.id)
                         setReplyContent('')
                       }}
-                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-orange-600 hover:underline dark:text-orange-400"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline dark:text-sky-400"
                     >
                       <ChatCircleDots size={14} weight="bold" />
                       Trả lời đánh giá này
@@ -349,7 +434,7 @@ export default function SellerReviewsTab({ reviews, onReplyReview, onReportRevie
                 onChange={function (e) {
                   setReportReason(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               >
                 <option value="Đánh giá sai sự thật / Cạnh tranh không lành mạnh">
                   Đánh giá sai sự thật / Cạnh tranh không lành mạnh

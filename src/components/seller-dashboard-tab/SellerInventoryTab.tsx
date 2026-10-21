@@ -1,6 +1,14 @@
 import { useState } from 'react'
 
 import {
+  useMovements,
+  getInventoryQueryKey,
+  getMovementsQueryKey,
+  useAdjustStock,
+  useInventory,
+  useListProducts,
+} from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
+import {
   WarningCircle,
   ClockCounterClockwise,
   PencilSimple,
@@ -10,31 +18,106 @@ import {
   ArrowUp,
   ArrowDown,
 } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
 
-import type { ProductItem, StockMovementItem } from './sellerData'
+import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
+import { productItem, stockMovementItem } from '@/lib/sellerAdapters'
+
+import type { ProductItem, StockMovementItem } from '@/types/seller'
+import type { InventoryItemResponse } from '@generated/model/inventoryItemResponse'
 
 interface Props {
-  products: ProductItem[]
-  movements: StockMovementItem[]
-  onAdjustStock: (
-    variantSku: string,
-    changeQty: number,
-    reason: 'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL',
-    note: string,
-  ) => void
+  shopId: string
 }
 
-export default function SellerInventoryTab({ products, movements, onAdjustStock }: Props) {
+type AdjustReason = 'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL'
+
+export default function SellerInventoryTab({ shopId }: Props) {
+  const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [showAdjustModal, setShowAdjustModal] = useState(false)
-  const [showHistoryModal, setShowHistoryModal] = useState(false)
-  const [selectedSku, setSelectedSku] = useState('')
+  const [historyVariant, setHistoryVariant] = useState<InventoryItemResponse | null>(null)
+  const [adjustVariant, setAdjustVariant] = useState<InventoryItemResponse | null>(null)
   const [adjustQty, setAdjustQty] = useState(10)
-  const [adjustReason, setAdjustReason] = useState<
-    'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL'
-  >('RESTOCK')
-  const [adjustNote, setAdjustNote] = useState('')
+  const [adjustReason, setAdjustReason] = useState<AdjustReason>('RESTOCK')
   const [notification, setNotification] = useState<string | null>(null)
+
+  const inventoryQuery = useInventory(shopId, undefined, { query: { enabled: shopId !== '' } })
+  // Chỉ để lấy ảnh sản phẩm cho từng dòng tồn kho
+  const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopId !== '' } })
+
+  const adjustStockMutation = useAdjustStock({
+    mutation: {
+      onSuccess: function (_data, variables) {
+        void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
+        void queryClient.invalidateQueries({
+          queryKey: getMovementsQueryKey(shopId, variables.variantId),
+        })
+      },
+    },
+  })
+
+  let inventory: InventoryItemResponse[] = []
+  if (inventoryQuery.data !== undefined) {
+    inventory = takeData(inventoryQuery.data)
+  }
+
+  let products: ProductItem[] = []
+  if (productsQuery.data !== undefined) {
+    products = takeData(productsQuery.data).map(function (p) {
+      return productItem(p, '')
+    })
+  }
+
+  const movementsQuery = useMovements(shopId, historyVariant?.variantId ?? '', {
+    query: { enabled: shopId !== '' && historyVariant !== null },
+  })
+  let movements: StockMovementItem[] = []
+  let movementsError = ''
+  if (movementsQuery.isError) {
+    movementsError = apiErrorMessage('sellerProductsInventory', errorStatus(movementsQuery.error))
+  }
+  if (movementsQuery.data !== undefined) {
+    const skuMap = skuByVariantId()
+    const nameMap = productNameByVariantId()
+    movements = takeData(movementsQuery.data).map(function (m) {
+      return stockMovementItem(m, skuMap, nameMap)
+    })
+  }
+
+  function skuByVariantId(): Map<string, string> {
+    const map = new Map<string, string>()
+    for (const inv of inventory) {
+      map.set(inv.variantId ?? '', inv.sku ?? '')
+    }
+    return map
+  }
+
+  function productNameByVariantId(): Map<string, string> {
+    const map = new Map<string, string>()
+    for (const inv of inventory) {
+      map.set(inv.variantId ?? '', inv.productName ?? '')
+    }
+    return map
+  }
+
+  function productImageByProductId(): Map<string, string> {
+    const map = new Map<string, string>()
+    for (const p of products) {
+      map.set(p.id, p.image)
+    }
+    return map
+  }
+
+  function errorStatus(error: unknown): number {
+    if (typeof error === 'object' && error !== null && 'status' in error) {
+      const status = (error as { status: unknown }).status
+      if (typeof status === 'number') {
+        return status
+      }
+    }
+    return 0
+  }
 
   function showToast(msg: string) {
     setNotification(msg)
@@ -43,24 +126,21 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
     }, 3000)
   }
 
-  // Flatten all variants across products
-  const allVariants = products.flatMap(function (p) {
-    return p.variants.map(function (v) {
-      return {
-        ...v,
-        productId: p.id,
-        productName: p.name,
-        productImage: p.image,
-      }
-    })
+  // Gắn ảnh sản phẩm vào từng dòng tồn kho
+  const imageByProductId = productImageByProductId()
+  const rows = inventory.map(function (inv) {
+    return {
+      ...inv,
+      productImage: imageByProductId.get(inv.productId ?? '') ?? '',
+    }
   })
 
   // Filter
-  const filteredVariants = allVariants.filter(function (v) {
+  const filteredRows = rows.filter(function (v) {
     if (searchTerm.trim() !== '') {
       const term = searchTerm.toLowerCase()
-      const matchSku = v.sku.toLowerCase().includes(term)
-      const matchName = v.productName.toLowerCase().includes(term)
+      const matchSku = (v.sku ?? '').toLowerCase().includes(term)
+      const matchName = (v.productName ?? '').toLowerCase().includes(term)
       if (matchSku === false && matchName === false) {
         return false
       }
@@ -68,29 +148,44 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
     return true
   })
 
-  const lowStockVariants = allVariants.filter(function (v) {
-    return v.stock <= v.lowStockThreshold
+  const lowStockRows = rows.filter(function (v) {
+    return v.isLowStock === true
   })
 
-  function handleOpenAdjust(sku: string) {
-    setSelectedSku(sku)
+  function handleOpenAdjust(row: InventoryItemResponse) {
+    setAdjustVariant(row)
     setAdjustQty(10)
     setAdjustReason('RESTOCK')
-    setAdjustNote('')
     setShowAdjustModal(true)
   }
 
   function handleConfirmAdjust() {
-    if (selectedSku === '') {
+    if (adjustVariant === null) {
       alert('Chưa chọn biến thể.')
       return
     }
-    onAdjustStock(selectedSku, adjustQty, adjustReason, adjustNote)
+    if ((adjustVariant.variantId ?? '') === '') {
+      alert('Biến thể không hợp lệ.')
+      return
+    }
+    handleAdjustStock(adjustVariant.variantId ?? '', adjustQty, adjustReason)
     setShowAdjustModal(false)
-    showToast(`Đã ghi nhận điều chỉnh kho cho SKU ${selectedSku}`)
+    showToast(`Đã ghi nhận điều chỉnh kho cho SKU ${adjustVariant.sku ?? ''}`)
   }
 
-  function renderStockState(stock: number, threshold: number) {
+  function handleAdjustStock(variantId: string, changeQty: number, reason: string) {
+    const current = inventory.find(function (i) {
+      return i.variantId === variantId
+    })
+    if (current === undefined) {
+      return
+    }
+    const stock = current.stockQuantity ?? 0
+    const newStock = Math.max(0, stock + changeQty)
+    adjustStockMutation.mutate({ shopId, variantId, data: { newStock, reason } })
+  }
+
+  function renderStockState(stock: number, threshold: number, isLow: boolean) {
     if (stock === 0) {
       return (
         <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
@@ -98,7 +193,7 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
         </span>
       )
     }
-    if (stock <= threshold) {
+    if (isLow) {
       return (
         <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
           Tồn kho thấp ({stock}/{threshold})
@@ -109,6 +204,24 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
       <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
         Đủ hàng ({stock})
       </span>
+    )
+  }
+
+  function renderMovementCell(m: StockMovementItem) {
+    return (
+      <td className="py-2.5 text-center font-bold">
+        {m.changeQty > 0 && (
+          <span className="inline-flex items-center text-emerald-600">
+            <ArrowUp size={12} weight="bold" />+{m.changeQty}
+          </span>
+        )}
+        {m.changeQty <= 0 && (
+          <span className="inline-flex items-center text-red-600">
+            <ArrowDown size={12} weight="bold" />
+            {m.changeQty}
+          </span>
+        )}
+      </td>
     )
   }
 
@@ -123,29 +236,17 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
       )}
 
       {/* Header bar */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-xl font-black text-zinc-900 dark:text-white">
-            Quản lý tồn kho & Biến động
-          </h2>
-          <p className="text-xs text-zinc-500">
-            Theo dõi số lượng tồn kho theo từng biến thể (size, màu) và sổ nhật ký xuất nhập
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={function () {
-            setShowHistoryModal(true)
-          }}
-          className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
-        >
-          <ClockCounterClockwise size={16} weight="bold" />
-          Xem sổ nhật ký biến động kho (Audit log)
-        </button>
+      <div>
+        <h2 className="text-xl font-black text-zinc-900 dark:text-white">
+          Quản lý tồn kho & Biến động
+        </h2>
+        <p className="text-xs text-zinc-500">
+          Theo dõi số lượng tồn kho theo từng biến thể (size, màu) và sổ nhật ký xuất nhập
+        </p>
       </div>
 
       {/* Cảnh báo tồn thấp */}
-      {lowStockVariants.length > 0 && (
+      {lowStockRows.length > 0 && (
         <div className="rounded-3xl border border-amber-200/80 bg-amber-50/70 p-5 dark:border-amber-900/40 dark:bg-amber-950/30">
           <div className="flex items-start gap-3">
             <WarningCircle
@@ -155,8 +256,7 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
             />
             <div>
               <p className="text-xs font-bold text-amber-900 dark:text-amber-200">
-                Cảnh báo: Có {lowStockVariants.length} biến thể sản phẩm sắp hết hàng hoặc đã hết
-                hàng!
+                Cảnh báo: Có {lowStockRows.length} biến thể sản phẩm sắp hết hàng hoặc đã hết hàng!
               </p>
               <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
                 Vui lòng nhập thêm hàng để tránh gián đoạn đơn đặt hàng của khách.
@@ -170,7 +270,7 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
       <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
-            Danh sách biến thể ({filteredVariants.length})
+            Danh sách biến thể ({filteredRows.length})
           </p>
           <div className="relative w-72">
             <MagnifyingGlass
@@ -185,7 +285,7 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
                 setSearchTerm(e.target.value)
               }}
               placeholder="Tìm theo SKU hoặc tên..."
-              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
         </div>
@@ -200,21 +300,21 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
                 <th className="pb-3 text-center">Tồn kho hiện tại</th>
                 <th className="pb-3 text-center">Ngưỡng báo động</th>
                 <th className="pb-3">Tình trạng</th>
-                <th className="pr-2 pb-3 text-right">Điều chỉnh</th>
+                <th className="pr-2 pb-3 text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-              {filteredVariants.map(function (v) {
+              {filteredRows.map(function (v) {
                 return (
                   <tr
-                    key={v.sku}
+                    key={v.variantId}
                     className="transition hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30"
                   >
                     <td className="py-3 pl-2">
                       <div className="flex items-center gap-2.5">
                         <img
                           src={v.productImage}
-                          alt={v.productName}
+                          alt={v.productName ?? ''}
                           className="h-9 w-9 rounded-lg border border-zinc-200 object-cover"
                         />
                         <span className="max-w-[220px] truncate font-bold text-zinc-900 dark:text-white">
@@ -229,22 +329,38 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
                       {v.color} - Size {v.size}
                     </td>
                     <td className="py-3 text-center text-sm font-extrabold text-zinc-900 dark:text-white">
-                      {v.stock}
+                      {v.stockQuantity}
                     </td>
                     <td className="py-3 text-center font-semibold text-zinc-500">
                       {v.lowStockThreshold}
                     </td>
-                    <td className="py-3">{renderStockState(v.stock, v.lowStockThreshold)}</td>
+                    <td className="py-3">
+                      {renderStockState(
+                        v.stockQuantity ?? 0,
+                        v.lowStockThreshold ?? 0,
+                        v.isLowStock === true,
+                      )}
+                    </td>
                     <td className="py-3 pr-2 text-right">
                       <button
                         type="button"
                         onClick={function () {
-                          handleOpenAdjust(v.sku)
+                          handleOpenAdjust(v)
                         }}
                         className="inline-flex items-center gap-1 rounded-xl border border-zinc-200 px-3 py-1.5 text-[11px] font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300"
                       >
                         <PencilSimple size={13} weight="bold" />
                         Điều chỉnh
+                      </button>
+                      <button
+                        type="button"
+                        onClick={function () {
+                          setHistoryVariant(v)
+                        }}
+                        className="ml-1.5 inline-flex items-center gap-1 rounded-xl border border-zinc-200 px-3 py-1.5 text-[11px] font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300"
+                      >
+                        <ClockCounterClockwise size={13} weight="bold" />
+                        Lịch sử
                       </button>
                     </td>
                   </tr>
@@ -252,11 +368,17 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
               })}
             </tbody>
           </table>
+
+          {filteredRows.length === 0 && (
+            <div className="py-8 text-center text-zinc-400">
+              <p>Chưa có biến thể nào trong kho.</p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Modal Điều chỉnh kho */}
-      {showAdjustModal && (
+      {showAdjustModal && adjustVariant !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
             <div className="flex items-center justify-between">
@@ -265,6 +387,7 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
               </h3>
               <button
                 type="button"
+                aria-label="Đóng điều chỉnh tồn kho"
                 onClick={function () {
                   setShowAdjustModal(false)
                 }}
@@ -280,12 +403,12 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
                   htmlFor="adjustSkuInput"
                   className="block font-semibold text-zinc-700 dark:text-zinc-300"
                 >
-                  SKU biến thể
+                  SKU biến thể (tồn hiện tại: {adjustVariant.stockQuantity})
                 </label>
                 <input
                   id="adjustSkuInput"
                   type="text"
-                  value={selectedSku}
+                  value={adjustVariant.sku ?? ''}
                   readOnly
                   className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 p-2.5 font-mono text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950"
                 />
@@ -302,11 +425,9 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
                   id="adjustReasonSelect"
                   value={adjustReason}
                   onChange={function (e) {
-                    setAdjustReason(
-                      e.target.value as 'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL',
-                    )
+                    setAdjustReason(e.target.value as AdjustReason)
                   }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 >
                   <option value="RESTOCK">Nhập thêm hàng vào kho (RESTOCK)</option>
                   <option value="DAMAGE">Xuất bỏ hàng lỗi / hư hỏng (DAMAGE)</option>
@@ -330,26 +451,7 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
                   onChange={function (e) {
                     setAdjustQty(Number(e.target.value))
                   }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="adjustNoteInput"
-                  className="block font-semibold text-zinc-700 dark:text-zinc-300"
-                >
-                  Ghi chú (bắt buộc)
-                </label>
-                <input
-                  id="adjustNoteInput"
-                  type="text"
-                  value={adjustNote}
-                  onChange={function (e) {
-                    setAdjustNote(e.target.value)
-                  }}
-                  placeholder="VD: Nhập thêm 50 cái từ xưởng may"
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs font-bold outline-none focus:border-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 />
               </div>
             </div>
@@ -367,7 +469,7 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
               <button
                 type="button"
                 onClick={handleConfirmAdjust}
-                className="rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white hover:bg-orange-700"
+                className="rounded-2xl bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700"
               >
                 Xác nhận lưu vào sổ kho
               </button>
@@ -376,23 +478,24 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
         </div>
       )}
 
-      {/* Modal Sổ nhật ký biến động kho */}
-      {showHistoryModal && (
+      {/* Modal Sổ nhật ký biến động kho (theo biến thể đang chọn) */}
+      {historyVariant !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-3xl rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                  Sổ nhật ký biến động kho (Stock Movement Audit)
+                  Nhật ký biến động kho — {historyVariant.productName}
                 </h3>
                 <p className="text-xs text-zinc-500">
-                  Toàn bộ thao tác tăng giảm kho đều được ghi nhận tự động theo thời gian thực
+                  SKU {historyVariant.sku} • mọi thao tác tăng giảm kho đều được ghi nhận tự động
                 </p>
               </div>
               <button
                 type="button"
+                aria-label="Đóng nhật ký biến động"
                 onClick={function () {
-                  setShowHistoryModal(false)
+                  setHistoryVariant(null)
                 }}
                 className="text-zinc-400 hover:text-zinc-600"
               >
@@ -401,68 +504,61 @@ export default function SellerInventoryTab({ products, movements, onAdjustStock 
             </div>
 
             <div className="mt-4 max-h-[420px] overflow-y-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-zinc-800">
-                    <th className="pb-3">Thời gian</th>
-                    <th className="pb-3">Mã SKU</th>
-                    <th className="pb-3">Lý do</th>
-                    <th className="pb-3 text-center">Biến động</th>
-                    <th className="pb-3 text-center">Trước → Sau</th>
-                    <th className="pb-3">Ghi chú & Người tạo</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                  {movements.map(function (m) {
-                    return (
-                      <tr key={m.id}>
-                        <td className="py-2.5 text-zinc-500">{m.createdAt}</td>
-                        <td className="py-2.5 font-mono text-[11px] font-bold text-zinc-800 dark:text-zinc-200">
-                          {m.variantSku}
-                        </td>
-                        <td className="py-2.5">
-                          <span className="rounded-lg bg-zinc-100 px-2 py-0.5 font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                            {m.reason}
-                          </span>
-                        </td>
-                        <td className="py-2.5 text-center font-bold">
-                          {m.changeQty > 0 && (
-                            <span className="inline-flex items-center text-emerald-600">
-                              <ArrowUp size={12} weight="bold" />+{m.changeQty}
-                            </span>
-                          )}
-                          {m.changeQty <= 0 && (
-                            <span className="inline-flex items-center text-red-600">
-                              <ArrowDown size={12} weight="bold" />
-                              {m.changeQty}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 text-center text-zinc-500">
-                          {m.previousStock} → {m.newStock}
-                        </td>
-                        <td className="py-2.5 text-zinc-600 dark:text-zinc-400">
-                          <p>{m.note}</p>
-                          <p className="text-[10px] text-zinc-400">{m.createdBy}</p>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-
-              {movements.length === 0 && (
-                <div className="py-8 text-center text-zinc-400">
-                  <p>Chưa có biến động kho nào được ghi nhận.</p>
-                </div>
+              {movementsError !== '' && (
+                <p className="py-4 text-center text-sm text-red-600">{movementsError}</p>
               )}
+              {movementsQuery.isPending && (
+                <p className="py-4 text-center text-sm text-zinc-500">Đang tải nhật ký…</p>
+              )}
+              {movementsError === '' && movementsQuery.isPending === false && (
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-zinc-800">
+                      <th className="pb-3">Thời gian</th>
+                      <th className="pb-3">Lý do</th>
+                      <th className="pb-3 text-center">Biến động</th>
+                      <th className="pb-3 text-center">Sau biến động</th>
+                      <th className="pb-3">Người tạo</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                    {movements.map(function (m) {
+                      return (
+                        <tr key={m.id}>
+                          <td className="py-2.5 text-zinc-500">{m.createdAt}</td>
+                          <td className="py-2.5">
+                            <span className="rounded-lg bg-zinc-100 px-2 py-0.5 font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                              {m.reason}
+                            </span>
+                          </td>
+                          {renderMovementCell(m)}
+                          <td className="py-2.5 text-center text-zinc-500">
+                            {/* API không lưu tồn trước/sau từng lần biến động */}
+                            {m.newStock === null && '—'}
+                            {m.newStock !== null && m.newStock}
+                          </td>
+                          <td className="py-2.5 text-zinc-600 dark:text-zinc-400">{m.createdBy}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+
+              {movementsError === '' &&
+                movementsQuery.isPending === false &&
+                movements.length === 0 && (
+                  <div className="py-8 text-center text-zinc-400">
+                    <p>Chưa có biến động kho nào được ghi nhận cho biến thể này.</p>
+                  </div>
+                )}
             </div>
 
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
                 onClick={function () {
-                  setShowHistoryModal(false)
+                  setHistoryVariant(null)
                 }}
                 className="rounded-2xl border border-zinc-200 px-5 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300"
               >

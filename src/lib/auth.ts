@@ -1,5 +1,6 @@
 import { AuthClient } from '@supabase/auth-js'
 
+import type { Credentials, MaybeAuthError, UserRole } from '@/types/auth'
 import type { AuthChangeEvent, Session } from '@supabase/auth-js'
 
 let client: InstanceType<typeof AuthClient> | null = null
@@ -36,11 +37,6 @@ export async function refreshAuthSession(): Promise<Session | null> {
     throw error
   }
   return data.session
-}
-
-export interface Credentials {
-  email: string
-  password: string
 }
 
 export async function signInWithPassword(creds: Credentials): Promise<Session | null> {
@@ -93,8 +89,6 @@ export async function signInWithGoogle(): Promise<void> {
     throw error
   }
 }
-
-export type UserRole = 'admin' | 'shop' | 'customer'
 
 export function getRoleFromSession(session: Session): UserRole {
   const meta = session.user.app_metadata as { role?: string } | undefined
@@ -150,10 +144,6 @@ export function validatePasswordReset(password: string, confirmPassword: string)
     return 'Mật khẩu xác nhận không khớp.'
   }
   return null
-}
-
-interface MaybeAuthError {
-  message?: string
 }
 
 export function friendlyAuthError(error: unknown): string {

@@ -25,7 +25,7 @@ import UserAvatar from '../components/UserAvatar'
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useSessionQuery } from '../hooks/useSession'
 
-import type { TrendMetric } from '@/lib/adminStats'
+import type { TrendMetric } from '@/types/admin'
 import type { AdminStatsResponse } from '@generated/model/adminStatsResponse'
 
 const TREND_TABS: { metric: TrendMetric; label: string }[] = [

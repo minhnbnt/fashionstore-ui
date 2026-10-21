@@ -25,6 +25,7 @@ fashionstore-ui/
 │   │   ├── AdminShopDetail.tsx    # hồ sơ + kiểm duyệt + audit trail
 │   │   ├── AdminUsers.tsx         # tìm/lọc tài khoản phân trang
 │   │   └── AdminUserDetail.tsx    # hồ sơ + khóa/mở khóa + audit trail
+│   ├── types/               # khai báo type dùng chung theo domain (seller/ con, admin.ts, auth.ts, product.ts, search.ts, ui.ts)
 │   ├── components/admin/  # shell, dialog kiểm duyệt, status, timeline dùng chung
 │   ├── App.tsx            # ráp Header/Routes/Footer + ScrollToHash
 │   ├── main.tsx           # providers (React Query) + import font + index.css
@@ -40,6 +41,7 @@ fashionstore-ui/
 - Section trang chủ: thêm vào `src/components/Sections.tsx` nếu nhỏ, tách file riêng nếu trên ~150 dòng.
 - Trang mới (cart, PDP): `src/pages/`, route ráp ở `src/App.tsx`.
 - Logic dùng chung (giỏ hàng, format): `src/hooks/`, `src/lib/`.
+- Type dùng chung (domain): `src/types/` — seller đặt trong `src/types/seller/`, domain khác là file `.ts` cùng cấp; `index.ts` re-export tất cả.
 - Test cạnh file: `TenFile.test.tsx`.
 
 Không tạo `src/views/`, `src/containers/` hay lồng `components/components/`.

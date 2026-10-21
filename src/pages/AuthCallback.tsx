@@ -8,9 +8,8 @@ import {
   subscribeToSessionChanges,
 } from '../lib/auth'
 
+import type { Status } from '@/types/auth'
 import type { Session } from '@supabase/auth-js'
-
-type Status = 'loading' | 'error'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
