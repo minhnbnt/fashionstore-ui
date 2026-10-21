@@ -53,9 +53,372 @@
     {
       "name": "Admin - Products",
       "description": "Kiểm duyệt sản phẩm toàn sàn, gỡ sản phẩm vi phạm. Cần role admin."
-    }
+    },
+    {
+      "name": "Admin - Banned Keywords",
+      "description": "Từ khóa cấm để hệ thống tự gắn cờ sản phẩm. Cần role admin."
+    },
+    { "name": "Product Reports", "description": "Người mua báo cáo sản phẩm nghi vi phạm" }
   ],
   "paths": {
+    "/api/products/{id}/reports": {
+      "post": {
+        "tags": ["Product Reports"],
+        "summary": "Báo cáo sản phẩm",
+        "description": "Đưa sản phẩm vào hàng đợi kiểm duyệt của admin. Mỗi người 1 báo cáo đang mở cho mỗi sản phẩm; thành viên shop không tự báo cáo hàng của shop mình.",
+        "operationId": "reportProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id sản phẩm",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateProductReportRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Đã ghi nhận báo cáo",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ProductReportResponse" } }
+            }
+          },
+          "400": {
+            "description": "Thiếu lý do hoặc mô tả quá dài",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ProductReportResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ProductReportResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Sản phẩm không tồn tại hoặc không còn hiển thị",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ProductReportResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Đã có báo cáo đang chờ xử lý, hoặc là sản phẩm của shop mình",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ProductReportResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/products/{id}/reports/dismiss": {
+      "patch": {
+        "tags": ["Admin - Products"],
+        "summary": "Bác bỏ báo cáo",
+        "description": "Đóng mọi báo cáo đang mở của sản phẩm là DISMISSED (không vi phạm). Sản phẩm giữ nguyên trạng thái.",
+        "operationId": "dismissProductReports",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id sản phẩm",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DismissReportsRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Số báo cáo đã đóng",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/DismissReportsResponse" } }
+            }
+          },
+          "400": {
+            "description": "Ghi chú quá dài",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/DismissReportsResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/DismissReportsResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/DismissReportsResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Sản phẩm không tồn tại",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/DismissReportsResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Sản phẩm không có báo cáo đang mở",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/DismissReportsResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/banned-keywords": {
+      "get": {
+        "tags": ["Admin - Banned Keywords"],
+        "summary": "Danh sách từ khóa cấm",
+        "description": "Mới thêm lên đầu.",
+        "operationId": "listBannedKeywords",
+        "responses": {
+          "200": {
+            "description": "Danh sách từ khóa",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BannedKeywordResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BannedKeywordResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BannedKeywordResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "post": {
+        "tags": ["Admin - Banned Keywords"],
+        "summary": "Thêm từ khóa cấm",
+        "description": "Lưu dạng chữ thường. Quét ngay sản phẩm đang bán/đang ẩn chứa từ khóa (khớp nguyên từ) và gắn cờ hệ thống vào hàng đợi báo cáo; trả số sản phẩm vừa bị gắn cờ. Không tự gỡ sản phẩm.",
+        "operationId": "createBannedKeyword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateBannedKeywordRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Đã thêm từ khóa",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannedKeywordCreatedResponse" } }
+            }
+          },
+          "400": {
+            "description": "Từ khóa trống, quá ngắn/dài hoặc thiếu loại vi phạm",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannedKeywordCreatedResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannedKeywordCreatedResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannedKeywordCreatedResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Từ khóa đã tồn tại (không phân biệt hoa thường)",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/BannedKeywordCreatedResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/admin/banned-keywords/{id}": {
+      "delete": {
+        "tags": ["Admin - Banned Keywords"],
+        "summary": "Xóa từ khóa cấm",
+        "description": "Không đóng các cờ đã tạo trước đó, admin vẫn xử lý nốt trong hàng đợi.",
+        "operationId": "deleteBannedKeyword",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id từ khóa",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Đã xóa" },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Từ khóa không tồn tại",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
     "/api/admin/products/{id}/restore": {
       "patch": {
         "tags": ["Admin - Products"],
@@ -231,6 +594,13 @@
             "description": "Từ khóa: tên/slug sản phẩm, tên shop hoặc SKU",
             "required": false,
             "schema": { "type": "string" }
+          },
+          {
+            "name": "reported",
+            "in": "query",
+            "description": "true = hàng đợi báo cáo: chỉ sản phẩm có báo cáo đang mở, nhiều báo cáo nhất trước",
+            "required": false,
+            "schema": { "type": "boolean", "default": false }
           },
           {
             "name": "page",
@@ -7978,6 +8348,152 @@
   },
   "components": {
     "schemas": {
+      "CreateProductReportRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Lý do báo cáo, dùng chung loại vi phạm với kiểm duyệt",
+            "enum": [
+              "PROHIBITED",
+              "COUNTERFEIT",
+              "IP_INFRINGEMENT",
+              "MISLEADING",
+              "WRONG_CATEGORY",
+              "SPAM",
+              "OTHER"
+            ],
+            "example": "COUNTERFEIT"
+          },
+          "description": {
+            "type": ["string", "null"],
+            "description": "Mô tả thêm cho admin, tối đa 1000 ký tự",
+            "example": "Logo in lệch, vải khác ảnh",
+            "maxLength": 1000,
+            "minLength": 0
+          }
+        },
+        "required": ["reason"]
+      },
+      "ProductReportResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "reason": { "type": "string", "example": "COUNTERFEIT" },
+          "status": {
+            "type": "string",
+            "description": "OPEN | ACTION_TAKEN | DISMISSED",
+            "example": "OPEN"
+          },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AdminProductReportResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "source": {
+            "type": "string",
+            "description": "USER (người mua) | SYSTEM (từ khóa cấm)",
+            "example": "USER"
+          },
+          "reason": { "type": "string", "example": "COUNTERFEIT" },
+          "description": {
+            "type": "string",
+            "description": "Mô tả của người báo cáo; với SYSTEM là các từ khóa khớp, cách nhau bởi dấu phẩy"
+          },
+          "reporterEmail": {
+            "type": ["string", "null"],
+            "description": "Email người báo cáo, null với SYSTEM"
+          },
+          "status": {
+            "type": "string",
+            "description": "OPEN | ACTION_TAKEN | DISMISSED",
+            "example": "OPEN"
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "resolvedByEmail": { "type": ["string", "null"] },
+          "resolvedAt": { "type": ["string", "null"], "format": "date-time" },
+          "resolutionNote": {
+            "type": ["string", "null"],
+            "description": "Lý do gỡ hoặc ghi chú khi bác bỏ"
+          }
+        }
+      },
+      "DismissReportsRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": ["string", "null"],
+            "description": "Ghi chú vì sao không vi phạm, tùy chọn",
+            "example": "Ảnh đúng thực tế",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        }
+      },
+      "DismissReportsResponse": {
+        "type": "object",
+        "properties": {
+          "dismissedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số báo cáo đã đóng"
+          }
+        }
+      },
+      "CreateBannedKeywordRequest": {
+        "type": "object",
+        "properties": {
+          "keyword": {
+            "type": "string",
+            "description": "Từ hoặc cụm từ, khớp nguyên từ, không phân biệt hoa thường",
+            "example": "replica",
+            "maxLength": 100,
+            "minLength": 2
+          },
+          "violationType": {
+            "type": "string",
+            "description": "Loại vi phạm gán cho cờ hệ thống",
+            "enum": [
+              "PROHIBITED",
+              "COUNTERFEIT",
+              "IP_INFRINGEMENT",
+              "MISLEADING",
+              "WRONG_CATEGORY",
+              "SPAM",
+              "OTHER"
+            ],
+            "example": "COUNTERFEIT"
+          }
+        },
+        "required": ["keyword", "violationType"]
+      },
+      "BannedKeywordResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "keyword": {
+            "type": "string",
+            "description": "Đã chuẩn hóa chữ thường",
+            "example": "replica"
+          },
+          "violationType": { "type": "string", "example": "COUNTERFEIT" },
+          "createdByEmail": { "type": ["string", "null"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BannedKeywordCreatedResponse": {
+        "type": "object",
+        "properties": {
+          "keyword": { "$ref": "#/components/schemas/BannedKeywordResponse" },
+          "flaggedProducts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số sản phẩm đang bán/đang ẩn bị gắn cờ ngay khi thêm từ khóa"
+          }
+        }
+      },
       "AdminProductResponse": {
         "type": "object",
         "properties": {
@@ -8031,7 +8547,26 @@
             "description": "S3 key ảnh đầu tiên, frontend tự ghép base URL"
           },
           "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "openReportCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Số báo cáo đang chờ xử lý (người mua + hệ thống)"
+          },
+          "topReportReason": {
+            "type": ["string", "null"],
+            "description": "Lý do bị báo cáo nhiều nhất trong các báo cáo đang mở",
+            "example": "COUNTERFEIT"
+          },
+          "lastReportedAt": {
+            "type": ["string", "null"],
+            "format": "date-time",
+            "description": "Lần bị báo cáo gần nhất (báo cáo đang mở)"
+          },
+          "systemFlagged": {
+            "type": "boolean",
+            "description": "Có cờ hệ thống (từ khóa cấm) đang mở"
+          }
         }
       },
       "BanProductRequest": {
@@ -8096,6 +8631,11 @@
             "type": "array",
             "description": "Lịch sử kiểm duyệt, cũ nhất trước",
             "items": { "$ref": "#/components/schemas/ProductModerationHistoryResponse" }
+          },
+          "reports": {
+            "type": "array",
+            "description": "Báo cáo của sản phẩm (mọi trạng thái), mới nhất trước, tối đa 100",
+            "items": { "$ref": "#/components/schemas/AdminProductReportResponse" }
           }
         }
       },
@@ -9602,6 +10142,11 @@
             "type": "integer",
             "format": "int64",
             "description": "Doanh thu COD đã thu (VND)"
+          },
+          "openProductReports": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Số báo cáo sản phẩm đang chờ xử lý (người mua + hệ thống)"
           },
           "dailyTrend": {
             "type": "array",

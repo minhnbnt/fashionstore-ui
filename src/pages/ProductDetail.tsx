@@ -10,6 +10,7 @@ import ProductGallery from '../components/pdp/ProductGallery'
 import ProductInfo from '../components/pdp/ProductInfo'
 import ProductTabs from '../components/pdp/ProductTabs'
 import RelatedProducts from '../components/pdp/RelatedProducts'
+import ReportProductButton from '../components/pdp/ReportProductButton'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 
@@ -100,6 +101,9 @@ export default function ProductDetail() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <ProductGallery images={product.images ?? []} name={product.name ?? ''} />
         <ProductInfo product={product} />
+      </div>
+      <div className="mt-4 flex justify-end">
+        <ReportProductButton productId={productId} />
       </div>
       <ProductTabs product={product} />
       <div className="mt-10">

@@ -2,11 +2,16 @@ import { describe, expect, it } from 'vitest'
 
 import {
   appendTemplate,
+  BUYER_REPORT_REASONS,
   canBan,
   canRestore,
+  keywordError,
   priceRangeLabel,
   reasonError,
+  reportSourceLabel,
+  reportStatusLabel,
   statusLabel,
+  VIOLATION_OPTIONS,
   violationLabel,
 } from './productModeration'
 
@@ -58,6 +63,29 @@ describe('violationLabel', () => {
     expect(violationLabel('COUNTERFEIT')).toBe('Hàng giả, hàng nhái')
     expect(violationLabel('NEW_TYPE')).toBe('NEW_TYPE')
     expect(violationLabel(null)).toBe('')
+  })
+})
+
+describe('report labels', () => {
+  it('labels report source and status', () => {
+    expect(reportSourceLabel('SYSTEM')).toBe('Hệ thống')
+    expect(reportSourceLabel('USER')).toBe('Người mua')
+    expect(reportStatusLabel('OPEN')).toBe('Chờ xử lý')
+    expect(reportStatusLabel('DISMISSED')).toBe('Không vi phạm')
+  })
+
+  it('offers every violation type to buyers', () => {
+    expect(BUYER_REPORT_REASONS.map((reason) => reason.type)).toEqual(
+      expect.arrayContaining(VIOLATION_OPTIONS.map((option) => option.type)),
+    )
+  })
+})
+
+describe('keywordError', () => {
+  it('requires 2 to 100 characters after trimming', () => {
+    expect(keywordError(' a ')).toBe('Từ khóa cần ít nhất 2 ký tự.')
+    expect(keywordError('fake')).toBeNull()
+    expect(keywordError('a'.repeat(101))).toBe('Từ khóa tối đa 100 ký tự.')
   })
 })
 

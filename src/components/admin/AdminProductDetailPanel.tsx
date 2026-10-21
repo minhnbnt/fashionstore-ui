@@ -1,5 +1,12 @@
 import { useGetAdminProduct } from '@generated/endpoints/admin-products/admin-products'
-import { ArrowCounterClockwise, ClockCounterClockwise, Prohibit, X } from '@phosphor-icons/react'
+import {
+  ArrowCounterClockwise,
+  ClockCounterClockwise,
+  Flag,
+  Prohibit,
+  ShieldCheck,
+  X,
+} from '@phosphor-icons/react'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
@@ -7,6 +14,8 @@ import {
   canBan,
   canRestore,
   formatDateTime,
+  reportSourceLabel,
+  reportStatusLabel,
   statusBadgeClass,
   statusLabel,
   violationLabel,
@@ -21,6 +30,7 @@ interface Props {
   onClose: () => void
   onBan: (product: AdminProductResponse) => void
   onRestore: (product: AdminProductResponse) => void
+  onDismiss: (product: AdminProductResponse) => void
 }
 
 function historyTitle(entry: ProductModerationHistoryResponse): string {
@@ -34,15 +44,18 @@ function DetailBody({
   detail,
   onBan,
   onRestore,
+  onDismiss,
 }: {
   detail: AdminProductDetailResponse
   onBan: Props['onBan']
   onRestore: Props['onRestore']
+  onDismiss: Props['onDismiss']
 }) {
   const product = detail.product
   const images = detail.images ?? []
   const variants = detail.variants ?? []
   const history = detail.history ?? []
+  const reports = detail.reports ?? []
   if (product === undefined) {
     return <p className="text-sm text-zinc-500 dark:text-zinc-400">Không có dữ liệu sản phẩm.</p>
   }
@@ -124,7 +137,69 @@ function DetailBody({
             Khôi phục
           </button>
         )}
+        {(product.openReportCount ?? 0) > 0 && (
+          <button
+            type="button"
+            onClick={() => onDismiss(product)}
+            className="flex items-center gap-2 rounded-full border border-emerald-300 px-5 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+          >
+            <ShieldCheck size={16} weight="bold" />
+            Không vi phạm
+          </button>
+        )}
       </div>
+
+      {reports.length > 0 && (
+        <section>
+          <h4 className="mb-2 flex items-center gap-2 text-sm font-bold">
+            <Flag size={16} weight="bold" />
+            Báo cáo ({product.openReportCount ?? 0} đang chờ / {reports.length})
+          </h4>
+          <ul className="space-y-2">
+            {reports.map(function (report) {
+              let itemClass = 'rounded-2xl bg-white/70 px-4 py-3 text-sm dark:bg-white/5'
+              if (report.status !== 'OPEN') {
+                itemClass =
+                  'rounded-2xl bg-white/40 px-4 py-3 text-sm opacity-70 dark:bg-white/[0.03]'
+              }
+              return (
+                <li key={report.id} className={itemClass}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold">{violationLabel(report.reason)}</span>
+                    {report.source === 'SYSTEM' && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                        {reportSourceLabel(report.source)}
+                      </span>
+                    )}
+                    <span className="ml-auto text-xs text-zinc-500 dark:text-zinc-400">
+                      {reportStatusLabel(report.status)}
+                    </span>
+                  </div>
+                  {report.source === 'SYSTEM' && (
+                    <p className="mt-1 text-zinc-700 dark:text-zinc-300">
+                      Chứa từ khóa cấm: <strong>{report.description}</strong>
+                    </p>
+                  )}
+                  {report.source !== 'SYSTEM' && report.description !== '' && (
+                    <p className="mt-1 text-zinc-700 dark:text-zinc-300">{report.description}</p>
+                  )}
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    {report.reporterEmail ?? reportSourceLabel(report.source)} ·{' '}
+                    {formatDateTime(report.createdAt)}
+                  </p>
+                  {report.status === 'DISMISSED' &&
+                    report.resolutionNote !== null &&
+                    report.resolutionNote !== undefined && (
+                      <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
+                        Ghi chú: {report.resolutionNote}
+                      </p>
+                    )}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
 
       <section>
         <h4 className="mb-2 text-sm font-bold">Mô tả</h4>
@@ -200,7 +275,13 @@ function DetailBody({
 }
 
 /** Bảng trượt bên phải: đủ thông tin để admin đánh giá trước khi gỡ. */
-export default function AdminProductDetailPanel({ productId, onClose, onBan, onRestore }: Props) {
+export default function AdminProductDetailPanel({
+  productId,
+  onClose,
+  onBan,
+  onRestore,
+  onDismiss,
+}: Props) {
   const query = useGetAdminProduct(productId)
 
   let body = <p className="text-sm text-zinc-500 dark:text-zinc-400">Đang tải…</p>
@@ -212,7 +293,14 @@ export default function AdminProductDetailPanel({ productId, onClose, onBan, onR
     )
   }
   if (query.isSuccess) {
-    body = <DetailBody detail={takeData(query.data)} onBan={onBan} onRestore={onRestore} />
+    body = (
+      <DetailBody
+        detail={takeData(query.data)}
+        onBan={onBan}
+        onRestore={onRestore}
+        onDismiss={onDismiss}
+      />
+    )
   }
 
   return (
