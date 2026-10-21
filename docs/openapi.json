@@ -146,6 +146,14 @@
     {
       "name": "Wishlist",
       "description": "San pham buyer thich, muc theo product"
+    },
+    {
+      "name": "Admin - Banned Keywords",
+      "description": "Từ khóa cấm để hệ thống tự gắn cờ sản phẩm. Cần role admin."
+    },
+    {
+      "name": "Product Reports",
+      "description": "Người mua báo cáo sản phẩm nghi vi phạm"
     }
   ],
   "paths": {
@@ -6300,7 +6308,9 @@
     },
     "/api/admin/orders/{id}/cancel": {
       "patch": {
-        "tags": ["Admin - Orders"],
+        "tags": [
+          "Admin - Orders"
+        ],
         "summary": "Hủy can thiệp đơn",
         "description": "PENDING/CONFIRMED → CANCELLED kèm loại lý do + ghi chú, ghi nhận admin là người hủy. Đơn đã xác nhận được hoàn kho. Đơn đã bàn giao vận chuyển không hủy được.",
         "operationId": "adminCancelOrder",
@@ -6310,13 +6320,18 @@
             "in": "path",
             "description": "id đơn",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/AdminCancelOrderRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/AdminCancelOrderRequest"
+              }
             }
           },
           "required": true
@@ -6325,56 +6340,94 @@
           "200": {
             "description": "Đơn đã hủy",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderResponse" } }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderResponse"
+                }
+              }
             }
           },
           "400": {
             "description": "Thiếu loại lý do hoặc ghi chú không hợp lệ",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
             "description": "Không phải admin",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "404": {
             "description": "Đơn không tồn tại",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "409": {
             "description": "Đơn đã bàn giao vận chuyển, đã giao hoặc đã hủy",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/users/me": {
@@ -10386,7 +10439,9 @@
     },
     "/api/admin/orders": {
       "get": {
-        "tags": ["Admin - Orders"],
+        "tags": [
+          "Admin - Orders"
+        ],
         "summary": "Danh sách đơn toàn sàn",
         "description": "Lọc theo trạng thái, cảnh báo SLA, shop, người mua, khoảng ngày đặt (giờ VN) + tìm theo mã đơn, tên/SĐT người nhận, tên shop, email người mua. Mặc định mới đặt trước; lọc theo cảnh báo thì đơn trễ lâu nhất lên đầu.",
         "operationId": "listAdminOrders",
@@ -10398,7 +10453,13 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["PENDING", "CONFIRMED", "SHIPPING", "DELIVERED", "CANCELLED"]
+              "enum": [
+                "PENDING",
+                "CONFIRMED",
+                "SHIPPING",
+                "DELIVERED",
+                "CANCELLED"
+              ]
             },
             "example": "PENDING"
           },
@@ -10409,7 +10470,12 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["CONFIRM_LATE", "HANDOVER_LATE", "DELIVERY_LATE", "RETURN_OPEN"]
+              "enum": [
+                "CONFIRM_LATE",
+                "HANDOVER_LATE",
+                "DELIVERY_LATE",
+                "RETURN_OPEN"
+              ]
             },
             "example": "CONFIRM_LATE"
           },
@@ -10418,28 +10484,39 @@
             "in": "query",
             "description": "Chỉ lấy đơn của shop này",
             "required": false,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           },
           {
             "name": "buyerId",
             "in": "query",
             "description": "Chỉ lấy đơn của người mua này",
             "required": false,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           },
           {
             "name": "q",
             "in": "query",
             "description": "Từ khóa: mã đơn, tên/SĐT người nhận, tên shop, email người mua",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "from",
             "in": "query",
             "description": "Đặt từ ngày (giờ VN), yyyy-MM-dd",
             "required": false,
-            "schema": { "type": "string", "format": "date" },
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
             "example": "2026-10-01"
           },
           {
@@ -10447,7 +10524,10 @@
             "in": "query",
             "description": "Đặt đến hết ngày (giờ VN), yyyy-MM-dd",
             "required": false,
-            "schema": { "type": "string", "format": "date" },
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
             "example": "2026-10-18"
           },
           {
@@ -10455,7 +10535,12 @@
             "in": "query",
             "description": "Trang, đếm từ 0",
             "required": false,
-            "schema": { "type": "integer", "format": "int32", "default": 0, "minimum": 0 }
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            }
           },
           {
             "name": "size",
@@ -10475,17 +10560,25 @@
           "200": {
             "description": "Trang kết quả",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/PageResponseAdminOrderResponse" } }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAdminOrderResponse"
+                }
+              }
             }
           },
           "400": {
             "description": "Tham số lọc, khoảng ngày hoặc phân trang sai",
             "content": {
               "*/*": {
-                "schema": { "$ref": "#/components/schemas/PageResponseAdminOrderResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAdminOrderResponse"
+                }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -10493,10 +10586,14 @@
             "description": "Thiếu hoặc sai JWT",
             "content": {
               "*/*": {
-                "schema": { "$ref": "#/components/schemas/PageResponseAdminOrderResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAdminOrderResponse"
+                }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -10504,10 +10601,14 @@
             "description": "Không phải admin",
             "content": {
               "*/*": {
-                "schema": { "$ref": "#/components/schemas/PageResponseAdminOrderResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseAdminOrderResponse"
+                }
               },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -10515,7 +10616,9 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -10523,17 +10626,25 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/admin/orders/{id}": {
       "get": {
-        "tags": ["Admin - Orders"],
+        "tags": [
+          "Admin - Orders"
+        ],
         "summary": "Chi tiết đơn",
         "description": "Đơn + shop + người mua + sản phẩm + tiền + dòng thời gian (ai làm gì, lúc nào) + yêu cầu trả hàng.",
         "operationId": "getAdminOrder",
@@ -10543,40 +10654,65 @@
             "in": "path",
             "description": "id đơn",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Chi tiết đơn",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderDetailResponse" } }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderDetailResponse"
+                }
+              }
             }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderDetailResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderDetailResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
             "description": "Không phải admin",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderDetailResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderDetailResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "404": {
             "description": "Đơn không tồn tại",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderDetailResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderDetailResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -10584,7 +10720,9 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -10592,17 +10730,25 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/admin/orders/summary": {
       "get": {
-        "tags": ["Admin - Orders"],
+        "tags": [
+          "Admin - Orders"
+        ],
         "summary": "Đếm đơn theo trạng thái và cảnh báo",
         "description": "Cùng bộ lọc với danh sách nhưng không lọc trạng thái/cảnh báo, để hiện số trên từng tab và thẻ cảnh báo (tính ngày làm việc, không tính Chủ nhật/ngày lễ): chờ xác nhận quá 1 ngày, chưa bàn giao vận chuyển sau 2 ngày, đang giao quá 7 ngày, trả hàng chưa xong.",
         "operationId": "getAdminOrderSummary",
@@ -10612,28 +10758,39 @@
             "in": "query",
             "description": "Chỉ đếm đơn của shop này",
             "required": false,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           },
           {
             "name": "buyerId",
             "in": "query",
             "description": "Chỉ đếm đơn của người mua này",
             "required": false,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           },
           {
             "name": "q",
             "in": "query",
             "description": "Từ khóa: mã đơn, tên/SĐT người nhận, tên shop, email người mua",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "from",
             "in": "query",
             "description": "Đặt từ ngày (giờ VN), yyyy-MM-dd",
             "required": false,
-            "schema": { "type": "string", "format": "date" },
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
             "example": "2026-10-01"
           },
           {
@@ -10641,7 +10798,10 @@
             "in": "query",
             "description": "Đặt đến hết ngày (giờ VN), yyyy-MM-dd",
             "required": false,
-            "schema": { "type": "string", "format": "date" },
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
             "example": "2026-10-18"
           }
         ],
@@ -10649,33 +10809,55 @@
           "200": {
             "description": "Số đếm",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderSummaryResponse" } }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderSummaryResponse"
+                }
+              }
             }
           },
           "400": {
             "description": "Tham số lọc hoặc khoảng ngày sai",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderSummaryResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderSummaryResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderSummaryResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderSummaryResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
             "description": "Không phải admin",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/AdminOrderSummaryResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderSummaryResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -10683,7 +10865,9 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -10691,12 +10875,18 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/shops/{shopId}/products/{id}/images/{imageId}": {
@@ -14183,7 +14373,9 @@
     },
     "/api/admin/holidays/{day}": {
       "put": {
-        "tags": ["Admin - Holidays"],
+        "tags": [
+          "Admin - Holidays"
+        ],
         "summary": "Thêm/sửa ngày lễ",
         "description": "Ghi tay, nguồn MANUAL: đồng bộ Calendarific không bao giờ ghi đè. Ngày đã bỏ được bật lại.",
         "operationId": "saveHoliday",
@@ -14193,45 +14385,76 @@
             "in": "path",
             "description": "Ngày, yyyy-MM-dd",
             "required": true,
-            "schema": { "type": "string", "format": "date" },
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
             "example": "2027-04-16"
           }
         ],
         "requestBody": {
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/SaveHolidayRequest" } }
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveHolidayRequest"
+              }
+            }
           },
           "required": true
         },
         "responses": {
           "200": {
             "description": "Ngày đã lưu",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } } }
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Thiếu tên/loại hoặc ngày sai định dạng",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
             "description": "Không phải admin",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -14239,7 +14462,9 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -14247,15 +14472,23 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       },
       "delete": {
-        "tags": ["Admin - Holidays"],
+        "tags": [
+          "Admin - Holidays"
+        ],
         "summary": "Bỏ ngày lễ",
         "description": "Không xóa hẳn: đánh dấu đã bỏ (nguồn MANUAL) để lần đồng bộ sau không thêm lại. Ngày đó tính là ngày làm việc trong SLA.",
         "operationId": "disableHoliday",
@@ -14265,39 +14498,66 @@
             "in": "path",
             "description": "Ngày, yyyy-MM-dd",
             "required": true,
-            "schema": { "type": "string", "format": "date" },
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
             "example": "2026-02-14"
           }
         ],
         "responses": {
           "200": {
             "description": "Ngày đã bỏ",
-            "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } } }
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
             "description": "Không phải admin",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "404": {
             "description": "Ngày chưa có trong lịch",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -14305,7 +14565,9 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -14313,17 +14575,25 @@
             "description": "Invalid request data",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/admin/holidays/sync": {
       "post": {
-        "tags": ["Admin - Holidays"],
+        "tags": [
+          "Admin - Holidays"
+        ],
         "summary": "Đồng bộ Calendarific ngay",
         "description": "Lấy ngày nghỉ quốc gia + ngày đi làm bù của Việt Nam trong năm. Ngày admin sửa tay giữ nguyên, ngày đồng bộ trước mà Calendarific rút lại thì xóa. Tốn 1 lượt gọi (gói free 500 lượt/tháng).",
         "operationId": "syncHolidays",
@@ -14333,7 +14603,12 @@
             "in": "query",
             "description": "Năm, bỏ trống = năm nay (giờ VN)",
             "required": false,
-            "schema": { "type": "integer", "format": "int32", "maximum": 2100, "minimum": 2000 },
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 2100,
+              "minimum": 2000
+            },
             "example": 2027
           }
         ],
@@ -14341,53 +14616,85 @@
           "200": {
             "description": "Kết quả đồng bộ",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidaySyncResultResponse"
+                }
+              }
             }
           },
           "400": {
             "description": "Năm ngoài 2000–2100",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidaySyncResultResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidaySyncResultResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
             "description": "Không phải admin",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidaySyncResultResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "502": {
             "description": "Calendarific lỗi hoặc hết lượt gọi",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidaySyncResultResponse"
+                }
+              }
             }
           },
           "503": {
             "description": "Chưa cấu hình API key Calendarific",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidaySyncResultResponse" } }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidaySyncResultResponse"
+                }
+              }
             }
           },
           "409": {
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -14395,17 +14702,25 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/admin/holidays": {
       "get": {
-        "tags": ["Admin - Holidays"],
+        "tags": [
+          "Admin - Holidays"
+        ],
         "summary": "Lịch nghỉ lễ theo năm",
         "description": "Mọi ngày của năm kể cả ngày đã bỏ, lần đồng bộ gần nhất, đã cấu hình API key chưa.",
         "operationId": "listHolidays",
@@ -14415,7 +14730,12 @@
             "in": "query",
             "description": "Năm, bỏ trống = năm nay (giờ VN)",
             "required": false,
-            "schema": { "type": "integer", "format": "int32", "maximum": 2100, "minimum": 2000 },
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 2100,
+              "minimum": 2000
+            },
             "example": 2026
           }
         ],
@@ -14423,33 +14743,55 @@
           "200": {
             "description": "Lịch của năm",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayYearResponse" } }
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayYearResponse"
+                }
+              }
             }
           },
           "400": {
             "description": "Năm ngoài 2000–2100",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayYearResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayYearResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "401": {
             "description": "Thiếu hoặc sai JWT",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayYearResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayYearResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
           "403": {
             "description": "Không phải admin",
             "content": {
-              "*/*": { "schema": { "$ref": "#/components/schemas/HolidayYearResponse" } },
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayYearResponse"
+                }
+              },
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -14457,7 +14799,9 @@
             "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           },
@@ -14465,12 +14809,543 @@
             "description": "Resource not found",
             "content": {
               "application/problem+json": {
-                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
               }
             }
           }
         },
-        "security": [{ "bearerAuth": [] }]
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/products/{id}/reports": {
+      "post": {
+        "tags": [
+          "Product Reports"
+        ],
+        "summary": "Báo cáo sản phẩm",
+        "description": "Đưa sản phẩm vào hàng đợi kiểm duyệt của admin. Mỗi người 1 báo cáo đang mở cho mỗi sản phẩm; thành viên shop không tự báo cáo hàng của shop mình.",
+        "operationId": "reportProduct",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id sản phẩm",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Đã ghi nhận báo cáo",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu lý do hoặc mô tả quá dài",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductReportResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductReportResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sản phẩm không tồn tại hoặc không còn hiển thị",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductReportResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Đã có báo cáo đang chờ xử lý, hoặc là sản phẩm của shop mình",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductReportResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/products/{id}/reports/dismiss": {
+      "patch": {
+        "tags": [
+          "Admin - Products"
+        ],
+        "summary": "Bác bỏ báo cáo",
+        "description": "Đóng mọi báo cáo đang mở của sản phẩm là DISMISSED (không vi phạm). Sản phẩm giữ nguyên trạng thái.",
+        "operationId": "dismissProductReports",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id sản phẩm",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissReportsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Số báo cáo đã đóng",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissReportsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ghi chú quá dài",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissReportsResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissReportsResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissReportsResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Sản phẩm không tồn tại",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissReportsResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Sản phẩm không có báo cáo đang mở",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissReportsResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/banned-keywords": {
+      "get": {
+        "tags": [
+          "Admin - Banned Keywords"
+        ],
+        "summary": "Danh sách từ khóa cấm",
+        "description": "Mới thêm lên đầu.",
+        "operationId": "listBannedKeywords",
+        "responses": {
+          "200": {
+            "description": "Danh sách từ khóa",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BannedKeywordResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BannedKeywordResponse"
+                  }
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BannedKeywordResponse"
+                  }
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Admin - Banned Keywords"
+        ],
+        "summary": "Thêm từ khóa cấm",
+        "description": "Lưu dạng chữ thường. Quét ngay sản phẩm đang bán/đang ẩn chứa từ khóa (khớp nguyên từ) và gắn cờ hệ thống vào hàng đợi báo cáo; trả số sản phẩm vừa bị gắn cờ. Không tự gỡ sản phẩm.",
+        "operationId": "createBannedKeyword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBannedKeywordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Đã thêm từ khóa",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannedKeywordCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Từ khóa trống, quá ngắn/dài hoặc thiếu loại vi phạm",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannedKeywordCreatedResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannedKeywordCreatedResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannedKeywordCreatedResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Từ khóa đã tồn tại (không phân biệt hoa thường)",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannedKeywordCreatedResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/banned-keywords/{id}": {
+      "delete": {
+        "tags": [
+          "Admin - Banned Keywords"
+        ],
+        "summary": "Xóa từ khóa cấm",
+        "description": "Không đóng các cờ đã tạo trước đó, admin vẫn xử lý nốt trong hàng đợi.",
+        "operationId": "deleteBannedKeyword",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id từ khóa",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Đã xóa"
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải admin",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Từ khóa không tồn tại",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
@@ -16531,17 +17406,36 @@
             "minLength": 5
           }
         },
-        "required": ["note", "reason"]
+        "required": [
+          "note",
+          "reason"
+        ]
       },
       "AdminOrderResponse": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "code": { "type": "string", "example": "ORD-AB12CD34" },
-          "shopId": { "type": "string", "format": "uuid" },
-          "shopName": { "type": "string" },
-          "shopSlug": { "type": "string" },
-          "buyerId": { "type": "string", "format": "uuid" },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "example": "ORD-AB12CD34"
+          },
+          "shopId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "shopName": {
+            "type": "string"
+          },
+          "shopSlug": {
+            "type": "string"
+          },
+          "buyerId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "buyerEmail": {
             "type": "string",
             "description": "Email tài khoản người mua",
@@ -16579,31 +17473,52 @@
             "description": "Tổng số lượng sản phẩm trong đơn"
           },
           "firstItemName": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tên sản phẩm đầu tiên, để nhận diện nhanh"
           },
           "alert": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Cảnh báo SLA: CONFIRM_LATE | HANDOVER_LATE | DELIVERY_LATE | RETURN_OPEN, null nếu bình thường",
             "example": "CONFIRM_LATE"
           },
           "returnStatus": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Trạng thái yêu cầu trả hàng gần nhất, null nếu không có",
             "example": "REQUESTED"
           },
           "cancelledBy": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Ai hủy đơn: BUYER | SELLER | ADMIN, null nếu chưa hủy",
             "example": "ADMIN"
           },
           "cancelReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Mã lý do hủy, null nếu chưa hủy",
             "example": "FRAUD_SUSPECTED"
           },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "StockMovementResponse": {
@@ -17531,7 +18446,9 @@
           "items": {
             "type": "array",
             "description": "Phần tử của trang hiện tại",
-            "items": { "$ref": "#/components/schemas/AdminOrderResponse" }
+            "items": {
+              "$ref": "#/components/schemas/AdminOrderResponse"
+            }
           },
           "total": {
             "type": "integer",
@@ -17543,41 +18460,97 @@
             "format": "int32",
             "description": "Trang hiện tại, đếm từ 0"
           },
-          "size": { "type": "integer", "format": "int32", "description": "Số phần tử mỗi trang" }
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số phần tử mỗi trang"
+          }
         }
       },
       "AdminOrderDetailResponse": {
         "type": "object",
         "properties": {
-          "order": { "$ref": "#/components/schemas/AdminOrderResponse" },
+          "order": {
+            "$ref": "#/components/schemas/AdminOrderResponse"
+          },
           "shopStatus": {
             "type": "string",
             "description": "Trạng thái shop hiện tại",
             "example": "APPROVED"
           },
-          "paymentMethod": { "type": "string", "example": "COD" },
-          "subtotal": { "type": "integer", "format": "int64" },
-          "shippingFee": { "type": "integer", "format": "int64" },
-          "shippingAddress": { "type": "string" },
-          "note": { "type": "string", "description": "Ghi chú của người mua" },
-          "cancelNote": { "type": ["string", "null"], "description": "Ghi chú khi hủy" },
-          "confirmedAt": { "type": ["string", "null"], "format": "date-time" },
-          "shippedAt": { "type": ["string", "null"], "format": "date-time" },
-          "deliveredAt": { "type": ["string", "null"], "format": "date-time" },
-          "cancelledAt": { "type": ["string", "null"], "format": "date-time" },
+          "paymentMethod": {
+            "type": "string",
+            "example": "COD"
+          },
+          "subtotal": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "shippingFee": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "shippingAddress": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string",
+            "description": "Ghi chú của người mua"
+          },
+          "cancelNote": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Ghi chú khi hủy"
+          },
+          "confirmedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "shippedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "deliveredAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "cancelledAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
           "items": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/OrderItemResponse" }
+            "items": {
+              "$ref": "#/components/schemas/OrderItemResponse"
+            }
           },
           "timeline": {
             "type": "array",
             "description": "Dòng thời gian trạng thái, cũ nhất trước",
-            "items": { "$ref": "#/components/schemas/OrderTimelineResponse" }
+            "items": {
+              "$ref": "#/components/schemas/OrderTimelineResponse"
+            }
           },
           "returns": {
             "type": "array",
             "description": "Yêu cầu trả hàng của đơn, mới nhất trước",
-            "items": { "$ref": "#/components/schemas/ReturnRequestResponse" }
+            "items": {
+              "$ref": "#/components/schemas/ReturnRequestResponse"
+            }
           }
         }
       },
@@ -17585,26 +18558,53 @@
         "type": "object",
         "properties": {
           "fromStatus": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Trạng thái trước, null ở bước tạo đơn",
             "example": "PENDING"
           },
-          "toStatus": { "type": "string", "example": "CONFIRMED" },
+          "toStatus": {
+            "type": "string",
+            "example": "CONFIRMED"
+          },
           "actor": {
             "type": "string",
             "description": "Vai trò người thao tác: BUYER | SELLER | ADMIN | SYSTEM",
             "example": "SELLER"
           },
-          "changedBy": { "type": ["string", "null"], "format": "uuid" },
-          "changedByEmail": { "type": ["string", "null"] },
-          "note": { "type": "string", "description": "Ghi chú kèm thao tác, rỗng nếu không có" },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "changedBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "changedByEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "description": "Ghi chú kèm thao tác, rỗng nếu không có"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "AdminOrderSummaryResponse": {
         "type": "object",
         "properties": {
-          "total": { "type": "integer", "format": "int64", "description": "Tổng đơn khớp bộ lọc" },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng đơn khớp bộ lọc"
+          },
           "pending": {
             "type": "integer",
             "format": "int64",
@@ -17615,9 +18615,21 @@
             "format": "int64",
             "description": "Đơn đã xác nhận, chờ giao vận chuyển"
           },
-          "shipping": { "type": "integer", "format": "int64", "description": "Đơn đang giao" },
-          "delivered": { "type": "integer", "format": "int64", "description": "Đơn đã giao" },
-          "cancelled": { "type": "integer", "format": "int64", "description": "Đơn đã hủy" },
+          "shipping": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Đơn đang giao"
+          },
+          "delivered": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Đơn đã giao"
+          },
+          "cancelled": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Đơn đã hủy"
+          },
           "confirmLate": {
             "type": "integer",
             "format": "int64",
@@ -18562,11 +19574,17 @@
           "kind": {
             "type": "string",
             "description": "HOLIDAY (nghỉ) | WORKING_DAY (đi làm bù)",
-            "enum": ["HOLIDAY", "WORKING_DAY"],
+            "enum": [
+              "HOLIDAY",
+              "WORKING_DAY"
+            ],
             "example": "HOLIDAY"
           }
         },
-        "required": ["kind", "name"]
+        "required": [
+          "kind",
+          "name"
+        ]
       },
       "HolidayResponse": {
         "type": "object",
@@ -18577,7 +19595,10 @@
             "description": "Ngày (giờ Việt Nam)",
             "example": "2026-11-24"
           },
-          "name": { "type": "string", "example": "Ngày Văn hóa Việt Nam" },
+          "name": {
+            "type": "string",
+            "example": "Ngày Văn hóa Việt Nam"
+          },
           "kind": {
             "type": "string",
             "description": "HOLIDAY (nghỉ) | WORKING_DAY (đi làm bù)",
@@ -18593,17 +19614,30 @@
             "description": "false = admin đã bỏ ngày này, đồng bộ không thêm lại"
           },
           "updatedByEmail": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Email admin sửa gần nhất, null nếu do seed/đồng bộ"
           },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "HolidaySyncResultResponse": {
         "type": "object",
         "properties": {
-          "year": { "type": "integer", "format": "int32" },
-          "added": { "type": "integer", "format": "int32", "description": "Ngày mới thêm" },
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "added": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Ngày mới thêm"
+          },
           "updated": {
             "type": "integer",
             "format": "int32",
@@ -18624,20 +19658,33 @@
       "HolidaySyncResponse": {
         "type": "object",
         "properties": {
-          "status": { "type": "string", "description": "SUCCESS | FAILED", "example": "SUCCESS" },
-          "message": { "type": "string", "description": "Lý do thất bại, rỗng nếu thành công" },
+          "status": {
+            "type": "string",
+            "description": "SUCCESS | FAILED",
+            "example": "SUCCESS"
+          },
+          "message": {
+            "type": "string",
+            "description": "Lý do thất bại, rỗng nếu thành công"
+          },
           "holidayCount": {
             "type": "integer",
             "format": "int32",
             "description": "Số ngày Calendarific trả về sau khi lọc"
           },
-          "syncedAt": { "type": "string", "format": "date-time" }
+          "syncedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "HolidayYearResponse": {
         "type": "object",
         "properties": {
-          "year": { "type": "integer", "format": "int32" },
+          "year": {
+            "type": "integer",
+            "format": "int32"
+          },
           "syncConfigured": {
             "type": "boolean",
             "description": "Đã cấu hình API key Calendarific chưa, false thì không đồng bộ được"
@@ -18650,7 +19697,159 @@
           "holidays": {
             "type": "array",
             "description": "Mọi ngày của năm kể cả ngày đã bỏ, sớm nhất trước",
-            "items": { "$ref": "#/components/schemas/HolidayResponse" }
+            "items": {
+              "$ref": "#/components/schemas/HolidayResponse"
+            }
+          }
+        }
+      },
+      "CreateProductReportRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Lý do báo cáo, dùng chung loại vi phạm với kiểm duyệt",
+            "enum": [
+              "PROHIBITED",
+              "COUNTERFEIT",
+              "IP_INFRINGEMENT",
+              "MISLEADING",
+              "WRONG_CATEGORY",
+              "SPAM",
+              "OTHER"
+            ],
+            "example": "COUNTERFEIT"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Mô tả thêm cho admin, tối đa 1000 ký tự",
+            "example": "Logo in lệch, vải khác ảnh",
+            "maxLength": 1000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ProductReportResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "example": "COUNTERFEIT"
+          },
+          "status": {
+            "type": "string",
+            "description": "OPEN | ACTION_TAKEN | DISMISSED",
+            "example": "OPEN"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DismissReportsRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Ghi chú vì sao không vi phạm, tùy chọn",
+            "example": "Ảnh đúng thực tế",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        }
+      },
+      "DismissReportsResponse": {
+        "type": "object",
+        "properties": {
+          "dismissedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số báo cáo đã đóng"
+          }
+        }
+      },
+      "BannedKeywordResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "keyword": {
+            "type": "string",
+            "description": "Đã chuẩn hóa chữ thường",
+            "example": "replica"
+          },
+          "violationType": {
+            "type": "string",
+            "example": "COUNTERFEIT"
+          },
+          "createdByEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateBannedKeywordRequest": {
+        "type": "object",
+        "properties": {
+          "keyword": {
+            "type": "string",
+            "description": "Từ hoặc cụm từ, khớp nguyên từ, không phân biệt hoa thường",
+            "example": "replica",
+            "maxLength": 100,
+            "minLength": 2
+          },
+          "violationType": {
+            "type": "string",
+            "description": "Loại vi phạm gán cho cờ hệ thống",
+            "enum": [
+              "PROHIBITED",
+              "COUNTERFEIT",
+              "IP_INFRINGEMENT",
+              "MISLEADING",
+              "WRONG_CATEGORY",
+              "SPAM",
+              "OTHER"
+            ],
+            "example": "COUNTERFEIT"
+          }
+        },
+        "required": [
+          "keyword",
+          "violationType"
+        ]
+      },
+      "BannedKeywordCreatedResponse": {
+        "type": "object",
+        "properties": {
+          "keyword": {
+            "$ref": "#/components/schemas/BannedKeywordResponse"
+          },
+          "flaggedProducts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số sản phẩm đang bán/đang ẩn bị gắn cờ ngay khi thêm từ khóa"
           }
         }
       }

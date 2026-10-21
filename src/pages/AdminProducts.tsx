@@ -1,8 +1,16 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 
 import { useListAdminProducts } from '@generated/endpoints/admin-products/admin-products'
-import { ArrowCounterClockwise, MagnifyingGlass, Prohibit, X } from '@phosphor-icons/react'
+import {
+  ArrowCounterClockwise,
+  Flag,
+  MagnifyingGlass,
+  Prohibit,
+  Robot,
+  TextAa,
+  X,
+} from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
@@ -20,6 +28,7 @@ import {
 import AdminProductDetailPanel from '../components/admin/AdminProductDetailPanel'
 import AdminShell from '../components/admin/AdminShell'
 import BanProductDialog from '../components/admin/BanProductDialog'
+import DismissReportsDialog from '../components/admin/DismissReportsDialog'
 import RestoreProductDialog from '../components/admin/RestoreProductDialog'
 import Pagination from '../components/search/Pagination'
 
@@ -28,7 +37,7 @@ import type { AdminProductResponse } from '@generated/model/adminProductResponse
 import type { ListAdminProductsParams } from '@generated/model/listAdminProductsParams'
 
 const PAGE_SIZE = 20
-const DEFAULT_STATUS: ProductStatusFilter = 'ACTIVE'
+const DEFAULT_STATUS: ProductStatusFilter = 'REPORTED'
 
 function statusFromUrl(raw: string | null): ProductStatusFilter {
   const match = STATUS_TABS.find((tab) => tab.value === raw)
@@ -53,7 +62,10 @@ function paramsOf(
   page: number,
 ): ListAdminProductsParams {
   const params: ListAdminProductsParams = { page, size: PAGE_SIZE }
-  if (status !== 'ALL') {
+  if (status === 'REPORTED') {
+    params.reported = true
+  }
+  if (status !== 'ALL' && status !== 'REPORTED') {
     params.status = status
   }
   if (q !== '') {
@@ -105,6 +117,20 @@ function ProductRow({
             {product.shopName} · {priceRangeLabel(product.minPrice, product.maxPrice)} · Tồn{' '}
             {product.totalStock ?? 0}
           </span>
+          {(product.openReportCount ?? 0) > 0 && (
+            <span className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 dark:bg-red-500/15 dark:text-red-300">
+                <Flag size={12} weight="bold" />
+                {product.openReportCount} báo cáo · {violationLabel(product.topReportReason)}
+              </span>
+              {product.systemFlagged === true && (
+                <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                  <Robot size={12} weight="bold" />
+                  Từ khóa cấm
+                </span>
+              )}
+            </span>
+          )}
           {product.status === 'BANNED' && (
             <span className="mt-1 block truncate text-xs text-red-700 dark:text-red-300">
               {violationLabel(product.violationType)}: {product.statusReason}
@@ -156,6 +182,7 @@ export default function AdminProducts() {
   const [openId, setOpenId] = useState<string | null>(null)
   const [banTarget, setBanTarget] = useState<AdminProductResponse | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<AdminProductResponse | null>(null)
+  const [dismissTarget, setDismissTarget] = useState<AdminProductResponse | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const listQuery = useListAdminProducts(paramsOf(status, q, shopId, page))
@@ -180,6 +207,7 @@ export default function AdminProducts() {
   function refreshAfterModeration(message: string) {
     setBanTarget(null)
     setRestoreTarget(null)
+    setDismissTarget(null)
     setNotice(message)
     void queryClient.invalidateQueries({ predicate: (query) => isAdminProductKey(query.queryKey) })
   }
@@ -210,10 +238,12 @@ export default function AdminProducts() {
     const items = data.items ?? []
     total = data.total ?? 0
     totalPages = Math.ceil(total / PAGE_SIZE)
+    let emptyText = 'Không có sản phẩm nào.'
+    if (status === 'REPORTED') {
+      emptyText = 'Không có báo cáo nào chờ xử lý.'
+    }
     listBody = (
-      <p className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
-        Không có sản phẩm nào.
-      </p>
+      <p className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">{emptyText}</p>
     )
     if (items.length > 0) {
       listBody = (
@@ -237,7 +267,16 @@ export default function AdminProducts() {
   return (
     <AdminShell
       title="Kiểm duyệt sản phẩm"
-      description="Tìm sản phẩm toàn sàn, gỡ hàng vi phạm chính sách và khôi phục khi shop đã khắc phục."
+      description="Xử lý sản phẩm bị người mua báo cáo hoặc hệ thống gắn cờ theo từ khóa cấm, gỡ hàng vi phạm và khôi phục khi shop đã khắc phục."
+      actions={
+        <Link
+          to="/admin/products/keywords"
+          className="flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-2 text-sm font-bold text-zinc-700 transition hover:bg-white/70 dark:border-white/10 dark:text-zinc-200 dark:hover:bg-white/10"
+        >
+          <TextAa size={17} weight="bold" />
+          Từ khóa cấm
+        </Link>
+      }
     >
       {notice !== null && (
         <output className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
@@ -326,6 +365,19 @@ export default function AdminProducts() {
           onClose={() => setOpenId(null)}
           onBan={(product) => setBanTarget(product)}
           onRestore={(product) => setRestoreTarget(product)}
+          onDismiss={(product) => setDismissTarget(product)}
+        />
+      )}
+
+      {dismissTarget !== null && (
+        <DismissReportsDialog
+          product={dismissTarget}
+          onClose={() => setDismissTarget(null)}
+          onDone={(count) =>
+            refreshAfterModeration(
+              `Đã đóng ${count} báo cáo của "${dismissTarget.name}": không vi phạm.`,
+            )
+          }
         />
       )}
 

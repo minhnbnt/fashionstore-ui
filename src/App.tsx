@@ -23,6 +23,7 @@ const StaticPage = lazy(() => import('./pages/StaticPage'))
 const Faq = lazy(() => import('./pages/Faq'))
 const AdminOrders = lazy(() => import('./pages/AdminOrders'))
 const AdminHolidays = lazy(() => import('./pages/AdminHolidays'))
+const AdminBannedKeywords = lazy(() => import('./pages/AdminBannedKeywords'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
@@ -149,6 +150,14 @@ function App() {
             element={
               <RequireRole requiredRole="admin">
                 <AdminHolidays />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/products/keywords"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminBannedKeywords />
               </RequireRole>
             }
           />

@@ -2,9 +2,11 @@ import { formatVnd } from './format'
 
 import type { BanProductRequestViolationType } from '@generated/model/banProductRequestViolationType'
 
-export type ProductStatusFilter = 'ACTIVE' | 'HIDDEN' | 'BANNED' | 'ALL'
+/** REPORTED là hàng đợi báo cáo (reported=true), không phải một trạng thái sản phẩm. */
+export type ProductStatusFilter = 'REPORTED' | 'ACTIVE' | 'HIDDEN' | 'BANNED' | 'ALL'
 
 export const STATUS_TABS: { value: ProductStatusFilter; label: string }[] = [
+  { value: 'REPORTED', label: 'Bị báo cáo' },
   { value: 'ACTIVE', label: 'Đang bán' },
   { value: 'HIDDEN', label: 'Đang ẩn' },
   { value: 'BANNED', label: 'Bị gỡ' },
@@ -82,6 +84,52 @@ export const VIOLATION_OPTIONS: ViolationOption[] = [
 
 export const REASON_MIN = 5
 export const REASON_MAX = 500
+export const REPORT_DESCRIPTION_MAX = 1000
+export const KEYWORD_MIN = 2
+export const KEYWORD_MAX = 100
+
+/** Lý do người mua chọn khi báo cáo: cùng mã với loại vi phạm, câu chữ dễ hiểu cho người mua. */
+export const BUYER_REPORT_REASONS: { type: BanProductRequestViolationType; label: string }[] = [
+  { type: 'COUNTERFEIT', label: 'Hàng giả, hàng nhái' },
+  { type: 'MISLEADING', label: 'Ảnh, mô tả hoặc giá không đúng thực tế' },
+  { type: 'IP_INFRINGEMENT', label: 'Dùng logo, thương hiệu không được phép' },
+  { type: 'PROHIBITED', label: 'Hàng cấm hoặc nội dung phản cảm' },
+  { type: 'WRONG_CATEGORY', label: 'Đăng sai danh mục' },
+  { type: 'SPAM', label: 'Spam, đăng trùng lặp' },
+  { type: 'OTHER', label: 'Lý do khác' },
+]
+
+export function reportSourceLabel(source: string | undefined): string {
+  if (source === 'SYSTEM') {
+    return 'Hệ thống'
+  }
+  return 'Người mua'
+}
+
+export function reportStatusLabel(status: string | undefined): string {
+  if (status === 'OPEN') {
+    return 'Chờ xử lý'
+  }
+  if (status === 'ACTION_TAKEN') {
+    return 'Đã gỡ sản phẩm'
+  }
+  if (status === 'DISMISSED') {
+    return 'Không vi phạm'
+  }
+  return status ?? ''
+}
+
+/** Lỗi hiển thị dưới ô từ khóa, null khi hợp lệ. Khớp ràng buộc 2–100 ký tự ở backend. */
+export function keywordError(keyword: string): string | null {
+  const length = keyword.trim().length
+  if (length < KEYWORD_MIN) {
+    return `Từ khóa cần ít nhất ${KEYWORD_MIN} ký tự.`
+  }
+  if (length > KEYWORD_MAX) {
+    return `Từ khóa tối đa ${KEYWORD_MAX} ký tự.`
+  }
+  return null
+}
 
 export function violationLabel(type: string | null | undefined): string {
   if (type === null || type === undefined) {

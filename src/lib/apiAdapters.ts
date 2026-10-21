@@ -101,6 +101,22 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     404: 'Trang không tồn tại hoặc chưa xuất bản.',
   },
   faqs: {},
+  productReport: {
+    400: 'Vui lòng chọn lý do báo cáo (mô tả tối đa 1000 ký tự).',
+    404: 'Sản phẩm không còn hiển thị trên sàn.',
+    409: 'Bạn đã báo cáo sản phẩm này và đang chờ xử lý, hoặc đây là sản phẩm của shop bạn.',
+  },
+  adminProductDismiss: {
+    403: 'Bạn không có quyền xử lý báo cáo.',
+    404: 'Sản phẩm không tồn tại.',
+    409: 'Sản phẩm không còn báo cáo nào chờ xử lý.',
+  },
+  adminKeywords: {
+    400: 'Từ khóa cần 2–100 ký tự và phải chọn loại vi phạm.',
+    403: 'Bạn không có quyền quản lý từ khóa cấm.',
+    404: 'Từ khóa không tồn tại hoặc đã bị xóa.',
+    409: 'Từ khóa này đã có trong danh sách.',
+  },
   adminProductRestore: {
     403: 'Bạn không có quyền khôi phục sản phẩm.',
     404: 'Sản phẩm không tồn tại.',
