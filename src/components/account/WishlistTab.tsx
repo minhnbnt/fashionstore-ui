@@ -83,7 +83,7 @@ export default function WishlistTab() {
               >
                 {/* Product Image Link */}
                 <Link
-                  to={`/products/${item.slug ?? item.productId}`}
+                  to={`/product/${item.productId}`}
                   className="relative aspect-3/4 w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800"
                 >
                   {hasImage && (
@@ -120,7 +120,7 @@ export default function WishlistTab() {
                 <div className="flex flex-1 flex-col justify-between p-3.5">
                   <div>
                     <Link
-                      to={`/products/${item.slug ?? item.productId}`}
+                      to={`/product/${item.productId}`}
                       className="line-clamp-2 text-xs font-bold text-zinc-900 hover:text-orange-600 dark:text-white dark:hover:text-orange-400"
                     >
                       {item.name ?? 'Sản phẩm thời trang'}
@@ -132,7 +132,7 @@ export default function WishlistTab() {
 
                   <div className="mt-3">
                     <Link
-                      to={`/products/${item.slug ?? item.productId}`}
+                      to={`/product/${item.productId}`}
                       className="flex w-full items-center justify-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-50/50 py-1.5 text-xs font-bold text-orange-600 transition hover:bg-orange-600 hover:text-white dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-600 dark:hover:text-white"
                     >
                       <span>Xem ngay</span>

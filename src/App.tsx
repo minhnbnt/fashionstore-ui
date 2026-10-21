@@ -62,15 +62,17 @@ function App() {
   const isSellerDashboard = location.pathname === '/shop' || location.pathname.startsWith('/shop/')
 
   return (
-    <div className="grain min-h-[100dvh]">
+    <div className="grain flex min-h-[100dvh] flex-col justify-between">
       {!isSellerDashboard && <Header />}
       <ScrollToHash />
-      <Suspense fallback={<PageLoading />}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/cart" element={<Cart />} />
+      <div className="flex-1">
+        <Suspense fallback={<PageLoading />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/cart" element={<Cart />} />
           <Route
             path="/checkout"
             element={
@@ -154,6 +156,7 @@ function App() {
           />
         </Routes>
       </Suspense>
+      </div>
       {!isSellerDashboard && <Footer />}
       {!isSellerDashboard && (
         <Suspense fallback={null}>

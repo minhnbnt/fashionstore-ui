@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 
 import {
   getMessagesQueryKey,
@@ -34,6 +34,8 @@ interface OpenChatEventDetail {
 
 export default function FloatingChatWidget() {
   const queryClient = useQueryClient()
+  const location = useLocation()
+  const isCartPage = location.pathname === '/cart'
   const { data: session } = useSessionQuery()
   const isLoggedIn = session !== null && session !== undefined
 
@@ -211,7 +213,7 @@ export default function FloatingChatWidget() {
   }
 
   return (
-    <div className="fixed right-5 bottom-5 z-50">
+    <div className={`fixed right-5 z-50 transition-all duration-300 ${isCartPage ? 'bottom-24 sm:bottom-28' : 'bottom-5'}`}>
       {/* 1. Floating Pill Button (When closed) */}
       {isOpen === false && (
         <button

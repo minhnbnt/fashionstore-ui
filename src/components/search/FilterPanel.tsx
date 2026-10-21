@@ -37,6 +37,9 @@ const COLOR_SWATCH_MAP: Record<string, string> = {
   'xanh nhạt': '#7dd3fc',
   đỏ: '#dc2626',
   nâu: '#78350f',
+  vàng: '#eab308',
+  tím: '#a855f7',
+  cam: '#f97316',
 }
 
 const COMMON_SIZES = ['S', 'M', 'L', 'XL', 'Freesize']
@@ -170,10 +173,31 @@ export default function FilterPanel(props: {
   const facetMin = props.facets?.minPrice
   const facetMax = props.facets?.maxPrice
 
-  // Combine known sizes with facet sizes
-  const allSizes = Array.from(new Set([...COMMON_SIZES, ...facetSizes]))
-  // Combine known colors with facet colors
-  const allColors = Array.from(new Set([...Object.keys(COLOR_SWATCH_MAP), ...facetColors]))
+  // Deduplicate sizes case-insensitively, prioritizing facetSizes
+  const rawSizes = facetSizes.length > 0 ? facetSizes : COMMON_SIZES
+  const sizeMap = new Map<string, string>()
+  for (const s of rawSizes) {
+    if (!s) continue
+    const key = s.trim().toUpperCase()
+    if (!sizeMap.has(key)) {
+      sizeMap.set(key, s.trim())
+    }
+  }
+  const allSizes = Array.from(sizeMap.values())
+
+  // Deduplicate colors case-insensitively, prioritizing actual facetColors from catalog
+  const rawColors = facetColors.length > 0 ? facetColors : Object.keys(COLOR_SWATCH_MAP)
+  const colorMap = new Map<string, string>()
+  for (const c of rawColors) {
+    if (!c) continue
+    const key = c.trim().toLowerCase()
+    if (!colorMap.has(key)) {
+      // Capitalize first letter if all lowercase
+      const display = c.charAt(0).toUpperCase() + c.slice(1)
+      colorMap.set(key, display)
+    }
+  }
+  const allColors = Array.from(colorMap.values())
 
   const hasAnyFilter =
     f.category !== null ||
@@ -387,7 +411,7 @@ export default function FilterPanel(props: {
         <AccordionGroup title="Màu sắc">
           <div className="flex max-h-48 flex-wrap gap-1.5 overflow-y-auto pr-1">
             {allColors.map(function (c) {
-              const selected = f.color === c
+              const selected = f.color !== null && f.color.trim().toLowerCase() === c.toLowerCase()
               const hex = COLOR_SWATCH_MAP[c.toLowerCase()] ?? '#cbd5e1'
               return (
                 <button
