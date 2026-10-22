@@ -174,8 +174,6 @@ export default function Account() {
         </section>
       )}
 
-      <AddressBook />
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Account Profile & Preferences */}
         <div className="glass rounded-3xl p-6 md:p-8 lg:col-span-5">
@@ -200,6 +198,7 @@ export default function Account() {
           )}
 
           <div className="mt-5 space-y-3 text-sm">
+            <AddressBook />
             <div className="flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3 dark:bg-white/10">
               <span className="font-medium">Đơn hàng đã mua</span>
               <span className="text-xs text-zinc-400 dark:text-zinc-500">0 đơn</span>

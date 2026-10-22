@@ -6,22 +6,23 @@ import {
   useDelete,
   useList1,
 } from '@generated/endpoints/addresses/addresses'
-import { MapPin, PencilSimple, Plus, Star, Trash } from '@phosphor-icons/react'
+import { CaretRight, MapPin, PencilSimple, Plus, Star, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
 import { formatFullAddress } from '@/lib/format'
 
-import AddressFormDialog from './AddressFormDialog'
-import ConfirmDialog from './admin/ConfirmDialog'
+import AddressForm from './AddressForm'
+import Modal from './Modal'
 
 import type { AddressResponse } from '@generated/model/addressResponse'
 
 export default function AddressBook() {
   const queryClient = useQueryClient()
-  const [formOpen, setFormOpen] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [mode, setMode] = useState<'list' | 'form'>('list')
   const [editing, setEditing] = useState<AddressResponse | null>(null)
-  const [deleting, setDeleting] = useState<AddressResponse | null>(null)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
@@ -30,7 +31,7 @@ export default function AddressBook() {
   const remove = useDelete({
     mutation: {
       onSuccess: function () {
-        setDeleting(null)
+        setConfirmingId(null)
         invalidate()
       },
     },
@@ -47,18 +48,33 @@ export default function AddressBook() {
     addresses = takeData(query.data)
   }
 
+  function closeModal() {
+    setOpen(false)
+    setMode('list')
+    setEditing(null)
+    setConfirmingId(null)
+    remove.reset()
+  }
+
   function openAdd() {
     setEditing(null)
-    setFormOpen(true)
+    setMode('form')
   }
 
   function openEdit(address: AddressResponse) {
     setEditing(address)
-    setFormOpen(true)
+    setMode('form')
   }
 
-  function closeForm() {
-    setFormOpen(false)
+  function backToList() {
+    setMode('list')
+    setEditing(null)
+  }
+
+  function handleSaved() {
+    setMode('list')
+    setEditing(null)
+    invalidate()
   }
 
   function makeDefault(address: AddressResponse) {
@@ -69,22 +85,31 @@ export default function AddressBook() {
     changeDefault.mutate({ id })
   }
 
-  function handleSaved() {
-    setFormOpen(false)
-    invalidate()
+  function confirmDelete(address: AddressResponse) {
+    const id = address.id
+    if (id === undefined) {
+      return
+    }
+    remove.mutate({ id })
   }
 
-  function closeDelete() {
-    setDeleting(null)
-    remove.reset()
+  let countLabel = 'Chưa có'
+  if (addresses.length > 0) {
+    countLabel = `${addresses.length} địa chỉ`
+  }
+  if (query.isError) {
+    countLabel = 'Lỗi tải'
   }
 
-  let deleteError: string | undefined
-  if (remove.isError) {
-    deleteError = hookErrorMessage('addressBook', remove.error)
+  let title = 'Sổ địa chỉ'
+  if (mode === 'form') {
+    title = 'Thêm địa chỉ'
+  }
+  if (mode === 'form' && editing !== null) {
+    title = 'Sửa địa chỉ'
   }
 
-  let body = (
+  let listBody = (
     <div className="mt-4 space-y-2" aria-busy="true">
       {[0, 1].map(function (index) {
         return (
@@ -95,7 +120,7 @@ export default function AddressBook() {
   )
 
   if (query.isError) {
-    body = (
+    listBody = (
       <p className="mt-4 text-sm text-red-600 dark:text-red-400">
         {hookErrorMessage('addressBook', query.error)}
       </p>
@@ -103,7 +128,7 @@ export default function AddressBook() {
   }
 
   if (query.isLoading === false && query.isError === false && addresses.length === 0) {
-    body = (
+    listBody = (
       <p className="mt-4 rounded-2xl bg-white/70 px-4 py-6 text-center text-sm text-zinc-500 dark:bg-white/5 dark:text-zinc-400">
         Chưa có địa chỉ nào. Thêm một địa chỉ để dùng khi thanh toán.
       </p>
@@ -111,15 +136,13 @@ export default function AddressBook() {
   }
 
   if (addresses.length > 0) {
-    body = (
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+    listBody = (
+      <div className="mt-4 space-y-2">
         {addresses.map(function (address) {
           const isDefault = address.defaultAddress === true
+          const id = address.id ?? ''
           return (
-            <div
-              key={address.id ?? ''}
-              className="flex flex-col gap-3 rounded-2xl bg-white/70 p-4 dark:bg-white/5"
-            >
+            <div key={id} className="rounded-2xl bg-white/70 p-4 dark:bg-white/5">
               <div className="flex items-start gap-2">
                 <MapPin size={18} weight="bold" className="mt-0.5 shrink-0 text-indigo-500" />
                 <div className="min-w-0 flex-1">
@@ -133,34 +156,62 @@ export default function AddressBook() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-1 text-xs font-bold">
-                {isDefault === false && (
+              {confirmingId === id && (
+                <div className="mt-3 flex items-center justify-between gap-2 rounded-full bg-red-50 px-3 py-1.5 dark:bg-red-500/10">
+                  <span className="text-xs font-bold text-red-700 dark:text-red-200">
+                    Xoá địa chỉ này?
+                  </span>
+                  <span className="flex items-center gap-1 text-xs font-bold">
+                    <button
+                      type="button"
+                      disabled={remove.isPending}
+                      onClick={() => setConfirmingId(null)}
+                      className="rounded-full px-3 py-1 text-zinc-600 hover:bg-white/70 disabled:opacity-50 dark:text-zinc-300 dark:hover:bg-white/10"
+                    >
+                      Huỷ
+                    </button>
+                    <button
+                      type="button"
+                      disabled={remove.isPending}
+                      onClick={() => confirmDelete(address)}
+                      className="rounded-full bg-red-600 px-3 py-1 text-white disabled:opacity-50"
+                    >
+                      Xoá
+                    </button>
+                  </span>
+                </div>
+              )}
+
+              {confirmingId !== id && (
+                <div className="mt-2 flex flex-wrap items-center gap-1 text-xs font-bold">
+                  {isDefault === false && (
+                    <button
+                      type="button"
+                      disabled={changeDefault.isPending}
+                      onClick={() => makeDefault(address)}
+                      className="rounded-full px-3 py-1.5 text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
+                    >
+                      Đặt mặc định
+                    </button>
+                  )}
                   <button
                     type="button"
-                    disabled={changeDefault.isPending}
-                    onClick={() => makeDefault(address)}
-                    className="rounded-full px-3 py-1.5 text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
+                    onClick={() => openEdit(address)}
+                    className="flex items-center gap-1 rounded-full px-3 py-1.5 text-zinc-600 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/10"
                   >
-                    Đặt mặc định
+                    <PencilSimple size={13} weight="bold" />
+                    Sửa
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => openEdit(address)}
-                  className="flex items-center gap-1 rounded-full px-3 py-1.5 text-zinc-600 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/10"
-                >
-                  <PencilSimple size={13} weight="bold" />
-                  Sửa
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeleting(address)}
-                  className="flex items-center gap-1 rounded-full px-3 py-1.5 text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
-                >
-                  <Trash size={13} weight="bold" />
-                  Xoá
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingId(id)}
+                    className="flex items-center gap-1 rounded-full px-3 py-1.5 text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                  >
+                    <Trash size={13} weight="bold" />
+                    Xoá
+                  </button>
+                </div>
+              )}
             </div>
           )
         })}
@@ -169,51 +220,55 @@ export default function AddressBook() {
   }
 
   return (
-    <section id="addresses" className="glass mb-6 scroll-mt-24 rounded-3xl p-6 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold tracking-[0.18em] text-indigo-900 uppercase dark:text-indigo-200">
-            Giao hàng
-          </p>
-          <h2 className="mt-1 text-2xl font-extrabold tracking-tighter">Sổ địa chỉ</h2>
-        </div>
-        <button
-          type="button"
-          onClick={openAdd}
-          className="btn-primary flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold"
-        >
-          <Plus size={16} weight="bold" />
-          Thêm địa chỉ
-        </button>
-      </div>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex w-full items-center justify-between gap-2 rounded-2xl bg-white/70 px-4 py-3 text-left dark:bg-white/10"
+      >
+        <span className="flex items-center gap-2 font-medium">
+          <MapPin size={16} weight="bold" className="text-indigo-500" />
+          Sổ địa chỉ
+        </span>
+        <span className="flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
+          {countLabel}
+          <CaretRight size={12} weight="bold" />
+        </span>
+      </button>
 
-      {changeDefault.isError && (
-        <p className="mt-3 text-sm text-red-600 dark:text-red-400">
-          {hookErrorMessage('addressBook', changeDefault.error)}
-        </p>
+      {open && (
+        <Modal title={title} onClose={closeModal}>
+          {mode === 'list' && (
+            <>
+              {changeDefault.isError && (
+                <p className="mt-3 text-sm text-red-600 dark:text-red-400">
+                  {hookErrorMessage('addressBook', changeDefault.error)}
+                </p>
+              )}
+              {remove.isError && (
+                <p className="mt-3 text-sm text-red-600 dark:text-red-400">
+                  {hookErrorMessage('addressBook', remove.error)}
+                </p>
+              )}
+
+              {listBody}
+
+              <button
+                type="button"
+                onClick={openAdd}
+                className="btn-primary mt-4 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-bold"
+              >
+                <Plus size={16} weight="bold" />
+                Thêm địa chỉ
+              </button>
+            </>
+          )}
+
+          {mode === 'form' && (
+            <AddressForm address={editing} onSaved={handleSaved} onCancel={backToList} />
+          )}
+        </Modal>
       )}
-
-      {body}
-
-      {formOpen && (
-        <AddressFormDialog address={editing} onClose={closeForm} onSaved={handleSaved} />
-      )}
-
-      <ConfirmDialog
-        open={deleting !== null}
-        title="Xoá địa chỉ"
-        description="Địa chỉ này sẽ bị xoá khỏi sổ. Các đơn hàng cũ không bị ảnh hưởng."
-        confirmLabel="Xoá"
-        pending={remove.isPending}
-        error={deleteError}
-        onClose={closeDelete}
-        onConfirm={function () {
-          const id = deleting?.id
-          if (id !== undefined) {
-            remove.mutate({ id })
-          }
-        }}
-      />
-    </section>
+    </>
   )
 }
