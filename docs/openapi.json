@@ -649,7 +649,7 @@
       "put": {
         "tags": ["Addresses"],
         "summary": "Sua dia chi",
-        "description": "Field trong thi giu gia tri cu, ke ca dia chi default.",
+        "description": "Gửi đủ các field, thay thế toàn bộ địa chỉ. Giữ default như cũ trừ khi defaultAddress = true.",
         "operationId": "update",
         "parameters": [
           {
@@ -680,6 +680,21 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/AddressResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Du lieu khong hop le",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -716,16 +731,6 @@
           },
           "409": {
             "description": "Data or state conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2554,7 +2559,7 @@
       "post": {
         "tags": ["Addresses"],
         "summary": "Them dia chi",
-        "description": "Dia chi dau tien tu thanh default.",
+        "description": "Toi da 10 dia chi. Dia chi dau tien tu thanh default.",
         "operationId": "add",
         "requestBody": {
           "content": {
@@ -2577,6 +2582,21 @@
               }
             }
           },
+          "400": {
+            "description": "Du lieu khong hop le hoac da dat gioi han 10 dia chi",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Thieu hoac sai JWT",
             "content": {
@@ -2594,16 +2614,6 @@
           },
           "409": {
             "description": "Data or state conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15664,60 +15674,38 @@
         "type": "object",
         "properties": {
           "recipientName": {
-            "type": ["string", "null"],
+            "type": "string",
             "description": "Ten nguoi nhan",
+            "example": "Nguyen Van A",
             "maxLength": 100,
-            "minLength": 0,
-            "example": "Nguyen Van A"
+            "minLength": 0
           },
           "phoneNumber": {
-            "type": ["string", "null"],
+            "type": "string",
             "description": "So dien thoai nguoi nhan",
+            "example": "0912345678",
             "maxLength": 20,
-            "minLength": 0,
-            "example": "0912345678"
+            "minLength": 0
           },
-          "detailAddress": {
-            "type": ["string", "null"],
-            "description": "Dia chi chi tiet (so nha, toa nha, ngo ngach)",
+          "fullAddress": {
+            "type": "string",
+            "description": "Dia chi day du do frontend build tu API locations (so nha + xa/phuong + tinh/thanh)",
+            "example": "So 18 Duy Tan, Phuong Dich Vong, Ha Noi",
             "maxLength": 300,
-            "minLength": 0,
-            "example": "So 18, ngo 12 Duy Tan"
-          },
-          "houseNumber": {
-            "type": ["string", "null"],
-            "description": "So nha"
-          },
-          "street": {
-            "type": ["string", "null"],
-            "description": "Ten duong"
-          },
-          "ward": {
-            "type": ["string", "null"],
-            "description": "Phuong/Xa",
-            "example": "Phuong Dich Vong Hau"
-          },
-          "district": {
-            "type": ["string", "null"],
-            "description": "Quan/Huyen",
-            "example": "Quan Cau Giay"
-          },
-          "city": {
-            "type": ["string", "null"],
-            "description": "Tinh/Thanh pho",
-            "example": "Thanh pho Ha Noi"
+            "minLength": 0
           },
           "label": {
-            "type": ["string", "null"],
+            "type": "string",
             "description": "Nhan dia chi (HOME, OFFICE, OTHER)",
             "enum": ["HOME", "OFFICE", "OTHER"],
             "example": "HOME"
           },
           "defaultAddress": {
-            "type": ["boolean", "null"],
+            "type": "boolean",
             "description": "Dat lam dia chi mac dinh"
           }
-        }
+        },
+        "required": ["defaultAddress", "fullAddress", "label", "phoneNumber", "recipientName"]
       },
       "AddressResponse": {
         "type": "object",
@@ -15734,24 +15722,9 @@
             "type": "string",
             "description": "So dien thoai nguoi nhan"
           },
-          "detailAddress": {
-            "type": ["string", "null"],
-            "description": "Dia chi chi tiet"
-          },
-          "houseNumber": {
-            "type": ["string", "null"]
-          },
-          "street": {
-            "type": ["string", "null"]
-          },
-          "ward": {
-            "type": ["string", "null"]
-          },
-          "district": {
-            "type": ["string", "null"]
-          },
-          "city": {
-            "type": ["string", "null"]
+          "fullAddress": {
+            "type": "string",
+            "description": "Dia chi day du"
           },
           "label": {
             "type": "string",

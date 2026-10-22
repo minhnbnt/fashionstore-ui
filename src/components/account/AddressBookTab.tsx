@@ -27,12 +27,16 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
+import { formatAddressLabel, splitFullAddress } from '@/lib/format'
 
+import type { AddressRequestLabel } from '@generated/model/addressRequestLabel'
 import type { AddressResponse } from '@generated/model/addressResponse'
 import type { ProvinceResponse } from '@generated/model/provinceResponse'
 import type { WardResponse } from '@generated/model/wardResponse'
 
 const MAX_ADDRESSES = 10
+
+const ADDRESS_LABELS: AddressRequestLabel[] = ['HOME', 'OFFICE', 'OTHER']
 
 function removeVietnameseAccents(str: string): string {
   return str
@@ -66,6 +70,7 @@ export default function AddressBookTab() {
   const wardContainerRef = useRef<HTMLDivElement>(null)
 
   const [detailAddress, setDetailAddress] = useState('')
+  const [label, setLabel] = useState<AddressRequestLabel>('HOME')
   const [isDefault, setIsDefault] = useState(false)
 
   // Selected province code for fetching wards
@@ -168,6 +173,7 @@ export default function AddressBookTab() {
     setWardSearch('')
     setWardDropdownOpen(false)
     setDetailAddress('')
+    setLabel('HOME')
     setIsDefault(false)
     setSelectedProvinceCode('')
     setEditingId(null)
@@ -188,17 +194,20 @@ export default function AddressBookTab() {
     setEditingId(addr.id ?? null)
     setRecipientName(addr.recipientName ?? '')
     setPhoneNumber(addr.phoneNumber ?? '')
-    const c = addr.city ?? ''
-    setCity(c)
-    setProvinceSearch(c)
-    const w = addr.ward ?? ''
-    setWard(w)
-    setWardSearch(w)
-    setDetailAddress(addr.detailAddress ?? `${addr.houseNumber ?? ''} ${addr.street ?? ''}`.trim())
+
+    const parts = splitFullAddress(addr.fullAddress ?? '')
+    setCity(parts.province)
+    setProvinceSearch(parts.province)
+    setWard(parts.ward)
+    setWardSearch(parts.ward)
+    setDetailAddress(parts.detail)
+    setLabel(addr.label ?? 'HOME')
     setIsDefault(addr.defaultAddress === true)
 
-    // Match province code
-    const matchedProv = provinces.find((p) => p.name === c)
+    // Match province code to load ward list
+    const matchedProv = provinces.find(function (p) {
+      return p.name === parts.province
+    })
     if (matchedProv?.code) {
       setSelectedProvinceCode(matchedProv.code)
     } else {
@@ -210,18 +219,10 @@ export default function AddressBookTab() {
 
   const addAddressMutation = useAdd({
     mutation: {
-      onSuccess: function (res) {
+      onSuccess: function () {
         showToast('Đã thêm địa chỉ nhận hàng mới thành công!')
         setModalOpen(false)
         resetForm()
-        try {
-          const newAddr = takeData(res)
-          if (isDefault && newAddr.id !== undefined) {
-            changeDefaultMutation.mutate({ id: newAddr.id })
-          }
-        } catch {
-          // Ignore takeData error if response unexpected
-        }
         void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
       },
       onError: function (err) {
@@ -285,8 +286,16 @@ export default function AddressBookTab() {
     const cleanWard = ward.trim()
     const cleanDetail = detailAddress.trim()
 
-    if (cleanName === '' || cleanPhone === '' || cleanCity === '' || cleanDetail === '') {
-      showToastError('Vui lòng điền đầy đủ tên, số điện thoại, tỉnh/thành và địa chỉ chi tiết.')
+    if (
+      cleanName === '' ||
+      cleanPhone === '' ||
+      cleanCity === '' ||
+      cleanWard === '' ||
+      cleanDetail === ''
+    ) {
+      showToastError(
+        'Vui lòng điền đầy đủ tên, số điện thoại, tỉnh/thành, phường/xã và địa chỉ chi tiết.',
+      )
       return
     }
 
@@ -299,9 +308,8 @@ export default function AddressBookTab() {
     const payload = {
       recipientName: cleanName,
       phoneNumber: cleanPhone,
-      city: cleanCity,
-      ward: cleanWard,
-      detailAddress: cleanDetail,
+      fullAddress: [cleanDetail, cleanWard, cleanCity].join(', '),
+      label: label,
       defaultAddress: isDefault,
     }
 
@@ -464,14 +472,10 @@ export default function AddressBookTab() {
                     )}
                   </div>
 
-                  {/* Row 2: Detail Address & Province/Ward */}
+                  {/* Row 2: Full address built by the frontend from /api/public/locations */}
                   <div className="space-y-0.5 text-xs text-zinc-600 dark:text-zinc-300">
                     <p className="font-semibold text-zinc-800 dark:text-zinc-200">
-                      {addr.detailAddress ||
-                        `${addr.houseNumber ?? ''} ${addr.street ?? ''}`.trim()}
-                    </p>
-                    <p className="text-zinc-500 dark:text-zinc-400">
-                      {[addr.ward, addr.district, addr.city].filter(Boolean).join(', ')}
+                      {addr.fullAddress}
                     </p>
                   </div>
                 </div>
@@ -813,7 +817,39 @@ export default function AddressBookTab() {
                 />
               </div>
 
-              {/* Row 5: Set default checkbox */}
+              {/* Row 5: Address label picker (required by the API contract) */}
+              <div>
+                <span className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                  Nhãn địa chỉ
+                </span>
+                <div className="mt-1.5 flex flex-wrap gap-2">
+                  {ADDRESS_LABELS.map(function (l) {
+                    let chipClass =
+                      'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition '
+                    if (label === l) {
+                      chipClass +=
+                        'border-orange-500 bg-orange-50 text-orange-600 dark:border-orange-500/50 dark:bg-orange-500/10 dark:text-orange-400'
+                    } else {
+                      chipClass +=
+                        'border-zinc-300 bg-white text-zinc-600 hover:border-orange-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+                    }
+                    return (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={function () {
+                          setLabel(l)
+                        }}
+                        className={chipClass}
+                      >
+                        {formatAddressLabel(l)}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Row 6: Set default checkbox */}
               <div className="flex items-center gap-2 pt-1">
                 <input
                   id="defaultAddressCheckbox"

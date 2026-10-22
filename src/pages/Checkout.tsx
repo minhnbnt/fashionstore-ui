@@ -44,7 +44,6 @@ export default function Checkout() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [detailAddress, setDetailAddress] = useState('')
   const [ward, setWard] = useState('')
-  const [district, setDistrict] = useState('')
   const [city, setCity] = useState('')
   const [label, setLabel] = useState<AddressRequestLabel>('HOME')
 
@@ -119,20 +118,21 @@ export default function Checkout() {
       recipientName.trim() === '' ||
       phoneNumber.trim() === '' ||
       city.trim() === '' ||
+      ward.trim() === '' ||
       detailAddress.trim() === ''
     ) {
-      showToast('Vui lòng điền đầy đủ tên người nhận, SĐT, tỉnh/thành và địa chỉ chi tiết')
+      showToast(
+        'Vui lòng điền đầy đủ tên người nhận, SĐT, tỉnh/thành, phường/xã và địa chỉ chi tiết',
+      )
       return
     }
     addAddressMutation.mutate({
       data: {
         recipientName: recipientName.trim(),
         phoneNumber: phoneNumber.trim(),
-        detailAddress: detailAddress.trim(),
-        ward: ward.trim(),
-        district: district.trim(),
-        city: city.trim(),
+        fullAddress: [detailAddress.trim(), ward.trim(), city.trim()].join(', '),
         label: label,
+        defaultAddress: false,
       },
     })
   }
@@ -605,41 +605,23 @@ export default function Checkout() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label
-                    htmlFor="address-ward"
-                    className="font-bold text-zinc-500 dark:text-zinc-400"
-                  >
-                    Phường / Xã
-                  </label>
-                  <input
-                    id="address-ward"
-                    value={ward}
-                    onChange={function (e) {
-                      setWard(e.target.value)
-                    }}
-                    placeholder="Bến Thành"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="address-district"
-                    className="font-bold text-zinc-500 dark:text-zinc-400"
-                  >
-                    Quận / Huyện
-                  </label>
-                  <input
-                    id="address-district"
-                    value={district}
-                    onChange={function (e) {
-                      setDistrict(e.target.value)
-                    }}
-                    placeholder="Quận 1"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
-                  />
-                </div>
+              <div>
+                <label
+                  htmlFor="address-ward"
+                  className="font-bold text-zinc-500 dark:text-zinc-400"
+                >
+                  Phường / Xã *
+                </label>
+                <input
+                  id="address-ward"
+                  required
+                  value={ward}
+                  onChange={function (e) {
+                    setWard(e.target.value)
+                  }}
+                  placeholder="Phường Bến Thành"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
+                />
               </div>
 
               <div>
