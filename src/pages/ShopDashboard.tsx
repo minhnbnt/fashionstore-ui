@@ -194,6 +194,8 @@ export default function ShopDashboard() {
     >
       {activeTab === 'OVERVIEW' && (
         <SellerOverviewTab
+          shopId={shopId}
+          shopName={profile.shopName}
           onNavigateTab={handleOverviewNavigate}
           pendingOrdersCount={pendingOrdersCount}
           confirmedOrdersCount={confirmedOrdersCount}
