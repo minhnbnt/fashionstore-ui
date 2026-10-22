@@ -88,6 +88,7 @@ export function useCart() {
     cart: cartData,
     items,
     totalQuantity,
+    totalCount: totalQuantity,
     subtotal,
     addItem: addItemMutation,
     updateQuantity: updateQuantityMutation,

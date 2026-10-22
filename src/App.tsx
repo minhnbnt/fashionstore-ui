@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Route, Routes, useLocation } from 'react-router'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
 
 import Header from './components/Header'
 import RequireAuth from './components/RequireAuth'
@@ -11,6 +11,8 @@ const Login = lazy(() => import('./pages/Login'))
 const Account = lazy(() => import('./pages/Account'))
 const ProductDetail = lazy(() => import('./pages/ProductDetail'))
 const Search = lazy(() => import('./pages/Search'))
+const Cart = lazy(() => import('./pages/Cart'))
+const Checkout = lazy(() => import('./pages/Checkout'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const AdminShops = lazy(() => import('./pages/AdminShops'))
@@ -26,6 +28,8 @@ const AdminHolidays = lazy(() => import('./pages/AdminHolidays'))
 const AdminBannedKeywords = lazy(() => import('./pages/AdminBannedKeywords'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const ShopView = lazy(() => import('./pages/ShopView'))
+const FloatingChatWidget = lazy(() => import('./components/chat/FloatingChatWidget'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -35,6 +39,10 @@ function ScrollToHash() {
   const location = useLocation()
   useEffect(
     function () {
+      // Do not auto-scroll on /account, where hashes represent tab states
+      if (location.pathname === '/account') {
+        return
+      }
       if (location.hash !== '' && location.hash !== '#') {
         const id = location.hash.replace(/^#/, '')
         if (id !== '') {
@@ -57,19 +65,30 @@ function ScrollToHash() {
 
 function App() {
   const location = useLocation()
-  const isShopRoute = location.pathname.startsWith('/shop')
+  const isSellerDashboard = location.pathname === '/shop' || location.pathname.startsWith('/shop/')
 
   return (
-    <div className="grain min-h-[100dvh]">
-      {!isShopRoute && <Header />}
+    <div className="grain flex min-h-[100dvh] flex-col justify-between">
+      {!isSellerDashboard && <Header />}
       <ScrollToHash />
-      <Suspense fallback={<PageLoading />}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/pages/:slug" element={<StaticPage />} />
-          <Route path="/faq" element={<Faq />} />
+      <div className="flex-1">
+        <Suspense fallback={<PageLoading />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/pages/:slug" element={<StaticPage />} />
+            <Route path="/faq" element={<Faq />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route
+              path="/checkout"
+              element={
+                <RequireAuth>
+                  <Checkout />
+                </RequireAuth>
+              }
+            />
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
@@ -81,6 +100,11 @@ function App() {
               </RequireAuth>
             }
           />
+          <Route
+            path="/seller-channel"
+            element={<Navigate to="/account#seller-channel" replace />}
+          />
+          <Route path="/seller" element={<Navigate to="/account#seller-channel" replace />} />
           <Route
             path="/admin"
             element={
@@ -129,6 +153,7 @@ function App() {
               </RequireRole>
             }
           />
+          <Route path="/shops/:slug" element={<ShopView />} />
           <Route
             path="/admin/content"
             element={
@@ -171,7 +196,13 @@ function App() {
           />
         </Routes>
       </Suspense>
-      {!isShopRoute && <Footer />}
+      </div>
+      {!isSellerDashboard && <Footer />}
+      {!isSellerDashboard && (
+        <Suspense fallback={null}>
+          <FloatingChatWidget />
+        </Suspense>
+      )}
     </div>
   )
 }

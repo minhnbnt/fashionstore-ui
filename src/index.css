@@ -155,19 +155,19 @@ body {
   opacity: 0.025;
 }
 
-/* Dimmed, italic placeholder styles to distinguish from filled values */
+/* Clean, normal placeholder styles to ensure readability */
 input::placeholder,
 textarea::placeholder {
   color: #94a3b8 !important;
-  opacity: 0.5 !important;
-  font-style: italic !important;
+  opacity: 0.65 !important;
+  font-style: normal !important;
   font-weight: 400 !important;
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
   color: #64748b !important;
-  opacity: 0.5 !important;
-  font-style: italic !important;
+  opacity: 0.65 !important;
+  font-style: normal !important;
   font-weight: 400 !important;
 }

@@ -11,6 +11,7 @@ import ProductInfo from '../components/pdp/ProductInfo'
 import ProductTabs from '../components/pdp/ProductTabs'
 import RelatedProducts from '../components/pdp/RelatedProducts'
 import ReportProductButton from '../components/pdp/ReportProductButton'
+import ShopInfoCard from '../components/pdp/ShopInfoCard'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 
@@ -75,8 +76,8 @@ export default function ProductDetail() {
   })
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[76px] pb-12">
-      <nav aria-label="Breadcrumb" className="flex flex-wrap gap-2 py-6 text-sm text-zinc-500">
+    <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-16 md:pt-36">
+      <nav aria-label="Breadcrumb" className="flex flex-wrap gap-2 py-4 text-sm text-zinc-500">
         <Link to="/" className="hover:text-zinc-900 dark:hover:text-white">
           Trang chủ
         </Link>
@@ -98,14 +99,19 @@ export default function ProductDetail() {
         <span>/</span>
         <span className="font-bold text-zinc-900 dark:text-zinc-100">{product.name}</span>
       </nav>
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <ProductGallery images={product.images ?? []} name={product.name ?? ''} />
         <ProductInfo product={product} />
       </div>
+      {/* Thẻ thông tin Shop Shopee-style */}
+      <ShopInfoCard shopId={product.shopId} />
+
       <div className="mt-4 flex justify-end">
         <ReportProductButton productId={productId} />
       </div>
       <ProductTabs product={product} />
+
       <div className="mt-10">
         <RelatedProducts category={category} currentId={productId} />
       </div>
