@@ -16310,9 +16310,23 @@
             "format": "uuid",
             "description": "Product id"
           },
+          "shopId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Shop id"
+          },
+          "shopName": {
+            "type": "string",
+            "description": "Ten shop"
+          },
           "productName": {
             "type": "string",
             "description": "Ten product hien tai"
+          },
+          "imageKey": {
+            "type": "string",
+            "description": "S3 key anh dai dien, null neu chua co",
+            "nullable": true
           },
           "variantLabel": {
             "type": "string",
@@ -16326,6 +16340,15 @@
             "type": "integer",
             "format": "int64",
             "description": "Gia hien tai VND"
+          },
+          "priceAtAdded": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Gia tai thoi diem them vao gio hang VND"
+          },
+          "priceChanged": {
+            "type": "boolean",
+            "description": "Co danh dau gia da thay doi so voi luc them"
           },
           "quantity": {
             "type": "integer",

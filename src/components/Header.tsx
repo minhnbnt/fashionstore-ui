@@ -17,7 +17,7 @@ import {
   UserCircle,
 } from '@phosphor-icons/react'
 
-import { takeData } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import { useSignOut } from '../hooks/useAuthMutations'
@@ -366,8 +366,18 @@ export default function Header() {
                           return (
                             <div
                               key={item.variantId ?? index}
-                              className="flex items-center justify-between gap-3 py-2.5 text-xs"
+                              className="flex items-center gap-2.5 py-2.5 text-xs"
                             >
+                              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-zinc-100 bg-zinc-50 shadow-xs dark:border-zinc-800 dark:bg-zinc-800">
+                                <img
+                                  src={imageUrl(item.imageKey)}
+                                  alt={item.productName ?? 'Sản phẩm'}
+                                  className="h-full w-full object-cover"
+                                  onError={function (e) {
+                                    e.currentTarget.src = PLACEHOLDER_IMAGE
+                                  }}
+                                />
+                              </div>
                               <div className="min-w-0 flex-1">
                                 {item.productId ? (
                                   <Link
@@ -389,7 +399,7 @@ export default function Header() {
                                   x{item.quantity} {item.variantLabel}
                                 </p>
                               </div>
-                              <p className="font-extrabold text-blue-600 dark:text-sky-400">
+                              <p className="font-extrabold text-blue-600 dark:text-sky-400 shrink-0">
                                 {formatVnd((item.unitPrice ?? 0) * (item.quantity ?? 1))}
                               </p>
                             </div>
