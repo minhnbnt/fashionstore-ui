@@ -15336,6 +15336,67 @@
           }
         ]
       }
+    },
+    "/api/public/locations/provinces": {
+      "get": {
+        "tags": ["Locations"],
+        "summary": "Danh sách tỉnh/thành",
+        "description": "34 tỉnh/thành kèm miền (NORTH, CENTRAL, SOUTH), sắp theo tên.",
+        "operationId": "listProvinces",
+        "responses": {
+          "200": {
+            "description": "Danh sách tỉnh/thành",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProvinceResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/locations/provinces/{provinceCode}/wards": {
+      "get": {
+        "tags": ["Locations"],
+        "summary": "Danh sách xã/phường của tỉnh",
+        "description": "Các xã/phường thuộc một tỉnh/thành, sắp theo tên.",
+        "operationId": "listWards",
+        "parameters": [
+          {
+            "name": "provinceCode",
+            "in": "path",
+            "description": "Mã tỉnh/thành 2 chữ số",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "01"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách xã/phường",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WardResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tỉnh/thành không tồn tại"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -15602,20 +15663,59 @@
       "AddressRequest": {
         "type": "object",
         "properties": {
+          "recipientName": {
+            "type": ["string", "null"],
+            "description": "Ten nguoi nhan",
+            "maxLength": 100,
+            "minLength": 0,
+            "example": "Nguyen Van A"
+          },
+          "phoneNumber": {
+            "type": ["string", "null"],
+            "description": "So dien thoai nguoi nhan",
+            "maxLength": 20,
+            "minLength": 0,
+            "example": "0912345678"
+          },
+          "detailAddress": {
+            "type": ["string", "null"],
+            "description": "Dia chi chi tiet (so nha, toa nha, ngo ngach)",
+            "maxLength": 300,
+            "minLength": 0,
+            "example": "So 18, ngo 12 Duy Tan"
+          },
           "houseNumber": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
+            "description": "So nha"
           },
           "street": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
+            "description": "Ten duong"
           },
           "ward": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
+            "description": "Phuong/Xa",
+            "example": "Phuong Dich Vong Hau"
           },
           "district": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
+            "description": "Quan/Huyen",
+            "example": "Quan Cau Giay"
           },
           "city": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
+            "description": "Tinh/Thanh pho",
+            "example": "Thanh pho Ha Noi"
+          },
+          "label": {
+            "type": ["string", "null"],
+            "description": "Nhan dia chi (HOME, OFFICE, OTHER)",
+            "enum": ["HOME", "OFFICE", "OTHER"],
+            "example": "HOME"
+          },
+          "defaultAddress": {
+            "type": ["boolean", "null"],
+            "description": "Dat lam dia chi mac dinh"
           }
         }
       },
@@ -15626,6 +15726,18 @@
             "type": "string",
             "format": "uuid"
           },
+          "recipientName": {
+            "type": "string",
+            "description": "Ten nguoi nhan"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "So dien thoai nguoi nhan"
+          },
+          "detailAddress": {
+            "type": ["string", "null"],
+            "description": "Dia chi chi tiet"
+          },
           "houseNumber": {
             "type": ["string", "null"]
           },
@@ -15641,8 +15753,50 @@
           "city": {
             "type": ["string", "null"]
           },
+          "label": {
+            "type": "string",
+            "description": "Nhan dia chi",
+            "enum": ["HOME", "OFFICE", "OTHER"]
+          },
           "defaultAddress": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Dia chi mac dinh"
+          }
+        }
+      },
+      "ProvinceResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Mã tỉnh/thành 2 chữ số",
+            "example": "01"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tên tỉnh/thành",
+            "example": "Thành phố Hà Nội"
+          },
+          "region": {
+            "type": "string",
+            "description": "Miền",
+            "enum": ["NORTH", "CENTRAL", "SOUTH"],
+            "example": "NORTH"
+          }
+        }
+      },
+      "WardResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Mã xã/phường 5 chữ số",
+            "example": "00004"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tên xã/phường",
+            "example": "Phường Ba Đình"
           }
         }
       },

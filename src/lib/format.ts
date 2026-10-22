@@ -26,14 +26,22 @@ export function formatFullAddress(addr: AddressResponse | null | undefined): str
   }
   const parts: string[] = []
   if (
-    addr.houseNumber !== null &&
-    addr.houseNumber !== undefined &&
-    addr.houseNumber.trim() !== ''
+    addr.detailAddress !== null &&
+    addr.detailAddress !== undefined &&
+    addr.detailAddress.trim() !== ''
   ) {
-    parts.push(addr.houseNumber.trim())
-  }
-  if (addr.street !== null && addr.street !== undefined && addr.street.trim() !== '') {
-    parts.push(addr.street.trim())
+    parts.push(addr.detailAddress.trim())
+  } else {
+    if (
+      addr.houseNumber !== null &&
+      addr.houseNumber !== undefined &&
+      addr.houseNumber.trim() !== ''
+    ) {
+      parts.push(addr.houseNumber.trim())
+    }
+    if (addr.street !== null && addr.street !== undefined && addr.street.trim() !== '') {
+      parts.push(addr.street.trim())
+    }
   }
   if (addr.ward !== null && addr.ward !== undefined && addr.ward.trim() !== '') {
     parts.push(addr.ward.trim())
@@ -45,6 +53,18 @@ export function formatFullAddress(addr: AddressResponse | null | undefined): str
     parts.push(addr.city.trim())
   }
   return parts.join(', ')
+}
+
+export function formatAddressLabel(label: string | null | undefined): string {
+  switch (label) {
+    case 'OFFICE':
+      return 'Công ty'
+    case 'OTHER':
+      return 'Khác'
+    case 'HOME':
+    default:
+      return 'Nhà riêng'
+  }
 }
 
 export function calculateDiscountPercent(

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   calculateDiscountPercent,
+  formatAddressLabel,
   formatDateTime,
   formatFullAddress,
   formatSoldCount,
@@ -53,9 +54,28 @@ describe('formatFullAddress', () => {
     expect(formatFullAddress(addr)).toBe('Cầu Giấy, Cầu Giấy, Hà Nội')
   })
 
+  it('uu tien detailAddress neu co', () => {
+    const addr = {
+      detailAddress: 'Số 18, Tòa Keangnam',
+      ward: 'Mễ Trì',
+      district: 'Nam Từ Liêm',
+      city: 'Hà Nội',
+    }
+    expect(formatFullAddress(addr)).toBe('Số 18, Tòa Keangnam, Mễ Trì, Nam Từ Liêm, Hà Nội')
+  })
+
   it('tra chuoi rong khi khong co dia chi', () => {
     expect(formatFullAddress(null)).toBe('')
     expect(formatFullAddress(undefined)).toBe('')
+  })
+})
+
+describe('formatAddressLabel', () => {
+  it('dich dung cac loai nhan', () => {
+    expect(formatAddressLabel('HOME')).toBe('Nhà riêng')
+    expect(formatAddressLabel('OFFICE')).toBe('Công ty')
+    expect(formatAddressLabel('OTHER')).toBe('Khác')
+    expect(formatAddressLabel(null)).toBe('Nhà riêng')
   })
 })
 
