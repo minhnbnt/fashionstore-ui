@@ -115,7 +115,12 @@ export default function Checkout() {
       showToast('Bạn đã đạt tối đa 10 địa chỉ nhận hàng')
       return
     }
-    if (recipientName.trim() === '' || phoneNumber.trim() === '' || city.trim() === '' || detailAddress.trim() === '') {
+    if (
+      recipientName.trim() === '' ||
+      phoneNumber.trim() === '' ||
+      city.trim() === '' ||
+      detailAddress.trim() === ''
+    ) {
       showToast('Vui lòng điền đầy đủ tên người nhận, SĐT, tỉnh/thành và địa chỉ chi tiết')
       return
     }
@@ -261,19 +266,19 @@ export default function Checkout() {
                   </span>
 
                   {currentAddress.label === 'HOME' && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
                       <House size={11} weight="fill" />
                       Nhà riêng
                     </span>
                   )}
                   {currentAddress.label === 'OFFICE' && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
                       <Buildings size={11} weight="fill" />
                       Công ty
                     </span>
                   )}
                   {currentAddress.label === 'OTHER' && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300">
                       <MapPin size={11} weight="fill" />
                       Khác
                     </span>
@@ -485,6 +490,7 @@ export default function Checkout() {
                       type="radio"
                       checked={isSelected}
                       readOnly
+                      aria-label="Chọn địa chỉ giao hàng này"
                       className="mt-0.5 cursor-pointer accent-blue-600"
                     />
                     <div className="min-w-0 flex-1 space-y-1">
@@ -499,9 +505,7 @@ export default function Checkout() {
                           </span>
                         )}
                       </div>
-                      <p className="text-zinc-600 dark:text-zinc-300">
-                        {formatFullAddress(a)}
-                      </p>
+                      <p className="text-zinc-600 dark:text-zinc-300">{formatFullAddress(a)}</p>
                     </div>
                   </button>
                 )
@@ -658,18 +662,16 @@ export default function Checkout() {
               </div>
 
               <div>
-                <span className="font-bold text-zinc-500 dark:text-zinc-400">
-                  Loại địa chỉ
-                </span>
+                <span className="font-bold text-zinc-500 dark:text-zinc-400">Loại địa chỉ</span>
                 <div className="mt-1.5 flex gap-2">
                   <button
                     type="button"
                     onClick={function () {
                       setLabel('HOME')
                     }}
-                    className={`rounded-full px-3 py-1 text-xs font-bold transition border ${
+                    className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
                       label === 'HOME'
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-500'
+                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300'
                         : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
                     }`}
                   >
@@ -680,9 +682,9 @@ export default function Checkout() {
                     onClick={function () {
                       setLabel('OFFICE')
                     }}
-                    className={`rounded-full px-3 py-1 text-xs font-bold transition border ${
+                    className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
                       label === 'OFFICE'
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-500'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950/40 dark:text-blue-300'
                         : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
                     }`}
                   >
@@ -693,9 +695,9 @@ export default function Checkout() {
                     onClick={function () {
                       setLabel('OTHER')
                     }}
-                    className={`rounded-full px-3 py-1 text-xs font-bold transition border ${
+                    className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
                       label === 'OTHER'
-                        ? 'border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-500'
+                        ? 'border-purple-600 bg-purple-50 text-purple-700 dark:border-purple-500 dark:bg-purple-950/40 dark:text-purple-300'
                         : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
                     }`}
                   >

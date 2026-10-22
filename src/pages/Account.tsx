@@ -25,6 +25,7 @@ import { adminErrorMessage } from '@/lib/admin'
 import { takeData } from '@/lib/apiAdapters'
 import { getRoleFromSession, refreshAuthSession } from '@/lib/auth'
 
+import AddressBookTab from '../components/account/AddressBookTab'
 import StatusBadge from '../components/admin/StatusBadge'
 import ChangePasswordForm from '../components/ChangePasswordForm'
 import ShopKycRegistrationModal from '../components/ShopKycRegistrationModal'
@@ -591,6 +592,11 @@ export default function Account() {
             )}
         </div>
       </div>
+
+      {/* Address Book */}
+      <section id="address-book" className="glass mt-6 rounded-3xl p-6 md:p-8">
+        <AddressBookTab />
+      </section>
 
       {/* Shop eKYC Registration Modal */}
       <ShopKycRegistrationModal

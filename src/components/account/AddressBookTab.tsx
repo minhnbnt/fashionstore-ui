@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
   getList1QueryKey,
@@ -122,10 +122,7 @@ export default function AddressBookTab() {
       ) {
         setProvinceDropdownOpen(false)
       }
-      if (
-        wardContainerRef.current &&
-        !wardContainerRef.current.contains(event.target as Node)
-      ) {
+      if (wardContainerRef.current && !wardContainerRef.current.contains(event.target as Node)) {
         setWardDropdownOpen(false)
       }
     }
@@ -136,24 +133,16 @@ export default function AddressBookTab() {
   }, [])
 
   // Filtered provinces
-  const filteredProvinces = useMemo(() => {
-    const q = removeVietnameseAccents(provinceSearch.trim())
-    if (!q) {
-      return provinces
-    }
-    return provinces.filter((p) =>
-      removeVietnameseAccents(p.name ?? '').includes(q),
-    )
-  }, [provinces, provinceSearch])
+  const provinceQuery = removeVietnameseAccents(provinceSearch.trim())
+  const filteredProvinces = provinces.filter((p) =>
+    removeVietnameseAccents(p.name ?? '').includes(provinceQuery),
+  )
 
   // Filtered wards
-  const filteredWards = useMemo(() => {
-    const q = removeVietnameseAccents(wardSearch.trim())
-    if (!q) {
-      return wards
-    }
-    return wards.filter((w) => removeVietnameseAccents(w.name ?? '').includes(q))
-  }, [wards, wardSearch])
+  const wardQuery = removeVietnameseAccents(wardSearch.trim())
+  const filteredWards = wards.filter((w) =>
+    removeVietnameseAccents(w.name ?? '').includes(wardQuery),
+  )
 
   function showToast(msg: string) {
     setToast(msg)
@@ -366,10 +355,10 @@ export default function AddressBookTab() {
             type="button"
             onClick={openCreateModal}
             disabled={isMaxReached}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition shadow-sm ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition ${
               isMaxReached
                 ? 'cursor-not-allowed bg-zinc-200 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600'
-                : 'bg-orange-600 text-white hover:bg-orange-700 shadow-orange-600/20'
+                : 'bg-orange-600 text-white shadow-orange-600/20 hover:bg-orange-700'
             }`}
             title={isMaxReached ? 'Bạn đã đạt giới hạn 10 địa chỉ' : 'Thêm địa chỉ mới'}
           >
@@ -384,8 +373,8 @@ export default function AddressBookTab() {
         <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
           <WarningCircle size={18} weight="fill" className="shrink-0 text-amber-600" />
           <span>
-            Bạn đã sử dụng tối đa {MAX_ADDRESSES} địa chỉ nhận hàng. Vui lòng xóa bớt địa chỉ cũ
-            nếu cần thêm địa chỉ mới.
+            Bạn đã sử dụng tối đa {MAX_ADDRESSES} địa chỉ nhận hàng. Vui lòng xóa bớt địa chỉ cũ nếu
+            cần thêm địa chỉ mới.
           </span>
         </div>
       )}
@@ -478,7 +467,8 @@ export default function AddressBookTab() {
                   {/* Row 2: Detail Address & Province/Ward */}
                   <div className="space-y-0.5 text-xs text-zinc-600 dark:text-zinc-300">
                     <p className="font-semibold text-zinc-800 dark:text-zinc-200">
-                      {addr.detailAddress || `${addr.houseNumber ?? ''} ${addr.street ?? ''}`.trim()}
+                      {addr.detailAddress ||
+                        `${addr.houseNumber ?? ''} ${addr.street ?? ''}`.trim()}
                     </p>
                     <p className="text-zinc-500 dark:text-zinc-400">
                       {[addr.ward, addr.district, addr.city].filter(Boolean).join(', ')}
@@ -518,7 +508,7 @@ export default function AddressBookTab() {
                           handleDeleteAddress(addr.id)
                         }}
                         disabled={isMutating}
-                        className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-2xs transition hover:bg-rose-50 hover:border-rose-300 dark:border-zinc-800 dark:bg-zinc-800 dark:hover:bg-rose-950/30"
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-2xs transition hover:border-rose-300 hover:bg-rose-50 dark:border-zinc-800 dark:bg-zinc-800 dark:hover:bg-rose-950/30"
                         title="Xóa địa chỉ"
                       >
                         <Trash size={13} />
@@ -534,8 +524,8 @@ export default function AddressBookTab() {
 
       {/* Add / Edit Address Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl transition dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl transition dark:border-zinc-800 dark:bg-zinc-900">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
               <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">
@@ -623,9 +613,9 @@ export default function AddressBookTab() {
                       setProvinceDropdownOpen(true)
                     }}
                     placeholder="Gõ để tìm nhanh (VD: Hà Nội, Hồ Chí Minh, Đà Nẵng...)"
-                    className="w-full rounded-2xl border border-zinc-200 py-2.5 pl-9 pr-14 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                    className="w-full rounded-2xl border border-zinc-200 py-2.5 pr-14 pl-9 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 gap-1">
+                  <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-2.5">
                     {city !== '' && (
                       <button
                         type="button"
@@ -727,9 +717,9 @@ export default function AddressBookTab() {
                         ? 'Vui lòng chọn Tỉnh/Thành phố trước'
                         : 'Gõ để tìm nhanh (VD: Dịch Vọng, Bến Nghé, Phường 1...)'
                     }
-                    className="w-full rounded-2xl border border-zinc-200 py-2.5 pl-9 pr-14 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:disabled:bg-zinc-900/60"
+                    className="w-full rounded-2xl border border-zinc-200 py-2.5 pr-14 pl-9 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:disabled:bg-zinc-900/60"
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 gap-1">
+                  <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-2.5">
                     {wardsQuery.isLoading && (
                       <ArrowClockwise size={13} className="animate-spin text-orange-500" />
                     )}
@@ -794,7 +784,8 @@ export default function AddressBookTab() {
                     )}
                     {filteredWards.length > 40 && (
                       <div className="p-2 text-center text-[11px] text-zinc-400">
-                        Còn {filteredWards.length - 40} phường/xã khác, gõ thêm để thu hẹp kết quả...
+                        Còn {filteredWards.length - 40} phường/xã khác, gõ thêm để thu hẹp kết
+                        quả...
                       </div>
                     )}
                   </div>
