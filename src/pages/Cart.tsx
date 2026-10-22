@@ -251,9 +251,19 @@ export default function Cart() {
                     className="h-4 w-4 shrink-0 cursor-pointer rounded accent-blue-600"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-zinc-900 dark:text-white">
-                      {item.productName}
-                    </p>
+                    {item.productId ? (
+                      <Link
+                        to={`/products/${item.productId}`}
+                        className="truncate block text-sm font-bold text-zinc-900 transition hover:text-blue-600 hover:underline dark:text-white dark:hover:text-sky-400"
+                        title={item.productName}
+                      >
+                        {item.productName}
+                      </Link>
+                    ) : (
+                      <p className="truncate text-sm font-bold text-zinc-900 dark:text-white">
+                        {item.productName}
+                      </p>
+                    )}
                     <div className="mt-1 flex items-center gap-2">
                       <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
                         {item.variantLabel}

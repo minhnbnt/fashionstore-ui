@@ -16305,6 +16305,11 @@
             "format": "uuid",
             "description": "Variant id"
           },
+          "productId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product id"
+          },
           "productName": {
             "type": "string",
             "description": "Ten product hien tai"

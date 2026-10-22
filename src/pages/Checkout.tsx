@@ -322,9 +322,21 @@ export default function Checkout() {
                 return (
                   <div key={item.variantId} className="flex items-center gap-4 py-3">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-zinc-900 dark:text-white">
-                        {item.productName}
-                      </p>
+                      {item.productId ? (
+                        <Link
+                          to={`/products/${item.productId}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="truncate block text-sm font-bold text-zinc-900 transition hover:text-blue-600 hover:underline dark:text-white dark:hover:text-sky-400"
+                          title="Xem chi tiết sản phẩm (mở tab mới)"
+                        >
+                          {item.productName}
+                        </Link>
+                      ) : (
+                        <p className="truncate text-sm font-bold text-zinc-900 dark:text-white">
+                          {item.productName}
+                        </p>
+                      )}
                       <p className="text-xs text-zinc-400">
                         {item.variantLabel} × {item.quantity}
                       </p>

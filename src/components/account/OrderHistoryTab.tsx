@@ -333,13 +333,33 @@ export default function OrderHistoryTab() {
                   {(order.items ?? []).map(function (item) {
                     return (
                       <div key={item.id ?? item.productId} className="flex items-center gap-4 py-4">
-                        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
-                          <ShoppingBag size={24} weight="duotone" />
-                        </div>
+                        {item.productId ? (
+                          <Link
+                            to={`/products/${item.productId}`}
+                            className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 text-zinc-400 transition hover:ring-2 hover:ring-blue-500/40 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+                            title="Xem chi tiết sản phẩm"
+                          >
+                            <ShoppingBag size={24} weight="duotone" />
+                          </Link>
+                        ) : (
+                          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
+                            <ShoppingBag size={24} weight="duotone" />
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1">
-                          <h4 className="line-clamp-2 text-xs font-bold text-zinc-900 dark:text-white">
-                            {item.productName ?? 'Sản phẩm thời trang nét'}
-                          </h4>
+                          {item.productId ? (
+                            <Link
+                              to={`/products/${item.productId}`}
+                              className="line-clamp-2 block text-xs font-bold text-zinc-900 transition hover:text-blue-600 hover:underline dark:text-white dark:hover:text-sky-400"
+                              title={item.productName ?? 'Xem chi tiết sản phẩm'}
+                            >
+                              {item.productName ?? 'Sản phẩm thời trang nét'}
+                            </Link>
+                          ) : (
+                            <h4 className="line-clamp-2 text-xs font-bold text-zinc-900 dark:text-white">
+                              {item.productName ?? 'Sản phẩm thời trang nét'}
+                            </h4>
+                          )}
                           {item.variantLabel !== undefined && item.variantLabel !== null && (
                             <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
                               Phân loại: {item.variantLabel}

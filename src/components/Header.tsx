@@ -369,9 +369,22 @@ export default function Header() {
                               className="flex items-center justify-between gap-3 py-2.5 text-xs"
                             >
                               <div className="min-w-0 flex-1">
-                                <p className="truncate font-bold text-zinc-800 dark:text-zinc-200">
-                                  {item.productName ?? 'Sản phẩm'}
-                                </p>
+                                {item.productId ? (
+                                  <Link
+                                    to={`/products/${item.productId}`}
+                                    onClick={function () {
+                                      setCartPreviewOpen(false)
+                                    }}
+                                    className="truncate block font-bold text-zinc-800 transition hover:text-blue-600 hover:underline dark:text-zinc-200 dark:hover:text-sky-400"
+                                    title={item.productName ?? 'Sản phẩm'}
+                                  >
+                                    {item.productName ?? 'Sản phẩm'}
+                                  </Link>
+                                ) : (
+                                  <p className="truncate font-bold text-zinc-800 dark:text-zinc-200">
+                                    {item.productName ?? 'Sản phẩm'}
+                                  </p>
+                                )}
                                 <p className="text-[11px] text-zinc-400">
                                   x{item.quantity} {item.variantLabel}
                                 </p>
