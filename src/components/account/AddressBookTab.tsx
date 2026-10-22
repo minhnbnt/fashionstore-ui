@@ -352,23 +352,11 @@ export default function AddressBookTab() {
       {/* Header with Title, Counter and Add Button */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
-              Địa chỉ của tôi
-            </h2>
-            <span
-              id="addressCounter"
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                isMaxReached
-                  ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300'
-                  : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
-              }`}
-            >
-              {addresses.length}/{MAX_ADDRESSES} địa chỉ
-            </span>
-          </div>
+          <h2 className="text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+            Địa chỉ của tôi
+          </h2>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Quản lý danh sách địa chỉ nhận hàng để thanh toán nhanh hơn (tối đa {MAX_ADDRESSES} địa chỉ)
+            Quản lý danh sách địa chỉ nhận hàng để thanh toán nhanh hơn
           </p>
         </div>
 
