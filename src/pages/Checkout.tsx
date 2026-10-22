@@ -5,8 +5,10 @@ import { getList1QueryKey, useAdd, useList1 } from '@generated/endpoints/address
 import {
   ArrowLeft,
   ArrowRight,
+  Buildings,
   CheckCircle,
   CreditCard,
+  House,
   MapPin,
   Plus,
   ShieldCheck,
@@ -17,11 +19,12 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import { takeData } from '@/lib/apiAdapters'
-import { formatFullAddress, formatVnd } from '@/lib/format'
+import { formatAddressLabel, formatFullAddress, formatVnd } from '@/lib/format'
 
 import { useCart } from '../hooks/useCart'
 import { useSessionQuery } from '../hooks/useSession'
 
+import type { AddressRequestLabel } from '@generated/model/addressRequestLabel'
 import type { AddressResponse } from '@generated/model/addressResponse'
 
 export default function Checkout() {
@@ -37,11 +40,13 @@ export default function Checkout() {
   const [toast, setToast] = useState<string | null>(null)
 
   // New Address form states
-  const [houseNumber, setHouseNumber] = useState('')
-  const [street, setStreet] = useState('')
+  const [recipientName, setRecipientName] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [detailAddress, setDetailAddress] = useState('')
   const [ward, setWard] = useState('')
   const [district, setDistrict] = useState('')
   const [city, setCity] = useState('')
+  const [label, setLabel] = useState<AddressRequestLabel>('HOME')
 
   function showToast(msg: string) {
     setToast(msg)
@@ -106,17 +111,23 @@ export default function Checkout() {
 
   function handleCreateAddress(e: React.FormEvent) {
     e.preventDefault()
-    if (street.trim() === '' || city.trim() === '') {
-      showToast('Vui lòng nhập tên đường và tỉnh/thành phố')
+    if (addresses.length >= 10) {
+      showToast('Bạn đã đạt tối đa 10 địa chỉ nhận hàng')
+      return
+    }
+    if (recipientName.trim() === '' || phoneNumber.trim() === '' || city.trim() === '' || detailAddress.trim() === '') {
+      showToast('Vui lòng điền đầy đủ tên người nhận, SĐT, tỉnh/thành và địa chỉ chi tiết')
       return
     }
     addAddressMutation.mutate({
       data: {
-        houseNumber: houseNumber.trim(),
-        street: street.trim(),
+        recipientName: recipientName.trim(),
+        phoneNumber: phoneNumber.trim(),
+        detailAddress: detailAddress.trim(),
         ward: ward.trim(),
         district: district.trim(),
         city: city.trim(),
+        label: label,
       },
     })
   }
@@ -128,11 +139,8 @@ export default function Checkout() {
     }
 
     const fullAddr = formatFullAddress(currentAddress)
-    let nameToUse = 'Khách Hàng'
-    if (session?.user.email !== undefined && session.user.email !== '') {
-      nameToUse = session.user.email
-    }
-    const phoneToUse = '0901234567'
+    const nameToUse = currentAddress.recipientName || session?.user.email || 'Khách Hàng'
+    const phoneToUse = currentAddress.phoneNumber || '0900000000'
 
     cart.checkout.mutate(
       {
@@ -242,18 +250,44 @@ export default function Checkout() {
             </div>
 
             {currentAddress !== null && (
-              <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                <div className="shrink-0 font-extrabold text-zinc-900 dark:text-white">
-                  <span>{session?.user.email}</span>
-                </div>
-                <div className="min-w-0 flex-1 text-sm text-zinc-600 dark:text-zinc-300">
-                  <span>{formatFullAddress(currentAddress)}</span>
-                </div>
-                {currentAddress.defaultAddress === true && (
-                  <span className="mt-2 shrink-0 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 sm:mt-0 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-sky-300">
-                    Mặc định
+              <div className="mt-4 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-extrabold text-zinc-900 dark:text-white">
+                    {currentAddress.recipientName || session?.user.email}
                   </span>
-                )}
+                  <span className="text-zinc-300 dark:text-zinc-700">|</span>
+                  <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                    {currentAddress.phoneNumber || 'Chưa có SĐT'}
+                  </span>
+
+                  {currentAddress.label === 'HOME' && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300">
+                      <House size={11} weight="fill" />
+                      Nhà riêng
+                    </span>
+                  )}
+                  {currentAddress.label === 'OFFICE' && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300">
+                      <Buildings size={11} weight="fill" />
+                      Công ty
+                    </span>
+                  )}
+                  {currentAddress.label === 'OTHER' && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300">
+                      <MapPin size={11} weight="fill" />
+                      Khác
+                    </span>
+                  )}
+
+                  {currentAddress.defaultAddress === true && (
+                    <span className="shrink-0 rounded-full bg-orange-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                      Mặc định
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-300">
+                  {formatFullAddress(currentAddress)}
+                </p>
               </div>
             )}
 
@@ -453,15 +487,26 @@ export default function Checkout() {
                       readOnly
                       className="mt-0.5 cursor-pointer accent-blue-600"
                     />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-zinc-900 dark:text-white">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-bold text-zinc-900 dark:text-white">
+                          {a.recipientName || 'Khách hàng'}
+                        </span>
+                        <span className="text-zinc-400">({a.phoneNumber || 'Chưa có SĐT'})</span>
+                        {a.label && (
+                          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                            {formatAddressLabel(a.label)}
+                          </span>
+                        )}
+                        {a.defaultAddress === true && (
+                          <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
+                            Mặc định
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-zinc-600 dark:text-zinc-300">
                         {formatFullAddress(a)}
                       </p>
-                      {a.defaultAddress === true && (
-                        <span className="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-500/20 dark:text-sky-300">
-                          Mặc định
-                        </span>
-                      )}
                     </div>
                   </button>
                 )
@@ -505,37 +550,58 @@ export default function Checkout() {
             <form onSubmit={handleCreateAddress} className="mt-4 space-y-3 text-xs">
               <div>
                 <label
-                  htmlFor="address-house-number"
+                  htmlFor="address-recipient-name"
                   className="font-bold text-zinc-500 dark:text-zinc-400"
                 >
-                  Số nhà
+                  Họ và tên người nhận *
                 </label>
                 <input
-                  id="address-house-number"
-                  value={houseNumber}
+                  id="address-recipient-name"
+                  required
+                  value={recipientName}
                   onChange={function (e) {
-                    setHouseNumber(e.target.value)
+                    setRecipientName(e.target.value)
                   }}
-                  placeholder="Ví dụ: 12 hoặc 45A"
+                  placeholder="Ví dụ: Nguyễn Văn A"
                   className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
                 />
               </div>
 
               <div>
                 <label
-                  htmlFor="address-street"
+                  htmlFor="address-phone-number"
                   className="font-bold text-zinc-500 dark:text-zinc-400"
                 >
-                  Tên đường *
+                  Số điện thoại *
                 </label>
                 <input
-                  id="address-street"
+                  id="address-phone-number"
                   required
-                  value={street}
+                  type="tel"
+                  value={phoneNumber}
                   onChange={function (e) {
-                    setStreet(e.target.value)
+                    setPhoneNumber(e.target.value)
                   }}
-                  placeholder="Ví dụ: Nguyễn Trãi"
+                  placeholder="Ví dụ: 0987654321"
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="address-detail"
+                  className="font-bold text-zinc-500 dark:text-zinc-400"
+                >
+                  Địa chỉ chi tiết (Tòa nhà, số nhà, ngõ/tên đường) *
+                </label>
+                <input
+                  id="address-detail"
+                  required
+                  value={detailAddress}
+                  onChange={function (e) {
+                    setDetailAddress(e.target.value)
+                  }}
+                  placeholder="Ví dụ: Số 18 ngõ 12 Duy Tân"
                   className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
                 />
               </div>
@@ -594,6 +660,53 @@ export default function Checkout() {
                   placeholder="TP. Hồ Chí Minh"
                   className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
                 />
+              </div>
+
+              <div>
+                <span className="font-bold text-zinc-500 dark:text-zinc-400">
+                  Loại địa chỉ
+                </span>
+                <div className="mt-1.5 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={function () {
+                      setLabel('HOME')
+                    }}
+                    className={`rounded-full px-3 py-1 text-xs font-bold transition border ${
+                      label === 'HOME'
+                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-500'
+                        : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
+                    }`}
+                  >
+                    Nhà riêng
+                  </button>
+                  <button
+                    type="button"
+                    onClick={function () {
+                      setLabel('OFFICE')
+                    }}
+                    className={`rounded-full px-3 py-1 text-xs font-bold transition border ${
+                      label === 'OFFICE'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-500'
+                        : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
+                    }`}
+                  >
+                    Công ty
+                  </button>
+                  <button
+                    type="button"
+                    onClick={function () {
+                      setLabel('OTHER')
+                    }}
+                    className={`rounded-full px-3 py-1 text-xs font-bold transition border ${
+                      label === 'OTHER'
+                        ? 'border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-500'
+                        : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
+                    }`}
+                  >
+                    Khác
+                  </button>
+                </div>
               </div>
 
               <div className="mt-5 pt-2">
