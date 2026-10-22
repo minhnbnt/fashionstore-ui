@@ -155,7 +155,7 @@ export function SellerLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f6f6f6] font-sans">
-      {/* Shopee-style Topbar */}
+      {/* Seller Topbar */}
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between px-4">
           <div className="flex items-center gap-3">
@@ -167,17 +167,17 @@ export function SellerLayout({
               <List size={22} />
             </button>
 
-            {/* Shopee Seller Branding */}
+            {/* Seller Branding */}
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ee4d2d] text-lg font-black text-white shadow-sm">
-                S
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600 text-lg font-black text-white shadow-sm">
+                n
               </div>
               <div className="flex flex-col">
                 <span className="text-sm leading-tight font-bold tracking-tight text-gray-900">
                   Kênh Người Bán
                 </span>
                 <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-                  Shopee Seller Centre
+                  nét Seller Center
                 </span>
               </div>
             </div>
@@ -235,7 +235,7 @@ export function SellerLayout({
                   </span>
                   <ShieldCheck size={14} className="text-blue-500" weight="fill" />
                 </div>
-                <span className="text-[10px] text-gray-400">Shopee Mall • 4.9 ⭐</span>
+                <span className="text-[10px] text-gray-400">nét Mall • 4.9 ⭐</span>
               </div>
             </button>
           </div>
@@ -367,9 +367,9 @@ export function SellerLayout({
               {activeTab === 'INVENTORY' && 'Quản lý tồn kho & Biến thể'}
               {activeTab === 'ORDERS' && 'Quản lý đơn hàng'}
               {activeTab === 'RETURNS' && 'Yêu cầu trả hàng & Hoàn tiền'}
-              {activeTab === 'REVENUE' && 'Doanh thu & Ví Shopee'}
+              {activeTab === 'REVENUE' && 'Doanh thu & Tài chính'}
               {activeTab === 'REVIEWS' && 'Đánh giá từ khách hàng'}
-              {activeTab === 'CHAT' && 'Tin nhắn khách hàng (Shopee Chat)'}
+              {activeTab === 'CHAT' && 'Tin nhắn khách hàng (nét Chat)'}
               {activeTab === 'DECORATION' && 'Trang trí gian hàng'}
               {activeTab === 'STAFF' && 'Phân quyền & Quản lý nhân viên'}
               {activeTab === 'PROFILE' && 'Hồ sơ Shop & KYC'}

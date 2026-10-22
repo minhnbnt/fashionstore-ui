@@ -267,15 +267,17 @@ export default function Account() {
                   <Sparkle size={12} weight="fill" />
                   Miễn phí đăng ký
                 </span>
-                <span className="text-xs text-zinc-400">Theo chuẩn Shopee</span>
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  Định danh eKYC tiện lợi · Tích hợp thử đồ ảo
+                </span>
               </div>
               <h3 className="mt-3 text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
-                Bắt đầu kinh doanh thời trang cùng nét
+                Kiến tạo thương hiệu thời trang độc bản cùng nét
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                Mở shop để tiếp cận hàng triệu khách hàng trẻ. Hệ thống cung cấp đầy đủ 11 phân hệ
-                chuyên nghiệp: Quản lý sản phẩm & biến thể, Xử lý đơn hàng, Quản lý kho, Doanh thu,
-                Trang trí gian hàng kéo-thả, và Phân quyền nhân viên.
+                Khởi tạo gian hàng chỉ trong 3 phút và tiếp cận hàng triệu tín đồ thời trang trẻ.
+                Tận hưởng hệ sinh thái thương mại toàn diện: công nghệ thử đồ ảo Virtual Try-On,
+                quản lý sản phẩm & đơn hàng đa kênh thông minh, cùng bộ công cụ trang trí gian hàng chuyên nghiệp.
               </p>
               <div className="mt-6">
                 <button
@@ -513,7 +515,7 @@ export default function Account() {
                     className="flex items-center gap-2 rounded-full bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-700/25 transition hover:bg-emerald-800"
                   >
                     <Storefront size={18} weight="bold" />
-                    <span>Vào Kênh Người Bán (Shopee Seller Center)</span>
+                    <span>Vào Kênh Người Bán (nét Seller Center)</span>
                     <ArrowRight size={16} weight="bold" />
                   </button>
                 </div>

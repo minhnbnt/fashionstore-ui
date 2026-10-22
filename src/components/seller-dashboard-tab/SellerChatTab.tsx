@@ -175,7 +175,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
         </button>
       </div>
 
-      {/* Cửa sổ Chat 2 cột Shopee Web Chat */}
+      {/* Cửa sổ Chat 2 cột */}
       <div className="grid h-[620px] grid-cols-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm md:grid-cols-3 dark:border-zinc-800 dark:bg-zinc-900">
         {/* Cột trái: Danh sách hội thoại */}
         <div className="flex flex-col border-r border-zinc-100 md:col-span-1 dark:border-zinc-800">

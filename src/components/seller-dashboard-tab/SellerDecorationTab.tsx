@@ -323,7 +323,7 @@ export function SellerDecorationTab({ shopId }: SellerDecorationTabProps) {
           </div>
 
           <div className="rounded border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800">
-            💡 <strong>Mẹo gian hàng chuẩn Shopee:</strong> Đặt <em>Banner Khuyến Mãi</em> ở vị trí
+            💡 <strong>Mẹo gian hàng chuyên nghiệp:</strong> Đặt <em>Banner Khuyến Mãi</em> ở vị trí
             đầu tiên, tiếp theo là <em>Flash Sale Giờ Vàng</em> để tối ưu tỷ lệ chuyển đổi đơn hàng
             lên tới +35%.
           </div>
@@ -484,7 +484,7 @@ export function SellerDecorationTab({ shopId }: SellerDecorationTabProps) {
                   <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
                 </div>
                 <div className="max-w-sm flex-1 truncate rounded bg-white px-3 py-0.5 text-[11px] text-gray-500">
-                  https://shopee.vn/fashionhub.boutique
+                  https://netfashion.vn/fashionhub.boutique
                 </div>
               </div>
               <div className="max-h-[500px] space-y-4 overflow-y-auto bg-gray-50 p-4">

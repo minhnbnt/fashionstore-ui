@@ -90,7 +90,7 @@ export default function SellerOverviewTab({
 
   return (
     <div className="space-y-6">
-      {/* Banner Chào mừng Shopee-style */}
+      {/* Banner Chào mừng */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 p-6 text-white shadow-xl">
         <div className="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
