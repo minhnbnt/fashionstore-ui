@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router'
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useList } from '@generated/endpoints/reviews/reviews'
 import { useSearch } from '@generated/endpoints/search/search'
+import { useListPageLinks } from '@generated/endpoints/site-content/site-content'
 import {
   ArrowRight,
   ArrowsLeftRight,
@@ -30,6 +31,7 @@ import UserAvatar from './UserAvatar'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
+import type { PublicPageLinkResponse } from '@generated/model/publicPageLinkResponse'
 import type { ReviewResponse } from '@generated/model/reviewResponse'
 
 function Reveal(props: { children: React.ReactNode; delay?: number }) {
@@ -576,24 +578,53 @@ export function Testimonials() {
   )
 }
 
+function FooterPageLinks({ links }: { links: PublicPageLinkResponse[] }) {
+  return (
+    <>
+      {links.map(function (link) {
+        return (
+          <li key={link.slug}>
+            <Link to={`/pages/${link.slug ?? ''}`} className="hover:text-white">
+              {link.title}
+            </Link>
+          </li>
+        )
+      })}
+    </>
+  )
+}
+
 export function Footer() {
+  const pagesQuery = useListPageLinks({ query: { staleTime: 5 * 60_000 } })
+  let links: PublicPageLinkResponse[] = []
+  if (pagesQuery.isSuccess) {
+    links = takeData(pagesQuery.data)
+  }
+  const aboutLinks = links.filter((link) => link.footerGroup === 'ABOUT')
+  const supportLinks = links.filter((link) => link.footerGroup === 'SUPPORT')
+  const policyLinks = links.filter((link) => link.footerGroup === 'POLICY')
+
   return (
     <footer className="rounded-t-[2.5rem] bg-zinc-950 px-6 pt-12 pb-8 text-zinc-300 md:px-10">
       <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-8 md:grid-cols-5">
-        <div className="col-span-2">
+        <div className="col-span-2 md:col-span-1">
           <p className="text-2xl font-extrabold text-white">
             nét<span className="text-sky-400">.</span>
           </p>
-          <p className="mt-2 max-w-sm text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-zinc-400">
             Sàn thương mại điện tử thời trang đa gian hàng. Mặc đẹp là nét riêng của bạn.
           </p>
-          <div className="mt-4 flex items-center gap-3 text-xs text-zinc-400">
+          <div className="mt-4 flex flex-col gap-1 text-xs text-zinc-400">
             <span className="flex items-center gap-1">
-              <Headset size={16} /> Hotline: 1900 6868
+              <Headset size={16} /> Hotline: 1900 6868 · 028 3861 4613
             </span>
-            <span>·</span>
             <span>cskh@fashionstore.vn</span>
           </div>
+          {aboutLinks.length > 0 && (
+            <ul className="mt-3 space-y-2 text-xs">
+              <FooterPageLinks links={aboutLinks} />
+            </ul>
+          )}
         </div>
 
         <div>
@@ -640,11 +671,20 @@ export function Footer() {
                 Cam kết hàng chính hãng
               </Link>
             </li>
+            {aboutLinks.length > 0 && <FooterPageLinks links={aboutLinks} />}
+          </ul>
+        </div>
+
+        <div>
+          <p className="text-sm font-bold text-white">Hỗ trợ &amp; Chính sách</p>
+          <ul className="mt-3 space-y-2 text-xs">
             <li>
-              <Link to="/search?q=bao-mat" className="hover:text-white">
-                Chính sách bảo mật
+              <Link to="/faq" className="hover:text-white">
+                Câu hỏi thường gặp (FAQ)
               </Link>
             </li>
+            {supportLinks.length > 0 && <FooterPageLinks links={supportLinks} />}
+            {policyLinks.length > 0 && <FooterPageLinks links={policyLinks} />}
           </ul>
         </div>
 

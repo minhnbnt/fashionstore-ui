@@ -15,9 +15,22 @@ interface Props {
   onDone: () => void
 }
 
+/** Gỡ từ hàng đợi báo cáo thì chọn sẵn lý do bị báo cáo nhiều nhất, admin vẫn đổi được. */
+function initialViolation(
+  topReason: string | null | undefined,
+): BanProductRequestViolationType | null {
+  const match = VIOLATION_OPTIONS.find((option) => option.type === topReason)
+  if (match === undefined) {
+    return null
+  }
+  return match.type
+}
+
 /** Chọn loại vi phạm + lý do (có câu mẫu theo loại), gỡ sản phẩm khỏi sàn. */
 export default function BanProductDialog({ product, onClose, onDone }: Props) {
-  const [violationType, setViolationType] = useState<BanProductRequestViolationType | null>(null)
+  const [violationType, setViolationType] = useState<BanProductRequestViolationType | null>(
+    initialViolation(product.topReportReason),
+  )
   const [reason, setReason] = useState('')
   const [touched, setTouched] = useState(false)
   const ban = useBanProduct()

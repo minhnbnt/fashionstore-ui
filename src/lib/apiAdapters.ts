@@ -81,10 +81,74 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     404: 'Sản phẩm không tồn tại.',
     409: 'Sản phẩm đã bị gỡ hoặc shop đã xóa. Tải lại danh sách để xem trạng thái mới.',
   },
+  adminContent: {
+    400: 'Dữ liệu chưa hợp lệ: kiểm tra trường bắt buộc, link và giờ kết thúc phải sau giờ bắt đầu.',
+    403: 'Bạn không có quyền quản lý nội dung.',
+    404: 'Nội dung không còn tồn tại. Tải lại danh sách.',
+  },
+  adminPageSave: {
+    400: 'Dữ liệu chưa hợp lệ: kiểm tra slug (chữ thường không dấu, nối bằng -) và độ dài các trường.',
+    403: 'Bạn không có quyền quản lý nội dung.',
+    404: 'Trang không còn tồn tại. Tải lại danh sách.',
+    409: 'Slug đã có trang khác dùng, hãy đổi slug.',
+  },
+  adminPageStatus: {
+    403: 'Bạn không có quyền quản lý nội dung.',
+    404: 'Trang không còn tồn tại. Tải lại danh sách.',
+    409: 'Trạng thái trang đã thay đổi. Tải lại để xem mới nhất; trang đang xuất bản phải gỡ trước khi xóa.',
+  },
+  sitePage: {
+    404: 'Trang không tồn tại hoặc chưa xuất bản.',
+  },
+  faqs: {},
+  productReport: {
+    400: 'Vui lòng chọn lý do báo cáo (mô tả tối đa 1000 ký tự).',
+    404: 'Sản phẩm không còn hiển thị trên sàn.',
+    409: 'Bạn đã báo cáo sản phẩm này và đang chờ xử lý, hoặc đây là sản phẩm của shop bạn.',
+  },
+  adminProductDismiss: {
+    403: 'Bạn không có quyền xử lý báo cáo.',
+    404: 'Sản phẩm không tồn tại.',
+    409: 'Sản phẩm không còn báo cáo nào chờ xử lý.',
+  },
+  adminKeywords: {
+    400: 'Từ khóa cần 2–100 ký tự và phải chọn loại vi phạm.',
+    403: 'Bạn không có quyền quản lý từ khóa cấm.',
+    404: 'Từ khóa không tồn tại hoặc đã bị xóa.',
+    409: 'Từ khóa này đã có trong danh sách.',
+  },
   adminProductRestore: {
     403: 'Bạn không có quyền khôi phục sản phẩm.',
     404: 'Sản phẩm không tồn tại.',
     409: 'Sản phẩm không còn ở trạng thái bị gỡ. Tải lại danh sách để xem trạng thái mới.',
+  },
+  adminOrders: {
+    400: 'Bộ lọc đơn hàng chưa hợp lệ.',
+    403: 'Bạn không có quyền giám sát đơn hàng.',
+  },
+  adminOrderDetail: {
+    403: 'Bạn không có quyền giám sát đơn hàng.',
+    404: 'Đơn hàng không tồn tại.',
+  },
+  adminOrderCancel: {
+    400: 'Thiếu lý do hoặc ghi chú chưa hợp lệ (5–500 ký tự).',
+    403: 'Bạn không có quyền hủy đơn hàng.',
+    404: 'Đơn hàng không tồn tại.',
+    409: 'Đơn đã bàn giao vận chuyển, đã giao hoặc đã hủy. Tải lại danh sách để xem trạng thái mới.',
+  },
+  adminHolidays: {
+    400: 'Năm không hợp lệ.',
+    403: 'Bạn không có quyền quản lý lịch nghỉ lễ.',
+  },
+  adminHolidaySave: {
+    400: 'Thiếu ngày, tên hoặc loại ngày nghỉ.',
+    403: 'Bạn không có quyền quản lý lịch nghỉ lễ.',
+    404: 'Ngày này chưa có trong lịch.',
+  },
+  adminHolidaySync: {
+    403: 'Bạn không có quyền đồng bộ lịch nghỉ lễ.',
+    502: 'Calendarific đang lỗi hoặc đã hết lượt gọi trong tháng. Thử lại sau.',
+    503: 'Server chưa cấu hình CALENDARIFIC_API_KEY.',
   },
 }
 

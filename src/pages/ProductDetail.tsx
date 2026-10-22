@@ -10,6 +10,7 @@ import ProductGallery from '../components/pdp/ProductGallery'
 import ProductInfo from '../components/pdp/ProductInfo'
 import ProductTabs from '../components/pdp/ProductTabs'
 import RelatedProducts from '../components/pdp/RelatedProducts'
+import ReportProductButton from '../components/pdp/ReportProductButton'
 import ShopInfoCard from '../components/pdp/ShopInfoCard'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
@@ -103,10 +104,12 @@ export default function ProductDetail() {
         <ProductGallery images={product.images ?? []} name={product.name ?? ''} />
         <ProductInfo product={product} />
       </div>
-
       {/* Thẻ thông tin Shop Shopee-style */}
       <ShopInfoCard shopId={product.shopId} />
 
+      <div className="mt-4 flex justify-end">
+        <ReportProductButton productId={productId} />
+      </div>
       <ProductTabs product={product} />
 
       <div className="mt-10">

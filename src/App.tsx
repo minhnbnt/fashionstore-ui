@@ -20,6 +20,12 @@ const AdminShopDetail = lazy(() => import('./pages/AdminShopDetail'))
 const AdminUsers = lazy(() => import('./pages/AdminUsers'))
 const AdminUserDetail = lazy(() => import('./pages/AdminUserDetail'))
 const AdminProducts = lazy(() => import('./pages/AdminProducts'))
+const AdminContent = lazy(() => import('./pages/AdminContent'))
+const StaticPage = lazy(() => import('./pages/StaticPage'))
+const Faq = lazy(() => import('./pages/Faq'))
+const AdminOrders = lazy(() => import('./pages/AdminOrders'))
+const AdminHolidays = lazy(() => import('./pages/AdminHolidays'))
+const AdminBannedKeywords = lazy(() => import('./pages/AdminBannedKeywords'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const ShopView = lazy(() => import('./pages/ShopView'))
@@ -72,15 +78,17 @@ function App() {
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/pages/:slug" element={<StaticPage />} />
+            <Route path="/faq" element={<Faq />} />
             <Route path="/cart" element={<Cart />} />
-          <Route
-            path="/checkout"
-            element={
-              <RequireAuth>
-                <Checkout />
-              </RequireAuth>
-            }
-          />
+            <Route
+              path="/checkout"
+              element={
+                <RequireAuth>
+                  <Checkout />
+                </RequireAuth>
+              }
+            />
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
@@ -146,6 +154,38 @@ function App() {
             }
           />
           <Route path="/shops/:slug" element={<ShopView />} />
+          <Route
+            path="/admin/content"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminContent />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminOrders />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/holidays"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminHolidays />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/products/keywords"
+            element={
+              <RequireRole requiredRole="admin">
+                <AdminBannedKeywords />
+              </RequireRole>
+            }
+          />
           <Route
             path="/shop"
             element={

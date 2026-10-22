@@ -284,8 +284,13 @@ export default function AdminDashboard() {
               <span>
                 <span className="block font-extrabold tracking-tight">Kiểm duyệt sản phẩm</span>
                 <span className="mt-1 block text-sm text-zinc-600 dark:text-zinc-300">
-                  Gỡ sản phẩm vi phạm và khôi phục khi shop khắc phục.
+                  Xử lý báo cáo của người mua và cờ từ khóa cấm.
                 </span>
+                {(stats.openProductReports ?? 0) > 0 && (
+                  <span className="mt-2 inline-block rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:bg-red-500/15 dark:text-red-300">
+                    {formatCount(stats.openProductReports ?? 0)} báo cáo chờ xử lý
+                  </span>
+                )}
               </span>
               <ArrowRight
                 size={18}
