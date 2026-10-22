@@ -8,14 +8,15 @@ import {
   Bank,
   Check,
   CheckCircle,
-  FileText,
-  IdentificationCard,
+  Clock,
   ShieldCheck,
   Storefront,
   UploadSimple,
   WarningCircle,
   X,
 } from '@phosphor-icons/react'
+
+import { uploadImage } from '@/lib/uploadImage'
 
 import type { Step } from '@/types/seller'
 
@@ -51,6 +52,16 @@ function slugify(text: string): string {
   return str
 }
 
+function normalizeName(name: string): string {
+  return name
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .replace(/\s+/g, ' ')
+    .toUpperCase()
+}
+
 function getStepClass(stepNumber: number, activeStep: number): string {
   if (stepNumber === activeStep) {
     return 'flex items-center gap-2 rounded-xl p-2 bg-orange-50 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300'
@@ -71,7 +82,7 @@ function renderStepBadge(stepNumber: number, activeStep: number) {
 export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, onSuccess }: Props) {
   const [currentStep, setCurrentStep] = useState<Step>(1)
 
-  // Step 1: Shop Basic Info
+  // Step 1: Shop Basic Info & Branding
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [phone, setPhone] = useState('')
@@ -79,23 +90,42 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
   const [description, setDescription] = useState('')
   const [autoSlug, setAutoSlug] = useState(true)
 
-  // Step 2: eKYC Identity Info
-  const [sellerType, setSellerType] = useState<'INDIVIDUAL' | 'CORPORATE'>('INDIVIDUAL')
+  const [logoKey, setLogoKey] = useState('')
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [logoUploading, setLogoUploading] = useState(false)
+
+  const [bannerKey, setBannerKey] = useState('')
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+  const [bannerUploading, setBannerUploading] = useState(false)
+
+  // Step 2: eKYC Identity Info (Không có loại hình người bán)
   const [legalName, setLegalName] = useState('')
   const [idNumber, setIdNumber] = useState('')
   const [idIssuedDate, setIdIssuedDate] = useState('')
   const [idIssuedPlace, setIdIssuedPlace] = useState('')
   const [taxCode, setTaxCode] = useState('')
-  const [idFrontFileName, setIdFrontFileName] = useState('')
-  const [idFrontPreview, setIdFrontPreview] = useState<string | null>(null)
-  const [idBackFileName, setIdBackFileName] = useState('')
-  const [idBackPreview, setIdBackPreview] = useState<string | null>(null)
-  const [idSelfieFileName, setIdSelfieFileName] = useState('')
-  const [idSelfiePreview, setIdSelfiePreview] = useState<string | null>(null)
 
-  // Step 3: Bank Account for Settlement
-  const [bankName, setBankName] = useState(VIETNAM_BANKS[0] || 'Vietcombank (VCB)')
+  const [idFrontKey, setIdFrontKey] = useState('')
+  const [idFrontPreview, setIdFrontPreview] = useState<string | null>(null)
+  const [idFrontUploading, setIdFrontUploading] = useState(false)
+
+  const [idBackKey, setIdBackKey] = useState('')
+  const [idBackPreview, setIdBackPreview] = useState<string | null>(null)
+  const [idBackUploading, setIdBackUploading] = useState(false)
+
+  const [idSelfieKey, setIdSelfieKey] = useState('')
+  const [idSelfiePreview, setIdSelfiePreview] = useState<string | null>(null)
+  const [idSelfieUploading, setIdSelfieUploading] = useState(false)
+
+  const [businessCertKey, setBusinessCertKey] = useState('')
+  const [businessCertPreview, setBusinessCertPreview] = useState<string | null>(null)
+  const [businessCertUploading, setBusinessCertUploading] = useState(false)
+
+  // Step 3: Bank Account for Settlement (Tên chủ TK cho phép người dùng tự điền)
+  const [bankName, setBankName] = useState(VIETNAM_BANKS[0] ?? 'Vietcombank (VCB)')
   const [bankAccount, setBankAccount] = useState('')
+  const [bankHolder, setBankHolder] = useState('')
+  const [bankHolderTouched, setBankHolderTouched] = useState(false)
 
   // Step 4: Pledges
   const [pledgeGenuine, setPledgeGenuine] = useState(false)
@@ -111,25 +141,52 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
     return null
   }
 
-  const isBusy = upsertUser.isPending || registerShop.isPending
+  const isUploadingAny =
+    logoUploading ||
+    bannerUploading ||
+    idFrontUploading ||
+    idBackUploading ||
+    idSelfieUploading ||
+    businessCertUploading
 
-  function handleImageUpload(
+  const isBusy = upsertUser.isPending || registerShop.isPending || isUploadingAny
+
+  async function handleUpload(
     e: React.ChangeEvent<HTMLInputElement>,
-    onFileName: (name: string) => void,
+    onKey: (key: string) => void,
     onPreview: (url: string | null) => void,
+    onBusy: (busy: boolean) => void,
   ) {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0]
-      if (file) {
-        onFileName(file.name)
-        const reader = new FileReader()
-        reader.onload = function (event) {
-          if (event.target && typeof event.target.result === 'string') {
-            onPreview(event.target.result)
-          }
-        }
-        reader.readAsDataURL(file)
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) {
+      return
+    }
+
+    onBusy(true)
+    setErrorMessage(null)
+
+    const reader = new FileReader()
+    reader.onload = function (event) {
+      if (typeof event.target?.result === 'string') {
+        onPreview(event.target.result)
       }
+    }
+    reader.readAsDataURL(file)
+
+    try {
+      const key = await uploadImage(file)
+      onKey(key)
+    } catch (err: unknown) {
+      let msg = 'Tải ảnh thất bại, vui lòng thử lại.'
+      if (err instanceof Error && err.message) {
+        msg = err.message
+      }
+      setErrorMessage(msg)
+      onPreview(null)
+      onKey('')
+    } finally {
+      onBusy(false)
     }
   }
 
@@ -143,7 +200,20 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
   function handleLegalNameChange(val: string) {
     const uppercaseVal = val.toUpperCase()
     setLegalName(uppercaseVal)
+    if (!bankHolderTouched) {
+      setBankHolder(uppercaseVal)
+    }
   }
+
+  function handleBankHolderChange(val: string) {
+    setBankHolderTouched(true)
+    setBankHolder(val.toUpperCase())
+  }
+
+  const isBankHolderMatch =
+    bankHolder.trim() !== '' &&
+    legalName.trim() !== '' &&
+    normalizeName(bankHolder) === normalizeName(legalName)
 
   function validateStep1(): boolean {
     if (name.trim() === '') {
@@ -167,6 +237,18 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
       setErrorMessage('Vui lòng nhập địa chỉ lấy hàng.')
       return false
     }
+    if (description.trim() === '') {
+      setErrorMessage('Vui lòng nhập mô tả phong cách gian hàng.')
+      return false
+    }
+    if (logoKey.trim() === '') {
+      setErrorMessage('Vui lòng tải lên ảnh Logo gian hàng.')
+      return false
+    }
+    if (bannerKey.trim() === '') {
+      setErrorMessage('Vui lòng tải lên Ảnh bìa gian hàng.')
+      return false
+    }
     setErrorMessage(null)
     return true
   }
@@ -178,12 +260,12 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
     }
     const cleanId = idNumber.trim()
     if (cleanId === '') {
-      setErrorMessage('Vui lòng nhập số Căn cước công dân (12 số).')
+      setErrorMessage('Vui lòng nhập số Căn cước công dân (9 hoặc 12 số).')
       return false
     }
     const idRegex = /^\d{9}$|^\d{12}$/
     if (idRegex.test(cleanId) === false) {
-      setErrorMessage('Số CCCD phải gồm đúng 12 chữ số hợp lệ.')
+      setErrorMessage('Số CCCD/CMND phải gồm đúng 9 hoặc 12 chữ số hợp lệ.')
       return false
     }
     if (idIssuedDate.trim() === '') {
@@ -194,13 +276,39 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
       setErrorMessage('Vui lòng nhập nơi cấp CCCD.')
       return false
     }
+    if (idFrontKey.trim() === '') {
+      setErrorMessage('Vui lòng tải lên ảnh mặt trước CCCD.')
+      return false
+    }
+    if (idBackKey.trim() === '') {
+      setErrorMessage('Vui lòng tải lên ảnh mặt sau CCCD.')
+      return false
+    }
+    if (idSelfieKey.trim() === '') {
+      setErrorMessage('Vui lòng tải lên ảnh chân dung cầm CCCD.')
+      return false
+    }
     setErrorMessage(null)
     return true
   }
 
   function validateStep3(): boolean {
+    if (bankName.trim() === '') {
+      setErrorMessage('Vui lòng chọn ngân hàng thụ hưởng.')
+      return false
+    }
     if (bankAccount.trim() === '') {
       setErrorMessage('Vui lòng nhập số tài khoản ngân hàng nhận tiền doanh thu.')
+      return false
+    }
+    if (bankHolder.trim() === '') {
+      setErrorMessage('Vui lòng nhập tên chủ tài khoản ngân hàng.')
+      return false
+    }
+    if (!isBankHolderMatch) {
+      setErrorMessage(
+        `Tên chủ tài khoản ngân hàng (${bankHolder.trim()}) phải trùng khớp 100% với Họ và tên trên CCCD (${legalName.trim()}) để phòng chống gian lận & rửa tiền.`,
+      )
       return false
     }
     setErrorMessage(null)
@@ -216,6 +324,9 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
     }
     if (currentStep === 2) {
       if (validateStep2()) {
+        if (!bankHolderTouched || bankHolder.trim() === '') {
+          setBankHolder(legalName.trim())
+        }
         setCurrentStep(3)
       }
       return
@@ -251,6 +362,11 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
       return
     }
 
+    if (isUploadingAny) {
+      setErrorMessage('Hình ảnh đang được tải lên máy chủ, vui lòng đợi trong giây lát.')
+      return
+    }
+
     setErrorMessage(null)
 
     try {
@@ -259,33 +375,32 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
         data: {
           email: userEmail,
           displayName,
-          avatarKey: null,
+          avatarKey: logoKey || null,
         },
       })
 
-      // Register shop with comprehensive eKYC parameters
       await registerShop.mutateAsync({
         data: {
           name: name.trim(),
           slug: slug.trim(),
           description: description.trim(),
-          logoKey: null,
-          bannerKey: null,
+          logoKey: logoKey.trim(),
+          bannerKey: bannerKey.trim(),
           phone: phone.trim(),
           address: address.trim(),
-          sellerType,
+          sellerType: 'INDIVIDUAL',
           legalName: legalName.trim(),
           idNumber: idNumber.trim(),
           idIssuedDate: idIssuedDate.trim(),
           idIssuedPlace: idIssuedPlace.trim(),
           taxCode: taxCode.trim() || null,
-          idFrontKey: idFrontFileName || 'cccd_front_default.jpg',
-          idBackKey: idBackFileName || 'cccd_back_default.jpg',
-          idSelfieKey: idSelfieFileName || 'portrait_holding_id_default.jpg',
-          businessCertKey: null,
-          bankName,
+          idFrontKey: idFrontKey.trim(),
+          idBackKey: idBackKey.trim(),
+          idSelfieKey: idSelfieKey.trim(),
+          businessCertKey: businessCertKey.trim() || null,
+          bankName: bankName.trim(),
           bankAccount: bankAccount.trim(),
-          bankHolder: legalName.trim(),
+          bankHolder: bankHolder.trim(),
         },
       })
 
@@ -306,20 +421,6 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
     }
   }
 
-  let individualBtnClass =
-    'flex-1 rounded-2xl border p-3 text-left transition border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-white/10 dark:bg-zinc-800'
-  if (sellerType === 'INDIVIDUAL') {
-    individualBtnClass =
-      'flex-1 rounded-2xl border p-3 text-left transition border-orange-500 bg-orange-50/60 text-orange-950 font-bold dark:bg-orange-500/20 dark:text-white'
-  }
-
-  let corporateBtnClass =
-    'flex-1 rounded-2xl border p-3 text-left transition border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-white/10 dark:bg-zinc-800'
-  if (sellerType === 'CORPORATE') {
-    corporateBtnClass =
-      'flex-1 rounded-2xl border p-3 text-left transition border-orange-500 bg-orange-50/60 text-orange-950 font-bold dark:bg-orange-500/20 dark:text-white'
-  }
-
   return (
     <div
       id="shop-registration-modal-backdrop"
@@ -337,10 +438,10 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
             </div>
             <div>
               <h2 className="text-lg font-extrabold tracking-tight text-zinc-900 dark:text-white">
-                Đăng ký Mở Shop & Xác thực Danh tính (eKYC)
+                Đăng ký Mở Shop & Định danh eKYC
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Chuẩn người bán Shopee — Phòng chống gian lận & Hàng giả
+                Chống hàng giả, gian lận & rửa tiền theo quy chuẩn TMĐT
               </p>
             </div>
           </div>
@@ -389,12 +490,12 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
 
         {/* Modal Body / Steps */}
         <div className="flex-1 overflow-y-auto p-6 text-sm">
-          {/* STEP 1: Thông tin Gian hàng & Kho */}
+          {/* STEP 1: Thông tin Gian hàng, Kho & Nhận diện Logo/Banner */}
           {currentStep === 1 && (
             <div className="space-y-4">
               <div className="rounded-2xl bg-amber-50/70 p-3.5 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
-                <span className="font-bold">Bước 1/4:</span> Thiết lập thông tin nhận diện gian hàng
-                và kho hàng để bưu tá đến lấy bưu kiện khi có đơn phát sinh.
+                <span className="font-bold">Bước 1/4:</span> Thiết lập thông tin nhận diện gian hàng,
+                ảnh đại diện, ảnh bìa và địa chỉ kho lấy hàng khi phát sinh đơn.
               </div>
 
               <div>
@@ -405,7 +506,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     type="text"
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
-                    placeholder="VD: Nguyễn Văn A Shop, Nét Boutique, Thời Trang GenZ..."
+                    placeholder="VD: Nét Boutique, Thời Trang GenZ, An Fashion..."
                     className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
@@ -424,13 +525,13 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                         setAutoSlug(false)
                         setSlug(slugify(e.target.value))
                       }}
-                      placeholder="VD: nguyen-van-a-shop"
+                      placeholder="VD: net-boutique"
                       className="w-full bg-transparent px-2 py-1.5 font-normal outline-none placeholder:italic placeholder:opacity-50"
                     />
                   </div>
                 </label>
                 <span className="mt-1 block text-[11px] text-zinc-400">
-                  Dùng làm đường dẫn chia sẻ gian hàng cho khách mua sắm.
+                  Đường dẫn độc nhất toàn sàn dùng để khách hàng truy cập gian hàng.
                 </span>
               </div>
 
@@ -456,7 +557,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       type="text"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      placeholder="VD: Số 123 Đường ABC, Phường X, Quận Y, Hà Nội"
+                      placeholder="VD: 123 Phố Huế, Phường Hàng Bài, Hà Nội"
                       className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                     />
                   </label>
@@ -465,21 +566,132 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
 
               <div>
                 <label className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-                  Mô tả phong cách gian hàng
+                  Mô tả giới thiệu gian hàng <span className="text-red-500">*</span>
                   <textarea
                     id="input-shop-desc"
                     rows={2}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="VD: Chuyên cung cấp thời trang nam nữ cao cấp, hàng thiết kế chính hãng 100%..."
+                    placeholder="VD: Chuyên cung cấp thời trang nam nữ cao cấp, thiết kế hiện đại, cam kết chính hãng 100%..."
                     className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2 font-normal outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
               </div>
+
+              {/* Upload Logo và Banner Shop */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* Logo gian hàng */}
+                <div>
+                  <p className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
+                    Logo gian hàng (Tỉ lệ 1:1) <span className="text-red-500">*</span>
+                  </p>
+                  <label
+                    htmlFor="upload-shop-logo"
+                    className="group relative mt-1.5 flex h-32 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 p-2 text-center transition hover:border-orange-500 hover:bg-orange-50/20 dark:border-white/20 dark:bg-zinc-800/80"
+                  >
+                    <input
+                      id="upload-shop-logo"
+                      type="file"
+                      accept="image/*"
+                      disabled={logoUploading}
+                      onChange={(e) => {
+                        void handleUpload(e, setLogoKey, setLogoPreview, setLogoUploading)
+                      }}
+                      className="hidden"
+                    />
+                    {!logoPreview && (
+                      <div className="py-2 text-center">
+                        <UploadSimple
+                          size={24}
+                          className="mx-auto text-orange-600 transition group-hover:scale-110"
+                        />
+                        <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                          {logoUploading && 'Đang tải lên…'}
+                          {!logoUploading && 'Tải Logo Shop'}
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">Vuông 1:1, tối đa 5MB</p>
+                      </div>
+                    )}
+                    {logoPreview && (
+                      <div className="relative h-full w-full">
+                        <img
+                          src={logoPreview}
+                          alt="Logo Shop"
+                          className="h-full w-full rounded-xl object-cover"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
+                          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow">
+                            Đổi ảnh
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </label>
+                  {logoKey && (
+                    <p className="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      ✓ Đã tải logo
+                    </p>
+                  )}
+                </div>
+
+                {/* Ảnh bìa / Banner gian hàng */}
+                <div>
+                  <p className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
+                    Ảnh bìa / Banner (Tỉ lệ 16:9) <span className="text-red-500">*</span>
+                  </p>
+                  <label
+                    htmlFor="upload-shop-banner"
+                    className="group relative mt-1.5 flex h-32 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 p-2 text-center transition hover:border-orange-500 hover:bg-orange-50/20 dark:border-white/20 dark:bg-zinc-800/80"
+                  >
+                    <input
+                      id="upload-shop-banner"
+                      type="file"
+                      accept="image/*"
+                      disabled={bannerUploading}
+                      onChange={(e) => {
+                        void handleUpload(e, setBannerKey, setBannerPreview, setBannerUploading)
+                      }}
+                      className="hidden"
+                    />
+                    {!bannerPreview && (
+                      <div className="py-2 text-center">
+                        <UploadSimple
+                          size={24}
+                          className="mx-auto text-orange-600 transition group-hover:scale-110"
+                        />
+                        <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                          {bannerUploading && 'Đang tải lên…'}
+                          {!bannerUploading && 'Tải Ảnh Bìa Shop'}
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">Ngang 16:9, tối đa 5MB</p>
+                      </div>
+                    )}
+                    {bannerPreview && (
+                      <div className="relative h-full w-full">
+                        <img
+                          src={bannerPreview}
+                          alt="Banner Shop"
+                          className="h-full w-full rounded-xl object-cover"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
+                          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow">
+                            Đổi ảnh
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </label>
+                  {bannerKey && (
+                    <p className="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      ✓ Đã tải ảnh bìa
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
-          {/* STEP 2: Định danh Người bán eKYC */}
+          {/* STEP 2: Định danh Người bán eKYC (CCCD + GPKD nếu có) */}
           {currentStep === 2 && (
             <div className="space-y-4">
               <div className="flex items-start gap-2.5 rounded-2xl bg-indigo-50/80 p-3.5 text-xs text-indigo-950 dark:bg-indigo-500/10 dark:text-indigo-200">
@@ -487,49 +699,16 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                 <div>
                   <p className="font-bold">Định danh người bán chính chủ (eKYC Bắt Buộc)</p>
                   <p className="mt-0.5 leading-relaxed">
-                    Theo quy định TMĐT Việt Nam và chính sách Shopee, chủ shop bắt buộc phải khai
-                    báo CCCD thật để chống lừa đảo, bán hàng giả và bảo vệ quyền lợi người tiêu
-                    dùng.
+                    Theo quy định TMĐT Việt Nam, chủ shop bắt buộc phải khai báo CCCD thật để chống
+                    lừa đảo, bán hàng giả và bảo vệ quyền lợi người tiêu dùng.
                   </p>
-                </div>
-              </div>
-
-              {/* Loại hình người bán */}
-              <div>
-                <p className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-                  Loại hình kinh doanh
-                </p>
-                <div className="mt-1.5 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSellerType('INDIVIDUAL')}
-                    className={individualBtnClass}
-                  >
-                    <IdentificationCard size={18} className="mb-1 text-orange-600" weight="bold" />
-                    <div>Cá nhân kinh doanh</div>
-                    <div className="text-[11px] font-normal text-zinc-500">
-                      Xác thực qua CCCD gắn chip
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSellerType('CORPORATE')}
-                    className={corporateBtnClass}
-                  >
-                    <FileText size={18} className="mb-1 text-orange-600" weight="bold" />
-                    <div>Công ty / Hộ KD</div>
-                    <div className="text-[11px] font-normal text-zinc-500">
-                      Xác thực qua Giấy phép ĐKKD
-                    </div>
-                  </button>
                 </div>
               </div>
 
               {/* Họ tên thật theo CCCD */}
               <div>
                 <label className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-                  Họ và tên thật chủ shop (in hoa theo CCCD) <span className="text-red-500">*</span>
+                  Họ và tên thật chủ shop (theo CCCD) <span className="text-red-500">*</span>
                   <input
                     id="input-legal-name"
                     type="text"
@@ -540,7 +719,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                   />
                 </label>
                 <span className="mt-1 block text-[11px] text-zinc-400">
-                  Họ tên này sẽ được dùng để đối chiếu với Tên chủ tài khoản ngân hàng ở Bước 3.
+                  Họ tên này bắt buộc phải trùng khớp với Tên chủ tài khoản ngân hàng ở Bước 3.
                 </span>
               </div>
 
@@ -548,7 +727,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-                    Số Căn cước công dân (12 số) <span className="text-red-500">*</span>
+                    Số CCCD / CMND (9 hoặc 12 số) <span className="text-red-500">*</span>
                     <input
                       id="input-id-number"
                       type="text"
@@ -562,7 +741,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                 </div>
                 <div>
                   <label className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-                    Mã số thuế cá nhân / DN
+                    Mã số thuế (nếu có)
                     <input
                       id="input-tax-code"
                       type="text"
@@ -607,10 +786,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
               {/* Upload ảnh định danh eKYC */}
               <div>
                 <p className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-                  Tải lên giấy tờ định danh (Ảnh CCCD & Chân dung)
-                </p>
-                <p className="mt-0.5 text-[11px] text-zinc-400 italic">
-                  Nhấn trực tiếp vào từng ô bên dưới để chọn ảnh từ máy của bạn.
+                  Tải lên giấy tờ định danh (Ảnh CCCD & Chân dung) <span className="text-red-500">*</span>
                 </p>
                 <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {/* Mặt trước CCCD */}
@@ -622,29 +798,26 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       id="upload-id-front"
                       type="file"
                       accept="image/*"
-                      onChange={function (e) {
-                        handleImageUpload(e, setIdFrontFileName, setIdFrontPreview)
+                      disabled={idFrontUploading}
+                      onChange={(e) => {
+                        void handleUpload(e, setIdFrontKey, setIdFrontPreview, setIdFrontUploading)
                       }}
                       className="hidden"
                     />
-                    {idFrontPreview === null && (
+                    {!idFrontPreview && (
                       <div className="py-2 text-center">
                         <UploadSimple
                           size={24}
                           className="mx-auto text-orange-600 transition group-hover:scale-110"
                         />
                         <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                          Mặt trước CCCD
+                          {idFrontUploading && 'Đang tải lên…'}
+                          {!idFrontUploading && 'Mặt trước CCCD *'}
                         </p>
-                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">
-                          Nhấn để tải ảnh lên
-                        </p>
-                        <span className="mt-1.5 inline-block rounded bg-zinc-200/60 px-1.5 py-0.5 text-[9px] text-zinc-500 dark:bg-zinc-700 dark:text-zinc-300">
-                          JPG, PNG, WEBP
-                        </span>
+                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">Nhấn để tải ảnh</p>
                       </div>
                     )}
-                    {idFrontPreview !== null && (
+                    {idFrontPreview && (
                       <div className="relative w-full">
                         <img
                           src={idFrontPreview}
@@ -656,9 +829,6 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                             Đổi ảnh
                           </span>
                         </div>
-                        <p className="mt-1 truncate text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                          ✓ {idFrontFileName}
-                        </p>
                       </div>
                     )}
                   </label>
@@ -672,29 +842,26 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       id="upload-id-back"
                       type="file"
                       accept="image/*"
-                      onChange={function (e) {
-                        handleImageUpload(e, setIdBackFileName, setIdBackPreview)
+                      disabled={idBackUploading}
+                      onChange={(e) => {
+                        void handleUpload(e, setIdBackKey, setIdBackPreview, setIdBackUploading)
                       }}
                       className="hidden"
                     />
-                    {idBackPreview === null && (
+                    {!idBackPreview && (
                       <div className="py-2 text-center">
                         <UploadSimple
                           size={24}
                           className="mx-auto text-orange-600 transition group-hover:scale-110"
                         />
                         <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                          Mặt sau CCCD
+                          {idBackUploading && 'Đang tải lên…'}
+                          {!idBackUploading && 'Mặt sau CCCD *'}
                         </p>
-                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">
-                          Nhấn để tải ảnh lên
-                        </p>
-                        <span className="mt-1.5 inline-block rounded bg-zinc-200/60 px-1.5 py-0.5 text-[9px] text-zinc-500 dark:bg-zinc-700 dark:text-zinc-300">
-                          JPG, PNG, WEBP
-                        </span>
+                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">Nhấn để tải ảnh</p>
                       </div>
                     )}
-                    {idBackPreview !== null && (
+                    {idBackPreview && (
                       <div className="relative w-full">
                         <img
                           src={idBackPreview}
@@ -706,9 +873,6 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                             Đổi ảnh
                           </span>
                         </div>
-                        <p className="mt-1 truncate text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                          ✓ {idBackFileName}
-                        </p>
                       </div>
                     )}
                   </label>
@@ -722,29 +886,26 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       id="upload-id-selfie"
                       type="file"
                       accept="image/*"
-                      onChange={function (e) {
-                        handleImageUpload(e, setIdSelfieFileName, setIdSelfiePreview)
+                      disabled={idSelfieUploading}
+                      onChange={(e) => {
+                        void handleUpload(e, setIdSelfieKey, setIdSelfiePreview, setIdSelfieUploading)
                       }}
                       className="hidden"
                     />
-                    {idSelfiePreview === null && (
+                    {!idSelfiePreview && (
                       <div className="py-2 text-center">
                         <UploadSimple
                           size={24}
                           className="mx-auto text-orange-600 transition group-hover:scale-110"
                         />
                         <p className="mt-1 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                          Ảnh Selfie cầm CCCD
+                          {idSelfieUploading && 'Đang tải lên…'}
+                          {!idSelfieUploading && 'Ảnh Selfie CCCD *'}
                         </p>
-                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">
-                          Nhấn để tải ảnh lên
-                        </p>
-                        <span className="mt-1.5 inline-block rounded bg-zinc-200/60 px-1.5 py-0.5 text-[9px] text-zinc-500 dark:bg-zinc-700 dark:text-zinc-300">
-                          JPG, PNG, WEBP
-                        </span>
+                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">Nhấn để tải ảnh</p>
                       </div>
                     )}
-                    {idSelfiePreview !== null && (
+                    {idSelfiePreview && (
                       <div className="relative w-full">
                         <img
                           src={idSelfiePreview}
@@ -756,28 +917,78 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                             Đổi ảnh
                           </span>
                         </div>
-                        <p className="mt-1 truncate text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                          ✓ {idSelfieFileName}
-                        </p>
                       </div>
                     )}
                   </label>
                 </div>
               </div>
+
+              {/* Giấy phép kinh doanh (nếu có - tùy chọn) */}
+              <div>
+                <p className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
+                  Giấy phép kinh doanh / ĐKKD (Nếu có - không bắt buộc)
+                </p>
+                <label
+                  htmlFor="upload-business-cert"
+                  className="group relative mt-1.5 flex h-24 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50/80 p-3 text-center transition hover:border-orange-500 hover:bg-orange-50/20 dark:border-white/20 dark:bg-zinc-800/80"
+                >
+                  <input
+                    id="upload-business-cert"
+                    type="file"
+                    accept="image/*"
+                    disabled={businessCertUploading}
+                    onChange={(e) => {
+                      void handleUpload(
+                        e,
+                        setBusinessCertKey,
+                        setBusinessCertPreview,
+                        setBusinessCertUploading,
+                      )
+                    }}
+                    className="hidden"
+                  />
+                  {!businessCertPreview && (
+                    <div className="text-center">
+                      <UploadSimple
+                        size={20}
+                        className="mx-auto text-zinc-500 transition group-hover:scale-110 group-hover:text-orange-600"
+                      />
+                      <p className="mt-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                        {businessCertUploading && 'Đang tải lên…'}
+                        {!businessCertUploading && 'Tải ảnh Giấy phép kinh doanh (nếu có)'}
+                      </p>
+                    </div>
+                  )}
+                  {businessCertPreview && (
+                    <div className="relative h-full w-full">
+                      <img
+                        src={businessCertPreview}
+                        alt="Giấy phép kinh doanh"
+                        className="h-full w-full rounded-xl object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow">
+                          Đổi ảnh
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </label>
+              </div>
             </div>
           )}
 
-          {/* STEP 3: Tài khoản Ngân hàng (Anti-Fraud Rule) */}
+          {/* STEP 3: Tài khoản Ngân hàng (Cho phép điền + Real-time Anti-Fraud Check) */}
           {currentStep === 3 && (
             <div className="space-y-4">
               <div className="flex items-start gap-2.5 rounded-2xl bg-amber-50/80 p-3.5 text-xs text-amber-950 dark:bg-amber-500/10 dark:text-amber-200">
                 <Bank size={20} className="mt-0.5 shrink-0 text-amber-700" weight="bold" />
                 <div>
-                  <p className="font-bold">Nguyên tắc Vàng Chống Rửa Tiền & Gian Lận</p>
+                  <p className="font-bold">Quy tắc Phòng Chống Rửa Tiền & Gian Lận</p>
                   <p className="mt-0.5 leading-relaxed">
                     Tên chủ tài khoản nhận doanh thu bắt buộc phải trùng khớp 100% với Họ và tên
-                    trên Căn cước công dân đã khai báo. Hệ thống tự động khóa trường này để ngăn
-                    chặn tẩu tán tiền sang tài khoản người khác.
+                    trên Căn cước công dân đã khai báo ({legalName || 'Họ tên CCCD'}). Hệ thống tự
+                    động đối soát để ngăn chặn tẩu tán tiền và gian lận thương mại.
                   </p>
                 </div>
               </div>
@@ -814,29 +1025,32 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                 </label>
               </div>
 
+              {/* Tên chủ tài khoản: CHO PHÉP TỰ ĐIỀN */}
               <div>
                 <label className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-                  Tên chủ tài khoản (Đã đồng bộ từ CCCD)
+                  Tên chủ tài khoản ngân hàng <span className="text-red-500">*</span>
                   <input
                     id="input-bank-holder"
                     type="text"
-                    disabled
-                    value={legalName}
-                    placeholder="VD: NGUYỄN VĂN A (Khóa tự động theo CCCD)"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-200/60 px-4 py-2.5 font-extrabold tracking-wider text-zinc-700 uppercase outline-none placeholder:italic placeholder:opacity-50 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300"
+                    value={bankHolder}
+                    onChange={(e) => handleBankHolderChange(e.target.value)}
+                    placeholder="VD: NGUYEN VAN A"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 font-extrabold tracking-wider uppercase outline-none placeholder:italic placeholder:opacity-50 focus:border-orange-500 focus:bg-white dark:border-white/10 dark:bg-zinc-800"
                   />
                 </label>
-                {legalName.trim() !== '' && (
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle size={14} weight="fill" />
-                    <span>Trùng khớp hoàn toàn với Họ tên trên CCCD: {legalName}</span>
+
+                {/* Real-time Match Validation Alert */}
+                {bankHolder.trim() !== '' && isBankHolderMatch && (
+                  <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle size={15} weight="fill" />
+                    <span>✓ Trùng khớp hoàn toàn với Họ tên trên CCCD: {legalName}</span>
                   </div>
                 )}
-                {legalName.trim() === '' && (
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                    <span>
-                      (Họ tên chủ tài khoản sẽ tự động đồng bộ khi bạn nhập CCCD ở Bước 2)
-                    </span>
+
+                {bankHolder.trim() !== '' && !isBankHolderMatch && (
+                  <div className="mt-2 rounded-xl bg-red-50 p-2.5 text-xs font-semibold text-red-600 dark:bg-red-500/10 dark:text-red-300">
+                    ⚠️ Tên chủ tài khoản ngân hàng ({bankHolder}) phải trùng khớp 100% với Họ và tên
+                    trên CCCD ({legalName}) để phòng chống gian lận & rửa tiền.
                   </div>
                 )}
               </div>
@@ -860,7 +1074,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     <span className="font-mono text-orange-600">net.vn/shop/{slug}</span>
                   </div>
                   <div>
-                    <span className="text-zinc-400">Chủ shop:</span>{' '}
+                    <span className="text-zinc-400">Chủ shop (CCCD):</span>{' '}
                     <span className="font-bold">{legalName}</span>
                   </div>
                   <div>
@@ -870,13 +1084,25 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                   <div className="col-span-2">
                     <span className="text-zinc-400">Tài khoản nhận tiền:</span>{' '}
                     <span className="font-bold">
-                      {bankAccount} ({bankName}) - {legalName}
+                      {bankAccount} ({bankName}) - {bankHolder}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Cam kết tuân thủ chính sách Shopee */}
+              {/* Thông báo thời gian chờ duyệt 1-3 ngày làm việc */}
+              <div className="flex items-center gap-2.5 rounded-2xl bg-sky-50 p-3.5 text-xs text-sky-950 dark:bg-sky-500/10 dark:text-sky-200">
+                <Clock size={20} weight="bold" className="shrink-0 text-sky-600" />
+                <div>
+                  <p className="font-bold">Thời gian xét duyệt hồ sơ</p>
+                  <p className="mt-0.5 leading-relaxed">
+                    Hồ sơ mở shop của bạn sẽ được Ban kiểm duyệt thẩm định trong vòng{' '}
+                    <strong>1-3 ngày làm việc</strong> (không tính Thứ 7, Chủ Nhật và ngày Lễ).
+                  </p>
+                </div>
+              </div>
+
+              {/* Cam kết tuân thủ chính sách sàn */}
               <div className="space-y-2.5 rounded-2xl bg-orange-50/70 p-4 dark:bg-orange-500/10">
                 <p className="text-xs font-extrabold tracking-wider text-orange-900 uppercase dark:text-orange-200">
                   Cam kết người bán & Trách nhiệm pháp lý:
@@ -891,8 +1117,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
                   />
                   <span>
-                    Tôi cam kết chỉ bán sản phẩm thời trang chính hãng, có nguồn gốc xuất xứ rõ
-                    ràng, không kinh doanh hàng giả, hàng nhái hoặc vi phạm quyền sở hữu trí tuệ.
+                    Tôi cam kết chỉ bán sản phẩm thời trang chính hãng, có nguồn gốc xuất xứ rõ ràng,
+                    không kinh doanh hàng giả, hàng nhái hoặc vi phạm quyền sở hữu trí tuệ.
                   </span>
                 </label>
 
@@ -971,7 +1197,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                 type="button"
                 id="btn-kyc-next-step"
                 onClick={handleNext}
-                className="btn-primary flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-bold"
+                disabled={isBusy || (currentStep === 3 && !isBankHolderMatch)}
+                className="btn-primary flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-bold disabled:opacity-50"
               >
                 <span>Tiếp tục</span>
                 <ArrowRight size={14} weight="bold" />
@@ -989,8 +1216,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                 className="btn-primary flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-bold disabled:opacity-50"
               >
                 <ShieldCheck size={16} weight="bold" />
-                {isBusy && <span>Đang gửi hồ sơ thẩm định…</span>}
-                {isBusy === false && <span>Nộp hồ sơ eKYC & Mở shop</span>}
+                {isBusy && <span>Đang xử lý nộp hồ sơ…</span>}
+                {!isBusy && <span>Nộp hồ sơ eKYC & Mở shop</span>}
               </button>
             )}
           </div>

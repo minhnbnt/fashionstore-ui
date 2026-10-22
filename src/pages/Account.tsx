@@ -122,7 +122,9 @@ export default function Account() {
 
   function handleShopCreated() {
     setModalOpen(false)
-    setStatusNotice('Đăng ký mở shop thành công! Hồ sơ đang ở trạng thái chờ duyệt.')
+    setStatusNotice(
+      'Đăng ký mở shop thành công! Hồ sơ đang ở trạng thái chờ duyệt (dự kiến 1-3 ngày làm việc).',
+    )
     void mineQuery.refetch()
   }
 
@@ -332,6 +334,21 @@ export default function Account() {
                   </p>
                 )}
 
+                <div
+                  id="notice-approval-time"
+                  className="mt-4 flex items-center gap-2.5 rounded-2xl border border-amber-300 bg-amber-100/70 px-4 py-3 text-xs font-semibold text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-100"
+                >
+                  <ClockCountdown
+                    size={20}
+                    weight="bold"
+                    className="shrink-0 text-amber-700 dark:text-amber-400"
+                  />
+                  <span>
+                    Thời gian thẩm định &amp; phê duyệt dự kiến: <strong>1-3 ngày làm việc</strong>{' '}
+                    (không tính Thứ 7, Chủ Nhật và ngày Lễ).
+                  </span>
+                </div>
+
                 {/* eKYC Anti-Fraud Details Summary */}
                 <div className="mt-5 rounded-2xl border border-amber-200/80 bg-white/90 p-4 text-xs dark:border-amber-500/20 dark:bg-zinc-900/80">
                   <div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-200">
@@ -403,28 +420,15 @@ export default function Account() {
 
                   <div className="mt-3 rounded-xl bg-amber-100/60 p-2.5 text-[11px] leading-relaxed text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
                     <p className="font-semibold">
-                      🔒 Cảnh báo chống gian lận & rửa tiền theo chuẩn Shopee:
+                      🔒 Quy định phòng chống gian lận &amp; rửa tiền:
                     </p>
                     <p className="mt-0.5">
-                      Tên chủ tài khoản ngân hàng nhận tiền doanh thu được hệ thống tự động khóa cố
-                      định theo Họ tên trên Căn cước công dân. Hồ sơ đang được Ban thẩm định pháp
-                      chế nét kiểm duyệt.
+                      Tên chủ tài khoản ngân hàng nhận tiền doanh thu bắt buộc phải trùng khớp với
+                      Họ và tên trên Căn cước công dân của chủ shop ({currentShop.legalName}). Hồ
+                      sơ đang được Ban quản trị nét thẩm định và phê duyệt trong vòng 1-3 ngày làm
+                      việc.
                     </p>
                   </div>
-                </div>
-
-                {/* Admin Approval Command Helper Box */}
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-100/60 p-3 text-xs text-amber-950 dark:border-amber-500/20 dark:bg-amber-950/40 dark:text-amber-200">
-                  <p className="font-bold">
-                    Lệnh duyệt mở shop & phê duyệt eKYC qua CLI (dành cho Admin):
-                  </p>
-                  <code
-                    id="cmd-approve-shop"
-                    className="mt-1 block overflow-x-auto rounded-lg bg-black/80 p-2 font-mono text-[11px] text-green-300"
-                  >
-                    UPDATE shop SET status = 'APPROVED', kyc_status = 'VERIFIED', approved_at =
-                    now() WHERE id = '{currentShop.id}';
-                  </code>
                 </div>
               </div>
             )}
