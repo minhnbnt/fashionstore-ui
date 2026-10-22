@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   getList1QueryKey,
@@ -11,9 +11,10 @@ import {
 import { useListProvinces, useListWards } from '@generated/endpoints/locations/locations'
 import {
   ArrowClockwise,
-  Buildings,
+  CaretDown,
+  Check,
   CheckCircle,
-  House,
+  MagnifyingGlass,
   MapPin,
   PencilSimple,
   Plus,
@@ -27,12 +28,20 @@ import { useQueryClient } from '@tanstack/react-query'
 import { takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
 
-import type { AddressRequestLabel } from '@generated/model/addressRequestLabel'
 import type { AddressResponse } from '@generated/model/addressResponse'
 import type { ProvinceResponse } from '@generated/model/provinceResponse'
 import type { WardResponse } from '@generated/model/wardResponse'
 
 const MAX_ADDRESSES = 10
+
+function removeVietnameseAccents(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+}
 
 export default function AddressBookTab() {
   const queryClient = useQueryClient()
@@ -47,10 +56,16 @@ export default function AddressBookTab() {
   const [recipientName, setRecipientName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [city, setCity] = useState('')
-  const [district, setDistrict] = useState('')
+  const [provinceSearch, setProvinceSearch] = useState('')
+  const [provinceDropdownOpen, setProvinceDropdownOpen] = useState(false)
+  const provinceContainerRef = useRef<HTMLDivElement>(null)
+
   const [ward, setWard] = useState('')
+  const [wardSearch, setWardSearch] = useState('')
+  const [wardDropdownOpen, setWardDropdownOpen] = useState(false)
+  const wardContainerRef = useRef<HTMLDivElement>(null)
+
   const [detailAddress, setDetailAddress] = useState('')
-  const [label, setLabel] = useState<AddressRequestLabel>('HOME')
   const [isDefault, setIsDefault] = useState(false)
 
   // Selected province code for fetching wards
@@ -98,6 +113,48 @@ export default function AddressBookTab() {
 
   const isMaxReached = addresses.length >= MAX_ADDRESSES
 
+  // Close dropdowns on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        provinceContainerRef.current &&
+        !provinceContainerRef.current.contains(event.target as Node)
+      ) {
+        setProvinceDropdownOpen(false)
+      }
+      if (
+        wardContainerRef.current &&
+        !wardContainerRef.current.contains(event.target as Node)
+      ) {
+        setWardDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
+  // Filtered provinces
+  const filteredProvinces = useMemo(() => {
+    const q = removeVietnameseAccents(provinceSearch.trim())
+    if (!q) {
+      return provinces
+    }
+    return provinces.filter((p) =>
+      removeVietnameseAccents(p.name ?? '').includes(q),
+    )
+  }, [provinces, provinceSearch])
+
+  // Filtered wards
+  const filteredWards = useMemo(() => {
+    const q = removeVietnameseAccents(wardSearch.trim())
+    if (!q) {
+      return wards
+    }
+    return wards.filter((w) => removeVietnameseAccents(w.name ?? '').includes(q))
+  }, [wards, wardSearch])
+
   function showToast(msg: string) {
     setToast(msg)
     window.setTimeout(function () {
@@ -116,10 +173,12 @@ export default function AddressBookTab() {
     setRecipientName('')
     setPhoneNumber('')
     setCity('')
-    setDistrict('')
+    setProvinceSearch('')
+    setProvinceDropdownOpen(false)
     setWard('')
+    setWardSearch('')
+    setWardDropdownOpen(false)
     setDetailAddress('')
-    setLabel('HOME')
     setIsDefault(false)
     setSelectedProvinceCode('')
     setEditingId(null)
@@ -140,15 +199,17 @@ export default function AddressBookTab() {
     setEditingId(addr.id ?? null)
     setRecipientName(addr.recipientName ?? '')
     setPhoneNumber(addr.phoneNumber ?? '')
-    setCity(addr.city ?? '')
-    setDistrict(addr.district ?? '')
-    setWard(addr.ward ?? '')
+    const c = addr.city ?? ''
+    setCity(c)
+    setProvinceSearch(c)
+    const w = addr.ward ?? ''
+    setWard(w)
+    setWardSearch(w)
     setDetailAddress(addr.detailAddress ?? `${addr.houseNumber ?? ''} ${addr.street ?? ''}`.trim())
-    setLabel(addr.label ?? 'HOME')
     setIsDefault(addr.defaultAddress === true)
 
-    // Match province code if present
-    const matchedProv = provinces.find((p) => p.name === addr.city)
+    // Match province code
+    const matchedProv = provinces.find((p) => p.name === c)
     if (matchedProv?.code) {
       setSelectedProvinceCode(matchedProv.code)
     } else {
@@ -232,7 +293,6 @@ export default function AddressBookTab() {
     const cleanName = recipientName.trim()
     const cleanPhone = phoneNumber.trim()
     const cleanCity = city.trim()
-    const cleanDistrict = district.trim()
     const cleanWard = ward.trim()
     const cleanDetail = detailAddress.trim()
 
@@ -251,10 +311,8 @@ export default function AddressBookTab() {
       recipientName: cleanName,
       phoneNumber: cleanPhone,
       city: cleanCity,
-      district: cleanDistrict,
       ward: cleanWard,
       detailAddress: cleanDetail,
-      label,
       defaultAddress: isDefault,
     }
 
@@ -299,59 +357,62 @@ export default function AddressBookTab() {
               Địa chỉ của tôi
             </h2>
             <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+              id="addressCounter"
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
                 isMaxReached
-                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                  : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
+                  ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300'
+                  : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
               }`}
             >
               {addresses.length}/{MAX_ADDRESSES} địa chỉ
             </span>
           </div>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Quản lý địa chỉ nhận hàng (tối đa {MAX_ADDRESSES} địa chỉ) để thuận tiện và tự động điền
-            khi đặt hàng
+            Quản lý danh sách địa chỉ nhận hàng để thanh toán nhanh hơn (tối đa {MAX_ADDRESSES} địa chỉ)
           </p>
         </div>
 
-        <button
-          type="button"
-          id="btn-add-new-address"
-          onClick={openCreateModal}
-          disabled={isMaxReached}
-          className={`inline-flex items-center gap-1.5 self-start rounded-full px-4 py-2.5 text-xs font-bold transition shadow-md ${
-            isMaxReached
-              ? 'cursor-not-allowed bg-zinc-300 text-zinc-500 shadow-none dark:bg-zinc-800 dark:text-zinc-500'
-              : 'bg-orange-600 text-white shadow-orange-600/20 hover:bg-orange-700'
-          }`}
-          title={isMaxReached ? `Đã đạt giới hạn tối đa ${MAX_ADDRESSES} địa chỉ` : undefined}
-        >
-          <Plus size={15} weight="bold" />
-          <span>Thêm địa chỉ mới</span>
-        </button>
+        <div>
+          <button
+            id="openAddAddressModalBtn"
+            type="button"
+            onClick={openCreateModal}
+            disabled={isMaxReached}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition shadow-sm ${
+              isMaxReached
+                ? 'cursor-not-allowed bg-zinc-200 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600'
+                : 'bg-orange-600 text-white hover:bg-orange-700 shadow-orange-600/20'
+            }`}
+            title={isMaxReached ? 'Bạn đã đạt giới hạn 10 địa chỉ' : 'Thêm địa chỉ mới'}
+          >
+            <Plus size={16} weight="bold" />
+            <span>Thêm địa chỉ mới</span>
+          </button>
+        </div>
       </div>
 
-      {/* Max addresses warning alert */}
+      {/* Limit Alert when 10/10 reached */}
       {isMaxReached && (
-        <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
-          <WarningCircle size={17} weight="fill" className="shrink-0" />
+        <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+          <WarningCircle size={18} weight="fill" className="shrink-0 text-amber-600" />
           <span>
-            Bạn đã sử dụng đủ tối đa <strong>{MAX_ADDRESSES}/10 địa chỉ</strong>. Vui lòng xóa bớt
-            địa chỉ không còn sử dụng trước khi thêm mới.
+            Bạn đã sử dụng tối đa {MAX_ADDRESSES} địa chỉ nhận hàng. Vui lòng xóa bớt địa chỉ cũ
+            nếu cần thêm địa chỉ mới.
           </span>
         </div>
       )}
 
-      {/* Notifications */}
-      {toast !== null && (
-        <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
-          <CheckCircle size={16} weight="fill" className="shrink-0" />
+      {/* Toast Feedback */}
+      {toast && (
+        <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <CheckCircle size={18} weight="fill" className="shrink-0 text-emerald-600" />
           <span>{toast}</span>
         </div>
       )}
-      {toastError !== null && (
-        <div className="flex items-center gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-xs font-bold text-rose-800 dark:bg-rose-500/10 dark:text-rose-300">
-          <WarningCircle size={16} weight="fill" className="shrink-0" />
+
+      {toastError && (
+        <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+          <WarningCircle size={18} weight="fill" className="shrink-0 text-rose-600" />
           <span>{toastError}</span>
         </div>
       )}
@@ -394,7 +455,6 @@ export default function AddressBookTab() {
         <div className="space-y-3.5">
           {addresses.map(function (addr) {
             const isDef = addr.defaultAddress === true
-            const addrLabel = addr.label ?? 'HOME'
 
             let containerClass =
               'rounded-3xl border p-5 transition flex flex-col md:flex-row md:items-start md:justify-between gap-4'
@@ -409,7 +469,7 @@ export default function AddressBookTab() {
             return (
               <div key={addr.id} className={containerClass}>
                 <div className="space-y-2">
-                  {/* Row 1: Recipient Name, Phone, Label Pill, Default Badge */}
+                  {/* Row 1: Recipient Name, Phone, Default Badge */}
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-extrabold text-zinc-900 dark:text-white">
                       {addr.recipientName || 'Khách hàng'}
@@ -419,26 +479,6 @@ export default function AddressBookTab() {
                       {addr.phoneNumber || 'Chưa có SĐT'}
                     </span>
 
-                    {/* Classification Label Badge */}
-                    {addrLabel === 'HOME' && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300">
-                        <House size={12} weight="fill" />
-                        Nhà riêng
-                      </span>
-                    )}
-                    {addrLabel === 'OFFICE' && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300">
-                        <Buildings size={12} weight="fill" />
-                        Công ty
-                      </span>
-                    )}
-                    {addrLabel === 'OTHER' && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300">
-                        <MapPin size={12} weight="fill" />
-                        Khác
-                      </span>
-                    )}
-
                     {isDef && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-orange-600 px-2.5 py-0.5 text-[10px] font-extrabold text-white">
                         <ShieldCheck size={12} weight="fill" />
@@ -447,7 +487,7 @@ export default function AddressBookTab() {
                     )}
                   </div>
 
-                  {/* Row 2: Detail Address & Full Address */}
+                  {/* Row 2: Detail Address & Province/Ward */}
                   <div className="space-y-0.5 text-xs text-zinc-600 dark:text-zinc-300">
                     <p className="font-semibold text-zinc-800 dark:text-zinc-200">
                       {addr.detailAddress || `${addr.houseNumber ?? ''} ${addr.street ?? ''}`.trim()}
@@ -468,34 +508,34 @@ export default function AddressBookTab() {
                     className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
                   >
                     <PencilSimple size={13} />
-                    <span>Cập nhật</span>
+                    <span>Sửa</span>
                   </button>
 
                   {isDef === false && (
-                    <button
-                      type="button"
-                      onClick={function () {
-                        handleSetDefault(addr.id)
-                      }}
-                      disabled={isMutating}
-                      className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-orange-500 hover:text-orange-600 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                    >
-                      Thiết lập mặc định
-                    </button>
-                  )}
+                    <>
+                      <button
+                        type="button"
+                        onClick={function () {
+                          handleSetDefault(addr.id)
+                        }}
+                        disabled={isMutating}
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                      >
+                        <span>Đặt làm mặc định</span>
+                      </button>
 
-                  {isDef === false && (
-                    <button
-                      type="button"
-                      onClick={function () {
-                        handleDeleteAddress(addr.id)
-                      }}
-                      disabled={isMutating}
-                      className="inline-flex items-center gap-1 rounded-full border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:border-rose-500/30 dark:hover:bg-rose-500/10"
-                    >
-                      <Trash size={13} />
-                      <span>Xóa</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={function () {
+                          handleDeleteAddress(addr.id)
+                        }}
+                        disabled={isMutating}
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-2xs transition hover:bg-rose-50 hover:border-rose-300 dark:border-zinc-800 dark:bg-zinc-800 dark:hover:bg-rose-950/30"
+                        title="Xóa địa chỉ"
+                      >
+                        <Trash size={13} />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -504,26 +544,28 @@ export default function AddressBookTab() {
         </div>
       )}
 
-      {/* Modal: Add or Edit Address */}
+      {/* Add / Edit Address Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl transition dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
               <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">
-                {modalMode === 'create' ? 'Thêm địa chỉ nhận hàng mới' : 'Cập nhật địa chỉ nhận hàng'}
+                {modalMode === 'create' ? 'Thêm địa chỉ nhận hàng' : 'Cập nhật địa chỉ nhận hàng'}
               </h3>
               <button
                 type="button"
                 onClick={function () {
                   setModalOpen(false)
                 }}
-                className="rounded-full p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                className="rounded-full p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitAddress} className="mt-5 space-y-4">
+            {/* Modal Form */}
+            <form onSubmit={handleSubmitAddress} className="space-y-4 p-6">
               {/* Row 1: Recipient Name & Phone */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
@@ -531,7 +573,7 @@ export default function AddressBookTab() {
                     htmlFor="recipientNameInput"
                     className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
                   >
-                    Họ và tên người nhận *
+                    Họ và tên *
                   </label>
                   <input
                     id="recipientNameInput"
@@ -567,112 +609,207 @@ export default function AddressBookTab() {
                 </div>
               </div>
 
-              {/* Row 2: Province/City & District */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="cityInput"
-                    className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
-                  >
-                    Tỉnh / Thành phố *
-                  </label>
-                  {provinces.length > 0 ? (
-                    <select
-                      id="cityInput"
-                      required
-                      value={city}
-                      onChange={function (e) {
-                        const val = e.target.value
-                        setCity(val)
-                        const matched = provinces.find((p) => p.name === val)
-                        if (matched?.code) {
-                          setSelectedProvinceCode(matched.code)
-                        } else {
-                          setSelectedProvinceCode('')
-                        }
-                      }}
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 px-3 py-2.5 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                    >
-                      <option value="">-- Chọn Tỉnh / Thành phố --</option>
-                      {provinces.map((p) => (
-                        <option key={p.code} value={p.name}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      id="cityInput"
-                      type="text"
-                      required
-                      value={city}
-                      onChange={function (e) {
-                        setCity(e.target.value)
-                      }}
-                      placeholder="VD: Hà Nội, TP.HCM"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="districtInput"
-                    className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
-                  >
-                    Quận / Huyện *
-                  </label>
+              {/* Row 2: Optimized Searchable Province / City */}
+              <div ref={provinceContainerRef} className="relative">
+                <label
+                  htmlFor="citySearchInput"
+                  className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
+                >
+                  Tỉnh / Thành phố *
+                </label>
+                <div className="relative mt-1">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
+                    <MagnifyingGlass size={14} />
+                  </div>
                   <input
-                    id="districtInput"
+                    id="citySearchInput"
                     type="text"
                     required
-                    value={district}
-                    onChange={function (e) {
-                      setDistrict(e.target.value)
+                    autoComplete="off"
+                    value={provinceSearch}
+                    onFocus={function () {
+                      setProvinceDropdownOpen(true)
                     }}
-                    placeholder="VD: Cầu Giấy, Quận 1"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                    onChange={function (e) {
+                      setProvinceSearch(e.target.value)
+                      setProvinceDropdownOpen(true)
+                    }}
+                    placeholder="Gõ để tìm nhanh (VD: Hà Nội, Hồ Chí Minh, Đà Nẵng...)"
+                    className="w-full rounded-2xl border border-zinc-200 py-2.5 pl-9 pr-14 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 gap-1">
+                    {city !== '' && (
+                      <button
+                        type="button"
+                        onClick={function () {
+                          setCity('')
+                          setProvinceSearch('')
+                          setSelectedProvinceCode('')
+                          setWard('')
+                          setWardSearch('')
+                        }}
+                        className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                        title="Xóa lựa chọn"
+                      >
+                        <X size={12} weight="bold" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={function () {
+                        setProvinceDropdownOpen(!provinceDropdownOpen)
+                      }}
+                      className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    >
+                      <CaretDown size={12} weight="bold" />
+                    </button>
+                  </div>
                 </div>
+
+                {/* Dropdown list for Province */}
+                {provinceDropdownOpen && (
+                  <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
+                    {filteredProvinces.length === 0 ? (
+                      <div className="p-3 text-center text-xs text-zinc-400">
+                        Không tìm thấy tỉnh/thành phố nào
+                      </div>
+                    ) : (
+                      filteredProvinces.map(function (p) {
+                        const isSelected = city === p.name
+                        return (
+                          <button
+                            key={p.code}
+                            type="button"
+                            onClick={function () {
+                              setCity(p.name ?? '')
+                              setProvinceSearch(p.name ?? '')
+                              setSelectedProvinceCode(p.code ?? '')
+                              setWard('')
+                              setWardSearch('')
+                              setProvinceDropdownOpen(false)
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${
+                              isSelected
+                                ? 'bg-orange-50 font-bold text-orange-600 dark:bg-orange-500/10 dark:text-orange-400'
+                                : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-700/60'
+                            }`}
+                          >
+                            <span>{p.name}</span>
+                            {isSelected && <Check size={14} weight="bold" />}
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Row 3: Ward */}
-              <div>
+              {/* Row 3: Optimized Searchable Ward */}
+              <div ref={wardContainerRef} className="relative">
                 <label
-                  htmlFor="wardInput"
+                  htmlFor="wardSearchInput"
                   className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
                 >
                   Phường / Xã *
                 </label>
-                {wards.length > 0 ? (
-                  <select
-                    id="wardInput"
-                    required
-                    value={ward}
-                    onChange={function (e) {
-                      setWard(e.target.value)
-                    }}
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 px-3 py-2.5 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                  >
-                    <option value="">-- Chọn Phường / Xã --</option>
-                    {wards.map((w) => (
-                      <option key={w.code} value={w.name}>
-                        {w.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
+                <div className="relative mt-1">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
+                    <MagnifyingGlass size={14} />
+                  </div>
                   <input
-                    id="wardInput"
+                    id="wardSearchInput"
                     type="text"
                     required
-                    value={ward}
-                    onChange={function (e) {
-                      setWard(e.target.value)
+                    autoComplete="off"
+                    disabled={selectedProvinceCode === ''}
+                    value={wardSearch}
+                    onFocus={function () {
+                      if (selectedProvinceCode !== '') {
+                        setWardDropdownOpen(true)
+                      }
                     }}
-                    placeholder="VD: Phường Dịch Vọng Hậu"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                    onChange={function (e) {
+                      setWardSearch(e.target.value)
+                      if (selectedProvinceCode !== '') {
+                        setWardDropdownOpen(true)
+                      }
+                    }}
+                    placeholder={
+                      selectedProvinceCode === ''
+                        ? 'Vui lòng chọn Tỉnh/Thành phố trước'
+                        : 'Gõ để tìm nhanh (VD: Dịch Vọng, Bến Nghé, Phường 1...)'
+                    }
+                    className="w-full rounded-2xl border border-zinc-200 py-2.5 pl-9 pr-14 text-xs font-medium text-zinc-900 focus:border-orange-500 focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:disabled:bg-zinc-900/60"
                   />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 gap-1">
+                    {wardsQuery.isLoading && (
+                      <ArrowClockwise size={13} className="animate-spin text-orange-500" />
+                    )}
+                    {ward !== '' && (
+                      <button
+                        type="button"
+                        onClick={function () {
+                          setWard('')
+                          setWardSearch('')
+                        }}
+                        className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                        title="Xóa lựa chọn"
+                      >
+                        <X size={12} weight="bold" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={selectedProvinceCode === ''}
+                      onClick={function () {
+                        setWardDropdownOpen(!wardDropdownOpen)
+                      }}
+                      className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 disabled:opacity-50 dark:hover:text-zinc-200"
+                    >
+                      <CaretDown size={12} weight="bold" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Dropdown list for Ward */}
+                {wardDropdownOpen && selectedProvinceCode !== '' && (
+                  <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
+                    {filteredWards.length === 0 ? (
+                      <div className="p-3 text-center text-xs text-zinc-400">
+                        {wards.length === 0
+                          ? 'Đang tải danh sách phường/xã...'
+                          : 'Không tìm thấy phường/xã phù hợp'}
+                      </div>
+                    ) : (
+                      filteredWards.slice(0, 40).map(function (w) {
+                        const isSelected = ward === w.name
+                        return (
+                          <button
+                            key={w.code}
+                            type="button"
+                            onClick={function () {
+                              setWard(w.name ?? '')
+                              setWardSearch(w.name ?? '')
+                              setWardDropdownOpen(false)
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${
+                              isSelected
+                                ? 'bg-orange-50 font-bold text-orange-600 dark:bg-orange-500/10 dark:text-orange-400'
+                                : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-700/60'
+                            }`}
+                          >
+                            <span>{w.name}</span>
+                            {isSelected && <Check size={14} weight="bold" />}
+                          </button>
+                        )
+                      })
+                    )}
+                    {filteredWards.length > 40 && (
+                      <div className="p-2 text-center text-[11px] text-zinc-400">
+                        Còn {filteredWards.length - 40} phường/xã khác, gõ thêm để thu hẹp kết quả...
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -697,60 +834,7 @@ export default function AddressBookTab() {
                 />
               </div>
 
-              {/* Row 5: Classification Label Pills */}
-              <div>
-                <span className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                  Loại địa chỉ (Gán nhãn)
-                </span>
-                <div className="mt-2 flex flex-wrap gap-2.5">
-                  <button
-                    type="button"
-                    onClick={function () {
-                      setLabel('HOME')
-                    }}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition border ${
-                      label === 'HOME'
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-500'
-                        : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-                    }`}
-                  >
-                    <House size={14} weight="fill" />
-                    <span>Nhà riêng</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={function () {
-                      setLabel('OFFICE')
-                    }}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition border ${
-                      label === 'OFFICE'
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-500'
-                        : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-                    }`}
-                  >
-                    <Buildings size={14} weight="fill" />
-                    <span>Công ty</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={function () {
-                      setLabel('OTHER')
-                    }}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition border ${
-                      label === 'OTHER'
-                        ? 'border-purple-600 bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-500'
-                        : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-                    }`}
-                  >
-                    <MapPin size={14} weight="fill" />
-                    <span>Khác</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Row 6: Set default checkbox */}
+              {/* Row 5: Set default checkbox */}
               <div className="flex items-center gap-2 pt-1">
                 <input
                   id="defaultAddressCheckbox"
@@ -759,36 +843,35 @@ export default function AddressBookTab() {
                   onChange={function (e) {
                     setIsDefault(e.target.checked)
                   }}
-                  className="h-4 w-4 rounded-md border-zinc-300 text-orange-600 focus:ring-orange-500"
+                  className="h-4 w-4 rounded border-zinc-300 text-orange-600 focus:ring-orange-500 dark:border-zinc-700 dark:bg-zinc-800"
                 />
                 <label
                   htmlFor="defaultAddressCheckbox"
-                  className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                  className="cursor-pointer text-xs font-medium text-zinc-700 dark:text-zinc-300"
                 >
-                  Đặt làm địa chỉ nhận hàng mặc định
+                  Đặt làm địa chỉ mặc định
                 </label>
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-3">
                 <button
                   type="button"
                   onClick={function () {
                     setModalOpen(false)
                   }}
-                  className="rounded-full border border-zinc-200 px-5 py-2.5 text-xs font-bold text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  className="rounded-full border border-zinc-200 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                 >
                   Hủy
                 </button>
                 <button
+                  id="submitAddressBtn"
                   type="submit"
                   disabled={isMutating}
-                  className="rounded-full bg-orange-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-orange-600/20 transition hover:bg-orange-700 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-orange-600 px-5 py-2 text-xs font-bold text-white shadow-sm shadow-orange-600/20 hover:bg-orange-700 disabled:opacity-50"
                 >
-                  {isMutating && <span>Đang lưu…</span>}
-                  {!isMutating && (
-                    <span>{modalMode === 'create' ? 'Thêm địa chỉ' : 'Lưu thay đổi'}</span>
-                  )}
+                  {isMutating && <ArrowClockwise size={14} className="animate-spin" />}
+                  <span>{modalMode === 'create' ? 'Thêm mới' : 'Lưu thay đổi'}</span>
                 </button>
               </div>
             </form>
