@@ -323,11 +323,6 @@ export default function Account() {
                 <MapPin size={18} weight="bold" />
                 <span>Sổ địa chỉ</span>
               </div>
-              {realAddressCount > 0 && (
-                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-extrabold">
-                  {realAddressCount}
-                </span>
-              )}
             </button>
 
             <button
