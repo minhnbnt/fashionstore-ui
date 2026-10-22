@@ -243,11 +243,12 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
 
       {deleting !== null && (
         <ConfirmDialog
+          open
           title="Xóa banner"
-          message={`Xóa hẳn banner "${deleting.title ?? ''}"? Muốn ẩn tạm thời thì bấm "Tắt" thay vì xóa.`}
+          description={`Xóa hẳn banner "${deleting.title ?? ''}"? Muốn ẩn tạm thời thì bấm "Tắt" thay vì xóa.`}
           confirmLabel="Xóa banner"
           pending={remove.isPending}
-          error={deleteError}
+          error={deleteError ?? undefined}
           onClose={() => setDeleting(null)}
           onConfirm={() => {
             if (deleting.id === undefined) {

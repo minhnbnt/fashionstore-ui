@@ -366,11 +366,12 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
 
       {confirmDelete && page?.id !== undefined && (
         <ConfirmDialog
+          open
           title="Xóa trang"
-          message={`Xóa hẳn trang nháp "${page.title ?? ''}"?`}
+          description={`Xóa hẳn trang nháp "${page.title ?? ''}"?`}
           confirmLabel="Xóa trang"
           pending={remove.isPending}
-          error={deleteError}
+          error={deleteError ?? undefined}
           onClose={() => setConfirmDelete(false)}
           onConfirm={() => {
             if (page.id === undefined) {

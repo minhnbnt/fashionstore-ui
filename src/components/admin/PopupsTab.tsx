@@ -207,11 +207,12 @@ export default function PopupsTab({ onNotice }: { onNotice: (message: string) =>
 
       {deleting !== null && (
         <ConfirmDialog
+          open
           title="Xóa popup"
-          message={`Xóa hẳn popup "${deleting.name ?? ''}"? Muốn ẩn tạm thời thì bấm "Tắt" thay vì xóa.`}
+          description={`Xóa hẳn popup "${deleting.name ?? ''}"? Muốn ẩn tạm thời thì bấm "Tắt" thay vì xóa.`}
           confirmLabel="Xóa popup"
           pending={remove.isPending}
-          error={deleteError}
+          error={deleteError ?? undefined}
           onClose={() => setDeleting(null)}
           onConfirm={() => {
             if (deleting.id === undefined) {
