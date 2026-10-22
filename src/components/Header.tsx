@@ -18,6 +18,7 @@ import {
 import { takeData } from '@/lib/apiAdapters'
 
 import { useSignOut } from '../hooks/useAuthMutations'
+import { useCart } from '../hooks/useCart'
 import { useSessionQuery } from '../hooks/useSession'
 import { useTheme } from '../hooks/useTheme'
 import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
@@ -54,6 +55,7 @@ export default function Header() {
   const { theme, toggle } = useTheme()
   const navigate = useNavigate()
   const signOut = useSignOut()
+  const { totalQuantity } = useCart()
   const [keyword, setKeyword] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -248,14 +250,19 @@ export default function Header() {
               {theme === 'dark' && <Sun size={20} />}
               {theme !== 'dark' && <Moon size={20} />}
             </button>
-            <button
-              type="button"
+            <Link
+              to="/cart"
               aria-label="Giỏ hàng"
-              className="btn-primary flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold"
+              className="btn-primary relative flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold"
             >
               <ShoppingBag size={18} weight="fill" />
               <span className="hidden sm:inline">Giỏ</span>
-            </button>
+              {totalQuantity > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-extrabold text-indigo-700 shadow">
+                  {totalQuantity}
+                </span>
+              )}
+            </Link>
           </div>
         </div>
       </div>
