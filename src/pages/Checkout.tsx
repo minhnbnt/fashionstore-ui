@@ -19,7 +19,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import { takeData } from '@/lib/apiAdapters'
-import { formatAddressLabel, formatFullAddress, formatVnd } from '@/lib/format'
+import { formatFullAddress, formatVnd } from '@/lib/format'
 
 import { useCart } from '../hooks/useCart'
 import { useSessionQuery } from '../hooks/useSession'
@@ -493,11 +493,6 @@ export default function Checkout() {
                           {a.recipientName || 'Khách hàng'}
                         </span>
                         <span className="text-zinc-400">({a.phoneNumber || 'Chưa có SĐT'})</span>
-                        {a.label && (
-                          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                            {formatAddressLabel(a.label)}
-                          </span>
-                        )}
                         {a.defaultAddress === true && (
                           <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
                             Mặc định
