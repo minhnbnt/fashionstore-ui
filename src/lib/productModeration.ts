@@ -3,10 +3,11 @@ import { formatVnd } from './format'
 import type { BanProductRequestViolationType } from '@generated/model/banProductRequestViolationType'
 
 /** REPORTED là hàng đợi báo cáo (reported=true), không phải một trạng thái sản phẩm. */
-export type ProductStatusFilter = 'REPORTED' | 'ACTIVE' | 'HIDDEN' | 'BANNED' | 'ALL'
+export type ProductStatusFilter = 'REPORTED' | 'PENDING' | 'ACTIVE' | 'HIDDEN' | 'BANNED' | 'ALL'
 
 export const STATUS_TABS: { value: ProductStatusFilter; label: string }[] = [
   { value: 'REPORTED', label: 'Bị báo cáo' },
+  { value: 'PENDING', label: 'Chờ duyệt' },
   { value: 'ACTIVE', label: 'Đang bán' },
   { value: 'HIDDEN', label: 'Đang ẩn' },
   { value: 'BANNED', label: 'Bị gỡ' },
@@ -143,6 +144,9 @@ export function violationLabel(type: string | null | undefined): string {
 }
 
 export function statusLabel(status: string | undefined): string {
+  if (status === 'PENDING') {
+    return 'Chờ duyệt'
+  }
   if (status === 'ACTIVE') {
     return 'Đang bán'
   }
@@ -160,6 +164,9 @@ export function statusLabel(status: string | undefined): string {
 
 export function statusBadgeClass(status: string | undefined): string {
   const base = 'w-fit shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold'
+  if (status === 'PENDING') {
+    return `${base} bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300`
+  }
   if (status === 'ACTIVE') {
     return `${base} bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300`
   }
@@ -176,6 +183,14 @@ export function canBan(status: string | undefined): boolean {
 
 export function canRestore(status: string | undefined): boolean {
   return status === 'BANNED'
+}
+
+export function canApprove(status: string | undefined): boolean {
+  return status === 'PENDING'
+}
+
+export function canReject(status: string | undefined): boolean {
+  return status === 'PENDING'
 }
 
 /** Lỗi hiển thị dưới ô lý do, null khi hợp lệ. Khớp ràng buộc 5–500 ký tự ở backend. */
