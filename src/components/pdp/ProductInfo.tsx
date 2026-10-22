@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 
 import { Minus, Plus, ShoppingBag, Star } from '@phosphor-icons/react'
 
 import { priceInfo } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import { findVariant, isOptionAvailable } from '@/lib/variants'
+
+import { useCart } from '../../hooks/useCart'
 
 import type { ProductResponse } from '@generated/model/productResponse'
 
@@ -27,6 +30,8 @@ function unavailableTitle(available: boolean): string | undefined {
 
 export default function ProductInfo(props: { product: ProductResponse }) {
   const p = props.product
+  const { isLoggedIn, addItem } = useCart()
+  const navigate = useNavigate()
   const info = priceInfo(p)
   const variants = p.variants ?? []
   const [color, setColor] = useState<string | null>(null)
@@ -84,6 +89,31 @@ export default function ProductInfo(props: { product: ProductResponse }) {
     if (qty < stock) {
       setQty(qty + 1)
     }
+  }
+
+  function addToCart() {
+    if (requireSelection() === false) {
+      return
+    }
+    if (isLoggedIn === false) {
+      void navigate('/login', { state: { from: '/product/' + (p.id ?? '') } })
+      return
+    }
+    if (match === undefined || match.id === undefined) {
+      showToast('Vui lòng chọn màu sắc và kích cỡ')
+      return
+    }
+    addItem.mutate(
+      { data: { variantId: match.id, quantity: qty } },
+      {
+        onSuccess: function () {
+          showToast('Đã thêm ' + qty + ' × ' + (p.name ?? '') + ' vào giỏ')
+        },
+        onError: function () {
+          showToast('Không thêm được vào giỏ, vui lòng thử lại')
+        },
+      },
+    )
   }
 
   if (info.totalStock === 0) {
@@ -191,13 +221,9 @@ export default function ProductInfo(props: { product: ProductResponse }) {
       <div className="mt-5 flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
-          onClick={function () {
-            if (requireSelection() === false) {
-              return
-            }
-            showToast('Đã thêm ' + qty + ' × ' + (p.name ?? '') + ' vào giỏ')
-          }}
-          className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold"
+          onClick={addToCart}
+          disabled={addItem.isPending}
+          className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold disabled:opacity-60"
         >
           <ShoppingBag size={16} weight="fill" />
           Thêm giỏ

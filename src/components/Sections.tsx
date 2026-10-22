@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useSearch } from '@generated/endpoints/search/search'
@@ -138,6 +138,7 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
 
 export function ProductCard(props: { item: ProductSummaryResponse }) {
   const p = props.item
+  const navigate = useNavigate()
   return (
     <article className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-sm transition hover:shadow-xl hover:shadow-sky-200 dark:border-white/10 dark:bg-white/5 dark:hover:shadow-black/50">
       <div className="relative">
@@ -175,6 +176,9 @@ export function ProductCard(props: { item: ProductSummaryResponse }) {
         </div>
         <button
           type="button"
+          onClick={function () {
+            void navigate('/product/' + (p.id ?? ''))
+          }}
           className="btn-primary mt-3 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold"
         >
           <ShoppingBag size={16} weight="fill" />
