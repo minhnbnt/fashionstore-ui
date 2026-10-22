@@ -9,6 +9,7 @@ import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
 import { formatFullAddress, formatVnd } from '@/lib/format'
 
+import AddressFormDialog from '../components/AddressFormDialog'
 import { useCart } from '../hooks/useCart'
 
 import type { AddressResponse } from '@generated/model/addressResponse'
@@ -22,8 +23,8 @@ export default function Checkout() {
   const addressesQuery = useList1()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [addressText, setAddressText] = useState('')
   const [pickedId, setPickedId] = useState<string | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
   const [formError, setFormError] = useState('')
   const [placed, setPlaced] = useState<OrderResponse[] | null>(null)
 
@@ -67,9 +68,6 @@ export default function Checkout() {
   if (hasSavedAddress) {
     shippingAddress = formatFullAddress(current)
   }
-  if (hasSavedAddress === false) {
-    shippingAddress = addressText.trim()
-  }
 
   let blocked: BlockedItem[] = []
   if (checkout.error instanceof ApiError && checkout.error.status === 409) {
@@ -87,7 +85,7 @@ export default function Checkout() {
       return
     }
     if (shippingAddress === '') {
-      setFormError('Vui lòng chọn hoặc nhập địa chỉ giao hàng.')
+      setFormError('Vui lòng chọn hoặc thêm địa chỉ giao hàng.')
       return
     }
     if (selectedItems.length === 0) {
@@ -227,19 +225,18 @@ export default function Checkout() {
             )}
 
             {hasSavedAddress === false && (
-              <label className="mt-4 block text-sm">
-                <span className="font-semibold">Địa chỉ</span>
-                <textarea
-                  value={addressText}
-                  onChange={(event) => setAddressText(event.target.value)}
-                  rows={2}
-                  placeholder="Số nhà, đường, phường, quận, tỉnh/thành"
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 bg-white/80 px-4 py-2.5 outline-none focus:border-indigo-400 dark:border-white/15 dark:bg-white/5"
-                />
-                <span className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
-                  Chưa có địa chỉ đã lưu nên nhập tay ở đây.
-                </span>
-              </label>
+              <div className="mt-4 rounded-2xl border border-dashed border-zinc-300 p-4 text-sm dark:border-white/20">
+                <p className="text-zinc-600 dark:text-zinc-300">
+                  Bạn chưa có địa chỉ nào. Thêm địa chỉ để dùng cho đơn này.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setAddOpen(true)}
+                  className="btn-primary mt-3 rounded-full px-4 py-2 text-sm font-bold"
+                >
+                  Thêm địa chỉ
+                </button>
+              </div>
             )}
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -340,6 +337,19 @@ export default function Checkout() {
             {checkout.isPending ? 'Đang đặt hàng…' : 'Đặt hàng'}
           </button>
         </aside>
+
+        {addOpen && (
+          <AddressFormDialog
+            address={null}
+            onClose={function () {
+              setAddOpen(false)
+            }}
+            onSaved={function (address) {
+              setPickedId(address.id ?? null)
+              setAddOpen(false)
+            }}
+          />
+        )}
       </form>
     )
   }
