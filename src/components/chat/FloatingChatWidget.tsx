@@ -112,8 +112,9 @@ export default function FloatingChatWidget() {
           const conv = takeData(res)
           if (conv.id !== undefined) {
             setSelectedConversationId(conv.id)
-            if (conv.shopName !== undefined && conv.shopName !== '') {
-              setSelectedShopName(conv.shopName)
+            const sName = (conv as { shopName?: string }).shopName
+            if (sName !== undefined && sName !== '') {
+              setSelectedShopName(sName)
             }
             void queryClient.invalidateQueries({ queryKey: getMyConversationsQueryKey() })
           }
@@ -160,8 +161,9 @@ export default function FloatingChatWidget() {
       const first = conversations[0]
       if (first && first.id !== undefined) {
         setSelectedConversationId(first.id)
-        if (first.shopName !== undefined && first.shopName !== '') {
-          setSelectedShopName(first.shopName)
+        const sName = (first as { shopName?: string }).shopName
+        if (sName !== undefined && sName !== '') {
+          setSelectedShopName(sName)
         }
       }
     }
@@ -204,12 +206,9 @@ export default function FloatingChatWidget() {
   const activeChatConv = conversations.find(function (c) {
     return c.id === selectedConversationId
   })
-  if (
-    activeChatConv !== undefined &&
-    activeChatConv.shopName !== undefined &&
-    activeChatConv.shopName !== ''
-  ) {
-    headerShopName = activeChatConv.shopName
+  const activeShopName = (activeChatConv as { shopName?: string } | undefined)?.shopName
+  if (activeShopName !== undefined && activeShopName !== '') {
+    headerShopName = activeShopName
   }
 
   return (
@@ -318,9 +317,10 @@ export default function FloatingChatWidget() {
                       itemClass += ' hover:bg-zinc-100/80 dark:hover:bg-zinc-800/60'
                     }
 
+                    const sName = (c as { shopName?: string }).shopName
                     let convTitle = 'Shop'
-                    if (c.shopName !== undefined && c.shopName !== '') {
-                      convTitle = c.shopName
+                    if (sName !== undefined && sName !== '') {
+                      convTitle = sName
                     } else if (c.shopId !== undefined && c.shopId !== '') {
                       convTitle = 'Shop #' + c.shopId.slice(0, 6)
                     }
@@ -342,8 +342,8 @@ export default function FloatingChatWidget() {
                           if (c.id !== undefined) {
                             setSelectedConversationId(c.id)
                           }
-                          if (c.shopName !== undefined && c.shopName !== '') {
-                            setSelectedShopName(c.shopName)
+                          if (sName !== undefined && sName !== '') {
+                            setSelectedShopName(sName)
                           }
                         }}
                         className={itemClass}
