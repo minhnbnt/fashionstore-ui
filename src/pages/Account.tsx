@@ -25,6 +25,7 @@ import { adminErrorMessage } from '@/lib/admin'
 import { takeData } from '@/lib/apiAdapters'
 import { getRoleFromSession, refreshAuthSession } from '@/lib/auth'
 
+import AddressBook from '../components/AddressBook'
 import StatusBadge from '../components/admin/StatusBadge'
 import ChangePasswordForm from '../components/ChangePasswordForm'
 import ShopKycRegistrationModal from '../components/ShopKycRegistrationModal'
@@ -172,6 +173,8 @@ export default function Account() {
           </div>
         </section>
       )}
+
+      <AddressBook />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Account Profile & Preferences */}
