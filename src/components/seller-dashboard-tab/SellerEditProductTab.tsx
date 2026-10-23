@@ -419,6 +419,16 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       return
     }
 
+    if (name.trim().length < 5) {
+      setErrorMessage('Tên sản phẩm phải có ít nhất 5 ký tự.')
+      return
+    }
+
+    if (name.trim().length > 300) {
+      setErrorMessage('Tên sản phẩm không được vượt quá 300 ký tự.')
+      return
+    }
+
     if (categoryId === '') {
       setErrorMessage('Vui lòng chọn danh mục cho sản phẩm.')
       return
@@ -440,18 +450,35 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
 
     // Check variant values
     for (const v of variants) {
+      if (v.sku.trim() === '') {
+        setErrorMessage('Tất cả các biến thể phải có mã SKU hợp lệ.')
+        return
+      }
+      if (v.size.trim() === '') {
+        setErrorMessage(`Vui lòng nhập kích cỡ cho biến thể SKU "${v.sku}".`)
+        return
+      }
+      if (v.color.trim() === '') {
+        setErrorMessage(`Vui lòng nhập màu sắc cho biến thể SKU "${v.sku}".`)
+        return
+      }
       if (v.price < 0) {
         setErrorMessage(`Giá bán của biến thể SKU "${v.sku}" không được âm.`)
+        return
+      }
+      if (v.compareAtPrice !== null && v.compareAtPrice < v.price) {
+        setErrorMessage(`Giá gốc của biến thể SKU "${v.sku}" không được nhỏ hơn giá bán.`)
         return
       }
       if (v.stockQuantity < 0) {
         setErrorMessage(`Tồn kho của biến thể SKU "${v.sku}" không được âm.`)
         return
       }
-      if (v.sku.trim() === '') {
-        setErrorMessage('Tất cả các biến thể phải có mã SKU hợp lệ.')
-        return
-      }
+    }
+
+    if (weightGrams <= 0 || lengthCm <= 0 || widthCm <= 0 || heightCm <= 0) {
+      setErrorMessage('Thông số kiện hàng (cân nặng, dài, rộng, cao) phải lớn hơn 0.')
+      return
     }
 
     setIsSaving(true)
