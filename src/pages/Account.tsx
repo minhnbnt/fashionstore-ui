@@ -249,8 +249,11 @@ export default function Account() {
 
           {/* Case 1: Loading state */}
           {mineQuery.isLoading && (
-            <div className="mt-6 flex items-center justify-center py-12 text-sm text-zinc-500">
-              <ArrowClockwise size={20} className="mr-2 animate-spin text-orange-600" />
+            <div className="mt-6 flex items-center justify-center py-12 text-sm text-zinc-500 dark:text-zinc-400">
+              <ArrowClockwise
+                size={20}
+                className="mr-2 animate-spin text-orange-600 dark:text-orange-400"
+              />
               <span>Đang kiểm tra hồ sơ gian hàng…</span>
             </div>
           )}
@@ -259,7 +262,7 @@ export default function Account() {
           {mineQuery.isLoading === false && currentShop === null && (
             <div
               id="card-no-shop"
-              className="mt-6 rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50/70 via-white to-amber-50/50 p-6 dark:border-orange-500/20 dark:bg-zinc-800/60"
+              className="mt-6 rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50/70 via-white to-amber-50/50 p-6 dark:border-orange-500/20 dark:bg-zinc-800/60 dark:bg-none"
             >
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-xs font-extrabold text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
