@@ -125,6 +125,9 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
   // 1. Basic Info
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
+  const [slugSuffix] = useState(function () {
+    return Math.random().toString(36).substring(2, 6)
+  })
   const [categoryId, setCategoryId] = useState('')
   const [description, setDescription] = useState(
     '### Đặc điểm nổi bật:\n- Chất liệu cao cấp, thoáng mát và co giãn nhẹ.\n- Phom dáng hiện đại, đường may tỉ mỉ, tôn dáng người mặc.\n- Phù hợp đi làm, đi chơi và dạo phố năng động.\n\n### Hướng dẫn giặt & bảo quản:\n- Giặt máy ở chế độ nhẹ nhàng với nước lạnh.\n- Không dùng chất tẩy rửa mạnh.\n- Phơi trong bóng râm, tránh ánh nắng trực tiếp.',
@@ -211,7 +214,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             const lower = err.message.toLowerCase()
             if (lower.includes('slug')) {
               setFormError(
-                'Đường dẫn slug sản phẩm đã tồn tại trong gian hàng. Vui lòng bấm "Tạo đuôi ngẫu nhiên" tại ô slug hoặc đổi tên sản phẩm.',
+                'Đường dẫn slug sản phẩm đã tồn tại trong gian hàng. Vui lòng đổi lại tên sản phẩm.',
               )
               return
             }
@@ -245,7 +248,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
   function handleNameChange(val: string) {
     setName(val)
-    const generatedSlug = val
+    const clean = val
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -253,7 +256,11 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       .replace(/[^a-z0-9\s-]/g, '')
       .trim()
       .replace(/\s+/g, '-')
-    setSlug(generatedSlug)
+    if (clean === '') {
+      setSlug('')
+      return
+    }
+    setSlug(`${clean}-${slugSuffix}`)
   }
 
   function syncVariantsFromColorSizes(
@@ -742,34 +749,18 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="addProductSlugInput"
-                  className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
-                >
-                  Đường dẫn slug
-                </label>
-                <button
-                  type="button"
-                  onClick={function () {
-                    const suffix = Math.random().toString(36).substring(2, 6)
-                    if (slug.trim() !== '') {
-                      setSlug(`${slug.replace(/-[a-z0-9]{4}$/, '')}-${suffix}`)
-                    }
-                  }}
-                  className="text-[11px] font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
-                >
-                  Tạo đuôi ngẫu nhiên
-                </button>
-              </div>
+              <label
+                htmlFor="addProductSlugInput"
+                className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+              >
+                Đường dẫn slug (Tự sinh độc nhất)
+              </label>
               <input
                 id="addProductSlugInput"
                 type="text"
                 value={slug}
-                onChange={function (e) {
-                  setSlug(e.target.value)
-                }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-white p-3 text-xs text-zinc-800 outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+                readOnly
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/50"
               />
             </div>
             <div>
