@@ -5,6 +5,7 @@ import Header from './components/Header'
 import RequireAuth from './components/RequireAuth'
 import RequireRole from './components/RequireRole'
 import { Footer } from './components/Sections'
+import AmbientBackground from './components/ui/AmbientBackground'
 
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
@@ -62,6 +63,7 @@ function App() {
 
   return (
     <div className="grain min-h-[100dvh]">
+      <AmbientBackground />
       {!isShopRoute && <Header />}
       <ScrollToHash />
       <Suspense fallback={<PageLoading />}>
