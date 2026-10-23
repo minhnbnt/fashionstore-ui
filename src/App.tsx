@@ -10,7 +10,6 @@ import AmbientBackground from './components/ui/AmbientBackground'
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
 const Account = lazy(() => import('./pages/Account'))
-const Checkout = lazy(() => import('./pages/Checkout'))
 const ProductDetail = lazy(() => import('./pages/ProductDetail'))
 const Search = lazy(() => import('./pages/Search'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
