@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import { getList1QueryKey, useAdd, useList1 } from '@generated/endpoints/addresses/addresses'
 import {
@@ -26,6 +26,7 @@ import { useSessionQuery } from '../hooks/useSession'
 
 import type { AddressRequestLabel } from '@generated/model/addressRequestLabel'
 import type { AddressResponse } from '@generated/model/addressResponse'
+import type { CartCheckoutRequest } from '@generated/model/cartCheckoutRequest'
 
 function resolveShippingAddress(fullAddress: string): string {
   if (fullAddress !== '') {
@@ -46,6 +47,11 @@ export default function Checkout() {
   const { data: session } = useSessionQuery()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [params] = useSearchParams()
+  // Cart chi truyen mon da tick; rong = checkout ca gio.
+  const wanted = (params.get('variantIds') ?? '').split(',').filter(function (id) {
+    return id !== ''
+  })
 
   const [addressModalOpen, setAddressModalOpen] = useState(false)
   const [newAddressModalOpen, setNewAddressModalOpen] = useState(false)
@@ -115,12 +121,25 @@ export default function Checkout() {
     }
   }
 
+  // Chi tinh tren mon duoc chon khi co ?variantIds=, khong thi ca gio.
+  let orderItems = cart.items
+  if (wanted.length > 0) {
+    orderItems = cart.items.filter(function (item) {
+      return wanted.includes(item.variantId ?? '')
+    })
+  }
+
+  let selectedSubtotal = 0
+  for (const item of orderItems) {
+    selectedSubtotal += (item.unitPrice ?? 0) * (item.quantity ?? 1)
+  }
+
   // Phí vận chuyển
   let shippingFee = 30000
-  if (cart.subtotal >= 500000) {
+  if (selectedSubtotal >= 500000) {
     shippingFee = 0
   }
-  const finalTotal = cart.subtotal + shippingFee
+  const finalTotal = selectedSubtotal + shippingFee
 
   function handleCreateAddress(e: React.FormEvent) {
     e.preventDefault()
@@ -161,15 +180,18 @@ export default function Checkout() {
     const nameToUse = currentAddress.recipientName || session?.user.email || 'Khách Hàng'
     const phoneToUse = currentAddress.phoneNumber || '0900000000'
 
+    const payload: CartCheckoutRequest = {
+      shippingName: nameToUse,
+      shippingPhone: phoneToUse,
+      shippingAddress: resolveShippingAddress(fullAddr),
+      shippingFee: shippingFee,
+    }
+    if (wanted.length > 0) {
+      payload.variantIds = wanted
+    }
+
     cart.checkout.mutate(
-      {
-        data: {
-          shippingName: nameToUse,
-          shippingPhone: phoneToUse,
-          shippingAddress: resolveShippingAddress(fullAddr),
-          shippingFee: shippingFee,
-        },
-      },
+      { data: payload },
       {
         onSuccess: function () {
           void navigate('/account#orders')
@@ -200,7 +222,7 @@ export default function Checkout() {
     )
   }
 
-  if (cart.items.length === 0) {
+  if (orderItems.length === 0) {
     return (
       <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-24 text-center md:pt-36">
         <div className="mx-auto max-w-md rounded-3xl border border-sky-100 bg-white/80 p-8 shadow-sm dark:border-white/10 dark:bg-white/5">
@@ -332,11 +354,11 @@ export default function Checkout() {
           {/* Danh Sách Sản Phẩm Đặt Mua */}
           <div className="rounded-3xl border border-sky-100 bg-white/90 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/90">
             <h2 className="text-sm font-extrabold text-zinc-900 dark:text-white">
-              Sản Phẩm Đặt Mua ({cart.items.length})
+              Sản Phẩm Đặt Mua ({orderItems.length})
             </h2>
 
             <div className="mt-4 divide-y divide-sky-100 dark:divide-white/10">
-              {cart.items.map(function (item) {
+              {orderItems.map(function (item) {
                 const lineTotal = (item.unitPrice ?? 0) * (item.quantity ?? 1)
                 return (
                   <div key={item.variantId} className="flex items-center gap-4 py-3">
@@ -423,7 +445,7 @@ export default function Checkout() {
               <div className="flex justify-between">
                 <span className="text-zinc-500">Tổng tiền hàng:</span>
                 <span className="font-bold text-zinc-800 dark:text-zinc-200">
-                  {formatVnd(cart.subtotal)}
+                  {formatVnd(selectedSubtotal)}
                 </span>
               </div>
               <div className="flex justify-between">
