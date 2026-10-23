@@ -57,15 +57,15 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Top Header Card */}
-      <div className="flex flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm md:flex-row md:items-center dark:border-white/10 dark:bg-zinc-900">
         <div>
           <div className="flex items-center gap-2">
             <Storefront size={24} className="text-[#ee4d2d]" />
-            <h2 className="text-xl font-bold text-gray-800">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-zinc-100">
               Hồ Sơ Shop & Định Danh (Shop Profile & KYC)
             </h2>
           </div>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-gray-500 dark:text-zinc-400">
             Quản lý tên shop, logo, địa chỉ kho lấy hàng, thông tin tài khoản ngân hàng và chính
             sách vận hành.
           </p>
@@ -100,9 +100,9 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
       )}
 
       {/* Section 1: Basic Information */}
-      <div className="space-y-5 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
+      <div className="space-y-5 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-white/10">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-zinc-100">
             <Storefront size={18} className="text-[#ee4d2d]" />
             1. Thông tin cơ bản gian hàng
           </h3>
@@ -116,7 +116,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
           <div>
             <label
               htmlFor="shopNameField"
-              className="mb-1 block text-xs font-semibold text-gray-700"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
             >
               Tên gian hàng (Shop Name) *
             </label>
@@ -126,19 +126,22 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               required
               value={formData.shopName}
               onChange={(e) => setFormData({ ...formData, shopName: e.target.value })}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
             />
-            <span className="mt-1 block text-[10px] text-gray-400">
+            <span className="mt-1 block text-[10px] text-gray-400 dark:text-zinc-500">
               Tên hiển thị với người mua hàng.
             </span>
           </div>
 
           <div>
-            <label htmlFor="slugField" className="mb-1 block text-xs font-semibold text-gray-700">
+            <label
+              htmlFor="slugField"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
+            >
               Đường dẫn Shop URL (Slug) *
             </label>
-            <div className="flex items-center overflow-hidden rounded border border-gray-300">
-              <span className="border-r border-gray-300 bg-gray-100 px-3 py-2 text-xs text-gray-500 select-none">
+            <div className="flex items-center overflow-hidden rounded border border-gray-300 dark:border-zinc-700">
+              <span className="border-r border-gray-300 bg-gray-100 px-3 py-2 text-xs text-gray-500 select-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
                 shopee.vn/
               </span>
               <input
@@ -150,13 +153,16 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
                 className="w-full px-3 py-2 text-xs focus:outline-none"
               />
             </div>
-            <span className="mt-1 block text-[10px] text-gray-400">
+            <span className="mt-1 block text-[10px] text-gray-400 dark:text-zinc-500">
               Chỉ dùng chữ cái thường, số và dấu gạch ngang.
             </span>
           </div>
 
           <div className="md:col-span-2">
-            <label htmlFor="bioField" className="mb-1 block text-xs font-semibold text-gray-700">
+            <label
+              htmlFor="bioField"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
+            >
               Mô tả Shop & Giới thiệu
             </label>
             <textarea
@@ -164,14 +170,14 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               rows={3}
               value={formData.bio}
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
             />
           </div>
 
           <div>
             <label
               htmlFor="logoUrlField"
-              className="mb-1 block text-xs font-semibold text-gray-700"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
             >
               Ảnh đại diện Shop (Avatar URL)
             </label>
@@ -180,14 +186,14 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               type="url"
               value={formData.logoUrl}
               onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
             />
           </div>
 
           <div>
             <label
               htmlFor="bannerUrlField"
-              className="mb-1 block text-xs font-semibold text-gray-700"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
             >
               Ảnh bìa gian hàng (Banner URL)
             </label>
@@ -196,20 +202,20 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               type="url"
               value={formData.bannerUrl}
               onChange={(e) => setFormData({ ...formData, bannerUrl: e.target.value })}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
             />
           </div>
         </div>
       </div>
 
       {/* Section 2: Warehouse Pickup & Shipping SLA */}
-      <div className="space-y-5 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="border-b border-gray-100 pb-3">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
+      <div className="space-y-5 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900">
+        <div className="border-b border-gray-100 pb-3 dark:border-white/10">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-zinc-100">
             <MapPin size={18} className="text-[#ee4d2d]" />
             2. Địa chỉ lấy hàng & Thời gian chuẩn bị hàng (Warehouse & DTS)
           </h3>
-          <p className="mt-0.5 text-xs text-gray-500">
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
             Đơn vị vận chuyển (SPX Express, GHTK, ViettelPost) sẽ đến địa chỉ này để lấy kiện hàng.
           </p>
         </div>
@@ -218,7 +224,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
           <div>
             <label
               htmlFor="contactNameField"
-              className="mb-1 block text-xs font-semibold text-gray-700"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
             >
               Người liên hệ tại kho
             </label>
@@ -227,12 +233,15 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               type="text"
               value={formData.contactName}
               onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
             />
           </div>
 
           <div>
-            <label htmlFor="phoneField" className="mb-1 block text-xs font-semibold text-gray-700">
+            <label
+              htmlFor="phoneField"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
+            >
               Số điện thoại liên hệ nhận hàng *
             </label>
             <input
@@ -241,14 +250,14 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               required
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
             />
           </div>
 
           <div className="md:col-span-2">
             <label
               htmlFor="pickupAddressField"
-              className="mb-1 block text-xs font-semibold text-gray-700"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
             >
               Địa chỉ chi tiết kho hàng *
             </label>
@@ -258,12 +267,15 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               required
               value={formData.pickupAddress}
               onChange={(e) => setFormData({ ...formData, pickupAddress: e.target.value })}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
             />
           </div>
 
           <div>
-            <label htmlFor="cityField" className="mb-1 block text-xs font-semibold text-gray-700">
+            <label
+              htmlFor="cityField"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
+            >
               Tỉnh / Thành phố
             </label>
             <input
@@ -271,14 +283,14 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               type="text"
               value={formData.city}
               onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
             />
           </div>
 
           <div>
             <label
               htmlFor="daysToShipSelect"
-              className="mb-1 block text-xs font-semibold text-gray-700"
+              className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
             >
               Thời gian chuẩn bị hàng (DTS - Days To Ship)
             </label>
@@ -286,7 +298,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               id="daysToShipSelect"
               value={formData.daysToShip}
               onChange={(e) => setFormData({ ...formData, daysToShip: Number(e.target.value) })}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
             >
               <option value={1}>1 ngày (Giao hàng nhanh chuẩn Shopee)</option>
               <option value={2}>2 ngày (Tiêu chuẩn)</option>
@@ -299,9 +311,9 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
       {/* Section 3: Legal Identification & Bank Accounts */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* KYC Verification Card */}
-        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-2 dark:border-white/10">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-zinc-100">
               <IdentificationBadge size={18} className="text-[#ee4d2d]" />
               3. Định danh pháp lý (KYC)
             </h3>
@@ -314,7 +326,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
             <div>
               <label
                 htmlFor="businessTypeSelect"
-                className="mb-1 block text-xs font-semibold text-gray-700"
+                className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
               >
                 Loại hình kinh doanh
               </label>
@@ -327,7 +339,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
                     businessType: e.target.value as 'INDIVIDUAL' | 'BUSINESS',
                   })
                 }
-                className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
               >
                 <option value="INDIVIDUAL">Cá nhân (Căn cước công dân gắn chip)</option>
                 <option value="BUSINESS">Hộ kinh doanh / Doanh nghiệp (Mã số thuế)</option>
@@ -337,7 +349,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
             <div>
               <label
                 htmlFor="taxOrIdNumberInput"
-                className="mb-1 block text-xs font-semibold text-gray-700"
+                className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
               >
                 Số CCCD / Mã số thuế
               </label>
@@ -346,7 +358,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
                 type="text"
                 value={formData.taxOrIdNumber}
                 onChange={(e) => setFormData({ ...formData, taxOrIdNumber: e.target.value })}
-                className="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                className="w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700 dark:bg-white/5"
               />
             </div>
 
@@ -358,9 +370,9 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
         </div>
 
         {/* Bank Account for Payouts */}
-        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800">
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-2 dark:border-white/10">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-zinc-100">
               <Bank size={18} className="text-[#ee4d2d]" />
               4. Tài khoản ngân hàng nhận tiền
             </h3>
@@ -373,7 +385,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
             <div>
               <label
                 htmlFor="bankNameInput"
-                className="mb-1 block text-xs font-semibold text-gray-700"
+                className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
               >
                 Ngân hàng
               </label>
@@ -382,14 +394,14 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
                 type="text"
                 value={formData.bankName}
                 onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
               />
             </div>
 
             <div>
               <label
                 htmlFor="bankAccountInput"
-                className="mb-1 block text-xs font-semibold text-gray-700"
+                className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
               >
                 Số tài khoản ngân hàng
               </label>
@@ -398,14 +410,14 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
                 type="text"
                 value={formData.bankAccount}
                 onChange={(e) => setFormData({ ...formData, bankAccount: e.target.value })}
-                className="w-full rounded border border-gray-300 px-3 py-2 font-mono text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                className="w-full rounded border border-gray-300 px-3 py-2 font-mono text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
               />
             </div>
 
             <div>
               <label
                 htmlFor="bankHolderInput"
-                className="mb-1 block text-xs font-semibold text-gray-700"
+                className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
               >
                 Tên chủ tài khoản (In hoa)
               </label>
@@ -414,7 +426,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
                 type="text"
                 value={formData.bankHolder}
                 onChange={(e) => setFormData({ ...formData, bankHolder: e.target.value })}
-                className="w-full rounded border border-gray-300 px-3 py-2 text-xs uppercase focus:ring-1 focus:ring-orange-500 focus:outline-none"
+                className="w-full rounded border border-gray-300 px-3 py-2 text-xs uppercase focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
               />
             </div>
           </div>
@@ -422,15 +434,17 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
       </div>
 
       {/* Section 4: Operating Hours */}
-      <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
+      <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900">
+        <div className="flex items-center gap-2 border-b border-gray-100 pb-2 dark:border-white/10">
           <Clock size={18} className="text-[#ee4d2d]" />
-          <h3 className="text-sm font-bold text-gray-800">5. Khung giờ làm việc & CSKH</h3>
+          <h3 className="text-sm font-bold text-gray-800 dark:text-zinc-100">
+            5. Khung giờ làm việc & CSKH
+          </h3>
         </div>
         <div>
           <label
             htmlFor="workingHoursInput"
-            className="mb-1 block text-xs font-semibold text-gray-700"
+            className="mb-1 block text-xs font-semibold text-gray-700 dark:text-zinc-200"
           >
             Khung giờ tiếp nhận & phản hồi chat
           </label>
@@ -439,7 +453,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
             type="text"
             value={formData.workingHours}
             onChange={(e) => setFormData({ ...formData, workingHours: e.target.value })}
-            className="w-full max-w-md rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
+            className="w-full max-w-md rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
           />
         </div>
       </div>
