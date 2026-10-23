@@ -85,6 +85,7 @@ export function useCart() {
     isLoggedIn,
     isLoading: cartQuery.isLoading,
     isError: cartQuery.isError,
+    error: cartQuery.error,
     cart: cartData,
     items,
     totalQuantity,

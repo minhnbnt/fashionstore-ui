@@ -17118,6 +17118,14 @@
             "format": "int64",
             "description": "Phi ship VND ap cho moi don, null = 0",
             "minimum": 0
+          },
+          "variantIds": {
+            "type": ["array", "null"],
+            "description": "Chi thanh toan cac variant nay, null/rong = toan bo gio",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
         "required": ["shippingAddress", "shippingName", "shippingPhone"]
