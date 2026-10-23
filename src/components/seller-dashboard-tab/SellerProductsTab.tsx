@@ -24,7 +24,7 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { takeData } from '@/lib/apiAdapters'
+import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { productItem } from '@/lib/sellerAdapters'
 
 import { formatVnd } from '../../lib/format'
@@ -43,7 +43,7 @@ interface Props {
 
 export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Props) {
   const queryClient = useQueryClient()
-  const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL')
+  const [activeFilter, setActiveFilter] = useState<'ACTIVE' | 'INACTIVE' | 'DELETED' | 'ALL'>('ACTIVE')
   const [searchTerm, setSearchTerm] = useState('')
   const [showImportModal, setShowImportModal] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
@@ -187,9 +187,36 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
     showToast('Đã nhập hàng loạt sản phẩm thành công!')
   }
 
+  let countActive = 0
+  let countInactive = 0
+  let countDeleted = 0
+  let countAll = 0
+  for (const p of products) {
+    if (p.status === 'ACTIVE') {
+      countActive += 1
+      countAll += 1
+    }
+    if (p.status === 'INACTIVE') {
+      countInactive += 1
+      countAll += 1
+    }
+    if (p.status === 'DELETED') {
+      countDeleted += 1
+    }
+  }
+
   // Lọc sản phẩm
   const filteredProducts = products.filter(function (p) {
-    if (activeFilter !== 'ALL' && p.status !== activeFilter) {
+    if (activeFilter === 'ACTIVE' && p.status !== 'ACTIVE') {
+      return false
+    }
+    if (activeFilter === 'INACTIVE' && p.status !== 'INACTIVE') {
+      return false
+    }
+    if (activeFilter === 'DELETED' && p.status !== 'DELETED') {
+      return false
+    }
+    if (activeFilter === 'ALL' && p.status === 'DELETED') {
       return false
     }
     if (searchTerm.trim() !== '') {
@@ -206,22 +233,22 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
   function renderStatusBadge(status: string) {
     if (status === 'ACTIVE') {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          Đang bán
+          Đang hoạt động
         </span>
       )
     }
     if (status === 'INACTIVE') {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
           <span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
-          Đã ẩn
+          Đã tạm ẩn
         </span>
       )
     }
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
         <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
         Đã xóa
       </span>
@@ -281,26 +308,29 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-2 md:border-b-0 md:pb-0 dark:border-zinc-800">
             {[
-              { id: 'ALL', label: 'Tất cả' },
-              { id: 'ACTIVE', label: 'Đang hoạt động' },
-              { id: 'INACTIVE', label: 'Đã tạm ẩn' },
-              { id: 'DELETED', label: 'Đã xóa' },
+              { id: 'ACTIVE', label: 'Đang hoạt động', count: countActive },
+              { id: 'INACTIVE', label: 'Đã tạm ẩn', count: countInactive },
+              { id: 'DELETED', label: 'Đã xóa', count: countDeleted },
+              { id: 'ALL', label: 'Tất cả', count: countAll },
             ].map(function (tab) {
               const isCurrent = activeFilter === tab.id
-              let tabClasses = 'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              let tabClasses = 'flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              let countBadgeClasses = 'rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'
               if (isCurrent) {
-                tabClasses = 'rounded-2xl px-4 py-2 text-xs font-bold transition bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
+                tabClasses = 'flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold transition bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
+                countBadgeClasses = 'rounded-full bg-orange-100/70 px-2 py-0.5 text-[10px] text-orange-600 dark:bg-orange-900/50 dark:text-orange-300'
               }
               return (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={function () {
-                    setActiveFilter(tab.id as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED')
+                    setActiveFilter(tab.id as 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'ALL')
                   }}
                   className={tabClasses}
                 >
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  <span className={countBadgeClasses}>{tab.count}</span>
                 </button>
               )
             })}
@@ -325,49 +355,70 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
         </div>
 
         {/* Bảng danh sách sản phẩm */}
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="mt-5 overflow-x-auto rounded-2xl border border-zinc-200/80 dark:border-zinc-800">
+          <table className="w-full min-w-[1060px] text-left text-xs">
             <thead>
-              <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-zinc-800">
-                <th className="pb-3 pl-2">Sản phẩm & SKU</th>
-                <th className="pb-3">Phân loại / Biến thể</th>
-                <th className="pb-3">Giá bán</th>
-                <th className="pb-3 text-center">Tổng kho</th>
-                <th className="pb-3 text-center">Đã bán</th>
-                <th className="pb-3">Trạng thái</th>
-                <th className="pr-2 pb-3 text-right">Thao tác</th>
+              <tr className="border-b border-zinc-200/80 bg-zinc-50/70 text-[11px] font-bold text-zinc-500 uppercase dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-400">
+                <th className="w-[300px] min-w-[260px] py-3.5 pl-4 pr-3 text-left whitespace-nowrap">
+                  Sản phẩm & SKU
+                </th>
+                <th className="min-w-[260px] py-3.5 px-3 text-left whitespace-nowrap">
+                  Phân loại / Biến thể
+                </th>
+                <th className="w-[140px] min-w-[120px] py-3.5 px-3 text-right whitespace-nowrap">
+                  Giá bán
+                </th>
+                <th className="w-[120px] min-w-[100px] py-3.5 px-3 text-center whitespace-nowrap">
+                  Tổng kho
+                </th>
+                <th className="w-[100px] min-w-[90px] py-3.5 px-3 text-center whitespace-nowrap">
+                  Đã bán
+                </th>
+                <th className="w-[150px] min-w-[130px] py-3.5 px-3 text-center whitespace-nowrap">
+                  Trạng thái
+                </th>
+                <th className="w-[120px] min-w-[100px] py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+                  Thao tác
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
               {filteredProducts.map(function (product) {
+                let toggleActionTitle = 'Bật bán sản phẩm'
+                if (product.status === 'ACTIVE') {
+                  toggleActionTitle = 'Tạm ẩn sản phẩm'
+                }
                 return (
                   <tr
                     key={product.id}
                     className="transition hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30"
                   >
-                    <td className="py-3.5 pl-2">
+                    <td className="py-3.5 pl-4 pr-3">
                       <div className="flex items-center gap-3">
                         <img
                           src={product.image}
-                          alt={product.name}
-                          className="h-12 w-12 rounded-xl border border-zinc-200 object-cover dark:border-zinc-800"
+                          alt=""
+                          onError={function (e) {
+                            e.currentTarget.src = PLACEHOLDER_IMAGE
+                          }}
+                          className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200/80 bg-zinc-100 object-cover dark:border-zinc-800 dark:bg-zinc-800"
                         />
-                        <div className="max-w-[240px]">
-                          <p className="line-clamp-2 font-bold text-zinc-900 dark:text-white">
+                        <div className="min-w-0 max-w-[220px]">
+                          <p className="line-clamp-2 font-bold text-zinc-900 dark:text-white" title={product.name}>
                             {product.name}
                           </p>
-                          <p className="mt-0.5 text-[11px] text-zinc-400">SKU: {product.sku}</p>
+                          <p className="mt-0.5 truncate text-[11px] text-zinc-400">SKU: {product.sku}</p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-3.5 text-zinc-600 dark:text-zinc-400">
-                      <div className="flex flex-wrap gap-1">
+                    <td className="py-3.5 px-3 text-zinc-600 dark:text-zinc-400">
+                      <div className="flex max-w-[320px] flex-wrap gap-1">
                         {product.variants.map(function (v) {
                           return (
                             <span
                               key={v.id}
-                              className="rounded-lg bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold dark:bg-zinc-800"
+                              className="rounded-lg bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
                             >
                               {v.color} - {v.size}
                             </span>
@@ -376,27 +427,35 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                       </div>
                     </td>
 
-                    <td className="py-3.5 font-bold text-zinc-900 dark:text-white">
+                    <td className="py-3.5 px-3 text-right font-bold whitespace-nowrap text-zinc-900 dark:text-white">
                       {formatVnd(product.price)}
                     </td>
 
-                    <td className="py-3.5 text-center font-bold">
+                    <td className="py-3.5 px-3 text-center font-bold whitespace-nowrap">
                       {product.stock <= 15 && product.stock > 0 && (
-                        <span className="text-orange-500">{product.stock} (Sắp hết)</span>
+                        <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+                          {product.stock} <span className="text-[10px] font-normal">(Sắp hết)</span>
+                        </span>
                       )}
-                      {product.stock === 0 && <span className="text-red-500">Hết hàng</span>}
+                      {product.stock === 0 && (
+                        <span className="inline-flex items-center rounded-lg bg-red-50 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
+                          Hết hàng
+                        </span>
+                      )}
                       {product.stock > 15 && (
                         <span className="text-zinc-700 dark:text-zinc-300">{product.stock}</span>
                       )}
                     </td>
 
-                    <td className="py-3.5 text-center font-semibold text-zinc-600 dark:text-zinc-400">
+                    <td className="py-3.5 px-3 text-center font-semibold whitespace-nowrap text-zinc-600 dark:text-zinc-400">
                       {product.sold}
                     </td>
 
-                    <td className="py-3.5">{renderStatusBadge(product.status)}</td>
+                    <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                      {renderStatusBadge(product.status)}
+                    </td>
 
-                    <td className="py-3.5 pr-2 text-right">
+                    <td className="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
                         {product.status !== 'DELETED' && (
                           <button
@@ -405,7 +464,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                             onClick={function () {
                               handleToggleProductStatus(product.id)
                             }}
-                            title={product.status === 'ACTIVE' ? 'Tạm ẩn sản phẩm' : 'Đăng bán sản phẩm'}
+                            title={toggleActionTitle}
                             className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
                           >
                             {product.status === 'ACTIVE' && <EyeSlash size={14} weight="bold" />}
