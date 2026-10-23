@@ -19,6 +19,8 @@ import {
   CheckCircle,
   X,
   FileCsv,
+  WarningCircle,
+  CircleNotch,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -45,6 +47,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
   const [searchTerm, setSearchTerm] = useState('')
   const [showImportModal, setShowImportModal] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null)
   const [importText, setImportText] = useState('')
   const [notification, setNotification] = useState<string | null>(null)
 
@@ -65,6 +68,13 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
     })
   }
 
+  let deleteTargetProduct: ProductItem | undefined
+  if (deleteTargetId !== null) {
+    deleteTargetProduct = products.find(function (p) {
+      return p.id === deleteTargetId
+    })
+  }
+
   const updateProductMutation = useUpdate1({
     mutation: {
       onSuccess: function () {
@@ -76,6 +86,19 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+        setDeleteTargetId(null)
+        setDeleteErrorMessage(null)
+        showToast('Đã xóa mềm sản phẩm vào thùng rác (trạng thái DELETED)')
+      },
+      onError: function (error: any) {
+        const status = error?.status ?? error?.response?.status
+        if (status === 409) {
+          setDeleteErrorMessage(
+            'Không thể xóa sản phẩm do đang có đơn hàng liên quan đang xử lý (chờ xác nhận hoặc đang vận chuyển). Vui lòng hoàn tất hoặc hủy các đơn hàng trước.'
+          )
+          return
+        }
+        setDeleteErrorMessage('Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau.')
       },
     },
   })
@@ -99,11 +122,28 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
     if (current.status === 'ACTIVE') {
       nextStatus = 'HIDDEN'
     }
-    updateProductMutation.mutate({ shopId, id: productId, data: { status: nextStatus } })
+    updateProductMutation.mutate(
+      { shopId, id: productId, data: { status: nextStatus } },
+      {
+        onSuccess: function () {
+          if (nextStatus === 'HIDDEN') {
+            showToast('Đã tạm ẩn sản phẩm khỏi gian hàng')
+            return
+          }
+          showToast('Đã bật bán sản phẩm thành công')
+        },
+        onError: function () {
+          showToast('Không thể cập nhật trạng thái sản phẩm. Vui lòng thử lại sau.')
+        },
+      }
+    )
   }
 
-  function handleDeleteProduct(productId: string) {
-    deleteProductMutation.mutate({ shopId, id: productId })
+  function handleConfirmDelete() {
+    if (deleteTargetId !== null) {
+      setDeleteErrorMessage(null)
+      deleteProductMutation.mutate({ shopId, id: deleteTargetId })
+    }
   }
 
   function handleBulkImport(csvContent: string) {
@@ -145,14 +185,6 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
     setShowImportModal(false)
     setImportText('')
     showToast('Đã nhập hàng loạt sản phẩm thành công!')
-  }
-
-  function handleConfirmDelete() {
-    if (deleteTargetId !== null) {
-      handleDeleteProduct(deleteTargetId)
-      setDeleteTargetId(null)
-      showToast('Đã xóa mềm sản phẩm vào thùng rác (Trạng thái DELETED)')
-    }
   }
 
   // Lọc sản phẩm
@@ -255,6 +287,10 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
               { id: 'DELETED', label: 'Đã xóa' },
             ].map(function (tab) {
               const isCurrent = activeFilter === tab.id
+              let tabClasses = 'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              if (isCurrent) {
+                tabClasses = 'rounded-2xl px-4 py-2 text-xs font-bold transition bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
+              }
               return (
                 <button
                   key={tab.id}
@@ -262,11 +298,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                   onClick={function () {
                     setActiveFilter(tab.id as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED')
                   }}
-                  className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
-                    isCurrent
-                      ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
-                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                  }`}
+                  className={tabClasses}
                 >
                   {tab.label}
                 </button>
@@ -369,13 +401,12 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                         {product.status !== 'DELETED' && (
                           <button
                             type="button"
+                            disabled={updateProductMutation.isPending}
                             onClick={function () {
                               handleToggleProductStatus(product.id)
                             }}
-                            title={
-                              product.status === 'ACTIVE' ? 'Tạm ẩn sản phẩm' : 'Đăng bán sản phẩm'
-                            }
-                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                            title={product.status === 'ACTIVE' ? 'Tạm ẩn sản phẩm' : 'Đăng bán sản phẩm'}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
                           >
                             {product.status === 'ACTIVE' && <EyeSlash size={14} weight="bold" />}
                             {product.status !== 'ACTIVE' && <Eye size={14} weight="bold" />}
@@ -385,6 +416,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                           <button
                             type="button"
                             onClick={function () {
+                              setDeleteErrorMessage(null)
                               setDeleteTargetId(product.id)
                             }}
                             title="Xóa mềm sản phẩm"
@@ -409,34 +441,80 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
         </div>
       </div>
 
-      {/* Modal Xóa mềm */}
+      {/* Modal Xóa mềm nguy hiểm */}
       {deleteTargetId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
-              Xác nhận xóa mềm sản phẩm?
-            </h3>
-            <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-              Hệ thống sẽ chuyển trạng thái sản phẩm sang <strong>DELETED</strong>. Sản phẩm sẽ
-              không còn hiển thị cho người mua, nhưng lịch sử đơn hàng đã đặt trước đó vẫn được lưu
-              trữ nguyên vẹn.
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400">
+                <WarningCircle size={24} weight="bold" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-zinc-900 dark:text-white">
+                  Xác nhận xóa mềm sản phẩm?
+                </h3>
+                <p className="text-[11px] font-semibold text-zinc-400">
+                  Chỉ xóa mềm trong hệ thống — không xóa cứng
+                </p>
+              </div>
+            </div>
+
+            {/* Thông báo lỗi nếu có đơn hàng đang xử lý (409) */}
+            {deleteErrorMessage !== null && (
+              <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+                <WarningCircle size={18} weight="bold" className="mt-0.5 shrink-0 text-red-600" />
+                <div className="leading-relaxed">{deleteErrorMessage}</div>
+              </div>
+            )}
+
+            {/* Thông tin sản phẩm cần xóa */}
+            {deleteTargetProduct !== undefined && (
+              <div className="mt-4 flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-800/40">
+                <img
+                  src={deleteTargetProduct.image}
+                  alt={deleteTargetProduct.name}
+                  className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-bold text-zinc-900 dark:text-white">
+                    {deleteTargetProduct.name}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-zinc-400">
+                    SKU: {deleteTargetProduct.sku} • Tồn kho: {deleteTargetProduct.stock}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <p className="mt-4 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+              Sản phẩm sẽ được chuyển sang trạng thái <strong>DELETED</strong>. Sản phẩm sẽ bị ẩn
+              khỏi gian hàng và người mua không thể đặt hàng mới. Lịch sử đơn hàng và doanh thu quá
+              khứ vẫn được lưu trữ nguyên vẹn.
             </p>
+
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
+                disabled={deleteProductMutation.isPending}
                 onClick={function () {
                   setDeleteTargetId(null)
+                  setDeleteErrorMessage(null)
                 }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300"
+                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
                 Hủy bỏ
               </button>
               <button
                 type="button"
+                disabled={deleteProductMutation.isPending}
                 onClick={handleConfirmDelete}
-                className="rounded-2xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700"
+                className="flex items-center gap-1.5 rounded-2xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-red-700 disabled:opacity-50"
               >
-                Xác nhận xóa
+                {deleteProductMutation.isPending && (
+                  <CircleNotch size={14} weight="bold" className="animate-spin" />
+                )}
+                {deleteProductMutation.isPending && <span>Đang xử lý...</span>}
+                {!deleteProductMutation.isPending && <span>Xác nhận xóa</span>}
               </button>
             </div>
           </div>
