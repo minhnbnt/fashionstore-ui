@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 
-import { getList1QueryKey, useAdd, useList1 } from '@generated/endpoints/addresses/addresses'
+import { useList1 } from '@generated/endpoints/addresses/addresses'
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,17 +14,16 @@ import {
   ShieldCheck,
   ShoppingBag,
   Truck,
-  X,
 } from '@phosphor-icons/react'
-import { useQueryClient } from '@tanstack/react-query'
 
 import { takeData } from '@/lib/apiAdapters'
 import { formatFullAddress, formatVnd } from '@/lib/format'
 
+import AddressFormModal from '../components/account/AddressFormModal'
+import Modal from '../components/Modal'
 import { useCart } from '../hooks/useCart'
 import { useSessionQuery } from '../hooks/useSession'
 
-import type { AddressRequestLabel } from '@generated/model/addressRequestLabel'
 import type { AddressResponse } from '@generated/model/addressResponse'
 import type { CartCheckoutRequest } from '@generated/model/cartCheckoutRequest'
 
@@ -35,37 +34,21 @@ function resolveShippingAddress(fullAddress: string): string {
   return 'Địa chỉ giao hàng mặc định'
 }
 
-function labelChipClass(active: boolean): string {
-  if (active) {
-    return 'rounded-full border border-sky-300 bg-sky-100 px-3 py-1 text-xs font-bold text-blue-700 transition dark:border-white/10 dark:bg-white/10 dark:text-sky-300'
-  }
-  return 'rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-bold text-zinc-600 transition dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-}
-
 export default function Checkout() {
   const cart = useCart()
   const { data: session } = useSessionQuery()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const [params] = useSearchParams()
   // Cart chi truyen mon da tick; rong = checkout ca gio.
   const wanted = (params.get('variantIds') ?? '').split(',').filter(function (id) {
     return id !== ''
   })
 
-  const [addressModalOpen, setAddressModalOpen] = useState(false)
-  const [newAddressModalOpen, setNewAddressModalOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [buyerNote, setBuyerNote] = useState('')
   const [toast, setToast] = useState<string | null>(null)
-
-  // New Address form states
-  const [recipientName, setRecipientName] = useState('')
-  const [phoneNumber, setPhoneNumber] = useState('')
-  const [detailAddress, setDetailAddress] = useState('')
-  const [ward, setWard] = useState('')
-  const [city, setCity] = useState('')
-  const [label, setLabel] = useState<AddressRequestLabel>('HOME')
 
   function showToast(msg: string) {
     setToast(msg)
@@ -84,23 +67,6 @@ export default function Checkout() {
   if (addressesQuery.data !== undefined) {
     addresses = takeData(addressesQuery.data)
   }
-
-  const addAddressMutation = useAdd({
-    mutation: {
-      onSuccess: function (res) {
-        void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
-        setNewAddressModalOpen(false)
-        const newAddr = takeData(res)
-        if (newAddr.id !== undefined) {
-          setSelectedAddressId(newAddr.id)
-        }
-        showToast('Đã thêm địa chỉ giao hàng mới')
-      },
-      onError: function () {
-        showToast('Không thể thêm địa chỉ. Vui lòng kiểm tra lại thông tin.')
-      },
-    },
-  })
 
   // Chọn địa chỉ hiển thị
   let currentAddress: AddressResponse | null = null
@@ -141,35 +107,6 @@ export default function Checkout() {
   }
   const finalTotal = selectedSubtotal + shippingFee
 
-  function handleCreateAddress(e: React.FormEvent) {
-    e.preventDefault()
-    if (addresses.length >= 10) {
-      showToast('Bạn đã đạt tối đa 10 địa chỉ nhận hàng')
-      return
-    }
-    if (
-      recipientName.trim() === '' ||
-      phoneNumber.trim() === '' ||
-      city.trim() === '' ||
-      ward.trim() === '' ||
-      detailAddress.trim() === ''
-    ) {
-      showToast(
-        'Vui lòng điền đầy đủ tên người nhận, SĐT, tỉnh/thành, phường/xã và địa chỉ chi tiết',
-      )
-      return
-    }
-    addAddressMutation.mutate({
-      data: {
-        recipientName: recipientName.trim(),
-        phoneNumber: phoneNumber.trim(),
-        fullAddress: [detailAddress.trim(), ward.trim(), city.trim()].join(', '),
-        label: label,
-        defaultAddress: false,
-      },
-    })
-  }
-
   function handlePlaceOrder() {
     if (currentAddress === null) {
       showToast('Vui lòng thêm hoặc chọn địa chỉ nhận hàng')
@@ -206,13 +143,13 @@ export default function Checkout() {
   if (!cart.isLoggedIn) {
     return (
       <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-24 text-center md:pt-36">
-        <div className="mx-auto max-w-md rounded-3xl border border-sky-100 bg-white/80 p-8 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <div className="glass mx-auto max-w-md rounded-3xl p-8">
           <ShoppingBag size={48} className="mx-auto text-blue-600 dark:text-sky-300" />
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight">Thanh Toán Đơn Hàng</h1>
           <p className="mt-2 text-sm text-zinc-500">Vui lòng đăng nhập để tiến hành đặt hàng.</p>
           <Link
             to="/login"
-            className="btn-primary mt-6 inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-bold shadow-lg shadow-blue-500/20"
+            className="btn-primary mt-6 inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-bold"
           >
             <span>Đăng Nhập Ngay</span>
             <ArrowRight size={16} weight="bold" />
@@ -225,14 +162,14 @@ export default function Checkout() {
   if (orderItems.length === 0) {
     return (
       <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-24 text-center md:pt-36">
-        <div className="mx-auto max-w-md rounded-3xl border border-sky-100 bg-white/80 p-8 shadow-sm dark:border-white/10 dark:bg-white/5">
+        <div className="glass mx-auto max-w-md rounded-3xl p-8">
           <h1 className="text-2xl font-extrabold tracking-tight">
             Không có sản phẩm để thanh toán
           </h1>
           <p className="mt-2 text-sm text-zinc-500">Giỏ hàng của bạn đang trống.</p>
           <Link
             to="/cart"
-            className="btn-primary mt-6 inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-bold shadow-lg shadow-blue-500/20"
+            className="btn-primary mt-6 inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-bold"
           >
             <ArrowLeft size={16} weight="bold" />
             <span>Về Giỏ Hàng</span>
@@ -251,7 +188,7 @@ export default function Checkout() {
       )}
 
       {/* Header trang thanh toán */}
-      <div className="flex items-center justify-between border-b border-sky-100 pb-4 dark:border-white/10">
+      <div className="flex items-center justify-between border-b border-zinc-200/70 pb-4 dark:border-white/10">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Thanh Toán</h1>
           <p className="mt-1 text-xs text-zinc-500">Xác nhận thông tin giao hàng và đặt hàng</p>
@@ -268,20 +205,25 @@ export default function Checkout() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Cột trái: Địa chỉ & Sản phẩm */}
         <div className="space-y-6 lg:col-span-8">
-          {/* Khối Địa Chỉ Nhận Hàng (Shopee Style) */}
-          <div className="overflow-hidden rounded-3xl border border-sky-100 bg-white/90 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/90">
-            {/* Thanh sọc trang trí Shopee */}
-            <div className="-mx-6 -mt-6 mb-5 h-1.5 bg-gradient-to-r from-blue-600 via-sky-400 to-indigo-600" />
-
+          {/* Khối Địa Chỉ Nhận Hàng */}
+          <div className="glass rounded-3xl p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-blue-700 dark:text-sky-300">
-                <MapPin size={18} weight="fill" />
-                <span>Địa Chỉ Nhận Hàng</span>
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] text-white shadow-lg">
+                  <MapPin size={16} weight="fill" />
+                </span>
+                <span className="text-sm font-extrabold text-zinc-900 dark:text-white">
+                  Địa Chỉ Nhận Hàng
+                </span>
               </div>
               <button
                 type="button"
                 onClick={function () {
-                  setAddressModalOpen(true)
+                  if (addresses.length > 0) {
+                    setPickerOpen(true)
+                  } else {
+                    setFormOpen(true)
+                  }
                 }}
                 className="text-xs font-bold text-blue-700 hover:underline dark:text-sky-300"
               >
@@ -302,26 +244,26 @@ export default function Checkout() {
                   </span>
 
                   {currentAddress.label === 'HOME' && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] font-bold text-zinc-600 dark:border-white/15 dark:bg-white/5 dark:text-zinc-300">
                       <House size={11} weight="fill" />
                       Nhà riêng
                     </span>
                   )}
                   {currentAddress.label === 'OFFICE' && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] font-bold text-zinc-600 dark:border-white/15 dark:bg-white/5 dark:text-zinc-300">
                       <Buildings size={11} weight="fill" />
                       Công ty
                     </span>
                   )}
                   {currentAddress.label === 'OTHER' && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] font-bold text-zinc-600 dark:border-white/15 dark:bg-white/5 dark:text-zinc-300">
                       <MapPin size={11} weight="fill" />
                       Khác
                     </span>
                   )}
 
                   {currentAddress.defaultAddress === true && (
-                    <span className="shrink-0 rounded-full bg-orange-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
+                    <span className="shrink-0 rounded-full bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] px-2 py-0.5 text-[10px] font-extrabold text-white">
                       Mặc định
                     </span>
                   )}
@@ -333,14 +275,14 @@ export default function Checkout() {
             )}
 
             {currentAddress === null && (
-              <div className="mt-4 rounded-2xl bg-sky-50/50 p-4 text-center dark:bg-white/5">
+              <div className="mt-4 rounded-2xl bg-zinc-100/70 p-4 text-center dark:bg-white/5">
                 <p className="text-xs text-zinc-500">
                   Bạn chưa có địa chỉ nhận hàng nào trong sổ địa chỉ.
                 </p>
                 <button
                   type="button"
                   onClick={function () {
-                    setNewAddressModalOpen(true)
+                    setFormOpen(true)
                   }}
                   className="btn-primary mt-3 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-bold"
                 >
@@ -352,12 +294,12 @@ export default function Checkout() {
           </div>
 
           {/* Danh Sách Sản Phẩm Đặt Mua */}
-          <div className="rounded-3xl border border-sky-100 bg-white/90 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/90">
+          <div className="glass rounded-3xl p-6">
             <h2 className="text-sm font-extrabold text-zinc-900 dark:text-white">
               Sản Phẩm Đặt Mua ({orderItems.length})
             </h2>
 
-            <div className="mt-4 divide-y divide-sky-100 dark:divide-white/10">
+            <div className="mt-4 divide-y divide-zinc-200/70 dark:divide-white/10">
               {orderItems.map(function (item) {
                 const lineTotal = (item.unitPrice ?? 0) * (item.quantity ?? 1)
                 return (
@@ -379,7 +321,7 @@ export default function Checkout() {
             </div>
 
             {/* Lời nhắn cho người bán */}
-            <div className="mt-4 border-t border-sky-100 pt-4 dark:border-white/10">
+            <div className="mt-4 border-t border-zinc-200/70 pt-4 dark:border-white/10">
               <label htmlFor="buyer-note" className="block text-xs font-bold text-zinc-500">
                 Lời nhắn cho người bán (tùy chọn)
               </label>
@@ -390,23 +332,25 @@ export default function Checkout() {
                   setBuyerNote(e.target.value)
                 }}
                 placeholder="Lưu ý giao hàng, khung giờ nhận..."
-                className="mt-2 w-full rounded-2xl border border-sky-100 bg-sky-50/50 px-4 py-2.5 text-xs outline-none focus:border-blue-500 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-white dark:placeholder-zinc-500"
+                className="mt-2 w-full rounded-full border border-zinc-200 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-indigo-400 dark:border-white/15 dark:bg-white/5 dark:text-white dark:placeholder-zinc-500"
               />
             </div>
           </div>
 
           {/* Phương Thức Vận Chuyển & Thanh Toán */}
-          <div className="rounded-3xl border border-sky-100 bg-white/90 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/90">
+          <div className="glass rounded-3xl p-6">
             <h2 className="text-sm font-extrabold text-zinc-900 dark:text-white">
               Phương Thức Vận Chuyển &amp; Thanh Toán
             </h2>
 
             <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-xs dark:border-emerald-500/20 dark:bg-emerald-950/20">
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200/70 bg-white/60 p-4 text-xs dark:border-white/10 dark:bg-white/5">
                 <div className="flex items-center gap-3">
-                  <Truck size={20} className="text-emerald-600" />
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] text-white shadow-lg">
+                    <Truck size={20} weight="fill" />
+                  </span>
                   <div>
-                    <p className="font-extrabold text-emerald-900 dark:text-emerald-200">
+                    <p className="font-extrabold text-zinc-900 dark:text-white">
                       Vận chuyển Tiêu chuẩn (Toàn quốc)
                     </p>
                     <p className="text-zinc-500 dark:text-zinc-400">
@@ -414,15 +358,23 @@ export default function Checkout() {
                     </p>
                   </div>
                 </div>
-                <span className="font-extrabold text-emerald-700 dark:text-emerald-300">
-                  {shippingFee === 0 && 'Miễn phí'}
-                  {shippingFee > 0 && formatVnd(shippingFee)}
-                </span>
+                {shippingFee === 0 && (
+                  <span className="shrink-0 font-extrabold text-emerald-600 dark:text-emerald-300">
+                    Miễn phí
+                  </span>
+                )}
+                {shippingFee > 0 && (
+                  <span className="shrink-0 font-extrabold text-zinc-900 dark:text-white">
+                    {formatVnd(shippingFee)}
+                  </span>
+                )}
               </div>
 
-              <div className="flex items-center justify-between rounded-2xl border border-sky-200 bg-sky-50/60 p-4 text-xs dark:border-white/10 dark:bg-white/5">
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200/70 bg-white/60 p-4 text-xs dark:border-white/10 dark:bg-white/5">
                 <div className="flex items-center gap-3">
-                  <CreditCard size={20} className="text-blue-600 dark:text-sky-300" />
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] text-white shadow-lg">
+                    <CreditCard size={20} weight="fill" />
+                  </span>
                   <div>
                     <p className="font-extrabold text-zinc-900 dark:text-white">
                       Thanh toán khi nhận hàng (COD)
@@ -430,7 +382,11 @@ export default function Checkout() {
                     <p className="text-zinc-500">Kiểm tra hàng trước khi thanh toán cho shipper</p>
                   </div>
                 </div>
-                <CheckCircle size={18} weight="fill" className="text-blue-600 dark:text-sky-300" />
+                <CheckCircle
+                  size={18}
+                  weight="fill"
+                  className="shrink-0 text-blue-700 dark:text-sky-300"
+                />
               </div>
             </div>
           </div>
@@ -438,7 +394,7 @@ export default function Checkout() {
 
         {/* Cột phải: Bảng Tổng Kết Thanh Toán */}
         <div className="lg:col-span-4">
-          <div className="sticky top-24 rounded-3xl border border-sky-100 bg-white/90 p-6 shadow-md dark:border-zinc-800 dark:bg-zinc-900/90">
+          <div className="glass sticky top-24 rounded-3xl p-6">
             <h2 className="text-base font-extrabold tracking-tight">Chi Tiết Thanh Toán</h2>
 
             <div className="mt-5 space-y-3 text-xs">
@@ -455,7 +411,7 @@ export default function Checkout() {
                   {shippingFee > 0 && formatVnd(shippingFee)}
                 </span>
               </div>
-              <div className="border-t border-sky-100 pt-3 dark:border-white/10">
+              <div className="border-t border-zinc-200/70 pt-3 dark:border-white/10">
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm font-extrabold">Tổng thanh toán:</span>
                   <span className="text-xl font-extrabold text-blue-700 dark:text-sky-300">
@@ -470,7 +426,7 @@ export default function Checkout() {
               id="btn-confirm-order"
               onClick={handlePlaceOrder}
               disabled={cart.checkout.isPending || currentAddress === null}
-              className="btn-primary mt-6 flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm font-bold shadow-xl shadow-blue-500/25 disabled:opacity-50"
+              className="btn-primary mt-6 flex w-full items-center justify-center gap-2 rounded-full py-4 text-sm font-bold disabled:opacity-50"
             >
               {cart.checkout.isPending && <span>Đang xử lý đặt hàng…</span>}
               {!cart.checkout.isPending && <span>Đặt Hàng (COD)</span>}
@@ -485,246 +441,91 @@ export default function Checkout() {
       </div>
 
       {/* Modal Chọn Địa Chỉ Có Sẵn */}
-      {addressModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-white/20 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-zinc-900">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-white/10">
-              <h3 className="text-base font-extrabold">Chọn Địa Chỉ Nhận Hàng</h3>
-              <button
-                type="button"
-                onClick={function () {
-                  setAddressModalOpen(false)
-                }}
-                className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="mt-4 max-h-72 space-y-3 overflow-y-auto">
-              {addresses.map(function (a) {
-                const isSelected = (selectedAddressId ?? currentAddress?.id) === a.id
-                let itemClass =
-                  'flex w-full cursor-pointer items-start gap-3 rounded-2xl border p-4 text-left text-xs transition border-zinc-200 hover:border-zinc-400 dark:border-white/10'
-                if (isSelected) {
-                  itemClass =
-                    'flex w-full cursor-pointer items-start gap-3 rounded-2xl border p-4 text-left text-xs transition border-blue-600 bg-blue-50/50 dark:border-sky-400 dark:bg-sky-500/10'
-                }
-                return (
-                  <button
-                    key={a.id}
-                    type="button"
-                    onClick={function () {
-                      if (a.id !== undefined) {
-                        setSelectedAddressId(a.id)
-                        setAddressModalOpen(false)
-                      }
-                    }}
-                    className={itemClass}
-                  >
-                    <input
-                      type="radio"
-                      checked={isSelected}
-                      readOnly
-                      aria-label="Chọn địa chỉ giao hàng này"
-                      className="mt-0.5 cursor-pointer accent-blue-600"
-                    />
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-bold text-zinc-900 dark:text-white">
-                          {a.recipientName || 'Khách hàng'}
+      {pickerOpen && (
+        <Modal
+          title="Chọn Địa Chỉ Nhận Hàng"
+          onClose={function () {
+            setPickerOpen(false)
+          }}
+        >
+          <div className="mt-4 max-h-72 space-y-3 overflow-y-auto">
+            {addresses.map(function (a) {
+              const isSelected = (selectedAddressId ?? currentAddress?.id) === a.id
+              let itemClass =
+                'flex w-full cursor-pointer items-start gap-3 rounded-2xl border border-zinc-200 p-4 text-left text-xs transition hover:border-zinc-400 dark:border-white/15'
+              if (isSelected) {
+                itemClass =
+                  'flex w-full cursor-pointer items-start gap-3 rounded-2xl border border-blue-700 bg-blue-700/5 p-4 text-left text-xs transition dark:border-skytint-500/60 dark:bg-white/5'
+              }
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={function () {
+                    if (a.id !== undefined) {
+                      setSelectedAddressId(a.id)
+                      setPickerOpen(false)
+                    }
+                  }}
+                  className={itemClass}
+                >
+                  <input
+                    type="radio"
+                    checked={isSelected}
+                    readOnly
+                    aria-label="Chọn địa chỉ giao hàng này"
+                    className="dark:accent-skytint-500 mt-0.5 cursor-pointer accent-blue-700"
+                  />
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-zinc-900 dark:text-white">
+                        {a.recipientName || 'Khách hàng'}
+                      </span>
+                      <span className="text-zinc-400">({a.phoneNumber || 'Chưa có SĐT'})</span>
+                      {a.defaultAddress === true && (
+                        <span className="rounded-full bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] px-2 py-0.5 text-[10px] font-bold text-white">
+                          Mặc định
                         </span>
-                        <span className="text-zinc-400">({a.phoneNumber || 'Chưa có SĐT'})</span>
-                        {a.defaultAddress === true && (
-                          <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
-                            Mặc định
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-zinc-600 dark:text-zinc-300">{formatFullAddress(a)}</p>
+                      )}
                     </div>
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="mt-5 border-t border-zinc-100 pt-4 dark:border-white/10">
-              <button
-                type="button"
-                onClick={function () {
-                  setAddressModalOpen(false)
-                  setNewAddressModalOpen(true)
-                }}
-                className="btn-primary flex w-full items-center justify-center gap-1.5 rounded-full py-2.5 text-xs font-bold"
-              >
-                <Plus size={14} weight="bold" />
-                <span>Thêm Địa Chỉ Mới</span>
-              </button>
-            </div>
+                    <p className="text-zinc-600 dark:text-zinc-300">{formatFullAddress(a)}</p>
+                  </div>
+                </button>
+              )
+            })}
           </div>
-        </div>
+
+          <div className="mt-5 border-t border-zinc-200/70 pt-4 dark:border-white/10">
+            <button
+              type="button"
+              onClick={function () {
+                setPickerOpen(false)
+                setFormOpen(true)
+              }}
+              className="btn-primary flex w-full items-center justify-center gap-1.5 rounded-full py-2.5 text-xs font-bold"
+            >
+              <Plus size={14} weight="bold" />
+              <span>Thêm Địa Chỉ Mới</span>
+            </button>
+          </div>
+        </Modal>
       )}
 
-      {/* Modal Thêm Địa Chỉ Mới */}
-      {newAddressModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-white/20 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-zinc-900">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-white/10">
-              <h3 className="text-base font-extrabold">Thêm Địa Chỉ Giao Hàng</h3>
-              <button
-                type="button"
-                onClick={function () {
-                  setNewAddressModalOpen(false)
-                }}
-                className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateAddress} className="mt-4 space-y-3 text-xs">
-              <div>
-                <label
-                  htmlFor="address-recipient-name"
-                  className="font-bold text-zinc-500 dark:text-zinc-400"
-                >
-                  Họ và tên người nhận *
-                </label>
-                <input
-                  id="address-recipient-name"
-                  required
-                  value={recipientName}
-                  onChange={function (e) {
-                    setRecipientName(e.target.value)
-                  }}
-                  placeholder="Ví dụ: Nguyễn Văn A"
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="address-phone-number"
-                  className="font-bold text-zinc-500 dark:text-zinc-400"
-                >
-                  Số điện thoại *
-                </label>
-                <input
-                  id="address-phone-number"
-                  required
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={function (e) {
-                    setPhoneNumber(e.target.value)
-                  }}
-                  placeholder="Ví dụ: 0987654321"
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="address-detail"
-                  className="font-bold text-zinc-500 dark:text-zinc-400"
-                >
-                  Địa chỉ chi tiết (Tòa nhà, số nhà, ngõ/tên đường) *
-                </label>
-                <input
-                  id="address-detail"
-                  required
-                  value={detailAddress}
-                  onChange={function (e) {
-                    setDetailAddress(e.target.value)
-                  }}
-                  placeholder="Ví dụ: Số 18 ngõ 12 Duy Tân"
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="address-ward"
-                  className="font-bold text-zinc-500 dark:text-zinc-400"
-                >
-                  Phường / Xã *
-                </label>
-                <input
-                  id="address-ward"
-                  required
-                  value={ward}
-                  onChange={function (e) {
-                    setWard(e.target.value)
-                  }}
-                  placeholder="Phường Bến Thành"
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="address-city"
-                  className="font-bold text-zinc-500 dark:text-zinc-400"
-                >
-                  Tỉnh / Thành phố *
-                </label>
-                <input
-                  id="address-city"
-                  required
-                  value={city}
-                  onChange={function (e) {
-                    setCity(e.target.value)
-                  }}
-                  placeholder="TP. Hồ Chí Minh"
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-400"
-                />
-              </div>
-
-              <div>
-                <span className="font-bold text-zinc-500 dark:text-zinc-400">Loại địa chỉ</span>
-                <div className="mt-1.5 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={function () {
-                      setLabel('HOME')
-                    }}
-                    className={labelChipClass(label === 'HOME')}
-                  >
-                    Nhà riêng
-                  </button>
-                  <button
-                    type="button"
-                    onClick={function () {
-                      setLabel('OFFICE')
-                    }}
-                    className={labelChipClass(label === 'OFFICE')}
-                  >
-                    Công ty
-                  </button>
-                  <button
-                    type="button"
-                    onClick={function () {
-                      setLabel('OTHER')
-                    }}
-                    className={labelChipClass(label === 'OTHER')}
-                  >
-                    Khác
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-5 pt-2">
-                <button
-                  type="submit"
-                  disabled={addAddressMutation.isPending}
-                  className="btn-primary w-full rounded-full py-3 text-xs font-bold"
-                >
-                  {addAddressMutation.isPending && <span>Đang lưu địa chỉ…</span>}
-                  {!addAddressMutation.isPending && <span>Lưu Địa Chỉ</span>}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* Form Thêm Địa Chỉ — dùng chung component với trang Account */}
+      {formOpen && (
+        <AddressFormModal
+          mode="create"
+          initial={null}
+          onClose={function () {
+            setFormOpen(false)
+          }}
+          onSaved={function (a) {
+            if (a.id !== undefined) {
+              setSelectedAddressId(a.id)
+            }
+            showToast('Đã thêm địa chỉ giao hàng mới')
+          }}
+        />
       )}
     </main>
   )

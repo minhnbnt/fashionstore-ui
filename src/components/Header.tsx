@@ -145,7 +145,7 @@ export default function Header() {
           </nav>
           <form
             onSubmit={submitSearch}
-            className="ml-auto hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-white bg-white/80 px-4 py-2 text-sm text-zinc-500 md:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-300"
+            className="ml-auto hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2 text-sm text-zinc-500 md:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-300"
           >
             <MagnifyingGlass size={16} weight="bold" />
             <input

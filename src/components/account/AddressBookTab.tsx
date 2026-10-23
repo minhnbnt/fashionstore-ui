@@ -1,59 +1,30 @@
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useState } from 'react'
 
 import {
   getList1QueryKey,
-  useAdd,
   useChangeDefault,
   useDelete,
   useList1,
-  useUpdate,
 } from '@generated/endpoints/addresses/addresses'
-import { useListProvinces, useListWards } from '@generated/endpoints/locations/locations'
 import {
   ArrowClockwise,
-  CaretDown,
-  Check,
   CheckCircle,
-  MagnifyingGlass,
   MapPin,
   PencilSimple,
   Plus,
   ShieldCheck,
   Trash,
   WarningCircle,
-  X,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { takeData } from '@/lib/apiAdapters'
-import { ApiError } from '@/lib/apiFetch'
-import { formatAddressLabel, splitFullAddress } from '@/lib/format'
 
-import type { AddressRequestLabel } from '@generated/model/addressRequestLabel'
+import AddressFormModal from './AddressFormModal'
+
 import type { AddressResponse } from '@generated/model/addressResponse'
-import type { ProvinceResponse } from '@generated/model/provinceResponse'
-import type { WardResponse } from '@generated/model/wardResponse'
 
 const MAX_ADDRESSES = 10
-
-const ADDRESS_LABELS: AddressRequestLabel[] = ['HOME', 'OFFICE', 'OTHER']
-
-function removeVietnameseAccents(str: string): string {
-  return str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase()
-}
-
-function maxAddressErrorMessage(message: string | undefined): string {
-  if (message !== undefined && message.includes('Maximum of 10')) {
-    return `Bạn chỉ có thể lưu tối đa ${MAX_ADDRESSES} địa chỉ nhận hàng.`
-  }
-  return 'Thông tin địa chỉ không hợp lệ. Vui lòng kiểm tra lại.'
-}
 
 function addAddressButtonClass(isMaxReached: boolean): string {
   if (isMaxReached) {
@@ -69,97 +40,17 @@ function addAddressButtonTitle(isMaxReached: boolean): string {
   return 'Thêm địa chỉ mới'
 }
 
-function modalTitle(mode: 'create' | 'edit'): string {
-  if (mode === 'create') {
-    return 'Thêm địa chỉ nhận hàng'
-  }
-  return 'Cập nhật địa chỉ nhận hàng'
-}
-
-function submitLabel(mode: 'create' | 'edit'): string {
-  if (mode === 'create') {
-    return 'Thêm mới'
-  }
-  return 'Lưu thay đổi'
-}
-
-function optionItemClass(isSelected: boolean): string {
-  if (isSelected) {
-    return 'bg-sky-100 font-bold text-blue-700 dark:bg-white/10 dark:text-sky-300'
-  }
-  return 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-700/60'
-}
-
-function wardInputPlaceholder(selectedProvinceCode: string): string {
-  if (selectedProvinceCode === '') {
-    return 'Vui lòng chọn Tỉnh/Thành phố trước'
-  }
-  return 'Gõ để tìm nhanh (VD: Dịch Vọng, Bến Nghé, Phường 1...)'
-}
-
-function wardEmptyText(totalWards: number): string {
-  if (totalWards === 0) {
-    return 'Đang tải danh sách phường/xã...'
-  }
-  return 'Không tìm thấy phường/xã phù hợp'
-}
-
 export default function AddressBookTab() {
   const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingAddr, setEditingAddr] = useState<AddressResponse | null>(null)
 
   const [toast, setToast] = useState<string | null>(null)
   const [toastError, setToastError] = useState<string | null>(null)
 
-  // Form states
-  const [recipientName, setRecipientName] = useState('')
-  const [phoneNumber, setPhoneNumber] = useState('')
-  const [city, setCity] = useState('')
-  const [provinceSearch, setProvinceSearch] = useState('')
-  const [provinceDropdownOpen, setProvinceDropdownOpen] = useState(false)
-  const provinceContainerRef = useRef<HTMLDivElement>(null)
-
-  const [ward, setWard] = useState('')
-  const [wardSearch, setWardSearch] = useState('')
-  const [wardDropdownOpen, setWardDropdownOpen] = useState(false)
-  const wardContainerRef = useRef<HTMLDivElement>(null)
-
-  const [detailAddress, setDetailAddress] = useState('')
-  const [label, setLabel] = useState<AddressRequestLabel>('HOME')
-  const [isDefault, setIsDefault] = useState(false)
-
-  // Selected province code for fetching wards
-  const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>('')
-
   // Queries
   const addressesQuery = useList1()
-  const provincesQuery = useListProvinces()
-
-  let provinces: ProvinceResponse[] = []
-  if (provincesQuery.data !== undefined) {
-    try {
-      provinces = takeData(provincesQuery.data)
-    } catch {
-      provinces = []
-    }
-  }
-
-  const wardsQuery = useListWards(selectedProvinceCode, {
-    query: {
-      enabled: selectedProvinceCode !== '',
-    },
-  })
-
-  let wards: WardResponse[] = []
-  if (wardsQuery.data !== undefined) {
-    try {
-      wards = takeData(wardsQuery.data)
-    } catch {
-      wards = []
-    }
-  }
 
   let addresses: AddressResponse[] = []
   if (addressesQuery.data !== undefined) {
@@ -175,37 +66,6 @@ export default function AddressBookTab() {
 
   const isMaxReached = addresses.length >= MAX_ADDRESSES
 
-  // Close dropdowns on outside click
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        provinceContainerRef.current &&
-        !provinceContainerRef.current.contains(event.target as Node)
-      ) {
-        setProvinceDropdownOpen(false)
-      }
-      if (wardContainerRef.current && !wardContainerRef.current.contains(event.target as Node)) {
-        setWardDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
-
-  // Filtered provinces
-  const provinceQuery = removeVietnameseAccents(provinceSearch.trim())
-  const filteredProvinces = provinces.filter((p) =>
-    removeVietnameseAccents(p.name ?? '').includes(provinceQuery),
-  )
-
-  // Filtered wards
-  const wardQuery = removeVietnameseAccents(wardSearch.trim())
-  const filteredWards = wards.filter((w) =>
-    removeVietnameseAccents(w.name ?? '').includes(wardQuery),
-  )
-
   function showToast(msg: string) {
     setToast(msg)
     window.setTimeout(function () {
@@ -220,91 +80,21 @@ export default function AddressBookTab() {
     }, 4000)
   }
 
-  function resetForm() {
-    setRecipientName('')
-    setPhoneNumber('')
-    setCity('')
-    setProvinceSearch('')
-    setProvinceDropdownOpen(false)
-    setWard('')
-    setWardSearch('')
-    setWardDropdownOpen(false)
-    setDetailAddress('')
-    setLabel('HOME')
-    setIsDefault(false)
-    setSelectedProvinceCode('')
-    setEditingId(null)
-  }
-
   function openCreateModal() {
     if (isMaxReached) {
       showToastError(`Bạn chỉ có thể lưu tối đa ${MAX_ADDRESSES} địa chỉ nhận hàng.`)
       return
     }
-    resetForm()
+    setEditingAddr(null)
     setModalMode('create')
     setModalOpen(true)
   }
 
   function openEditModal(addr: AddressResponse) {
+    setEditingAddr(addr)
     setModalMode('edit')
-    setEditingId(addr.id ?? null)
-    setRecipientName(addr.recipientName ?? '')
-    setPhoneNumber(addr.phoneNumber ?? '')
-
-    const parts = splitFullAddress(addr.fullAddress ?? '')
-    setCity(parts.province)
-    setProvinceSearch(parts.province)
-    setWard(parts.ward)
-    setWardSearch(parts.ward)
-    setDetailAddress(parts.detail)
-    setLabel(addr.label ?? 'HOME')
-    setIsDefault(addr.defaultAddress === true)
-
-    // Match province code to load ward list
-    const matchedProv = provinces.find(function (p) {
-      return p.name === parts.province
-    })
-    if (matchedProv?.code) {
-      setSelectedProvinceCode(matchedProv.code)
-    } else {
-      setSelectedProvinceCode('')
-    }
-
     setModalOpen(true)
   }
-
-  const addAddressMutation = useAdd({
-    mutation: {
-      onSuccess: function () {
-        showToast('Đã thêm địa chỉ nhận hàng mới thành công!')
-        setModalOpen(false)
-        resetForm()
-        void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
-      },
-      onError: function (err) {
-        if (err instanceof ApiError && err.status === 400) {
-          showToastError(maxAddressErrorMessage(err.message))
-        } else {
-          showToastError('Không thể thêm địa chỉ. Vui lòng thử lại.')
-        }
-      },
-    },
-  })
-
-  const updateAddressMutation = useUpdate({
-    mutation: {
-      onSuccess: function () {
-        showToast('Đã cập nhật thông tin địa chỉ thành công!')
-        setModalOpen(false)
-        resetForm()
-        void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
-      },
-      onError: function () {
-        showToastError('Không thể cập nhật địa chỉ. Vui lòng kiểm tra lại thông tin.')
-      },
-    },
-  })
 
   const deleteAddressMutation = useDelete({
     mutation: {
@@ -330,49 +120,6 @@ export default function AddressBookTab() {
     },
   })
 
-  function handleSubmitAddress(e: React.FormEvent) {
-    e.preventDefault()
-
-    const cleanName = recipientName.trim()
-    const cleanPhone = phoneNumber.trim()
-    const cleanCity = city.trim()
-    const cleanWard = ward.trim()
-    const cleanDetail = detailAddress.trim()
-
-    if (
-      cleanName === '' ||
-      cleanPhone === '' ||
-      cleanCity === '' ||
-      cleanWard === '' ||
-      cleanDetail === ''
-    ) {
-      showToastError(
-        'Vui lòng điền đầy đủ tên, số điện thoại, tỉnh/thành, phường/xã và địa chỉ chi tiết.',
-      )
-      return
-    }
-
-    const phoneRegex = /^[0-9+() -]{9,15}$/
-    if (!phoneRegex.test(cleanPhone)) {
-      showToastError('Số điện thoại không hợp lệ (cần từ 9 đến 15 số).')
-      return
-    }
-
-    const payload = {
-      recipientName: cleanName,
-      phoneNumber: cleanPhone,
-      fullAddress: [cleanDetail, cleanWard, cleanCity].join(', '),
-      label: label,
-      defaultAddress: isDefault,
-    }
-
-    if (modalMode === 'create') {
-      addAddressMutation.mutate({ data: payload })
-    } else if (modalMode === 'edit' && editingId !== null) {
-      updateAddressMutation.mutate({ id: editingId, data: payload })
-    }
-  }
-
   function handleDeleteAddress(id: string | undefined) {
     if (id === undefined || id === '') {
       return
@@ -391,11 +138,7 @@ export default function AddressBookTab() {
     changeDefaultMutation.mutate({ id })
   }
 
-  const isMutating =
-    addAddressMutation.isPending ||
-    updateAddressMutation.isPending ||
-    deleteAddressMutation.isPending ||
-    changeDefaultMutation.isPending
+  const isMutating = deleteAddressMutation.isPending || changeDefaultMutation.isPending
 
   return (
     <div className="space-y-6">
@@ -575,362 +318,25 @@ export default function AddressBookTab() {
         </div>
       )}
 
-      {/* Add / Edit Address Modal — portal ra <body> để thoát containing block của .glass
-          (backdrop-filter làm position: fixed quy chiếu theo section thay vì viewport) */}
-      {modalOpen &&
-        createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-            <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl transition dark:border-zinc-800 dark:bg-zinc-900">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
-                <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">
-                  {modalTitle(modalMode)}
-                </h3>
-                <button
-                  type="button"
-                  onClick={function () {
-                    setModalOpen(false)
-                  }}
-                  className="rounded-full p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Modal Form */}
-              <form onSubmit={handleSubmitAddress} className="space-y-4 overflow-y-auto p-6">
-                {/* Row 1: Recipient Name & Phone */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="recipientNameInput"
-                      className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
-                    >
-                      Họ và tên *
-                    </label>
-                    <input
-                      id="recipientNameInput"
-                      type="text"
-                      required
-                      value={recipientName}
-                      onChange={function (e) {
-                        setRecipientName(e.target.value)
-                      }}
-                      placeholder="VD: Nguyễn Văn A"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-xs font-medium text-zinc-900 focus:border-blue-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="phoneNumberInput"
-                      className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
-                    >
-                      Số điện thoại *
-                    </label>
-                    <input
-                      id="phoneNumberInput"
-                      type="tel"
-                      required
-                      value={phoneNumber}
-                      onChange={function (e) {
-                        setPhoneNumber(e.target.value)
-                      }}
-                      placeholder="VD: 0987654321"
-                      className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-xs font-medium text-zinc-900 focus:border-blue-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                    />
-                  </div>
-                </div>
-
-                {/* Row 2: Optimized Searchable Province / City */}
-                <div ref={provinceContainerRef} className="relative">
-                  <label
-                    htmlFor="citySearchInput"
-                    className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
-                  >
-                    Tỉnh / Thành phố *
-                  </label>
-                  <div className="relative mt-1">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
-                      <MagnifyingGlass size={14} />
-                    </div>
-                    <input
-                      id="citySearchInput"
-                      type="text"
-                      required
-                      autoComplete="off"
-                      value={provinceSearch}
-                      onFocus={function () {
-                        setProvinceDropdownOpen(true)
-                      }}
-                      onChange={function (e) {
-                        setProvinceSearch(e.target.value)
-                        setProvinceDropdownOpen(true)
-                      }}
-                      placeholder="Gõ để tìm nhanh (VD: Hà Nội, Hồ Chí Minh, Đà Nẵng...)"
-                      className="w-full rounded-2xl border border-zinc-200 py-2.5 pr-14 pl-9 text-xs font-medium text-zinc-900 focus:border-blue-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-2.5">
-                      {city !== '' && (
-                        <button
-                          type="button"
-                          onClick={function () {
-                            setCity('')
-                            setProvinceSearch('')
-                            setSelectedProvinceCode('')
-                            setWard('')
-                            setWardSearch('')
-                          }}
-                          className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                          title="Xóa lựa chọn"
-                        >
-                          <X size={12} weight="bold" />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={function () {
-                          setProvinceDropdownOpen(!provinceDropdownOpen)
-                        }}
-                        className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                      >
-                        <CaretDown size={12} weight="bold" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Dropdown list for Province */}
-                  {provinceDropdownOpen && (
-                    <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
-                      {filteredProvinces.length === 0 && (
-                        <div className="p-3 text-center text-xs text-zinc-400">
-                          Không tìm thấy tỉnh/thành phố nào
-                        </div>
-                      )}
-                      {filteredProvinces.length > 0 &&
-                        filteredProvinces.map(function (p) {
-                          const isSelected = city === p.name
-                          return (
-                            <button
-                              key={p.code}
-                              type="button"
-                              onClick={function () {
-                                setCity(p.name ?? '')
-                                setProvinceSearch(p.name ?? '')
-                                setSelectedProvinceCode(p.code ?? '')
-                                setWard('')
-                                setWardSearch('')
-                                setProvinceDropdownOpen(false)
-                              }}
-                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${optionItemClass(isSelected)}`}
-                            >
-                              <span>{p.name}</span>
-                              {isSelected && <Check size={14} weight="bold" />}
-                            </button>
-                          )
-                        })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Row 3: Optimized Searchable Ward */}
-                <div ref={wardContainerRef} className="relative">
-                  <label
-                    htmlFor="wardSearchInput"
-                    className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
-                  >
-                    Phường / Xã *
-                  </label>
-                  <div className="relative mt-1">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
-                      <MagnifyingGlass size={14} />
-                    </div>
-                    <input
-                      id="wardSearchInput"
-                      type="text"
-                      required
-                      autoComplete="off"
-                      disabled={selectedProvinceCode === ''}
-                      value={wardSearch}
-                      onFocus={function () {
-                        if (selectedProvinceCode !== '') {
-                          setWardDropdownOpen(true)
-                        }
-                      }}
-                      onChange={function (e) {
-                        setWardSearch(e.target.value)
-                        if (selectedProvinceCode !== '') {
-                          setWardDropdownOpen(true)
-                        }
-                      }}
-                      placeholder={wardInputPlaceholder(selectedProvinceCode)}
-                      className="w-full rounded-2xl border border-zinc-200 py-2.5 pr-14 pl-9 text-xs font-medium text-zinc-900 focus:border-blue-600 focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:disabled:bg-zinc-900/60"
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-2.5">
-                      {wardsQuery.isLoading && (
-                        <ArrowClockwise size={13} className="animate-spin text-blue-600" />
-                      )}
-                      {ward !== '' && (
-                        <button
-                          type="button"
-                          onClick={function () {
-                            setWard('')
-                            setWardSearch('')
-                          }}
-                          className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                          title="Xóa lựa chọn"
-                        >
-                          <X size={12} weight="bold" />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        disabled={selectedProvinceCode === ''}
-                        onClick={function () {
-                          setWardDropdownOpen(!wardDropdownOpen)
-                        }}
-                        className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 disabled:opacity-50 dark:hover:text-zinc-200"
-                      >
-                        <CaretDown size={12} weight="bold" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Dropdown list for Ward */}
-                  {wardDropdownOpen && selectedProvinceCode !== '' && (
-                    <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
-                      {filteredWards.length === 0 && (
-                        <div className="p-3 text-center text-xs text-zinc-400">
-                          {wardEmptyText(wards.length)}
-                        </div>
-                      )}
-                      {filteredWards.length > 0 &&
-                        filteredWards.slice(0, 40).map(function (w) {
-                          const isSelected = ward === w.name
-                          return (
-                            <button
-                              key={w.code}
-                              type="button"
-                              onClick={function () {
-                                setWard(w.name ?? '')
-                                setWardSearch(w.name ?? '')
-                                setWardDropdownOpen(false)
-                              }}
-                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${optionItemClass(isSelected)}`}
-                            >
-                              <span>{w.name}</span>
-                              {isSelected && <Check size={14} weight="bold" />}
-                            </button>
-                          )
-                        })}
-                      {filteredWards.length > 40 && (
-                        <div className="p-2 text-center text-[11px] text-zinc-400">
-                          Còn {filteredWards.length - 40} phường/xã khác, gõ thêm để thu hẹp kết
-                          quả...
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Row 4: Detail Address */}
-                <div>
-                  <label
-                    htmlFor="detailAddressInput"
-                    className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
-                  >
-                    Địa chỉ chi tiết (Tòa nhà, số nhà, ngõ/tên đường) *
-                  </label>
-                  <input
-                    id="detailAddressInput"
-                    type="text"
-                    required
-                    value={detailAddress}
-                    onChange={function (e) {
-                      setDetailAddress(e.target.value)
-                    }}
-                    placeholder="VD: Số 18 ngõ 12 Duy Tân, Tòa Landmark"
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-xs font-medium text-zinc-900 focus:border-blue-600 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                  />
-                </div>
-
-                {/* Row 5: Address label picker (required by the API contract) */}
-                <div>
-                  <span className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                    Nhãn địa chỉ
-                  </span>
-                  <div className="mt-1.5 flex flex-wrap gap-2">
-                    {ADDRESS_LABELS.map(function (l) {
-                      let chipClass =
-                        'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition '
-                      if (label === l) {
-                        chipClass +=
-                          'border-blue-600 bg-sky-100 text-blue-700 dark:border-sky-400/50 dark:bg-white/10 dark:text-sky-300'
-                      } else {
-                        chipClass +=
-                          'border-zinc-300 bg-white text-zinc-600 hover:border-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
-                      }
-                      return (
-                        <button
-                          key={l}
-                          type="button"
-                          onClick={function () {
-                            setLabel(l)
-                          }}
-                          className={chipClass}
-                        >
-                          {formatAddressLabel(l)}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Row 6: Set default checkbox */}
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    id="defaultAddressCheckbox"
-                    type="checkbox"
-                    checked={isDefault}
-                    onChange={function (e) {
-                      setIsDefault(e.target.checked)
-                    }}
-                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-600 dark:border-zinc-700 dark:bg-zinc-800"
-                  />
-                  <label
-                    htmlFor="defaultAddressCheckbox"
-                    className="cursor-pointer text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                  >
-                    Đặt làm địa chỉ mặc định
-                  </label>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-2.5 pt-3">
-                  <button
-                    type="button"
-                    onClick={function () {
-                      setModalOpen(false)
-                    }}
-                    className="rounded-full border border-zinc-200 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    id="submitAddressBtn"
-                    type="submit"
-                    disabled={isMutating}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 px-5 py-2 text-xs font-bold text-white shadow-sm shadow-indigo-900/20 hover:opacity-90 disabled:opacity-50"
-                  >
-                    {isMutating && <ArrowClockwise size={14} className="animate-spin" />}
-                    <span>{submitLabel(modalMode)}</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>,
-          document.body,
-        )}
+      {/* Form thêm/sửa địa chỉ — component dùng chung với Checkout, portal ra <body>
+          để thoát containing block của .glass (backdrop-filter làm position: fixed
+          quy chiếu theo section thay vì viewport) */}
+      {modalOpen && (
+        <AddressFormModal
+          mode={modalMode}
+          initial={editingAddr}
+          onClose={function () {
+            setModalOpen(false)
+          }}
+          onSaved={function () {
+            if (modalMode === 'create') {
+              showToast('Đã thêm địa chỉ nhận hàng mới thành công!')
+            } else {
+              showToast('Đã cập nhật thông tin địa chỉ thành công!')
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

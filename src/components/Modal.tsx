@@ -78,9 +78,9 @@ export default function Modal(props: { title: string; onClose: () => void; child
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-white/30 bg-white p-6 shadow-2xl outline-none dark:border-white/10 dark:bg-[#11182a]"
+        className="static max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-white/30 bg-white p-6 shadow-2xl outline-none dark:border-white/10 dark:bg-[#11182a]"
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex min-h-9 items-center justify-between">
           <h2 id={titleId} className="text-xl font-extrabold tracking-tight">
             {props.title}
           </h2>
