@@ -47,7 +47,7 @@ const ALL_SYSTEM_PERMISSIONS = [
   { key: 'REVENUE_WITHDRAW', label: 'Yêu cầu rút tiền về tài khoản ngân hàng', group: 'Tài chính' },
   { key: 'REVIEW_READ', label: 'Xem đánh giá của khách hàng', group: 'CSKH' },
   { key: 'REVIEW_REPLY', label: 'Phản hồi đánh giá & báo cáo vi phạm', group: 'CSKH' },
-  { key: 'CHAT_ACCESS', label: 'Nhắn tin trực tiếp với người mua (Shopee Chat)', group: 'CSKH' },
+  { key: 'CHAT_ACCESS', label: 'Nhắn tin trực tiếp với người mua (nét Chat)', group: 'CSKH' },
   { key: 'DECORATION_WRITE', label: 'Trang trí gian hàng & xếp layout', group: 'Gian hàng' },
 ]
 

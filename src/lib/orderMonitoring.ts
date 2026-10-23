@@ -34,7 +34,7 @@ export interface AlertOption {
   hint: string
 }
 
-// Mốc khớp backend (OrderSlaPolicy): ngày làm việc, không tính Chủ nhật và ngày lễ như Shopee/Lazada.
+// Mốc khớp backend (OrderSlaPolicy): ngày làm việc, không tính Chủ nhật và ngày lễ.
 export const ALERT_OPTIONS: AlertOption[] = [
   {
     value: 'CONFIRM_LATE',
@@ -96,7 +96,7 @@ export const CANCEL_REASON_OPTIONS: CancelReasonOption[] = [
   },
 ]
 
-/** Chỉ hủy được khi chưa bàn giao vận chuyển, giống Shopee/Lazada. */
+/** Chỉ hủy được khi chưa bàn giao vận chuyển. */
 export function canAdminCancel(status: string | undefined): boolean {
   return status === 'PENDING' || status === 'CONFIRMED'
 }

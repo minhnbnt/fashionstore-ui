@@ -108,7 +108,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
           </h3>
           <div className="flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
             <ShieldCheck size={14} />
-            <span>Gian hàng đã xác thực KYC Shopee Mall</span>
+            <span>Gian hàng đã xác thực eKYC nét Mall</span>
           </div>
         </div>
 
@@ -142,7 +142,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
             </label>
             <div className="flex items-center overflow-hidden rounded border border-gray-300 dark:border-zinc-700">
               <span className="border-r border-gray-300 bg-gray-100 px-3 py-2 text-xs text-gray-500 select-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
-                shopee.vn/
+                netfashion.vn/
               </span>
               <input
                 id="slugField"
@@ -300,7 +300,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               onChange={(e) => setFormData({ ...formData, daysToShip: Number(e.target.value) })}
               className="w-full rounded border border-gray-300 px-3 py-2 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none dark:border-zinc-700"
             >
-              <option value={1}>1 ngày (Giao hàng nhanh chuẩn Shopee)</option>
+              <option value={1}>1 ngày (Giao hàng nhanh hỏa tốc)</option>
               <option value={2}>2 ngày (Tiêu chuẩn)</option>
               <option value={7}>7 ngày (Hàng đặt trước / Pre-order)</option>
             </select>

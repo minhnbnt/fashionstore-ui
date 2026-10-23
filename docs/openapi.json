@@ -15737,42 +15737,6 @@
           }
         }
       },
-      "ProvinceResponse": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string",
-            "description": "Mã tỉnh/thành 2 chữ số",
-            "example": "01"
-          },
-          "name": {
-            "type": "string",
-            "description": "Tên tỉnh/thành",
-            "example": "Thành phố Hà Nội"
-          },
-          "region": {
-            "type": "string",
-            "description": "Miền",
-            "enum": ["NORTH", "CENTRAL", "SOUTH"],
-            "example": "NORTH"
-          }
-        }
-      },
-      "WardResponse": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string",
-            "description": "Mã xã/phường 5 chữ số",
-            "example": "00004"
-          },
-          "name": {
-            "type": "string",
-            "description": "Tên xã/phường",
-            "example": "Phường Ba Đình"
-          }
-        }
-      },
       "UpdateProductRequest": {
         "type": "object",
         "properties": {
@@ -18192,6 +18156,54 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "phone": {
+            "type": ["string", "null"]
+          },
+          "address": {
+            "type": ["string", "null"]
+          },
+          "legalName": {
+            "type": ["string", "null"]
+          },
+          "idNumber": {
+            "type": ["string", "null"]
+          },
+          "idIssuedDate": {
+            "type": ["string", "null"]
+          },
+          "idIssuedPlace": {
+            "type": ["string", "null"]
+          },
+          "taxCode": {
+            "type": ["string", "null"]
+          },
+          "idFrontKey": {
+            "type": ["string", "null"]
+          },
+          "idBackKey": {
+            "type": ["string", "null"]
+          },
+          "idSelfieKey": {
+            "type": ["string", "null"]
+          },
+          "businessCertKey": {
+            "type": ["string", "null"]
+          },
+          "bankName": {
+            "type": ["string", "null"]
+          },
+          "bankAccount": {
+            "type": ["string", "null"]
+          },
+          "bankHolder": {
+            "type": ["string", "null"]
+          },
+          "kycStatus": {
+            "type": ["string", "null"]
+          },
+          "kycRejectReason": {
+            "type": ["string", "null"]
           }
         }
       },
@@ -19524,6 +19536,42 @@
           "resolutionNote": {
             "type": ["string", "null"],
             "description": "Lý do gỡ hoặc ghi chú khi bác bỏ"
+          }
+        }
+      },
+      "ProvinceResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Mã tỉnh/thành 2 chữ số",
+            "example": "01"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tên tỉnh/thành",
+            "example": "Thành phố Hà Nội"
+          },
+          "region": {
+            "type": "string",
+            "description": "Miền",
+            "enum": ["NORTH", "CENTRAL", "SOUTH"],
+            "example": "NORTH"
+          }
+        }
+      },
+      "WardResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Mã xã/phường 5 chữ số",
+            "example": "00004"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tên xã/phường",
+            "example": "Phường Ba Đình"
           }
         }
       }

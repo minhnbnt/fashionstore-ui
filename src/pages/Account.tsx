@@ -123,7 +123,9 @@ export default function Account() {
 
   function handleShopCreated() {
     setModalOpen(false)
-    setStatusNotice('Đăng ký mở shop thành công! Hồ sơ đang ở trạng thái chờ duyệt.')
+    setStatusNotice(
+      'Đăng ký mở shop thành công! Hồ sơ đang ở trạng thái chờ duyệt (dự kiến 1-3 ngày làm việc).',
+    )
     void mineQuery.refetch()
   }
 
@@ -269,15 +271,18 @@ export default function Account() {
                   <Sparkle size={12} weight="fill" />
                   Miễn phí đăng ký
                 </span>
-                <span className="text-xs text-zinc-400">Theo chuẩn Shopee</span>
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  Định danh eKYC tiện lợi · Tích hợp thử đồ ảo
+                </span>
               </div>
               <h3 className="mt-3 text-xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
-                Bắt đầu kinh doanh thời trang cùng nét
+                Kiến tạo thương hiệu thời trang độc bản cùng nét
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                Mở shop để tiếp cận hàng triệu khách hàng trẻ. Hệ thống cung cấp đầy đủ 11 phân hệ
-                chuyên nghiệp: Quản lý sản phẩm & biến thể, Xử lý đơn hàng, Quản lý kho, Doanh thu,
-                Trang trí gian hàng kéo-thả, và Phân quyền nhân viên.
+                Khởi tạo gian hàng chỉ trong 3 phút và tiếp cận hàng triệu tín đồ thời trang trẻ.
+                Tận hưởng hệ sinh thái thương mại toàn diện: công nghệ thử đồ ảo Virtual Try-On,
+                quản lý sản phẩm & đơn hàng đa kênh thông minh, cùng bộ công cụ trang trí gian hàng
+                chuyên nghiệp.
               </p>
               <div className="mt-6">
                 <button
@@ -335,6 +340,21 @@ export default function Account() {
                     {currentShop.description}
                   </p>
                 )}
+
+                <div
+                  id="notice-approval-time"
+                  className="mt-4 flex items-center gap-2.5 rounded-2xl border border-amber-300 bg-amber-100/70 px-4 py-3 text-xs font-semibold text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-100"
+                >
+                  <ClockCountdown
+                    size={20}
+                    weight="bold"
+                    className="shrink-0 text-amber-700 dark:text-amber-400"
+                  />
+                  <span>
+                    Thời gian thẩm định &amp; phê duyệt dự kiến: <strong>1-3 ngày làm việc</strong>{' '}
+                    (không tính Thứ 7, Chủ Nhật và ngày Lễ).
+                  </span>
+                </div>
 
                 {/* eKYC Anti-Fraud Details Summary */}
                 <div className="mt-5 rounded-2xl border border-amber-200/80 bg-white/90 p-4 text-xs dark:border-amber-500/20 dark:bg-zinc-900/80">
@@ -407,28 +427,15 @@ export default function Account() {
 
                   <div className="mt-3 rounded-xl bg-amber-100/60 p-2.5 text-[11px] leading-relaxed text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
                     <p className="font-semibold">
-                      🔒 Cảnh báo chống gian lận & rửa tiền theo chuẩn Shopee:
+                      🔒 Quy định phòng chống gian lận &amp; rửa tiền:
                     </p>
                     <p className="mt-0.5">
-                      Tên chủ tài khoản ngân hàng nhận tiền doanh thu được hệ thống tự động khóa cố
-                      định theo Họ tên trên Căn cước công dân. Hồ sơ đang được Ban thẩm định pháp
-                      chế nét kiểm duyệt.
+                      Tên chủ tài khoản ngân hàng nhận tiền doanh thu bắt buộc phải trùng khớp với
+                      Họ và tên trên Căn cước công dân của chủ shop ({currentShop.legalName}). Hồ sơ
+                      đang được Ban quản trị nét thẩm định và phê duyệt trong vòng 1-3 ngày làm
+                      việc.
                     </p>
                   </div>
-                </div>
-
-                {/* Admin Approval Command Helper Box */}
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-100/60 p-3 text-xs text-amber-950 dark:border-amber-500/20 dark:bg-amber-950/40 dark:text-amber-200">
-                  <p className="font-bold">
-                    Lệnh duyệt mở shop & phê duyệt eKYC qua CLI (dành cho Admin):
-                  </p>
-                  <code
-                    id="cmd-approve-shop"
-                    className="mt-1 block overflow-x-auto rounded-lg bg-black/80 p-2 font-mono text-[11px] text-green-300"
-                  >
-                    UPDATE shop SET status = 'APPROVED', kyc_status = 'VERIFIED', approved_at =
-                    now() WHERE id = '{currentShop.id}';
-                  </code>
                 </div>
               </div>
             )}
@@ -513,7 +520,7 @@ export default function Account() {
                     className="flex items-center gap-2 rounded-full bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-700/25 transition hover:bg-emerald-800"
                   >
                     <Storefront size={18} weight="bold" />
-                    <span>Vào Kênh Người Bán (Shopee Seller Center)</span>
+                    <span>Vào Kênh Người Bán (nét Seller Center)</span>
                     <ArrowRight size={16} weight="bold" />
                   </button>
                 </div>
