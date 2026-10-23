@@ -131,7 +131,7 @@ function DetailBody({
           <button
             type="button"
             onClick={() => onRestore(product)}
-            className="flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700 dark:bg-indigo-500"
+            className="btn-primary flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold"
           >
             <ArrowCounterClockwise size={16} weight="bold" />
             Khôi phục
@@ -324,7 +324,7 @@ export default function AdminProductDetailPanel({
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:hover:bg-white/10"
+            className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-white/10"
           >
             <X size={18} weight="bold" />
           </button>

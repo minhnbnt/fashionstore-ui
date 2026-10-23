@@ -113,7 +113,7 @@ export default function AdminUsers() {
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
         <form onSubmit={submitSearch} className="flex gap-2">
           <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2.5 dark:border-white/10 dark:bg-white/5">
-            <MagnifyingGlass size={17} className="shrink-0 text-zinc-500" />
+            <MagnifyingGlass size={17} className="shrink-0 text-zinc-500 dark:text-zinc-400" />
             <span className="sr-only">Tìm tài khoản</span>
             <input
               key={query}
@@ -208,7 +208,9 @@ export default function AdminUsers() {
                             <p className="truncate font-bold text-zinc-900 dark:text-zinc-100">
                               {user.displayName ?? 'Chưa có tên'}
                             </p>
-                            <p className="mt-0.5 truncate text-xs text-zinc-500">{user.email}</p>
+                            <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
+                              {user.email}
+                            </p>
                           </div>
                         </div>
                       </td>

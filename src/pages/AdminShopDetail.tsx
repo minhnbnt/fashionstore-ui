@@ -321,7 +321,7 @@ export default function AdminShopDetail() {
                     )}
                     <div>
                       <h2 className="text-xl font-extrabold tracking-tight">{shop.name}</h2>
-                      <p className="text-sm text-zinc-500">/{shop.slug}</p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">/{shop.slug}</p>
                     </div>
                   </div>
                   <StatusBadge status={shop.status} />
@@ -335,7 +335,10 @@ export default function AdminShopDetail() {
                   <div className="mt-4 rounded-2xl bg-zinc-50 p-3.5 text-xs text-zinc-700 dark:bg-white/5 dark:text-zinc-300">
                     {shop.address && (
                       <p className="flex items-start gap-2">
-                        <MapPin size={16} className="mt-0.5 shrink-0 text-zinc-500" />
+                        <MapPin
+                          size={16}
+                          className="mt-0.5 shrink-0 text-zinc-500 dark:text-zinc-400"
+                        />
                         <span>
                           <strong>Kho lấy hàng:</strong> {shop.address}
                         </span>
@@ -343,7 +346,7 @@ export default function AdminShopDetail() {
                     )}
                     {shop.phone && (
                       <p className="mt-2 flex items-center gap-2">
-                        <Phone size={16} className="shrink-0 text-zinc-500" />
+                        <Phone size={16} className="shrink-0 text-zinc-500 dark:text-zinc-400" />
                         <span>
                           <strong>Hotline shop:</strong> {shop.phone}
                         </span>
@@ -365,23 +368,31 @@ export default function AdminShopDetail() {
 
                 <dl className="mt-5 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Lần nộp gần nhất</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Lần nộp gần nhất
+                    </dt>
                     <dd className="mt-1 text-sm font-semibold">
                       {formatDateTime(shop.submittedAt)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Được duyệt lúc</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Được duyệt lúc
+                    </dt>
                     <dd className="mt-1 text-sm font-semibold">
                       {formatDateTime(shop.approvedAt)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Ngày tạo</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Ngày tạo
+                    </dt>
                     <dd className="mt-1 text-sm font-semibold">{formatDateTime(shop.createdAt)}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Cập nhật gần nhất</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Cập nhật gần nhất
+                    </dt>
                     <dd className="mt-1 text-sm font-semibold">{formatDateTime(shop.updatedAt)}</dd>
                   </div>
                 </dl>
@@ -398,7 +409,7 @@ export default function AdminShopDetail() {
                       <h3 className="font-extrabold tracking-tight">
                         Hồ sơ pháp lý &amp; Định danh eKYC
                       </h3>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
                         Giấy tờ tùy thân và xác thực danh tính chủ shop
                       </p>
                     </div>
@@ -412,32 +423,42 @@ export default function AdminShopDetail() {
 
                 <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold text-zinc-500 uppercase">Họ và tên thật</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Họ và tên thật
+                    </dt>
                     <dd className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
                       {shop.legalName || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold text-zinc-500 uppercase">Số CCCD / CMND</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Số CCCD / CMND
+                    </dt>
                     <dd className="mt-1 font-mono text-sm font-bold text-zinc-900 dark:text-white">
                       {shop.idNumber || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold text-zinc-500 uppercase">Ngày cấp</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Ngày cấp
+                    </dt>
                     <dd className="mt-1 font-semibold text-zinc-800 dark:text-zinc-200">
                       {shop.idIssuedDate || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold text-zinc-500 uppercase">Nơi cấp</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Nơi cấp
+                    </dt>
                     <dd className="mt-1 font-semibold text-zinc-800 dark:text-zinc-200">
                       {shop.idIssuedPlace || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   {shop.taxCode && (
                     <div className="rounded-2xl bg-zinc-50 p-3 sm:col-span-2 dark:bg-white/5">
-                      <dt className="font-bold text-zinc-500 uppercase">Mã số thuế</dt>
+                      <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                        Mã số thuế
+                      </dt>
                       <dd className="mt-1 font-mono font-semibold text-zinc-800 dark:text-zinc-200">
                         {shop.taxCode}
                       </dd>
@@ -446,7 +467,7 @@ export default function AdminShopDetail() {
                 </dl>
 
                 <div className="mt-5">
-                  <h4 className="text-xs font-bold tracking-wide text-zinc-500 uppercase">
+                  <h4 className="text-xs font-bold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
                     Ảnh giấy tờ định danh đã tải lên
                   </h4>
                   <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -612,7 +633,7 @@ export default function AdminShopDetail() {
                     <h3 className="font-extrabold tracking-tight">
                       Tài khoản ngân hàng nhận thanh toán
                     </h3>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
                       Đối soát và chuyển khoản doanh thu định kỳ
                     </p>
                   </div>
@@ -620,19 +641,25 @@ export default function AdminShopDetail() {
 
                 <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-3">
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold text-zinc-500 uppercase">Ngân hàng</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Ngân hàng
+                    </dt>
                     <dd className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
                       {shop.bankName || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold text-zinc-500 uppercase">Số tài khoản</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Số tài khoản
+                    </dt>
                     <dd className="mt-1 font-mono text-sm font-bold text-zinc-900 dark:text-white">
                       {shop.bankAccount || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold text-zinc-500 uppercase">Tên chủ tài khoản</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Tên chủ tài khoản
+                    </dt>
                     <dd className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
                       {shop.bankHolder || 'Chưa cung cấp'}
                     </dd>
@@ -675,15 +702,15 @@ export default function AdminShopDetail() {
                 <h2 className="font-extrabold tracking-tight">Chủ sở hữu</h2>
                 <div className="mt-4 space-y-3 text-sm">
                   <p className="flex items-center gap-2">
-                    <User size={17} className="text-zinc-500" />
+                    <User size={17} className="text-zinc-500 dark:text-zinc-400" />
                     <span className="font-semibold">{shop.ownerName ?? 'Chưa có tên'}</span>
                   </p>
                   <p className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
-                    <Envelope size={17} className="text-zinc-500" />
+                    <Envelope size={17} className="text-zinc-500 dark:text-zinc-400" />
                     {shop.ownerEmail ?? '—'}
                   </p>
                   <div className="flex items-center gap-2">
-                    <LockKey size={17} className="text-zinc-500" />
+                    <LockKey size={17} className="text-zinc-500 dark:text-zinc-400" />
                     <StatusBadge status={shop.ownerStatus} />
                   </div>
                 </div>
@@ -770,7 +797,7 @@ export default function AdminShopDetail() {
               setPreviewModal(null)
             }}
           />
-          <div className="relative z-10 max-h-[90vh] max-w-4xl overflow-hidden rounded-3xl bg-white p-4 shadow-2xl dark:bg-zinc-900">
+          <div className="relative z-10 max-h-[90vh] max-w-4xl overflow-hidden rounded-3xl bg-white p-4 shadow-2xl dark:bg-[#11182a]">
             <div className="mb-3 flex items-center justify-between gap-4">
               <h3 className="font-bold text-zinc-900 dark:text-white">{previewModal.title}</h3>
               <div className="flex items-center gap-2">

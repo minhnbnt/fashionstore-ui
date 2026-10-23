@@ -21,7 +21,7 @@ import {
 
 import Markdown from '../Markdown'
 import ConfirmDialog from './ConfirmDialog'
-import { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, LABEL_CLASS } from './ContentDialog'
+import { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, LABEL_CLASS, TEXTAREA_CLASS } from './ContentDialog'
 
 import type { FooterGroupValue } from '@/lib/siteContent'
 import type { SitePageRequest } from '@generated/model/sitePageRequest'
@@ -154,10 +154,10 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
 
   let modeWriteClass = 'rounded-full px-3 py-1 text-xs font-bold text-zinc-600 dark:text-zinc-300'
   let modePreviewClass =
-    'rounded-full px-3 py-1 text-xs font-bold bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+    'rounded-full px-3 py-1 text-xs font-bold bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
   if (mode === 'write') {
     modeWriteClass =
-      'rounded-full px-3 py-1 text-xs font-bold bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+      'rounded-full px-3 py-1 text-xs font-bold bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
     modePreviewClass = 'rounded-full px-3 py-1 text-xs font-bold text-zinc-600 dark:text-zinc-300'
   }
 
@@ -177,7 +177,7 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
   }
   let writePaneClass = ''
   let previewPaneClass =
-    'max-h-[560px] overflow-y-auto rounded-2xl border border-zinc-100 bg-white p-5 dark:border-white/10 dark:bg-zinc-950'
+    'max-h-[560px] overflow-y-auto rounded-2xl border border-zinc-100 bg-white p-5 dark:border-white/10 dark:bg-[#0a0f1e]'
   if (mode === 'preview') {
     writePaneClass = 'hidden lg:block'
   }
@@ -238,7 +238,7 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
             type="button"
             onClick={handleSave}
             disabled={canSave === false || busy || dirty === false}
-            className="flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500"
+            className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold disabled:opacity-50"
           >
             <FloppyDisk size={14} weight="bold" />
             Lưu
@@ -350,7 +350,7 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
               onChange={(event) => setForm({ ...form, content: event.target.value })}
               rows={22}
               aria-label="Nội dung Markdown"
-              className={`${INPUT_CLASS} resize-y font-mono leading-relaxed`}
+              className={`${TEXTAREA_CLASS} resize-y font-mono leading-relaxed`}
             />
             <p className={HINT_CLASS}>
               Markdown: # Tiêu đề lớn, ## Tiêu đề mục, **đậm**, - gạch đầu dòng, 1. đánh số,

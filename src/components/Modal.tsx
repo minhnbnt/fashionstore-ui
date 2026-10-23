@@ -7,7 +7,13 @@ const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 // Modal chan tuong tac ben ngoai: backdrop, khoa scroll, focus trap, Escape de dong.
-export default function Modal(props: { title: string; onClose: () => void; children: ReactNode }) {
+// widthClass: do rong panel, moi form truyen rieng (mac dinh max-w-lg giong cac modal hien co).
+export default function Modal(props: {
+  title: string
+  onClose: () => void
+  widthClass?: string
+  children: ReactNode
+}) {
   const titleId = useId()
   const panelRef = useRef<HTMLDialogElement>(null)
   const closeRef = useRef(props.onClose)
@@ -78,7 +84,7 @@ export default function Modal(props: { title: string; onClose: () => void; child
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="static max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-white/30 bg-white p-6 shadow-2xl outline-none dark:border-white/10 dark:bg-[#11182a]"
+        className={`static max-h-[calc(100dvh-2rem)] w-full ${props.widthClass ?? 'max-w-lg'} overflow-y-auto rounded-3xl border border-white/30 bg-white p-6 shadow-2xl outline-none dark:border-white/10 dark:bg-[#11182a]`}
       >
         <div className="flex min-h-9 items-center justify-between">
           <h2 id={titleId} className="text-xl font-extrabold tracking-tight">

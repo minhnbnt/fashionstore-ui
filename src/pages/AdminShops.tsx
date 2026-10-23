@@ -143,7 +143,7 @@ export default function AdminShops() {
 
         <form onSubmit={submitSearch} className="flex max-w-2xl gap-2">
           <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2.5 dark:border-white/10 dark:bg-white/5">
-            <MagnifyingGlass size={17} className="shrink-0 text-zinc-500" />
+            <MagnifyingGlass size={17} className="shrink-0 text-zinc-500 dark:text-zinc-400" />
             <span className="sr-only">Tìm shop</span>
             <input
               key={query}
@@ -200,7 +200,9 @@ export default function AdminShops() {
                     >
                       <td className="px-5 py-4">
                         <p className="font-bold text-zinc-900 dark:text-zinc-100">{shop.name}</p>
-                        <p className="mt-0.5 text-xs text-zinc-500">/{shop.slug}</p>
+                        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                          /{shop.slug}
+                        </p>
                         {shop.statusReason !== undefined && shop.statusReason !== null && (
                           <p className="mt-2 max-w-xs truncate text-xs text-red-600 dark:text-red-300">
                             {shop.statusReason}
@@ -209,7 +211,9 @@ export default function AdminShops() {
                       </td>
                       <td className="px-5 py-4">
                         <p>{shop.ownerName ?? 'Chưa có tên'}</p>
-                        <p className="mt-0.5 text-xs text-zinc-500">{shop.ownerEmail ?? '—'}</p>
+                        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                          {shop.ownerEmail ?? '—'}
+                        </p>
                       </td>
                       <td className="px-5 py-4">
                         <StatusBadge status={shop.status} />
