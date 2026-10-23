@@ -27,6 +27,20 @@ import { useSessionQuery } from '../hooks/useSession'
 import type { AddressRequestLabel } from '@generated/model/addressRequestLabel'
 import type { AddressResponse } from '@generated/model/addressResponse'
 
+function resolveShippingAddress(fullAddress: string): string {
+  if (fullAddress !== '') {
+    return fullAddress
+  }
+  return 'Địa chỉ giao hàng mặc định'
+}
+
+function labelChipClass(active: boolean): string {
+  if (active) {
+    return 'rounded-full border border-sky-300 bg-sky-100 px-3 py-1 text-xs font-bold text-blue-700 transition dark:border-white/10 dark:bg-white/10 dark:text-sky-300'
+  }
+  return 'rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-bold text-zinc-600 transition dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
+}
+
 export default function Checkout() {
   const cart = useCart()
   const { data: session } = useSessionQuery()
@@ -152,7 +166,7 @@ export default function Checkout() {
         data: {
           shippingName: nameToUse,
           shippingPhone: phoneToUse,
-          shippingAddress: fullAddr !== '' ? fullAddr : 'Địa chỉ giao hàng mặc định',
+          shippingAddress: resolveShippingAddress(fullAddr),
           shippingFee: shippingFee,
         },
       },
@@ -651,11 +665,7 @@ export default function Checkout() {
                     onClick={function () {
                       setLabel('HOME')
                     }}
-                    className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
-                      label === 'HOME'
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-300'
-                        : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-                    }`}
+                    className={labelChipClass(label === 'HOME')}
                   >
                     Nhà riêng
                   </button>
@@ -664,11 +674,7 @@ export default function Checkout() {
                     onClick={function () {
                       setLabel('OFFICE')
                     }}
-                    className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
-                      label === 'OFFICE'
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950/40 dark:text-blue-300'
-                        : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-                    }`}
+                    className={labelChipClass(label === 'OFFICE')}
                   >
                     Công ty
                   </button>
@@ -677,11 +683,7 @@ export default function Checkout() {
                     onClick={function () {
                       setLabel('OTHER')
                     }}
-                    className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
-                      label === 'OTHER'
-                        ? 'border-purple-600 bg-purple-50 text-purple-700 dark:border-purple-500 dark:bg-purple-950/40 dark:text-purple-300'
-                        : 'border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-                    }`}
+                    className={labelChipClass(label === 'OTHER')}
                   >
                     Khác
                   </button>

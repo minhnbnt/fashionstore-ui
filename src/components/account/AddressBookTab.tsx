@@ -48,6 +48,62 @@ function removeVietnameseAccents(str: string): string {
     .toLowerCase()
 }
 
+function maxAddressErrorMessage(message: string | undefined): string {
+  if (message !== undefined && message.includes('Maximum of 10')) {
+    return `Bạn chỉ có thể lưu tối đa ${MAX_ADDRESSES} địa chỉ nhận hàng.`
+  }
+  return 'Thông tin địa chỉ không hợp lệ. Vui lòng kiểm tra lại.'
+}
+
+function addAddressButtonClass(isMaxReached: boolean): string {
+  if (isMaxReached) {
+    return 'cursor-not-allowed bg-zinc-200 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600'
+  }
+  return 'bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 text-white shadow-indigo-900/20 hover:opacity-90'
+}
+
+function addAddressButtonTitle(isMaxReached: boolean): string {
+  if (isMaxReached) {
+    return 'Bạn đã đạt giới hạn 10 địa chỉ'
+  }
+  return 'Thêm địa chỉ mới'
+}
+
+function modalTitle(mode: 'create' | 'edit'): string {
+  if (mode === 'create') {
+    return 'Thêm địa chỉ nhận hàng'
+  }
+  return 'Cập nhật địa chỉ nhận hàng'
+}
+
+function submitLabel(mode: 'create' | 'edit'): string {
+  if (mode === 'create') {
+    return 'Thêm mới'
+  }
+  return 'Lưu thay đổi'
+}
+
+function optionItemClass(isSelected: boolean): string {
+  if (isSelected) {
+    return 'bg-sky-100 font-bold text-blue-700 dark:bg-white/10 dark:text-sky-300'
+  }
+  return 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-700/60'
+}
+
+function wardInputPlaceholder(selectedProvinceCode: string): string {
+  if (selectedProvinceCode === '') {
+    return 'Vui lòng chọn Tỉnh/Thành phố trước'
+  }
+  return 'Gõ để tìm nhanh (VD: Dịch Vọng, Bến Nghé, Phường 1...)'
+}
+
+function wardEmptyText(totalWards: number): string {
+  if (totalWards === 0) {
+    return 'Đang tải danh sách phường/xã...'
+  }
+  return 'Không tìm thấy phường/xã phù hợp'
+}
+
 export default function AddressBookTab() {
   const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
@@ -228,11 +284,7 @@ export default function AddressBookTab() {
       },
       onError: function (err) {
         if (err instanceof ApiError && err.status === 400) {
-          showToastError(
-            err.message?.includes('Maximum of 10')
-              ? `Bạn chỉ có thể lưu tối đa ${MAX_ADDRESSES} địa chỉ nhận hàng.`
-              : 'Thông tin địa chỉ không hợp lệ. Vui lòng kiểm tra lại.',
-          )
+          showToastError(maxAddressErrorMessage(err.message))
         } else {
           showToastError('Không thể thêm địa chỉ. Vui lòng thử lại.')
         }
@@ -364,12 +416,8 @@ export default function AddressBookTab() {
             type="button"
             onClick={openCreateModal}
             disabled={isMaxReached}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition ${
-              isMaxReached
-                ? 'cursor-not-allowed bg-zinc-200 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600'
-                : 'bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 text-white shadow-indigo-900/20 hover:opacity-90'
-            }`}
-            title={isMaxReached ? 'Bạn đã đạt giới hạn 10 địa chỉ' : 'Thêm địa chỉ mới'}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition ${addAddressButtonClass(isMaxReached)}`}
+            title={addAddressButtonTitle(isMaxReached)}
           >
             <Plus size={16} weight="bold" />
             <span>Thêm địa chỉ mới</span>
@@ -536,7 +584,7 @@ export default function AddressBookTab() {
               {/* Modal Header */}
               <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
                 <h3 className="text-base font-extrabold text-zinc-900 dark:text-white">
-                  {modalMode === 'create' ? 'Thêm địa chỉ nhận hàng' : 'Cập nhật địa chỉ nhận hàng'}
+                  {modalTitle(modalMode)}
                 </h3>
                 <button
                   type="button"
@@ -654,11 +702,12 @@ export default function AddressBookTab() {
                   {/* Dropdown list for Province */}
                   {provinceDropdownOpen && (
                     <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
-                      {filteredProvinces.length === 0 ? (
+                      {filteredProvinces.length === 0 && (
                         <div className="p-3 text-center text-xs text-zinc-400">
                           Không tìm thấy tỉnh/thành phố nào
                         </div>
-                      ) : (
+                      )}
+                      {filteredProvinces.length > 0 &&
                         filteredProvinces.map(function (p) {
                           const isSelected = city === p.name
                           return (
@@ -673,18 +722,13 @@ export default function AddressBookTab() {
                                 setWardSearch('')
                                 setProvinceDropdownOpen(false)
                               }}
-                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${
-                                isSelected
-                                  ? 'bg-sky-100 font-bold text-blue-700 dark:bg-white/10 dark:text-sky-300'
-                                  : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-700/60'
-                              }`}
+                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${optionItemClass(isSelected)}`}
                             >
                               <span>{p.name}</span>
                               {isSelected && <Check size={14} weight="bold" />}
                             </button>
                           )
-                        })
-                      )}
+                        })}
                     </div>
                   )}
                 </div>
@@ -719,11 +763,7 @@ export default function AddressBookTab() {
                           setWardDropdownOpen(true)
                         }
                       }}
-                      placeholder={
-                        selectedProvinceCode === ''
-                          ? 'Vui lòng chọn Tỉnh/Thành phố trước'
-                          : 'Gõ để tìm nhanh (VD: Dịch Vọng, Bến Nghé, Phường 1...)'
-                      }
+                      placeholder={wardInputPlaceholder(selectedProvinceCode)}
                       className="w-full rounded-2xl border border-zinc-200 py-2.5 pr-14 pl-9 text-xs font-medium text-zinc-900 focus:border-blue-600 focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:disabled:bg-zinc-900/60"
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-2.5">
@@ -759,13 +799,12 @@ export default function AddressBookTab() {
                   {/* Dropdown list for Ward */}
                   {wardDropdownOpen && selectedProvinceCode !== '' && (
                     <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
-                      {filteredWards.length === 0 ? (
+                      {filteredWards.length === 0 && (
                         <div className="p-3 text-center text-xs text-zinc-400">
-                          {wards.length === 0
-                            ? 'Đang tải danh sách phường/xã...'
-                            : 'Không tìm thấy phường/xã phù hợp'}
+                          {wardEmptyText(wards.length)}
                         </div>
-                      ) : (
+                      )}
+                      {filteredWards.length > 0 &&
                         filteredWards.slice(0, 40).map(function (w) {
                           const isSelected = ward === w.name
                           return (
@@ -777,18 +816,13 @@ export default function AddressBookTab() {
                                 setWardSearch(w.name ?? '')
                                 setWardDropdownOpen(false)
                               }}
-                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${
-                                isSelected
-                                  ? 'bg-sky-100 font-bold text-blue-700 dark:bg-white/10 dark:text-sky-300'
-                                  : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-700/60'
-                              }`}
+                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${optionItemClass(isSelected)}`}
                             >
                               <span>{w.name}</span>
                               {isSelected && <Check size={14} weight="bold" />}
                             </button>
                           )
-                        })
-                      )}
+                        })}
                       {filteredWards.length > 40 && (
                         <div className="p-2 text-center text-[11px] text-zinc-400">
                           Còn {filteredWards.length - 40} phường/xã khác, gõ thêm để thu hẹp kết
@@ -889,7 +923,7 @@ export default function AddressBookTab() {
                     className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 px-5 py-2 text-xs font-bold text-white shadow-sm shadow-indigo-900/20 hover:opacity-90 disabled:opacity-50"
                   >
                     {isMutating && <ArrowClockwise size={14} className="animate-spin" />}
-                    <span>{modalMode === 'create' ? 'Thêm mới' : 'Lưu thay đổi'}</span>
+                    <span>{submitLabel(modalMode)}</span>
                   </button>
                 </div>
               </form>

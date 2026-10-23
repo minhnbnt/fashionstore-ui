@@ -38,7 +38,7 @@ import ReasonDialog from '@/components/admin/ReasonDialog'
 import StatePanel from '@/components/admin/StatePanel'
 import StatusBadge from '@/components/admin/StatusBadge'
 import { adminErrorMessage, formatDateTime } from '@/lib/admin'
-import { imageUrl, takeData } from '@/lib/apiAdapters'
+import { PLACEHOLDER_IMAGE, imageUrl, takeData } from '@/lib/apiAdapters'
 
 import type { ConfirmAction, ReasonAction } from '@/types/admin'
 import type { AdminShopDetailResponse } from '@generated/model/adminShopDetailResponse'
@@ -290,6 +290,11 @@ export default function AdminShopDetail() {
                     <img
                       src={imageUrl(shop.bannerKey)}
                       alt={shop.name ?? 'Ảnh bìa shop'}
+                      onError={function (e) {
+                        if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                          e.currentTarget.src = PLACEHOLDER_IMAGE
+                        }
+                      }}
                       className="h-36 w-full object-cover"
                     />
                   </div>
@@ -301,6 +306,11 @@ export default function AdminShopDetail() {
                       <img
                         src={imageUrl(shop.logoKey)}
                         alt={shop.name ?? 'Logo shop'}
+                        onError={function (e) {
+                          if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                            e.currentTarget.src = PLACEHOLDER_IMAGE
+                          }
+                        }}
                         className="h-12 w-12 rounded-2xl border border-zinc-200 object-cover dark:border-white/10"
                       />
                     )}
@@ -449,6 +459,11 @@ export default function AdminShopDetail() {
                           <img
                             src={imageUrl(shop.idFrontKey)}
                             alt="Mặt trước CCCD"
+                            onError={function (e) {
+                              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                                e.currentTarget.src = PLACEHOLDER_IMAGE
+                              }
+                            }}
                             className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
                           />
                           <button
@@ -482,6 +497,11 @@ export default function AdminShopDetail() {
                           <img
                             src={imageUrl(shop.idBackKey)}
                             alt="Mặt sau CCCD"
+                            onError={function (e) {
+                              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                                e.currentTarget.src = PLACEHOLDER_IMAGE
+                              }
+                            }}
                             className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
                           />
                           <button
@@ -515,6 +535,11 @@ export default function AdminShopDetail() {
                           <img
                             src={imageUrl(shop.idSelfieKey)}
                             alt="Selfie cầm CCCD"
+                            onError={function (e) {
+                              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                                e.currentTarget.src = PLACEHOLDER_IMAGE
+                              }
+                            }}
                             className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
                           />
                           <button
@@ -548,6 +573,11 @@ export default function AdminShopDetail() {
                           <img
                             src={imageUrl(shop.businessCertKey)}
                             alt="Giấy phép kinh doanh"
+                            onError={function (e) {
+                              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                                e.currentTarget.src = PLACEHOLDER_IMAGE
+                              }
+                            }}
                             className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
                           />
                           <button
@@ -767,6 +797,11 @@ export default function AdminShopDetail() {
               <img
                 src={previewModal.url}
                 alt={previewModal.title}
+                onError={function (e) {
+                  if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                    e.currentTarget.src = PLACEHOLDER_IMAGE
+                  }
+                }}
                 className="mx-auto max-h-[75vh] w-auto object-contain"
               />
             </div>
