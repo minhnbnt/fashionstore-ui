@@ -262,6 +262,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       setFormError('Vui lòng chọn danh mục ngành hàng.')
       return
     }
+    if (description.trim() === '') {
+      setFormError('Mô tả chi tiết sản phẩm không được để trống.')
+      return
+    }
 
     // 2. Validation media
     if (images.length < 3) {
