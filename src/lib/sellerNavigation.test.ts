@@ -10,11 +10,13 @@ describe('parseSellerTab', () => {
   it('nhan tab hop le theo dung chu hoa', () => {
     expect(parseSellerTab('ORDERS')).toBe('ORDERS')
     expect(parseSellerTab('CHAT')).toBe('CHAT')
+    expect(parseSellerTab('EDIT_PRODUCT')).toBe('EDIT_PRODUCT')
   })
 
   it('khong phan biet hoa thuong', () => {
     expect(parseSellerTab('orders')).toBe('ORDERS')
     expect(parseSellerTab('Add_Product')).toBe('ADD_PRODUCT')
+    expect(parseSellerTab('edit_product')).toBe('EDIT_PRODUCT')
   })
 
   it('param khong hop le quay ve OVERVIEW', () => {

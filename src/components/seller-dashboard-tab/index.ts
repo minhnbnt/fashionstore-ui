@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 
 export const SellerAddProductTab = lazy(() => import('./SellerAddProductTab'))
+export const SellerEditProductTab = lazy(() => import('./SellerEditProductTab'))
 export const SellerChatTab = lazy(() => import('./SellerChatTab'))
 export const SellerDecorationTab = lazy(() =>
   import('./SellerDecorationTab').then((m) => ({ default: m.SellerDecorationTab })),

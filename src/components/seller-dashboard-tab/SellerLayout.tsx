@@ -254,7 +254,10 @@ export function SellerLayout({
                 </span>
                 {group.items.map((item) => {
                   const Icon = item.icon
-                  const isActive = activeTab === item.id
+                  let isActive = activeTab === item.id
+                  if (item.id === 'PRODUCTS' && activeTab === 'EDIT_PRODUCT') {
+                    isActive = true
+                  }
                   return (
                     <button
                       key={item.id}
@@ -316,7 +319,10 @@ export function SellerLayout({
                     </span>
                     {group.items.map((item) => {
                       const Icon = item.icon
-                      const isActive = activeTab === item.id
+                      let isActive = activeTab === item.id
+                      if (item.id === 'PRODUCTS' && activeTab === 'EDIT_PRODUCT') {
+                        isActive = true
+                      }
                       return (
                         <button
                           key={item.id}

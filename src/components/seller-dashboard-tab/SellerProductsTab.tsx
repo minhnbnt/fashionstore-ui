@@ -19,6 +19,7 @@ import {
   CheckCircle,
   X,
   FileCsv,
+  PencilSimple,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -37,9 +38,14 @@ function csvExportFileName(): string {
 interface Props {
   shopId: string
   onNavigateAddProduct: () => void
+  onNavigateEditProduct: (productId: string) => void
 }
 
-export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Props) {
+export default function SellerProductsTab({
+  shopId,
+  onNavigateAddProduct,
+  onNavigateEditProduct,
+}: Props) {
   const queryClient = useQueryClient()
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL')
   const [searchTerm, setSearchTerm] = useState('')
@@ -308,6 +314,11 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
               {filteredProducts.map(function (product) {
+                let toggleTitle = 'Đăng bán sản phẩm'
+                if (product.status === 'ACTIVE') {
+                  toggleTitle = 'Tạm ẩn sản phẩm'
+                }
+
                 return (
                   <tr
                     key={product.id}
@@ -370,11 +381,21 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                           <button
                             type="button"
                             onClick={function () {
+                              onNavigateEditProduct(product.id)
+                            }}
+                            title="Chỉnh sửa sản phẩm"
+                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                          >
+                            <PencilSimple size={14} weight="bold" />
+                          </button>
+                        )}
+                        {product.status !== 'DELETED' && (
+                          <button
+                            type="button"
+                            onClick={function () {
                               handleToggleProductStatus(product.id)
                             }}
-                            title={
-                              product.status === 'ACTIVE' ? 'Tạm ẩn sản phẩm' : 'Đăng bán sản phẩm'
-                            }
+                            title={toggleTitle}
                             className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
                           >
                             {product.status === 'ACTIVE' && <EyeSlash size={14} weight="bold" />}
