@@ -507,11 +507,16 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       }
     })
 
+    let requestStatus: string | undefined = undefined
+    if (status === 'ACTIVE' || status === 'HIDDEN') {
+      requestStatus = status
+    }
+
     const requestData: UpdateProductRequest = {
       name: name.trim(),
       description: description.trim(),
       categoryId: categoryId,
-      status: status,
+      status: requestStatus,
       images: mappedImages,
       videoKey: videoKey,
       garmentKey: garmentKey,
