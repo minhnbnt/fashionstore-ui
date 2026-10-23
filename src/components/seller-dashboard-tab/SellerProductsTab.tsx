@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import {
@@ -452,34 +452,24 @@ export default function SellerProductsTab({
     priceInputPlaceholder = 'Ví dụ: 199000'
   }
 
-  useEffect(
-    function () {
-      if (showBulkStockModal && singleSelectedProduct !== undefined) {
-        const initialMap: Record<string, string> = {}
-        for (const v of singleSelectedProduct.variants) {
-          initialMap[v.id] = String(v.stock)
-        }
-        setVariantStocks(initialMap)
-        setQuickApplyValue('')
-      }
-    },
-    [showBulkStockModal, singleSelectedProduct],
-  )
-
   let totalNewStock = 0
   let totalDiff = 0
   if (singleSelectedProduct !== undefined) {
     let allValid = true
     let calculatedTotal = 0
     for (const v of singleSelectedProduct.variants) {
-      const stockStr = variantStocks[v.id]
       let parsed = v.stock
-      if (stockStr !== undefined && stockStr !== '') {
-        const n = parseInt(stockStr, 10)
-        if (!Number.isNaN(n) && n >= 0) {
-          parsed = n
-        } else {
+      const stockStr = variantStocks[v.id]
+      if (stockStr !== undefined) {
+        if (stockStr === '') {
           allValid = false
+        } else {
+          const n = parseInt(stockStr, 10)
+          if (!Number.isNaN(n) && n >= 0) {
+            parsed = n
+          } else {
+            allValid = false
+          }
         }
       }
       calculatedTotal += parsed
@@ -652,6 +642,51 @@ export default function SellerProductsTab({
       nextMap[v.id] = String(calculated)
     }
     setVariantStocks(nextMap)
+  }
+
+  function handleIncrementVariant(variantId: string, fallbackStock: number) {
+    setVariantStocks(function (prev) {
+      let current = fallbackStock
+      const stockStr = prev[variantId]
+      if (stockStr !== undefined && stockStr !== '') {
+        const parsed = parseInt(stockStr, 10)
+        if (!Number.isNaN(parsed)) {
+          current = parsed
+        }
+      }
+      const nextMap = { ...prev }
+      nextMap[variantId] = String(current + 1)
+      return nextMap
+    })
+  }
+
+  function handleDecrementVariant(variantId: string, fallbackStock: number) {
+    setVariantStocks(function (prev) {
+      let current = fallbackStock
+      const stockStr = prev[variantId]
+      if (stockStr !== undefined && stockStr !== '') {
+        const parsed = parseInt(stockStr, 10)
+        if (!Number.isNaN(parsed)) {
+          current = parsed
+        }
+      }
+      const nextMap = { ...prev }
+      nextMap[variantId] = String(Math.max(0, current - 1))
+      return nextMap
+    })
+  }
+
+  function handleResetToOriginalStock() {
+    if (singleSelectedProduct === undefined) {
+      return
+    }
+    const initialMap: Record<string, string> = {}
+    for (const v of singleSelectedProduct.variants) {
+      initialMap[v.id] = String(v.stock)
+    }
+    setVariantStocks(initialMap)
+    setQuickApplyValue('')
+    setBulkStockError(null)
   }
 
   async function handleConfirmBulkStock() {
@@ -1632,35 +1667,44 @@ export default function SellerProductsTab({
 
                 {/* Thanh tiện ích gán nhanh nếu có phân loại */}
                 {singleSelectedProduct.variants.length > 0 && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-zinc-200/70 bg-zinc-50/60 p-2.5 text-xs dark:border-zinc-800 dark:bg-zinc-800/20">
-                    <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
-                      Áp dụng nhanh cho mọi size:
-                    </span>
-                    <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-800/30">
+                    <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
+                      <span className="text-xs font-bold">Áp dụng hàng loạt:</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <input
                         type="number"
                         min="0"
                         step="1"
-                        placeholder="Số lượng"
+                        placeholder="SL mới"
                         value={quickApplyValue}
                         onChange={function (e) {
                           setQuickApplyValue(e.target.value)
                         }}
-                        className="w-24 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-center text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                        className="h-8 w-20 [appearance:textfield] rounded-xl border border-zinc-200 bg-white px-2.5 text-center font-mono text-xs font-bold text-zinc-900 shadow-2xs transition outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                       <button
                         type="button"
                         onClick={handleApplyAllFixed}
-                        className="rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                        className="h-8 rounded-xl bg-orange-600 px-3 text-[11px] font-bold text-white shadow-2xs transition hover:bg-orange-700 active:scale-95"
                       >
                         Gán tất cả
                       </button>
                       <button
                         type="button"
                         onClick={handleApplyAllDelta}
-                        className="rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                        className="h-8 rounded-xl border border-zinc-200 bg-white px-3 text-[11px] font-bold text-zinc-700 shadow-2xs transition hover:bg-zinc-100 active:scale-95 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                       >
-                        + Cộng thêm
+                        + Thêm vào tất cả
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetToOriginalStock}
+                        title="Khôi phục về số lượng tồn gốc ban đầu"
+                        className="flex h-8 items-center gap-1 rounded-xl border border-zinc-200 bg-white px-2.5 text-[11px] font-semibold text-zinc-500 shadow-2xs transition hover:bg-zinc-100 hover:text-zinc-800 active:scale-95 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
+                      >
+                        <ArrowCounterClockwise size={13} weight="bold" />
+                        <span>Khôi phục</span>
                       </button>
                     </div>
                   </div>
@@ -1670,14 +1714,17 @@ export default function SellerProductsTab({
                 <div>
                   <div className="mb-2 flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
                     <span>Điều chỉnh số lượng từng kích thước (Size):</span>
-                    <span className="text-[11px] font-normal text-zinc-400">
+                    <span className="text-[11px] font-medium text-zinc-400">
                       {singleSelectedProduct.variants.length} phân loại
                     </span>
                   </div>
 
-                  <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
+                  <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                     {singleSelectedProduct.variants.map(function (v) {
-                      const currentVal = variantStocks[v.id] ?? String(v.stock)
+                      let currentVal = String(v.stock)
+                      if (variantStocks[v.id] !== undefined) {
+                        currentVal = variantStocks[v.id]
+                      }
                       let diff = 0
                       let hasDiff = false
                       const numVal = parseInt(currentVal, 10)
@@ -1689,58 +1736,94 @@ export default function SellerProductsTab({
                       return (
                         <div
                           key={v.id}
-                          className="flex items-center justify-between rounded-2xl border border-zinc-200/80 bg-white p-2.5 text-xs transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/60"
+                          className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white p-3 shadow-2xs transition hover:border-orange-200 hover:shadow-xs dark:border-zinc-800 dark:bg-zinc-900/70 dark:hover:border-zinc-700"
                         >
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex min-w-9 items-center justify-center rounded-xl bg-orange-100 px-2.5 py-1 text-xs font-black text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
+                          {/* Size & Info */}
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span className="inline-flex h-9 min-w-10 items-center justify-center rounded-xl border border-orange-200/80 bg-gradient-to-br from-orange-50 to-orange-100 px-2.5 text-xs font-black text-orange-700 shadow-2xs dark:border-orange-900/60 dark:from-orange-950/60 dark:to-orange-900/40 dark:text-orange-300">
                               {v.size}
                             </span>
                             <div className="min-w-0">
                               {v.color !== '' && (
-                                <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                                <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-200">
                                   {v.color}
                                 </p>
                               )}
-                              <p className="font-mono text-[10px] text-zinc-400">{v.sku}</p>
+                              <p className="truncate font-mono text-[11px] text-zinc-400">
+                                SKU: {v.sku}
+                              </p>
                             </div>
                           </div>
 
+                          {/* Stock Controls */}
                           <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <span className="block text-[10px] text-zinc-400">Cũ:</span>
-                              <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                            <div className="min-w-[48px] text-right">
+                              <span className="block text-[10px] font-semibold tracking-wider text-zinc-400 uppercase">
+                                Cũ
+                              </span>
+                              <span className="text-xs font-black text-zinc-700 dark:text-zinc-300">
                                 {v.stock}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="number"
-                                min="0"
-                                step="1"
-                                value={currentVal}
-                                onChange={function (e) {
-                                  const val = e.target.value
-                                  setVariantStocks(function (prev) {
-                                    const nextMap = { ...prev }
-                                    nextMap[v.id] = val
-                                    return nextMap
-                                  })
-                                }}
-                                className="w-20 rounded-xl border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-center text-xs font-bold text-zinc-900 outline-none focus:border-orange-500 focus:bg-white dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-                              />
+                            <div className="flex items-center gap-2">
+                              {/* Stepper Input */}
+                              <div className="flex items-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 shadow-2xs transition focus-within:border-orange-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-500/20 dark:border-zinc-700 dark:bg-zinc-800/80 dark:focus-within:bg-zinc-900">
+                                <button
+                                  type="button"
+                                  onClick={function () {
+                                    handleDecrementVariant(v.id, v.stock)
+                                  }}
+                                  className="flex h-8 w-8 items-center justify-center text-zinc-500 transition hover:bg-zinc-200/70 hover:text-zinc-900 active:scale-90 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-white"
+                                  title="Giảm 1"
+                                >
+                                  <span className="text-base leading-none font-bold">−</span>
+                                </button>
 
-                              <div className="w-12 text-center text-[11px] font-bold">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={currentVal}
+                                  onChange={function (e) {
+                                    const val = e.target.value
+                                    setVariantStocks(function (prev) {
+                                      const nextMap = { ...prev }
+                                      nextMap[v.id] = val
+                                      return nextMap
+                                    })
+                                  }}
+                                  className="h-8 w-16 [appearance:textfield] bg-transparent text-center font-mono text-xs font-bold text-zinc-900 outline-none dark:text-white [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+
+                                <button
+                                  type="button"
+                                  onClick={function () {
+                                    handleIncrementVariant(v.id, v.stock)
+                                  }}
+                                  className="flex h-8 w-8 items-center justify-center text-zinc-500 transition hover:bg-zinc-200/70 hover:text-zinc-900 active:scale-90 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-white"
+                                  title="Tăng 1"
+                                >
+                                  <span className="text-base leading-none font-bold">+</span>
+                                </button>
+                              </div>
+
+                              {/* Difference Badge */}
+                              <div className="flex min-w-[50px] justify-center text-center">
                                 {hasDiff && diff > 0 && (
-                                  <span className="text-emerald-600 dark:text-emerald-400">
+                                  <span className="inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[11px] font-black text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-950/60 dark:text-emerald-300">
                                     +{diff}
                                   </span>
                                 )}
                                 {hasDiff && diff < 0 && (
-                                  <span className="text-red-600 dark:text-red-400">{diff}</span>
+                                  <span className="inline-flex items-center rounded-full border border-rose-200/80 bg-rose-50 px-2 py-0.5 text-[11px] font-black text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/60 dark:text-rose-300">
+                                    {diff}
+                                  </span>
                                 )}
                                 {!hasDiff && (
-                                  <span className="text-zinc-300 dark:text-zinc-600">0</span>
+                                  <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500">
+                                    0
+                                  </span>
                                 )}
                               </div>
                             </div>
