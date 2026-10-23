@@ -652,7 +652,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                           className="h-24 w-full rounded-xl object-cover"
                         />
                         <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
-                          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow">
+                          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow dark:bg-zinc-900 dark:text-zinc-100">
                             Đổi ảnh
                           </span>
                         </div>
@@ -702,7 +702,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                           className="h-24 w-full rounded-xl object-cover"
                         />
                         <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
-                          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow">
+                          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow dark:bg-zinc-900 dark:text-zinc-100">
                             Đổi ảnh
                           </span>
                         </div>
@@ -752,7 +752,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                           className="h-24 w-full rounded-xl object-cover"
                         />
                         <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
-                          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow">
+                          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow dark:bg-zinc-900 dark:text-zinc-100">
                             Đổi ảnh
                           </span>
                         </div>
@@ -888,7 +888,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     type="checkbox"
                     checked={pledgeGenuine}
                     onChange={(e) => setPledgeGenuine(e.target.checked)}
-                    className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
+                    className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500 dark:border-zinc-600"
                   />
                   <span>
                     Tôi cam kết chỉ bán sản phẩm thời trang chính hãng, có nguồn gốc xuất xứ rõ
@@ -902,7 +902,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     type="checkbox"
                     checked={pledgeLegal}
                     onChange={(e) => setPledgeLegal(e.target.checked)}
-                    className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
+                    className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500 dark:border-zinc-600"
                   />
                   <span>
                     Tôi hoàn toàn chịu trách nhiệm trước pháp luật và bồi thường 100% thiệt hại phát
@@ -916,7 +916,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     type="checkbox"
                     checked={pledgeTax}
                     onChange={(e) => setPledgeTax(e.target.checked)}
-                    className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
+                    className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500 dark:border-zinc-600"
                   />
                   <span>
                     Tôi đồng ý để sàn nét lưu trữ dữ liệu định danh eKYC và cung cấp số liệu doanh
