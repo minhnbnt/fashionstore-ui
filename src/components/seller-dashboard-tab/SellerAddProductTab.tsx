@@ -26,6 +26,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import ProductMediaUploader from '@/components/seller/ProductMediaUploader'
 import RichTextEditor from '@/components/ui/RichTextEditor'
 import { imageUrl, takeData } from '@/lib/apiAdapters'
+import { ApiError } from '@/lib/apiFetch'
 import { uploadImage } from '@/lib/uploadImage'
 
 import type { CreateProductRequest } from '@generated/model/createProductRequest'
@@ -77,6 +78,26 @@ function safeSkuPart(str: string): string {
 const COMMON_COLORS = ['Trắng', 'Đen', 'Xanh Navy', 'Be', 'Hồng', 'Xám', 'Đỏ', 'Vàng', 'Nâu']
 const COMMON_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', 'Freesize']
 
+
+function generateVariantSku(prefix: string, color: string, size: string): string {
+  const cleanPrefix = prefix.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
+  let safePrefix = cleanPrefix
+  if (safePrefix === '') {
+    safePrefix = 'SP'
+  }
+  const colorCode = safeSkuPart(color).slice(0, 4)
+  let safeColor = colorCode
+  if (safeColor === '') {
+    safeColor = 'COL'
+  }
+  const sizeCode = safeSkuPart(size).slice(0, 4)
+  let safeSize = sizeCode
+  if (safeSize === '') {
+    safeSize = 'SZ'
+  }
+  const rand = Math.random().toString(36).substring(2, 6).toUpperCase()
+  return `${safePrefix}-${safeColor}-${safeSize}-${rand}`
+}
 
 function newVariantRow(
   sku: string,
@@ -131,10 +152,12 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
   const [bulkCompareAtPrice, setBulkCompareAtPrice] = useState('250.000')
   const [bulkStock, setBulkStock] = useState('50')
 
-  const [variants, setVariants] = useState<VariantRow[]>([
-    newVariantRow('AO-THUN-TRG-M', 'M', 'Trắng', true),
-    newVariantRow('AO-THUN-DEN-L', 'L', 'Đen', false),
-  ])
+  const [variants, setVariants] = useState<VariantRow[]>(function () {
+    return [
+      newVariantRow(generateVariantSku('SP', 'Trắng', 'M'), 'M', 'Trắng', true),
+      newVariantRow(generateVariantSku('SP', 'Đen', 'L'), 'L', 'Đen', false),
+    ]
+  })
   const [colorImages, setColorImages] = useState<Record<string, string>>({})
   const [uploadingColor, setUploadingColor] = useState<string | null>(null)
 
@@ -183,8 +206,34 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         onBack()
       },
       onError: function (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo sản phẩm.'
-        setFormError(message)
+        if (err instanceof ApiError) {
+          if (err.status === 409) {
+            const lower = err.message.toLowerCase()
+            if (lower.includes('slug')) {
+              setFormError(
+                'Đường dẫn slug sản phẩm đã tồn tại trong gian hàng. Vui lòng bấm "Tạo đuôi ngẫu nhiên" tại ô slug hoặc đổi tên sản phẩm.',
+              )
+              return
+            }
+            if (lower.includes('sku')) {
+              setFormError(
+                'Mã SKU của một trong các phân loại đã tồn tại trong gian hàng. Vui lòng kiểm tra lại bảng phân loại bên dưới và đổi mã SKU.',
+              )
+              return
+            }
+            setFormError(
+              'Xung đột dữ liệu (409): Tên/slug hoặc mã SKU đã tồn tại trong gian hàng. Vui lòng kiểm tra lại.',
+            )
+            return
+          }
+          setFormError(err.message)
+          return
+        }
+        if (err instanceof Error) {
+          setFormError(err.message)
+          return
+        }
+        setFormError('Có lỗi xảy ra khi tạo sản phẩm.')
       },
     },
   })
@@ -231,10 +280,13 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             isDefault: isFirst,
           })
         } else {
-          const baseSlug = (slug || 'SP').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
-          const colorCode = safeSkuPart(c).slice(0, 4)
-          const sizeCode = safeSkuPart(s).slice(0, 4)
-          const sku = `${baseSlug || 'SKU'}-${colorCode || 'COLOR'}-${sizeCode || 'SIZE'}`
+          let skuPrefix = 'SP'
+          if (slug.trim() !== '') {
+            skuPrefix = slug
+          } else if (name.trim() !== '') {
+            skuPrefix = name
+          }
+          const sku = generateVariantSku(skuPrefix, c, s)
           const samplePrice = parseNumberFromDots(bulkPrice) ?? 199000
           const sampleCompareAtPrice = parseNumberFromDots(bulkCompareAtPrice) ?? 250000
           const sampleStock = parseNumberFromDots(bulkStock) ?? 50
@@ -527,11 +579,20 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       return
     }
 
+    const seenSkus = new Set<string>()
     for (const v of variants) {
       if (v.sku.trim() === '') {
         setFormError('Mã SKU không được để trống.')
         return
       }
+      const upperSku = v.sku.trim().toUpperCase()
+      if (seenSkus.has(upperSku)) {
+        setFormError(
+          `Mã SKU "${v.sku}" bị trùng lặp giữa các phân loại. Mỗi phân loại phải có mã SKU riêng biệt.`,
+        )
+        return
+      }
+      seenSkus.add(upperSku)
       if (v.size.trim() === '' || v.color.trim() === '') {
         setFormError('Kích cỡ và màu sắc của biến thể không được để trống.')
         return
@@ -681,18 +742,34 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label
-                htmlFor="addProductSlugInput"
-                className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
-              >
-                Đường dẫn slug (Tự sinh độc nhất)
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="addProductSlugInput"
+                  className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+                >
+                  Đường dẫn slug
+                </label>
+                <button
+                  type="button"
+                  onClick={function () {
+                    const suffix = Math.random().toString(36).substring(2, 6)
+                    if (slug.trim() !== '') {
+                      setSlug(`${slug.replace(/-[a-z0-9]{4}$/, '')}-${suffix}`)
+                    }
+                  }}
+                  className="text-[11px] font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+                >
+                  Tạo đuôi ngẫu nhiên
+                </button>
+              </div>
               <input
                 id="addProductSlugInput"
                 type="text"
                 value={slug}
-                readOnly
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/50"
+                onChange={function (e) {
+                  setSlug(e.target.value)
+                }}
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-white p-3 text-xs text-zinc-800 outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
               />
             </div>
             <div>
