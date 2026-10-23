@@ -3,21 +3,14 @@ import { Link, useNavigate } from 'react-router'
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useSearch } from '@generated/endpoints/search/search'
 import { useListPageLinks } from '@generated/endpoints/site-content/site-content'
-import {
-  Heart,
-  ShoppingBag,
-  Star,
-  Truck,
-  ShieldCheck,
-  ArrowsLeftRight,
-  ArrowRight,
-} from '@phosphor-icons/react'
+import { Star, Truck, ShieldCheck, ArrowsLeftRight, ArrowRight } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import UserAvatar from './UserAvatar'
+import WishlistButton from './WishlistButton'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
@@ -157,13 +150,7 @@ export function ProductCard(props: { item: ProductSummaryResponse }) {
             className="aspect-[4/5] w-full object-cover"
           />
         </Link>
-        <button
-          type="button"
-          aria-label="Yêu thích"
-          className="glass absolute top-3 right-3 rounded-full p-2"
-        >
-          <Heart size={16} />
-        </button>
+        <WishlistButton productId={p.id} />
       </div>
       <div className="p-4">
         <Link to={'/product/' + p.id}>
@@ -181,8 +168,7 @@ export function ProductCard(props: { item: ProductSummaryResponse }) {
           }}
           className="btn-primary mt-3 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold"
         >
-          <ShoppingBag size={16} weight="fill" />
-          Thêm giỏ
+          Xem thêm
         </button>
       </div>
     </article>

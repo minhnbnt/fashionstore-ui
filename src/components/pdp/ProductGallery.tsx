@@ -1,7 +1,5 @@
 import { useState } from 'react'
 
-import { Heart } from '@phosphor-icons/react'
-
 import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
 
 import type { ImageResponse } from '@generated/model/imageResponse'
@@ -33,13 +31,6 @@ export default function ProductGallery(props: { images: ImageResponse[]; name: s
           }}
           className="aspect-[4/5] w-full object-cover"
         />
-        <button
-          type="button"
-          aria-label="Yêu thích"
-          className="glass absolute top-3 right-3 rounded-full p-2"
-        >
-          <Heart size={18} />
-        </button>
       </div>
       {imgs.length > 1 && (
         <div className="mt-3 flex gap-3">

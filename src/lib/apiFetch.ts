@@ -2,10 +2,12 @@ import { getAuthClient } from './auth'
 
 export class ApiError extends Error {
   status: number
+  body: unknown
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, body?: unknown) {
     super(message)
     this.status = status
+    this.body = body
   }
 }
 
@@ -25,7 +27,13 @@ export async function customFetch<T>(url: string, options?: RequestInit): Promis
 
   const response = await fetch(`${baseUrl}${url}`, { ...options, headers })
   if (response.ok === false) {
-    throw new ApiError(response.status, `Request failed with status ${response.status}`)
+    let body: unknown = null
+    try {
+      body = await response.json()
+    } catch {
+      // loi khong co body JSON (vd 401 tu security filter)
+    }
+    throw new ApiError(response.status, `Request failed with status ${response.status}`, body)
   }
   if (response.status === 204) {
     return undefined as T

@@ -15673,19 +15673,15 @@
       "AddressRequest": {
         "type": "object",
         "properties": {
-          "recipientName": {
-            "type": "string",
-            "description": "Ten nguoi nhan",
-            "example": "Nguyen Van A",
-            "maxLength": 100,
-            "minLength": 0
+          "city": {
+            "type": ["string", "null"]
           },
-          "phoneNumber": {
-            "type": "string",
-            "description": "So dien thoai nguoi nhan",
-            "example": "0912345678",
-            "maxLength": 20,
-            "minLength": 0
+          "defaultAddress": {
+            "type": "boolean",
+            "description": "Dat lam dia chi mac dinh"
+          },
+          "district": {
+            "type": ["string", "null"]
           },
           "fullAddress": {
             "type": "string",
@@ -15694,46 +15690,80 @@
             "maxLength": 300,
             "minLength": 0
           },
+          "houseNumber": {
+            "type": ["string", "null"]
+          },
           "label": {
             "type": "string",
             "description": "Nhan dia chi (HOME, OFFICE, OTHER)",
             "enum": ["HOME", "OFFICE", "OTHER"],
             "example": "HOME"
           },
-          "defaultAddress": {
-            "type": "boolean",
-            "description": "Dat lam dia chi mac dinh"
+          "phoneNumber": {
+            "type": "string",
+            "description": "So dien thoai nguoi nhan",
+            "example": "0912345678",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "recipientName": {
+            "type": "string",
+            "description": "Ten nguoi nhan",
+            "example": "Nguyen Van A",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "street": {
+            "type": ["string", "null"]
+          },
+          "ward": {
+            "type": ["string", "null"]
           }
         },
-        "required": ["defaultAddress", "fullAddress", "label", "phoneNumber", "recipientName"]
+        "required": []
       },
       "AddressResponse": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
+          "city": {
+            "type": ["string", "null"]
           },
-          "recipientName": {
-            "type": "string",
-            "description": "Ten nguoi nhan"
+          "defaultAddress": {
+            "type": "boolean",
+            "description": "Dia chi mac dinh"
           },
-          "phoneNumber": {
-            "type": "string",
-            "description": "So dien thoai nguoi nhan"
+          "district": {
+            "type": ["string", "null"]
           },
           "fullAddress": {
             "type": "string",
             "description": "Dia chi day du"
+          },
+          "houseNumber": {
+            "type": ["string", "null"]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "label": {
             "type": "string",
             "description": "Nhan dia chi",
             "enum": ["HOME", "OFFICE", "OTHER"]
           },
-          "defaultAddress": {
-            "type": "boolean",
-            "description": "Dia chi mac dinh"
+          "phoneNumber": {
+            "type": "string",
+            "description": "So dien thoai nguoi nhan"
+          },
+          "recipientName": {
+            "type": "string",
+            "description": "Ten nguoi nhan"
+          },
+          "street": {
+            "type": ["string", "null"]
+          },
+          "ward": {
+            "type": ["string", "null"]
           }
         }
       },
@@ -17209,6 +17239,14 @@
             "format": "int64",
             "description": "Phi ship VND ap cho moi don, null = 0",
             "minimum": 0
+          },
+          "variantIds": {
+            "type": ["array", "null"],
+            "description": "Chi thanh toan cac variant nay, null/rong = toan bo gio",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
         "required": ["shippingAddress", "shippingName", "shippingPhone"]

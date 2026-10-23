@@ -10,7 +10,6 @@ import AmbientBackground from './components/ui/AmbientBackground'
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
 const Account = lazy(() => import('./pages/Account'))
-const Checkout = lazy(() => import('./pages/Checkout'))
 const ProductDetail = lazy(() => import('./pages/ProductDetail'))
 const Search = lazy(() => import('./pages/Search'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
@@ -28,6 +27,10 @@ const AdminHolidays = lazy(() => import('./pages/AdminHolidays'))
 const AdminBannedKeywords = lazy(() => import('./pages/AdminBannedKeywords'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const Cart = lazy(() => import('./pages/Cart'))
+const Checkout = lazy(() => import('./pages/Checkout'))
+const Addresses = lazy(() => import('./pages/Addresses'))
+const Wishlist = lazy(() => import('./pages/Wishlist'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -81,6 +84,30 @@ function App() {
             element={
               <RequireAuth>
                 <Account />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/account/addresses"
+            element={
+              <RequireAuth>
+                <Addresses />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/wishlist"
+            element={
+              <RequireAuth>
+                <Wishlist />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/cart"
+            element={
+              <RequireAuth>
+                <Cart />
               </RequireAuth>
             }
           />
