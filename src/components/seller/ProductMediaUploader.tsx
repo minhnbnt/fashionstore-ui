@@ -14,7 +14,7 @@ import {
 } from '@phosphor-icons/react'
 
 import { imageUrl } from '@/lib/apiAdapters'
-import { uploadImage, uploadVideo } from '@/lib/uploadImage'
+import { checkVideoDuration, uploadImage, uploadVideo } from '@/lib/uploadImage'
 
 interface Props {
   images: string[]
@@ -41,6 +41,9 @@ export default function ProductMediaUploader({
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
   const [isUploadingGarment, setIsUploadingGarment] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
+  const [videoDuration, setVideoDuration] = useState<number | null>(null)
+  const [videoFileName, setVideoFileName] = useState<string | null>(null)
 
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -105,19 +108,38 @@ export default function ProductMediaUploader({
       return
     }
 
-    setIsUploadingVideo(true)
     setErrorMessage(null)
+    const localPreviewUrl = URL.createObjectURL(file)
+    setVideoPreviewUrl(localPreviewUrl)
+    setVideoFileName(file.name)
+    setIsUploadingVideo(true)
 
     try {
+      const dur = await checkVideoDuration(file, 60)
+      setVideoDuration(dur)
       const key = await uploadVideo(file)
       onVideoChange(key)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Upload video thất bại.'
       setErrorMessage(msg)
+      setVideoPreviewUrl(null)
+      setVideoDuration(null)
+      setVideoFileName(null)
+      onVideoChange(null)
     } finally {
       setIsUploadingVideo(false)
       e.target.value = ''
     }
+  }
+
+  function handleRemoveVideo() {
+    if (videoPreviewUrl !== null && videoPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(videoPreviewUrl)
+    }
+    setVideoPreviewUrl(null)
+    setVideoDuration(null)
+    setVideoFileName(null)
+    onVideoChange(null)
   }
 
   async function handleGarmentFile(e: ChangeEvent<HTMLInputElement>) {
@@ -296,7 +318,7 @@ export default function ProductMediaUploader({
             </p>
           </div>
 
-          {videoKey === null && (
+          {videoKey === null && videoPreviewUrl === null && (
             <button
               type="button"
               disabled={isUploadingVideo}
@@ -321,32 +343,64 @@ export default function ProductMediaUploader({
           />
         </div>
 
-        {videoKey !== null && (
+        {(videoKey !== null || videoPreviewUrl !== null) && (
           <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <div className="relative aspect-video w-64 overflow-hidden rounded-2xl border border-zinc-200 bg-black dark:border-zinc-800">
+            <div className="relative aspect-video w-full sm:w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-xs dark:border-zinc-800">
               <video
-                src={imageUrl(videoKey)}
+                src={videoPreviewUrl ?? imageUrl(videoKey)}
                 controls
                 playsInline
                 className="h-full w-full object-contain"
               />
+              {isUploadingVideo && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white backdrop-blur-xs">
+                  <SpinnerGap size={24} weight="bold" className="animate-spin text-orange-400" />
+                  <span className="mt-2 text-xs font-semibold">Đang tải lên hệ thống S3...</span>
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                <PlayCircle size={16} weight="fill" />
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                <PlayCircle size={18} weight="fill" />
                 <span>Video hợp lệ (thời lượng ≤ 60s)</span>
+                {videoDuration !== null && (
+                  <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                    {videoDuration}s / 60s
+                  </span>
+                )}
               </div>
-              <p className="text-[11px] text-zinc-500">Video đã được upload lên hệ thống S3 an toàn.</p>
-              <button
-                type="button"
-                onClick={function () {
-                  onVideoChange(null)
-                }}
-                className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400"
-              >
-                <Trash size={14} weight="bold" />
-                Gỡ video
-              </button>
+              {videoFileName !== null && (
+                <p className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">
+                  File: <span className="font-semibold text-zinc-900 dark:text-white">{videoFileName}</span>
+                </p>
+              )}
+              <p className="text-[11px] text-zinc-500">
+                {isUploadingVideo
+                  ? 'Đang đồng bộ hóa video lên máy chủ lưu trữ S3...'
+                  : 'Video đã được tải lên và sẵn sàng phát trên trang chi tiết sản phẩm.'}
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={isUploadingVideo}
+                  onClick={function () {
+                    videoInputRef.current?.click()
+                  }}
+                  className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
+                >
+                  <VideoCamera size={14} weight="bold" />
+                  Thay đổi video
+                </button>
+                <button
+                  type="button"
+                  disabled={isUploadingVideo}
+                  onClick={handleRemoveVideo}
+                  className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400"
+                >
+                  <Trash size={14} weight="bold" />
+                  Gỡ video
+                </button>
+              </div>
             </div>
           </div>
         )}

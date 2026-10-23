@@ -14,6 +14,9 @@ import {
   ShieldCheck,
   SpinnerGap,
   UploadSimple,
+  X,
+  Tag,
+  Lightning,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -44,6 +47,34 @@ interface VariantRow {
   imageKey: string | null
 }
 
+function formatNumberWithDots(val: number | null | undefined): string {
+  if (val === null || val === undefined || isNaN(val)) {
+    return ''
+  }
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+function parseNumberFromDots(val: string): number | null {
+  const clean = val.replace(/\D/g, '')
+  if (clean === '') {
+    return null
+  }
+  return parseInt(clean, 10)
+}
+
+function safeSkuPart(str: string): string {
+  return str
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/Đ/g, 'D')
+    .replace(/[^A-Z0-9]/g, '')
+}
+
+const COMMON_COLORS = ['Trắng', 'Đen', 'Xanh Navy', 'Be', 'Hồng', 'Xám', 'Đỏ', 'Vàng', 'Nâu']
+const COMMON_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', 'Freesize']
+
+
 function newVariantRow(
   sku: string,
   size: string,
@@ -52,7 +83,7 @@ function newVariantRow(
   imageKey: string | null = null,
 ): VariantRow {
   return {
-    keyId: `var-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+    keyId: `var-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
     sku,
     size,
     color,
@@ -81,7 +112,15 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
   const [tryOnEnabled, setTryOnEnabled] = useState(false)
   const [garmentKey, setGarmentKey] = useState<string | null>(null)
 
-  // 3. Variants & Color Images
+  // 3. Classifications (Màu sắc & Kích cỡ), Bulk Apply & Variants
+  const [colors, setColors] = useState<string[]>(['Trắng', 'Đen'])
+  const [customColor, setCustomColor] = useState('')
+  const [sizes, setSizes] = useState<string[]>(['M', 'L'])
+  const [customSize, setCustomSize] = useState('')
+  const [bulkPrice, setBulkPrice] = useState('199.000')
+  const [bulkCompareAtPrice, setBulkCompareAtPrice] = useState('250.000')
+  const [bulkStock, setBulkStock] = useState('50')
+
   const [variants, setVariants] = useState<VariantRow[]>([
     newVariantRow('AO-THUN-TRG-M', 'M', 'Trắng', true),
     newVariantRow('AO-THUN-DEN-L', 'L', 'Đen', false),
@@ -156,6 +195,125 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       .trim()
       .replace(/\s+/g, '-')
     setSlug(generatedSlug)
+  }
+
+  function updateVariantsFromMatrix(newColors: string[], newSizes: string[]) {
+    const activeColors = newColors.length > 0 ? newColors : ['Mặc định']
+    const activeSizes = newSizes.length > 0 ? newSizes : ['Freesize']
+
+    const nextVariants: VariantRow[] = []
+    let isFirst = true
+
+    for (const c of activeColors) {
+      for (const s of activeSizes) {
+        const existing = variants.find(
+          (v) =>
+            v.color.trim().toLowerCase() === c.trim().toLowerCase() &&
+            v.size.trim().toLowerCase() === s.trim().toLowerCase(),
+        )
+
+        if (existing !== undefined) {
+          nextVariants.push({
+            ...existing,
+            color: c,
+            size: s,
+            isDefault: isFirst,
+          })
+        } else {
+          const baseSlug = (slug || 'SP').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
+          const colorCode = safeSkuPart(c).slice(0, 4)
+          const sizeCode = safeSkuPart(s).slice(0, 4)
+          const sku = `${baseSlug || 'SKU'}-${colorCode || 'COLOR'}-${sizeCode || 'SIZE'}`
+          const samplePrice = variants[0]?.price ?? 199000
+          const sampleCompareAtPrice = variants[0]?.compareAtPrice ?? 250000
+          const sampleStock = variants[0]?.stockQuantity ?? 50
+          const colorImg = colorImages[c] ?? null
+
+          nextVariants.push({
+            keyId: `var-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+            sku,
+            size: s,
+            color: c,
+            price: samplePrice,
+            compareAtPrice: sampleCompareAtPrice,
+            stockQuantity: sampleStock,
+            isDefault: isFirst,
+            imageKey: colorImg,
+          })
+        }
+        isFirst = false
+      }
+    }
+
+    const hadDefault = nextVariants.some((v) => v.isDefault)
+    if (!hadDefault && nextVariants.length > 0 && nextVariants[0] !== undefined) {
+      nextVariants[0].isDefault = true
+    }
+
+    setVariants(nextVariants)
+  }
+
+  function handleAddColor(colorName: string) {
+    const trimmed = colorName.trim()
+    if (trimmed === '' || colors.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      return
+    }
+    const updated = [...colors, trimmed]
+    setColors(updated)
+    setCustomColor('')
+    updateVariantsFromMatrix(updated, sizes)
+  }
+
+  function handleRemoveColor(colorName: string) {
+    if (colors.length <= 1) {
+      setFormError('Sản phẩm nên có ít nhất 1 màu sắc.')
+      return
+    }
+    const updated = colors.filter((c) => c !== colorName)
+    setColors(updated)
+    updateVariantsFromMatrix(updated, sizes)
+  }
+
+  function handleAddSize(sizeName: string) {
+    const trimmed = sizeName.trim()
+    if (trimmed === '' || sizes.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      return
+    }
+    const updated = [...sizes, trimmed]
+    setSizes(updated)
+    setCustomSize('')
+    updateVariantsFromMatrix(colors, updated)
+  }
+
+  function handleRemoveSize(sizeName: string) {
+    if (sizes.length <= 1) {
+      setFormError('Sản phẩm nên có ít nhất 1 kích cỡ.')
+      return
+    }
+    const updated = sizes.filter((s) => s !== sizeName)
+    setSizes(updated)
+    updateVariantsFromMatrix(colors, updated)
+  }
+
+  function handleApplyBulk() {
+    const p = parseNumberFromDots(bulkPrice)
+    const cp = parseNumberFromDots(bulkCompareAtPrice)
+    const stock = parseNumberFromDots(bulkStock)
+
+    if (p === null && cp === null && stock === null) {
+      setFormError('Vui lòng nhập ít nhất một thông tin để áp dụng hàng loạt.')
+      return
+    }
+
+    setVariants((prev) =>
+      prev.map((v) => ({
+        ...v,
+        price: p !== null ? p : v.price,
+        compareAtPrice: cp !== null ? cp : v.compareAtPrice,
+        stockQuantity: stock !== null ? stock : v.stockQuantity,
+      })),
+    )
+    setFormError(null)
   }
 
   function handleAddVariant() {
@@ -305,8 +463,8 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         setFormError('Giá bán phải lớn hơn 0 ₫.')
         return
       }
-      if (v.compareAtPrice !== null && v.compareAtPrice <= v.price) {
-        setFormError(`Giá gốc (${v.compareAtPrice}₫) phải lớn hơn giá bán (${v.price}₫).`)
+      if (v.compareAtPrice !== null && v.compareAtPrice < 0) {
+        setFormError('Giá gốc không được âm.')
         return
       }
       if (v.stockQuantity < 0) {
@@ -381,11 +539,8 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           </button>
           <div>
             <h2 className="text-base font-extrabold tracking-tight text-zinc-900 dark:text-white">
-              Thêm sản phẩm mới (Đặc tả 2.2.1)
+              Thêm sản phẩm mới
             </h2>
-            <p className="text-xs text-zinc-500">
-              Đăng bán sản phẩm với đầy đủ ảnh gallery, video giới thiệu, Virtual Try-On và biến thể.
-            </p>
           </div>
         </div>
 
@@ -519,28 +674,251 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         onGarmentChange={setGarmentKey}
       />
 
-      {/* 3. Phân loại biến thể & Ảnh theo màu & Giá bán */}
+      {/* 3. Phân loại biến thể (Size & Màu sắc) & Tồn kho */}
       <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-4 dark:border-zinc-800">
           <div>
-            <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
-              3. Phân loại biến thể (Size & Màu sắc) & Tồn kho
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
+                3. Phân loại biến thể (Size & Màu sắc) & Tồn kho
+              </h3>
+              <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-bold text-orange-700 dark:bg-orange-950/60 dark:text-orange-400">
+                {variants.length} phân loại
+              </span>
+            </div>
             <p className="mt-1 text-xs text-zinc-500">
-              Quản lý SKU, giá bán, giá gốc (tự động tính % giảm) và ảnh riêng cho từng màu sắc.
+              Thiết lập màu sắc, kích cỡ, công cụ áp dụng giá hàng loạt và quản lý tồn kho theo biến thể.
             </p>
           </div>
+
           <button
             type="button"
             onClick={handleAddVariant}
             className="flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-600 hover:bg-orange-100 dark:border-orange-900/40 dark:bg-orange-950/40 dark:text-orange-400"
           >
             <Plus size={14} weight="bold" />
-            Thêm biến thể
+            Thêm dòng tùy biến
           </button>
         </div>
 
-        {/* Upload ảnh riêng cho từng màu sắc */}
+        {/* 3.1 Nhóm phân loại 1: Màu sắc */}
+        <div className="mt-5 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/80 dark:bg-zinc-950/50">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+              <Tag size={14} weight="bold" className="text-orange-600 dark:text-orange-400" />
+              Nhóm 1: Màu sắc sản phẩm
+            </label>
+            <span className="text-[11px] text-zinc-400">Chọn hoặc nhập màu sắc</span>
+          </div>
+
+          {/* Active Colors Chips */}
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            {colors.map((c) => (
+              <span
+                key={c}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-xs font-bold text-zinc-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              >
+                {c}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveColor(c)}
+                  className="rounded-full p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-red-500 dark:hover:bg-zinc-700"
+                  title={`Xóa màu ${c}`}
+                >
+                  <X size={12} weight="bold" />
+                </button>
+              </span>
+            ))}
+
+            {/* Input custom color */}
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                placeholder="Nhập màu khác..."
+                value={customColor}
+                onChange={(e) => setCustomColor(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddColor(customColor)
+                  }
+                }}
+                className="w-32 rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddColor(customColor)}
+                className="rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              >
+                Thêm
+              </button>
+            </div>
+          </div>
+
+          {/* Quick pick colors */}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/60">
+            <span className="text-[11px] font-medium text-zinc-400 mr-1">Gợi ý nhanh:</span>
+            {COMMON_COLORS.map((c) => {
+              const isSelected = colors.some((col) => col.toLowerCase() === c.toLowerCase())
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  disabled={isSelected}
+                  onClick={() => handleAddColor(c)}
+                  className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition ${
+                    isSelected
+                      ? 'bg-zinc-200/70 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600'
+                      : 'border border-dashed border-zinc-300 bg-white text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400'
+                  }`}
+                >
+                  + {c}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 3.2 Nhóm phân loại 2: Kích cỡ (S, M, L, XL, 2XL, 3XL, 4XL, Freesize) */}
+        <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/80 dark:bg-zinc-950/50">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+              <Tag size={14} weight="bold" className="text-orange-600 dark:text-orange-400" />
+              Nhóm 2: Kích cỡ (Size)
+            </label>
+            <span className="text-[11px] text-zinc-400">Bao gồm size từ S đến 4XL</span>
+          </div>
+
+          {/* Active Sizes Chips */}
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            {sizes.map((s) => (
+              <span
+                key={s}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-xs font-bold text-zinc-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              >
+                {s}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSize(s)}
+                  className="rounded-full p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-red-500 dark:hover:bg-zinc-700"
+                  title={`Xóa size ${s}`}
+                >
+                  <X size={12} weight="bold" />
+                </button>
+              </span>
+            ))}
+
+            {/* Input custom size */}
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                placeholder="Nhập size khác..."
+                value={customSize}
+                onChange={(e) => setCustomSize(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddSize(customSize)
+                  }
+                }}
+                className="w-28 rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddSize(customSize)}
+                className="rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              >
+                Thêm
+              </button>
+            </div>
+          </div>
+
+          {/* Quick pick sizes (S, M, L, XL, 2XL, 3XL, 4XL, Freesize) */}
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/60">
+            <span className="text-[11px] font-medium text-zinc-400 mr-1">Chọn nhanh size chuẩn:</span>
+            {COMMON_SIZES.map((s) => {
+              const isSelected = sizes.some((sz) => sz.toLowerCase() === s.toLowerCase())
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={isSelected}
+                  onClick={() => handleAddSize(s)}
+                  className={`rounded-lg px-2.5 py-0.5 text-[11px] font-semibold transition ${
+                    isSelected
+                      ? 'bg-zinc-200/70 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600'
+                      : 'border border-dashed border-zinc-300 bg-white text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400'
+                  }`}
+                >
+                  + {s}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 3.3 Công cụ áp dụng hàng loạt (Bulk Apply Tool) */}
+        <div className="mt-4 rounded-2xl border border-orange-200/80 bg-orange-50/50 p-4 dark:border-orange-950/60 dark:bg-orange-950/20">
+          <div className="flex items-center gap-2 text-xs font-bold text-orange-900 dark:text-orange-300">
+            <Lightning size={16} weight="fill" className="text-orange-600 dark:text-orange-400" />
+            <span>Áp dụng thông số hàng loạt cho tất cả {variants.length} phân loại</span>
+          </div>
+          <div className="mt-3 flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                Giá bán chung (₫)
+              </label>
+              <input
+                type="text"
+                placeholder="Ví dụ: 199.000"
+                value={bulkPrice}
+                onChange={(e) => {
+                  const num = parseNumberFromDots(e.target.value)
+                  setBulkPrice(num !== null ? formatNumberWithDots(num) : '')
+                }}
+                className="mt-1 w-36 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                Giá gốc chung (₫)
+              </label>
+              <input
+                type="text"
+                placeholder="Ví dụ: 250.000"
+                value={bulkCompareAtPrice}
+                onChange={(e) => {
+                  const num = parseNumberFromDots(e.target.value)
+                  setBulkCompareAtPrice(num !== null ? formatNumberWithDots(num) : '')
+                }}
+                className="mt-1 w-36 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                Kho ban đầu
+              </label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Ví dụ: 50"
+                value={bulkStock}
+                onChange={(e) => setBulkStock(e.target.value)}
+                className="mt-1 w-24 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleApplyBulk}
+              className="flex items-center gap-1.5 rounded-xl bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-orange-700"
+            >
+              <Lightning size={14} weight="bold" />
+              Áp dụng cho tất cả phân loại
+            </button>
+          </div>
+        </div>
+
+        {/* 3.4 Upload ảnh riêng cho từng màu sắc */}
         {distinctColors.length > 0 && (
           <div className="mt-5 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/80 dark:bg-zinc-950/60">
             <h4 className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
@@ -590,7 +968,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           </div>
         )}
 
-        {/* Bảng biến thể */}
+        {/* 3.5 Bảng danh sách phân loại chi tiết */}
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
@@ -632,7 +1010,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                 }
 
                 return (
-                  <tr key={v.keyId}>
+                  <tr key={v.keyId} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30">
                     <td className="py-2.5 pl-2">
                       <input
                         type="radio"
@@ -653,7 +1031,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         onChange={function (e) {
                           handleUpdateVariant(v.keyId, 'color', e.target.value)
                         }}
-                        className="w-24 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-24 rounded-xl border border-zinc-200 p-2 text-xs font-medium outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5">
@@ -664,7 +1042,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         onChange={function (e) {
                           handleUpdateVariant(v.keyId, 'size', e.target.value)
                         }}
-                        className="w-16 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-16 rounded-xl border border-zinc-200 p-2 text-xs font-medium outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5">
@@ -675,33 +1053,32 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         onChange={function (e) {
                           handleUpdateVariant(v.keyId, 'sku', e.target.value)
                         }}
-                        className="w-32 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-36 rounded-xl border border-zinc-200 p-2 text-xs font-mono outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5">
                       <input
                         aria-label="Giá bán"
-                        type="number"
-                        min="0"
-                        value={v.price}
+                        type="text"
+                        value={formatNumberWithDots(v.price)}
                         onChange={function (e) {
-                          handleUpdateVariant(v.keyId, 'price', Number(e.target.value))
+                          const val = parseNumberFromDots(e.target.value) ?? 0
+                          handleUpdateVariant(v.keyId, 'price', val)
                         }}
-                        className="w-28 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-32 rounded-xl border border-zinc-200 p-2 text-xs font-semibold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5">
                       <input
                         aria-label="Giá gốc"
-                        type="number"
-                        min="0"
-                        value={v.compareAtPrice ?? ''}
+                        type="text"
+                        value={formatNumberWithDots(v.compareAtPrice)}
                         onChange={function (e) {
-                          const val = e.target.value === '' ? null : Number(e.target.value)
+                          const val = parseNumberFromDots(e.target.value)
                           handleUpdateVariant(v.keyId, 'compareAtPrice', val)
                         }}
                         placeholder="Không có"
-                        className="w-28 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-32 rounded-xl border border-zinc-200 p-2 text-xs font-semibold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5">
@@ -721,7 +1098,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         onChange={function (e) {
                           handleUpdateVariant(v.keyId, 'stockQuantity', Number(e.target.value))
                         }}
-                        className="w-20 rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-20 rounded-xl border border-zinc-200 p-2 text-xs font-medium outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5 pr-2 text-right">
