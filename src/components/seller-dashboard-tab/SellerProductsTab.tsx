@@ -5,7 +5,6 @@ import {
   getInventoryQueryKey,
   getListProductsQueryKey,
   useBulkDeleteProducts,
-  useBulkImport,
   useBulkUpdatePrice,
   useBulkUpdateStatus,
   useBulkUpdateStock,
@@ -14,15 +13,12 @@ import {
 import { useDeleteProduct, useUpdate1 } from '@generated/endpoints/shop-products/shop-products'
 import {
   Plus,
-  DownloadSimple,
-  UploadSimple,
   MagnifyingGlass,
   Eye,
   EyeSlash,
   Trash,
   CheckCircle,
   X,
-  FileCsv,
   WarningCircle,
   CircleNotch,
   PencilSimple,
@@ -53,9 +49,11 @@ function isBulkResult(data: unknown): data is BulkOperationResult {
   return 'successCount' in data && 'failedCount' in data
 }
 
-// Tên file export chỉ dùng khi bấm nút — sinh ở module-level để khỏi gọi Date.now trong render
-function csvExportFileName(): string {
-  return `products_export_${Date.now()}.csv`
+function parseCreatedTime(p: ProductItem): number {
+  if (p.createdAt === undefined || p.createdAt === null || p.createdAt === '') {
+    return 0
+  }
+  return new Date(p.createdAt).getTime()
 }
 
 type TabKey = 'ALL' | 'ACTIVE' | 'INACTIVE' | 'OUT_OF_STOCK' | 'PENDING' | 'BANNED' | 'DELETED'
@@ -111,10 +109,6 @@ export default function SellerProductsTab({
   const [bulkStockMode, setBulkStockMode] = useState<'FIXED' | 'DELTA'>('FIXED')
   const [bulkStockQuantity, setBulkStockQuantity] = useState('')
   const [bulkStockError, setBulkStockError] = useState<string | null>(null)
-
-  // CSV Import modal state
-  const [showImportModal, setShowImportModal] = useState(false)
-  const [importText, setImportText] = useState('')
 
   // Toast notification
   const [notification, setNotification] = useState<string | null>(null)
@@ -237,58 +231,33 @@ export default function SellerProductsTab({
 
   const bulkPriceMutation = useBulkUpdatePrice({
     mutation: {
-      onSuccess: function (resp) {
+      onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
         setShowBulkPriceModal(false)
         setBulkPriceError(null)
         setBulkPriceValue('')
         setSelectedProductIds(new Set())
-        const data = resp.data
-        if (isBulkResult(data)) {
-          showToast(`Đã cập nhật giá cho ${data.successCount} sản phẩm`)
-          return
-        }
-        showToast('Cập nhật giá hoàn tất')
+        showToast('Cập nhật giá sản phẩm thành công')
       },
       onError: function () {
-        setBulkPriceError('Lỗi cập nhật giá hàng loạt. Vui lòng kiểm tra lại giá trị.')
+        setBulkPriceError('Lỗi cập nhật giá sản phẩm. Vui lòng kiểm tra lại giá trị.')
       },
     },
   })
 
   const bulkStockMutation = useBulkUpdateStock({
     mutation: {
-      onSuccess: function (resp) {
+      onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
         void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
         setShowBulkStockModal(false)
         setBulkStockError(null)
         setBulkStockQuantity('')
         setSelectedProductIds(new Set())
-        const data = resp.data
-        if (isBulkResult(data)) {
-          showToast(`Đã cập nhật tồn kho cho ${data.successCount} sản phẩm`)
-          return
-        }
-        showToast('Cập nhật tồn kho hoàn tất')
+        showToast('Cập nhật tồn kho sản phẩm thành công')
       },
       onError: function () {
-        setBulkStockError('Lỗi cập nhật tồn kho hàng loạt. Vui lòng kiểm tra lại số lượng.')
-      },
-    },
-  })
-
-  const bulkImportMutation = useBulkImport({
-    mutation: {
-      onSuccess: function () {
-        void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
-        void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
-        setShowImportModal(false)
-        setImportText('')
-        showToast('Đã nhập hàng loạt sản phẩm thành công!')
-      },
-      onError: function () {
-        showToast('Lỗi khi nhập file CSV. Vui lòng kiểm tra đúng định dạng các cột.')
+        setBulkStockError('Lỗi cập nhật tồn kho. Vui lòng kiểm tra lại số lượng.')
       },
     },
   })
@@ -397,8 +366,8 @@ export default function SellerProductsTab({
   // Sắp xếp
   filteredProducts = filteredProducts.slice().sort(function (a, b) {
     if (sortBy === 'createdAt_asc') {
-      const dateA = a.createdAt !== undefined ? new Date(a.createdAt).getTime() : 0
-      const dateB = b.createdAt !== undefined ? new Date(b.createdAt).getTime() : 0
+      const dateA = parseCreatedTime(a)
+      const dateB = parseCreatedTime(b)
       return dateA - dateB
     }
     if (sortBy === 'stock_desc') {
@@ -417,10 +386,40 @@ export default function SellerProductsTab({
       return b.price - a.price
     }
     // Default: createdAt_desc
-    const dateA = a.createdAt !== undefined ? new Date(a.createdAt).getTime() : 0
-    const dateB = b.createdAt !== undefined ? new Date(b.createdAt).getTime() : 0
+    const dateA = parseCreatedTime(a)
+    const dateB = parseCreatedTime(b)
     return dateB - dateA
   })
+
+  // Tìm sản phẩm duy nhất khi chỉ chọn 1 sản phẩm
+  let singleSelectedProduct: ProductItem | undefined
+  if (selectedProductIds.size === 1) {
+    const onlyId = Array.from(selectedProductIds)[0]
+    singleSelectedProduct = products.find(function (p) {
+      return p.id === onlyId
+    })
+  }
+
+  // Xem trước giá mới khi đổi giá
+  let previewNewPriceText = ''
+  if (singleSelectedProduct !== undefined && bulkPriceValue !== '') {
+    const val = parseFloat(bulkPriceValue)
+    if (!Number.isNaN(val)) {
+      if (bulkPriceMode === 'FIXED') {
+        if (val > 0) {
+          previewNewPriceText = formatVnd(Math.round(val))
+        }
+      } else {
+        const factor = 1 + val / 100
+        const calculated = Math.max(1000, Math.round(singleSelectedProduct.price * factor))
+        let sign = ''
+        if (val >= 0) {
+          sign = '+'
+        }
+        previewNewPriceText = `${formatVnd(calculated)} (${sign}${val}%)`
+      }
+    }
+  }
 
   // Selection logic
   const selectableProducts = filteredProducts.filter(function (p) {
@@ -438,6 +437,54 @@ export default function SellerProductsTab({
     if (countSelected === selectableProducts.length) {
       allSelectableSelected = true
     }
+  }
+
+  let selectAllTitle = 'Chọn tất cả sản phẩm'
+  if (allSelectableSelected) {
+    selectAllTitle = 'Bỏ chọn tất cả'
+  }
+
+  let fixedPriceBtnClass =
+    'rounded-2xl border border-zinc-200 p-3 text-left text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400'
+  if (bulkPriceMode === 'FIXED') {
+    fixedPriceBtnClass =
+      'rounded-2xl border border-orange-500 bg-orange-50/40 p-3 text-left text-orange-700 transition dark:bg-orange-950/30 dark:text-orange-300'
+  }
+
+  let percentPriceBtnClass =
+    'rounded-2xl border border-zinc-200 p-3 text-left text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400'
+  if (bulkPriceMode === 'PERCENT') {
+    percentPriceBtnClass =
+      'rounded-2xl border border-orange-500 bg-orange-50/40 p-3 text-left text-orange-700 transition dark:bg-orange-950/30 dark:text-orange-300'
+  }
+
+  let priceInputStep = '1'
+  if (bulkPriceMode === 'FIXED') {
+    priceInputStep = '1000'
+  }
+
+  let priceInputPlaceholder = 'Ví dụ: -10 (giảm 10%) hoặc 15'
+  if (bulkPriceMode === 'FIXED') {
+    priceInputPlaceholder = 'Ví dụ: 199000'
+  }
+
+  let fixedStockBtnClass =
+    'rounded-2xl border border-zinc-200 p-3 text-left text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400'
+  if (bulkStockMode === 'FIXED') {
+    fixedStockBtnClass =
+      'rounded-2xl border border-orange-500 bg-orange-50/40 p-3 text-left text-orange-700 transition dark:bg-orange-950/30 dark:text-orange-300'
+  }
+
+  let deltaStockBtnClass =
+    'rounded-2xl border border-zinc-200 p-3 text-left text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400'
+  if (bulkStockMode === 'DELTA') {
+    deltaStockBtnClass =
+      'rounded-2xl border border-orange-500 bg-orange-50/40 p-3 text-left text-orange-700 transition dark:bg-orange-950/30 dark:text-orange-300'
+  }
+
+  let stockInputPlaceholder = 'Ví dụ: 10 hoặc -5'
+  if (bulkStockMode === 'FIXED') {
+    stockInputPlaceholder = 'Ví dụ: 50'
   }
 
   function handleToggleSelectAll() {
@@ -533,8 +580,8 @@ export default function SellerProductsTab({
 
   function handleConfirmBulkPrice() {
     const ids = Array.from(selectedProductIds)
-    if (ids.length === 0) {
-      setBulkPriceError('Vui lòng chọn ít nhất 1 sản phẩm')
+    if (ids.length !== 1) {
+      setBulkPriceError('Chỉ được cập nhật giá khi chọn đúng 1 sản phẩm')
       return
     }
     const val = parseFloat(bulkPriceValue)
@@ -563,8 +610,8 @@ export default function SellerProductsTab({
 
   function handleConfirmBulkStock() {
     const ids = Array.from(selectedProductIds)
-    if (ids.length === 0) {
-      setBulkStockError('Vui lòng chọn ít nhất 1 sản phẩm')
+    if (ids.length !== 1) {
+      setBulkStockError('Chỉ được cập nhật tồn kho khi chọn đúng 1 sản phẩm')
       return
     }
     const qty = parseInt(bulkStockQuantity, 10)
@@ -606,33 +653,6 @@ export default function SellerProductsTab({
     maxPriceInput !== '' ||
     sortBy !== 'createdAt_desc'
 
-  function handleExportCsv() {
-    const headers = 'name,slug,sku,category,price,stock,sold,status,createdAt\n'
-    const rows = products
-      .map(function (p) {
-        return `"${p.name}","${p.slug}","${p.sku}","${p.category}",${p.price},${p.stock},${p.sold},${p.status},"${p.createdAt ?? ''}"`
-      })
-      .join('\n')
-    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', csvExportFileName())
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    showToast('Đã xuất file CSV thành công!')
-  }
-
-  function handleConfirmImport() {
-    if (importText.trim() === '') {
-      alert('Vui lòng nhập hoặc dán nội dung CSV.')
-      return
-    }
-    const file = new File([importText], 'products.csv', { type: 'text/csv' })
-    bulkImportMutation.mutate({ shopId, data: { file } })
-  }
-
   function renderStatusBadge(product: ProductItem) {
     if (product.status === 'ACTIVE') {
       return (
@@ -659,14 +679,18 @@ export default function SellerProductsTab({
       )
     }
     if (product.status === 'BANNED') {
+      let reasonTitle = 'Sản phẩm vi phạm chính sách sàn'
+      if (
+        product.statusReason !== undefined &&
+        product.statusReason !== null &&
+        product.statusReason !== ''
+      ) {
+        reasonTitle = `Lý do vi phạm: ${product.statusReason}`
+      }
       return (
         <span
           className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:bg-red-950/60 dark:text-red-300"
-          title={
-            product.statusReason !== undefined && product.statusReason !== null
-              ? `Lý do vi phạm: ${product.statusReason}`
-              : 'Sản phẩm vi phạm chính sách sàn'
-          }
+          title={reasonTitle}
         >
           <ShieldWarning size={14} weight="fill" className="text-red-600" />
           Vi phạm
@@ -702,24 +726,6 @@ export default function SellerProductsTab({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
-            <DownloadSimple size={16} weight="bold" />
-            Xuất CSV
-          </button>
-          <button
-            type="button"
-            onClick={function () {
-              setShowImportModal(true)
-            }}
-            className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
-            <UploadSimple size={16} weight="bold" />
-            Nhập CSV
-          </button>
           <button
             type="button"
             onClick={onNavigateAddProduct}
@@ -938,7 +944,7 @@ export default function SellerProductsTab({
                     onClick={handleToggleSelectAll}
                     disabled={selectableProducts.length === 0}
                     className="flex items-center justify-center text-zinc-400 hover:text-orange-600 disabled:opacity-40"
-                    title={allSelectableSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả sản phẩm'}
+                    title={selectAllTitle}
                   >
                     {allSelectableSelected && (
                       <CheckSquare size={18} weight="fill" className="text-orange-600" />
@@ -988,12 +994,20 @@ export default function SellerProductsTab({
                 const isOutOfStock = product.stock === 0
                 const isBanned = product.status === 'BANNED'
 
+                let rowSelectedClass = ''
+                if (isSelected) {
+                  rowSelectedClass = 'bg-orange-50/30 dark:bg-orange-950/20'
+                }
+
+                let displaySku = '---'
+                if (product.sku !== '') {
+                  displaySku = product.sku
+                }
+
                 return (
                   <tr
                     key={product.id}
-                    className={`transition hover:bg-zinc-50/70 dark:hover:bg-zinc-800/30 ${
-                      isSelected ? 'bg-orange-50/30 dark:bg-orange-950/20' : ''
-                    }`}
+                    className={`transition hover:bg-zinc-50/70 dark:hover:bg-zinc-800/30 ${rowSelectedClass}`}
                   >
                     {/* Checkbox */}
                     <td className="py-3.5 pr-1 pl-4 text-center">
@@ -1038,7 +1052,7 @@ export default function SellerProductsTab({
                             {product.name}
                           </button>
                           <p className="mt-0.5 truncate text-[11px] text-zinc-400">
-                            SKU: {product.sku !== '' ? product.sku : '---'}
+                            SKU: {displaySku}
                           </p>
                         </div>
                       </div>
@@ -1228,33 +1242,63 @@ export default function SellerProductsTab({
               <span>Ẩn</span>
             </button>
 
-            {/* Đổi giá hàng loạt */}
-            <button
-              type="button"
-              onClick={function () {
-                setBulkPriceError(null)
-                setBulkPriceValue('')
-                setShowBulkPriceModal(true)
-              }}
-              className="flex items-center gap-1.5 rounded-2xl bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700"
-            >
-              <CurrencyDollar size={14} weight="bold" className="text-cyan-400" />
-              <span>Đổi giá</span>
-            </button>
+            {/* Đổi giá (Chỉ khi chọn 1 sản phẩm) */}
+            {selectedProductIds.size === 1 && (
+              <button
+                type="button"
+                onClick={function () {
+                  setBulkPriceError(null)
+                  setBulkPriceValue('')
+                  setShowBulkPriceModal(true)
+                }}
+                title="Đổi giá sản phẩm đã chọn"
+                className="flex items-center gap-1.5 rounded-2xl bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700"
+              >
+                <CurrencyDollar size={14} weight="bold" className="text-cyan-400" />
+                <span>Đổi giá</span>
+              </button>
+            )}
+            {selectedProductIds.size !== 1 && (
+              <button
+                type="button"
+                disabled={true}
+                title="Chỉ được cập nhật giá khi chọn chính xác 1 sản phẩm"
+                className="flex cursor-not-allowed items-center gap-1.5 rounded-2xl bg-zinc-800/40 px-3 py-1.5 text-xs font-semibold text-zinc-500 opacity-60"
+              >
+                <CurrencyDollar size={14} weight="bold" className="text-zinc-500" />
+                <span>Đổi giá</span>
+                <span className="text-[10px] text-zinc-500">(1 SP)</span>
+              </button>
+            )}
 
-            {/* Cập nhật tồn kho hàng loạt */}
-            <button
-              type="button"
-              onClick={function () {
-                setBulkStockError(null)
-                setBulkStockQuantity('')
-                setShowBulkStockModal(true)
-              }}
-              className="flex items-center gap-1.5 rounded-2xl bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700"
-            >
-              <Package size={14} weight="bold" className="text-indigo-400" />
-              <span>Cập nhật kho</span>
-            </button>
+            {/* Cập nhật tồn kho (Chỉ khi chọn 1 sản phẩm) */}
+            {selectedProductIds.size === 1 && (
+              <button
+                type="button"
+                onClick={function () {
+                  setBulkStockError(null)
+                  setBulkStockQuantity('')
+                  setShowBulkStockModal(true)
+                }}
+                title="Cập nhật kho cho sản phẩm đã chọn"
+                className="flex items-center gap-1.5 rounded-2xl bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700"
+              >
+                <Package size={14} weight="bold" className="text-indigo-400" />
+                <span>Cập nhật kho</span>
+              </button>
+            )}
+            {selectedProductIds.size !== 1 && (
+              <button
+                type="button"
+                disabled={true}
+                title="Chỉ được cập nhật kho khi chọn chính xác 1 sản phẩm"
+                className="flex cursor-not-allowed items-center gap-1.5 rounded-2xl bg-zinc-800/40 px-3 py-1.5 text-xs font-semibold text-zinc-500 opacity-60"
+              >
+                <Package size={14} weight="bold" className="text-zinc-500" />
+                <span>Cập nhật kho</span>
+                <span className="text-[10px] text-zinc-500">(1 SP)</span>
+              </button>
+            )}
 
             {/* Xóa hàng loạt */}
             <button
@@ -1281,7 +1325,7 @@ export default function SellerProductsTab({
         </aside>
       )}
 
-      {/* Modal Đổi giá hàng loạt */}
+      {/* Modal Đổi giá (Chỉ cho 1 sản phẩm, hiển thị giá cũ) */}
       {showBulkPriceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
@@ -1289,7 +1333,7 @@ export default function SellerProductsTab({
               <div className="flex items-center gap-2">
                 <CurrencyDollar size={22} weight="bold" className="text-orange-600" />
                 <h3 className="text-base font-black text-zinc-900 dark:text-white">
-                  Đổi giá cho {selectedProductIds.size} sản phẩm
+                  Cập nhật giá sản phẩm
                 </h3>
               </div>
               <button
@@ -1297,7 +1341,7 @@ export default function SellerProductsTab({
                 onClick={function () {
                   setShowBulkPriceModal(false)
                 }}
-                className="text-zinc-400 hover:text-zinc-600"
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               >
                 <X size={18} weight="bold" />
               </button>
@@ -1307,6 +1351,63 @@ export default function SellerProductsTab({
               <div className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 p-2.5 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">
                 <WarningCircle size={16} weight="bold" className="shrink-0 text-red-600" />
                 <span>{bulkPriceError}</span>
+              </div>
+            )}
+
+            {/* Thông tin sản phẩm và Giá cũ hiện tại */}
+            {singleSelectedProduct !== undefined && (
+              <div className="mt-3.5 space-y-2.5 rounded-2xl border border-zinc-200/80 bg-zinc-50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/40">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={singleSelectedProduct.image}
+                    alt={singleSelectedProduct.name}
+                    className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-bold text-zinc-900 dark:text-white">
+                      {singleSelectedProduct.name}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-zinc-400">
+                      Mã SKU: {singleSelectedProduct.sku}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl bg-orange-50 px-3 py-2 text-xs dark:bg-orange-950/40">
+                  <span className="font-semibold text-zinc-600 dark:text-zinc-300">
+                    Giá cũ hiện tại:
+                  </span>
+                  <span className="text-sm font-black text-orange-600 dark:text-orange-400">
+                    {formatVnd(singleSelectedProduct.price)}
+                  </span>
+                </div>
+
+                {singleSelectedProduct.variants.length > 1 && (
+                  <div className="max-h-24 overflow-y-auto rounded-xl border border-zinc-200/60 bg-white p-2 text-[11px] dark:border-zinc-700/60 dark:bg-zinc-900">
+                    <p className="mb-1 font-semibold text-zinc-500 dark:text-zinc-400">
+                      Giá cũ theo từng phân loại:
+                    </p>
+                    <div className="space-y-1">
+                      {singleSelectedProduct.variants.map(function (v) {
+                        let variantLabel = v.size
+                        if (v.color !== '') {
+                          variantLabel = variantLabel + ' - ' + v.color
+                        }
+                        return (
+                          <div
+                            key={v.id}
+                            className="flex items-center justify-between text-zinc-600 dark:text-zinc-300"
+                          >
+                            <span>
+                              {variantLabel} ({v.sku}):
+                            </span>
+                            <span className="font-bold">{formatVnd(v.price)}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1320,11 +1421,7 @@ export default function SellerProductsTab({
                   onClick={function () {
                     setBulkPriceMode('FIXED')
                   }}
-                  className={`rounded-2xl border p-3 text-left transition ${
-                    bulkPriceMode === 'FIXED'
-                      ? 'border-orange-500 bg-orange-50/40 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300'
-                      : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400'
-                  }`}
+                  className={fixedPriceBtnClass}
                 >
                   <p className="text-xs font-bold">Giá cố định</p>
                   <p className="text-[10px] text-zinc-400">Gán một mức giá mới cho toàn bộ</p>
@@ -1334,11 +1431,7 @@ export default function SellerProductsTab({
                   onClick={function () {
                     setBulkPriceMode('PERCENT')
                   }}
-                  className={`rounded-2xl border p-3 text-left transition ${
-                    bulkPriceMode === 'PERCENT'
-                      ? 'border-orange-500 bg-orange-50/40 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300'
-                      : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400'
-                  }`}
+                  className={percentPriceBtnClass}
                 >
                   <p className="text-xs font-bold">Theo phần trăm (%)</p>
                   <p className="text-[10px] text-zinc-400">Tăng (+) hoặc giảm (-) % giá hiện tại</p>
@@ -1356,17 +1449,22 @@ export default function SellerProductsTab({
                 <input
                   id="bulkPriceValueInput"
                   type="number"
-                  step={bulkPriceMode === 'FIXED' ? '1000' : '1'}
+                  step={priceInputStep}
                   value={bulkPriceValue}
                   onChange={function (e) {
                     setBulkPriceValue(e.target.value)
                   }}
-                  placeholder={
-                    bulkPriceMode === 'FIXED' ? 'Ví dụ: 199000' : 'Ví dụ: -10 (giảm 10%) hoặc 15'
-                  }
+                  placeholder={priceInputPlaceholder}
                   className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 />
               </div>
+
+              {previewNewPriceText !== '' && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5 text-xs text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300">
+                  <span className="font-semibold">Giá mới dự kiến: </span>
+                  <span className="font-bold">{previewNewPriceText}</span>
+                </div>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end gap-2.5">
@@ -1395,7 +1493,7 @@ export default function SellerProductsTab({
         </div>
       )}
 
-      {/* Modal Cập nhật tồn kho hàng loạt */}
+      {/* Modal Cập nhật kho (Chỉ cho 1 sản phẩm, hiển thị size và số lượng cũ) */}
       {showBulkStockModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
@@ -1403,7 +1501,7 @@ export default function SellerProductsTab({
               <div className="flex items-center gap-2">
                 <Package size={22} weight="bold" className="text-orange-600" />
                 <h3 className="text-base font-black text-zinc-900 dark:text-white">
-                  Cập nhật kho cho {selectedProductIds.size} sản phẩm
+                  Cập nhật tồn kho sản phẩm
                 </h3>
               </div>
               <button
@@ -1411,7 +1509,7 @@ export default function SellerProductsTab({
                 onClick={function () {
                   setShowBulkStockModal(false)
                 }}
-                className="text-zinc-400 hover:text-zinc-600"
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               >
                 <X size={18} weight="bold" />
               </button>
@@ -1421,6 +1519,68 @@ export default function SellerProductsTab({
               <div className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 p-2.5 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">
                 <WarningCircle size={16} weight="bold" className="shrink-0 text-red-600" />
                 <span>{bulkStockError}</span>
+              </div>
+            )}
+
+            {/* Thông tin sản phẩm, Size và Số lượng cũ */}
+            {singleSelectedProduct !== undefined && (
+              <div className="mt-3.5 space-y-3 rounded-2xl border border-zinc-200/80 bg-zinc-50 p-3.5 dark:border-zinc-800 dark:bg-zinc-800/40">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={singleSelectedProduct.image}
+                    alt={singleSelectedProduct.name}
+                    className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-bold text-zinc-900 dark:text-white">
+                      {singleSelectedProduct.name}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-zinc-400">
+                      Mã SKU: {singleSelectedProduct.sku} • Tổng tồn kho cũ:{' '}
+                      <strong className="text-orange-600 dark:text-orange-400">
+                        {singleSelectedProduct.stock}
+                      </strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Bảng hiển thị Size và Số lượng cũ */}
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                    <span>Tồn kho cũ theo kích thước (Size):</span>
+                    <span className="text-[11px] font-normal text-zinc-400">
+                      {singleSelectedProduct.variants.length} phân loại
+                    </span>
+                  </div>
+                  <div className="max-h-36 space-y-1.5 overflow-y-auto pr-1">
+                    {singleSelectedProduct.variants.map(function (v) {
+                      return (
+                        <div
+                          key={v.id}
+                          className="flex items-center justify-between rounded-xl border border-zinc-200/70 bg-white px-3 py-2 text-xs dark:border-zinc-700 dark:bg-zinc-900"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex min-w-8 items-center justify-center rounded-lg bg-orange-100 px-2 py-0.5 text-[11px] font-black text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
+                              {v.size}
+                            </span>
+                            {v.color !== '' && (
+                              <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                {v.color}
+                              </span>
+                            )}
+                            <span className="font-mono text-[10px] text-zinc-400">({v.sku})</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] text-zinc-400">Số lượng cũ:</span>
+                            <span className="rounded-md bg-zinc-100 px-2.5 py-0.5 font-black text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">
+                              {v.stock}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1434,11 +1594,7 @@ export default function SellerProductsTab({
                   onClick={function () {
                     setBulkStockMode('FIXED')
                   }}
-                  className={`rounded-2xl border p-3 text-left transition ${
-                    bulkStockMode === 'FIXED'
-                      ? 'border-orange-500 bg-orange-50/40 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300'
-                      : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400'
-                  }`}
+                  className={fixedStockBtnClass}
                 >
                   <p className="text-xs font-bold">Gán tồn cố định</p>
                   <p className="text-[10px] text-zinc-400">Thiết lập số lượng tồn mới (≥ 0)</p>
@@ -1448,11 +1604,7 @@ export default function SellerProductsTab({
                   onClick={function () {
                     setBulkStockMode('DELTA')
                   }}
-                  className={`rounded-2xl border p-3 text-left transition ${
-                    bulkStockMode === 'DELTA'
-                      ? 'border-orange-500 bg-orange-50/40 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300'
-                      : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400'
-                  }`}
+                  className={deltaStockBtnClass}
                 >
                   <p className="text-xs font-bold">Cộng/Trừ (+ / -)</p>
                   <p className="text-[10px] text-zinc-400">Thêm hoặc bớt số lượng vào kho</p>
@@ -1475,7 +1627,7 @@ export default function SellerProductsTab({
                   onChange={function (e) {
                     setBulkStockQuantity(e.target.value)
                   }}
-                  placeholder={bulkStockMode === 'FIXED' ? 'Ví dụ: 50' : 'Ví dụ: 10 hoặc -5'}
+                  placeholder={stockInputPlaceholder}
                   className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                 />
               </div>
@@ -1637,76 +1789,6 @@ export default function SellerProductsTab({
                 )}
                 {deleteProductMutation.isPending && <span>Đang xử lý...</span>}
                 {!deleteProductMutation.isPending && <span>Xác nhận xóa</span>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Nhập hàng loạt CSV */}
-      {showImportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileCsv size={24} weight="bold" className="text-orange-600" />
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
-                  Nhập hàng loạt sản phẩm bằng file CSV
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={function () {
-                  setShowImportModal(false)
-                }}
-                className="text-zinc-400 hover:text-zinc-600"
-              >
-                <X size={20} weight="bold" />
-              </button>
-            </div>
-
-            <div className="mt-4 rounded-2xl bg-orange-50 p-3.5 text-xs text-orange-900 dark:bg-orange-950/40 dark:text-orange-200">
-              <p className="font-bold">Định dạng 8 cột bắt buộc (theo dòng):</p>
-              <code className="mt-1 block font-mono text-[11px]">
-                name,slug,description,categoryId,sku,size,color,stock,price
-              </code>
-            </div>
-
-            <div className="mt-4">
-              <label
-                htmlFor="importCsvText"
-                className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
-              >
-                Dán nội dung CSV vào ô dưới đây:
-              </label>
-              <textarea
-                id="importCsvText"
-                rows={6}
-                value={importText}
-                onChange={function (e) {
-                  setImportText(e.target.value)
-                }}
-                placeholder="Áo Polo Nam,ao-polo-nam,Mo ta,uuid-cat,POLO-01,L,Trắng,50,220000"
-                className="mt-2 w-full rounded-2xl border border-zinc-200 p-3 font-mono text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-              />
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={function () {
-                  setShowImportModal(false)
-                }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300"
-              >
-                Đóng
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmImport}
-                className="rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white hover:bg-orange-700"
-              >
-                Bắt đầu nhập
               </button>
             </div>
           </div>
