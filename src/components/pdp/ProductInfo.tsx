@@ -8,6 +8,7 @@ import { formatVnd } from '@/lib/format'
 import { findVariant, isOptionAvailable } from '@/lib/variants'
 
 import { useCart } from '../../hooks/useCart'
+import WishlistButton from '../WishlistButton'
 
 import type { ProductResponse } from '@generated/model/productResponse'
 
@@ -240,6 +241,7 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         >
           Mua ngay
         </button>
+        <WishlistButton productId={p.id} variant="action" />
       </div>
       {toast && (
         <p className="glass fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full px-5 py-2 text-sm font-bold">

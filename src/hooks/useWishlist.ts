@@ -59,6 +59,8 @@ export function useWishlist() {
   return {
     isLoggedIn,
     isLoading: wishlistQuery.isLoading,
+    isError: wishlistQuery.isError,
+    error: wishlistQuery.error,
     items,
     count: items.length,
     isFavorited,

@@ -21,6 +21,7 @@ import { useSignOut } from '../hooks/useAuthMutations'
 import { useCart } from '../hooks/useCart'
 import { useSessionQuery } from '../hooks/useSession'
 import { useTheme } from '../hooks/useTheme'
+import { useWishlist } from '../hooks/useWishlist'
 import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
 import UserAvatar from './UserAvatar'
 
@@ -56,6 +57,7 @@ export default function Header() {
   const navigate = useNavigate()
   const signOut = useSignOut()
   const { totalQuantity } = useCart()
+  const { count: wishlistCount } = useWishlist()
   const [keyword, setKeyword] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -234,13 +236,18 @@ export default function Header() {
               )}
             </div>
 
-            <button
-              type="button"
-              aria-label="Yêu thích"
-              className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10"
+            <Link
+              to="/wishlist"
+              aria-label="Sản phẩm yêu thích"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10"
             >
               <Heart size={20} />
-            </button>
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-700 px-1 text-[11px] font-extrabold text-white shadow">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
             <button
               type="button"
               onClick={toggle}

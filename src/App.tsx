@@ -29,6 +29,7 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const Cart = lazy(() => import('./pages/Cart'))
 const Checkout = lazy(() => import('./pages/Checkout'))
 const Addresses = lazy(() => import('./pages/Addresses'))
+const Wishlist = lazy(() => import('./pages/Wishlist'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -89,6 +90,14 @@ function App() {
             element={
               <RequireAuth>
                 <Addresses />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/wishlist"
+            element={
+              <RequireAuth>
+                <Wishlist />
               </RequireAuth>
             }
           />

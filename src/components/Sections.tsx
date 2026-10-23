@@ -4,7 +4,6 @@ import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useSearch } from '@generated/endpoints/search/search'
 import { useListPageLinks } from '@generated/endpoints/site-content/site-content'
 import {
-  Heart,
   ShoppingBag,
   Star,
   Truck,
@@ -18,6 +17,7 @@ import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/a
 import { formatVnd } from '@/lib/format'
 
 import UserAvatar from './UserAvatar'
+import WishlistButton from './WishlistButton'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
@@ -157,13 +157,7 @@ export function ProductCard(props: { item: ProductSummaryResponse }) {
             className="aspect-[4/5] w-full object-cover"
           />
         </Link>
-        <button
-          type="button"
-          aria-label="Yêu thích"
-          className="glass absolute top-3 right-3 rounded-full p-2"
-        >
-          <Heart size={16} />
-        </button>
+        <WishlistButton productId={p.id} />
       </div>
       <div className="p-4">
         <Link to={'/product/' + p.id}>
