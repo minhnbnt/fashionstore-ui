@@ -7973,19 +7973,83 @@
           {
             "name": "status",
             "in": "query",
-            "description": "Lọc theo status (ACTIVE, HIDDEN, DELETED)",
+            "description": "Lọc theo status (ALL, ACTIVE, HIDDEN, OUT_OF_STOCK, PENDING, BANNED, DELETED)",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": "ALL"
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "description": "Lọc theo danh mục",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "stockLevel",
+            "in": "query",
+            "description": "Lọc mức tồn kho (ALL, LOW_STOCK, OUT_OF_STOCK)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "ALL"
+            }
+          },
+          {
+            "name": "minPrice",
+            "in": "query",
+            "description": "Giá tối thiểu",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0
+            }
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "description": "Giá tối đa",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0
             }
           },
           {
             "name": "q",
             "in": "query",
-            "description": "Tìm theo tên hoặc slug",
+            "description": "Tìm theo tên, slug hoặc SKU",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Sắp xếp theo: createdAt, stock, sold, price",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "createdAt"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "description": "Thứ tự sắp xếp: asc hoặc desc",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "desc"
             }
           },
           {
@@ -8007,7 +8071,7 @@
             "schema": {
               "type": "integer",
               "format": "int32",
-              "default": 20
+              "default": 50
             }
           }
         ],
@@ -16470,6 +16534,314 @@
           }
         ]
       }
+    },
+    "/api/seller/shops/{shopId}/products/bulk-status": {
+      "patch": {
+        "tags": ["Seller - Products & Inventory"],
+        "summary": "Thao tác hàng loạt: Ẩn / Hiện sản phẩm",
+        "description": "Cập nhật trạng thái ACTIVE hoặc HIDDEN cho danh sách sản phẩm.",
+        "operationId": "bulkUpdateStatus",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "description": "Id shop",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateProductStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Kết quả thao tác hàng loạt",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkOperationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu yêu cầu không hợp lệ",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc shop chưa duyệt",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/seller/shops/{shopId}/products/bulk-delete": {
+      "post": {
+        "tags": ["Seller - Products & Inventory"],
+        "summary": "Thao tác hàng loạt: Xóa mềm sản phẩm",
+        "description": "Xóa mềm danh sách sản phẩm (bảo vệ các sản phẩm đang có đơn hàng xử lý).",
+        "operationId": "bulkDeleteProducts",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "description": "Id shop",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkDeleteProductsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Kết quả thao tác hàng loạt",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkOperationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu yêu cầu không hợp lệ",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc shop chưa duyệt",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/seller/shops/{shopId}/products/bulk-price": {
+      "patch": {
+        "tags": ["Seller - Products & Inventory"],
+        "summary": "Thao tác hàng loạt: Cập nhật giá sản phẩm",
+        "description": "Thay đổi giá theo số tiền cố định (FIXED) hoặc theo phần trăm (PERCENT).",
+        "operationId": "bulkUpdatePrice",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "description": "Id shop",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdatePriceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Kết quả thao tác hàng loạt",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkOperationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu yêu cầu không hợp lệ",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc shop chưa duyệt",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/seller/shops/{shopId}/products/bulk-stock": {
+      "patch": {
+        "tags": ["Seller - Products & Inventory"],
+        "summary": "Thao tác hàng loạt: Cập nhật tồn kho sản phẩm",
+        "description": "Cập nhật tồn kho theo số lượng cố định (FIXED) hoặc tăng/giảm (DELTA).",
+        "operationId": "bulkUpdateStock",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "description": "Id shop",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateStockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Kết quả thao tác hàng loạt",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkOperationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu yêu cầu không hợp lệ",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc shop chưa duyệt",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -18790,6 +19162,12 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "soldCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số lượng sản phẩm đã bán thành công",
+            "example": 15
           }
         }
       },
@@ -21106,6 +21484,112 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "BulkUpdateProductStatusRequest": {
+        "type": "object",
+        "required": ["productIds", "status"],
+        "properties": {
+          "productIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Danh sách ID sản phẩm cần cập nhật"
+          },
+          "status": {
+            "type": "string",
+            "description": "Trạng thái mới: ACTIVE hoặc HIDDEN",
+            "example": "ACTIVE"
+          }
+        }
+      },
+      "BulkDeleteProductsRequest": {
+        "type": "object",
+        "required": ["productIds"],
+        "properties": {
+          "productIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Danh sách ID sản phẩm cần xóa mềm"
+          }
+        }
+      },
+      "BulkUpdatePriceRequest": {
+        "type": "object",
+        "required": ["productIds", "mode", "value"],
+        "properties": {
+          "productIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "mode": {
+            "type": "string",
+            "description": "FIXED (đặt giá cố định) hoặc PERCENT (tăng/giảm %)",
+            "example": "FIXED"
+          },
+          "value": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Giá tiền mới nếu FIXED, hoặc % thay đổi nếu PERCENT (-90 đến 500)",
+            "example": 250000
+          }
+        }
+      },
+      "BulkUpdateStockRequest": {
+        "type": "object",
+        "required": ["productIds", "mode", "quantity"],
+        "properties": {
+          "productIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "mode": {
+            "type": "string",
+            "description": "FIXED (đặt tồn kho mới) hoặc DELTA (cộng/trừ thêm)",
+            "example": "FIXED"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Tồn kho mới nếu FIXED, hoặc số lượng tăng/giảm nếu DELTA",
+            "example": 50
+          }
+        }
+      },
+      "BulkOperationResult": {
+        "type": "object",
+        "required": ["successCount", "failedCount", "messages"],
+        "properties": {
+          "successCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số sản phẩm xử lý thành công",
+            "example": 5
+          },
+          "failedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số sản phẩm bỏ qua hoặc thất bại",
+            "example": 0
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Chi tiết thông báo kết quả hoặc lý do bỏ qua"
           }
         }
       }
