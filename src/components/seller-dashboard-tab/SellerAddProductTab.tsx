@@ -17,6 +17,9 @@ import {
   X,
   Tag,
   Lightning,
+  Copy,
+  SquaresFour,
+  ListDashes,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -115,8 +118,15 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
   // 3. Classifications (Màu sắc & Kích cỡ), Bulk Apply & Variants
   const [colors, setColors] = useState<string[]>(['Trắng', 'Đen'])
   const [customColor, setCustomColor] = useState('')
-  const [sizes, setSizes] = useState<string[]>(['M', 'L'])
-  const [customSize, setCustomSize] = useState('')
+  const [colorSizesMap, setColorSizesMap] = useState<Record<string, string[]>>({
+    Trắng: ['M', 'L'],
+    Đen: ['M', 'L'],
+  })
+  const [customColorSizeInputs, setCustomColorSizeInputs] = useState<Record<string, string>>({})
+  const [sizeViewMode, setSizeViewMode] = useState<'by_color' | 'grid'>('by_color')
+
+  // Bulk Apply state
+  const [bulkTarget, setBulkTarget] = useState<string>('ALL')
   const [bulkPrice, setBulkPrice] = useState('199.000')
   const [bulkCompareAtPrice, setBulkCompareAtPrice] = useState('250.000')
   const [bulkStock, setBulkStock] = useState('50')
@@ -197,15 +207,16 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     setSlug(generatedSlug)
   }
 
-  function updateVariantsFromMatrix(newColors: string[], newSizes: string[]) {
-    const activeColors = newColors.length > 0 ? newColors : ['Mặc định']
-    const activeSizes = newSizes.length > 0 ? newSizes : ['Freesize']
-
+  function syncVariantsFromColorSizes(
+    activeColors: string[],
+    activeMap: Record<string, string[]>,
+  ) {
     const nextVariants: VariantRow[] = []
     let isFirst = true
 
     for (const c of activeColors) {
-      for (const s of activeSizes) {
+      const sizesForColor = activeMap[c] ?? []
+      for (const s of sizesForColor) {
         const existing = variants.find(
           (v) =>
             v.color.trim().toLowerCase() === c.trim().toLowerCase() &&
@@ -224,9 +235,9 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           const colorCode = safeSkuPart(c).slice(0, 4)
           const sizeCode = safeSkuPart(s).slice(0, 4)
           const sku = `${baseSlug || 'SKU'}-${colorCode || 'COLOR'}-${sizeCode || 'SIZE'}`
-          const samplePrice = variants[0]?.price ?? 199000
-          const sampleCompareAtPrice = variants[0]?.compareAtPrice ?? 250000
-          const sampleStock = variants[0]?.stockQuantity ?? 50
+          const samplePrice = parseNumberFromDots(bulkPrice) ?? 199000
+          const sampleCompareAtPrice = parseNumberFromDots(bulkCompareAtPrice) ?? 250000
+          const sampleStock = parseNumberFromDots(bulkStock) ?? 50
           const colorImg = colorImages[c] ?? null
 
           nextVariants.push({
@@ -258,10 +269,20 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     if (trimmed === '' || colors.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
       return
     }
-    const updated = [...colors, trimmed]
-    setColors(updated)
+    const updatedColors = [...colors, trimmed]
+    // Mặc định màu mới nhận bộ size của màu đầu tiên (nếu có), hoặc ['M', 'L']
+    const templateSizes =
+      colors.length > 0 && colorSizesMap[colors[0]!]
+        ? [...(colorSizesMap[colors[0]!] ?? [])]
+        : ['M', 'L']
+    const updatedMap = {
+      ...colorSizesMap,
+      [trimmed]: templateSizes.length > 0 ? templateSizes : ['M', 'L'],
+    }
+    setColors(updatedColors)
+    setColorSizesMap(updatedMap)
     setCustomColor('')
-    updateVariantsFromMatrix(updated, sizes)
+    syncVariantsFromColorSizes(updatedColors, updatedMap)
   }
 
   function handleRemoveColor(colorName: string) {
@@ -269,30 +290,69 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       setFormError('Sản phẩm nên có ít nhất 1 màu sắc.')
       return
     }
-    const updated = colors.filter((c) => c !== colorName)
-    setColors(updated)
-    updateVariantsFromMatrix(updated, sizes)
+    const updatedColors = colors.filter((c) => c !== colorName)
+    const updatedMap = { ...colorSizesMap }
+    delete updatedMap[colorName]
+    setColors(updatedColors)
+    setColorSizesMap(updatedMap)
+    syncVariantsFromColorSizes(updatedColors, updatedMap)
   }
 
-  function handleAddSize(sizeName: string) {
+  function handleAddSizeToColor(colorName: string, sizeName: string) {
     const trimmed = sizeName.trim()
-    if (trimmed === '' || sizes.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+    if (trimmed === '') {
       return
     }
-    const updated = [...sizes, trimmed]
-    setSizes(updated)
-    setCustomSize('')
-    updateVariantsFromMatrix(colors, updated)
+    const currentSizes = colorSizesMap[colorName] ?? []
+    if (currentSizes.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      return
+    }
+    const updatedSizes = [...currentSizes, trimmed]
+    const updatedMap = {
+      ...colorSizesMap,
+      [colorName]: updatedSizes,
+    }
+    setColorSizesMap(updatedMap)
+    setCustomColorSizeInputs((prev) => ({ ...prev, [colorName]: '' }))
+    syncVariantsFromColorSizes(colors, updatedMap)
   }
 
-  function handleRemoveSize(sizeName: string) {
-    if (sizes.length <= 1) {
-      setFormError('Sản phẩm nên có ít nhất 1 kích cỡ.')
+  function handleRemoveSizeFromColor(colorName: string, sizeName: string) {
+    const currentSizes = colorSizesMap[colorName] ?? []
+    if (currentSizes.length <= 1) {
+      setFormError(`Màu "${colorName}" phải có ít nhất 1 kích cỡ.`)
       return
     }
-    const updated = sizes.filter((s) => s !== sizeName)
-    setSizes(updated)
-    updateVariantsFromMatrix(colors, updated)
+    const updatedSizes = currentSizes.filter((s) => s !== sizeName)
+    const updatedMap = {
+      ...colorSizesMap,
+      [colorName]: updatedSizes,
+    }
+    setColorSizesMap(updatedMap)
+    syncVariantsFromColorSizes(colors, updatedMap)
+  }
+
+  function handleToggleSizeForColor(colorName: string, sizeName: string) {
+    const currentSizes = colorSizesMap[colorName] ?? []
+    const isPresent = currentSizes.some((s) => s.toLowerCase() === sizeName.toLowerCase())
+    if (isPresent) {
+      handleRemoveSizeFromColor(colorName, sizeName)
+    } else {
+      handleAddSizeToColor(colorName, sizeName)
+    }
+  }
+
+  function handleCopySizesToAllColors(sourceColor: string) {
+    const sourceSizes = colorSizesMap[sourceColor] ?? []
+    if (sourceSizes.length === 0) {
+      return
+    }
+    const updatedMap: Record<string, string[]> = {}
+    for (const c of colors) {
+      updatedMap[c] = [...sourceSizes]
+    }
+    setColorSizesMap(updatedMap)
+    syncVariantsFromColorSizes(colors, updatedMap)
   }
 
   function handleApplyBulk() {
@@ -306,12 +366,29 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     }
 
     setVariants((prev) =>
-      prev.map((v) => ({
-        ...v,
-        price: p !== null ? p : v.price,
-        compareAtPrice: cp !== null ? cp : v.compareAtPrice,
-        stockQuantity: stock !== null ? stock : v.stockQuantity,
-      })),
+      prev.map((v) => {
+        let shouldApply = false
+        if (bulkTarget === 'ALL') {
+          shouldApply = true
+        } else if (bulkTarget.startsWith('color:')) {
+          const targetColor = bulkTarget.replace('color:', '')
+          shouldApply = v.color.trim().toLowerCase() === targetColor.trim().toLowerCase()
+        } else if (bulkTarget.startsWith('size:')) {
+          const targetSize = bulkTarget.replace('size:', '')
+          shouldApply = v.size.trim().toLowerCase() === targetSize.trim().toLowerCase()
+        }
+
+        if (!shouldApply) {
+          return v
+        }
+
+        return {
+          ...v,
+          price: p !== null ? p : v.price,
+          compareAtPrice: cp !== null ? cp : v.compareAtPrice,
+          stockQuantity: stock !== null ? stock : v.stockQuantity,
+        }
+      }),
     )
     setFormError(null)
   }
@@ -779,144 +856,320 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           </div>
         </div>
 
-        {/* 3.2 Nhóm phân loại 2: Kích cỡ (S, M, L, XL, 2XL, 3XL, 4XL, Freesize) */}
-        <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/80 dark:bg-zinc-950/50">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
-              <Tag size={14} weight="bold" className="text-orange-600 dark:text-orange-400" />
-              Nhóm 2: Kích cỡ (Size)
-            </label>
-            <span className="text-[11px] text-zinc-400">Bao gồm size từ S đến 4XL</span>
-          </div>
-
-          {/* Active Sizes Chips */}
-          <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            {sizes.map((s) => (
-              <span
-                key={s}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-xs font-bold text-zinc-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-              >
-                {s}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSize(s)}
-                  className="rounded-full p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-red-500 dark:hover:bg-zinc-700"
-                  title={`Xóa size ${s}`}
-                >
-                  <X size={12} weight="bold" />
-                </button>
+        {/* 3.2 Nhóm phân loại 2: Kích cỡ theo từng màu sắc (Color-specific Sizes Builder) */}
+        <div className="mt-5 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/80 dark:bg-zinc-950/50">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/50 pb-3 dark:border-zinc-800/60">
+            <div>
+              <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+                <Tag size={14} weight="bold" className="text-orange-600 dark:text-orange-400" />
+                Nhóm 2: Kích cỡ (Size) theo từng màu sắc
+              </label>
+              <span className="text-[11px] text-zinc-400">
+                Cho phép mỗi màu sắc sở hữu một tập kích cỡ riêng biệt (Ví dụ: Đen chỉ có XL, 2XL; Trắng có đủ S, M, L, XL, 2XL; Xanh Navy có 4XL)
               </span>
-            ))}
+            </div>
 
-            {/* Input custom size */}
-            <div className="flex items-center gap-1.5">
-              <input
-                type="text"
-                placeholder="Nhập size khác..."
-                value={customSize}
-                onChange={(e) => setCustomSize(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleAddSize(customSize)
-                  }
-                }}
-                className="w-28 rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-xs outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-              />
+            {/* Toggle View Mode: By Color vs Matrix Grid */}
+            <div className="flex items-center rounded-xl border border-zinc-200 bg-white p-0.5 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900">
               <button
                 type="button"
-                onClick={() => handleAddSize(customSize)}
-                className="rounded-xl border border-zinc-200 bg-white px-2.5 py-1 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                onClick={() => setSizeViewMode('by_color')}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                  sizeViewMode === 'by_color'
+                    ? 'bg-orange-600 text-white shadow-xs'
+                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                }`}
               >
-                Thêm
+                <ListDashes size={14} weight="bold" />
+                Theo từng màu
+              </button>
+              <button
+                type="button"
+                onClick={() => setSizeViewMode('grid')}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                  sizeViewMode === 'grid'
+                    ? 'bg-orange-600 text-white shadow-xs'
+                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                }`}
+              >
+                <SquaresFour size={14} weight="bold" />
+                Lưới ma trận Màu × Size
               </button>
             </div>
           </div>
 
-          {/* Quick pick sizes (S, M, L, XL, 2XL, 3XL, 4XL, Freesize) */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/60">
-            <span className="text-[11px] font-medium text-zinc-400 mr-1">Chọn nhanh size chuẩn:</span>
-            {COMMON_SIZES.map((s) => {
-              const isSelected = sizes.some((sz) => sz.toLowerCase() === s.toLowerCase())
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  disabled={isSelected}
-                  onClick={() => handleAddSize(s)}
-                  className={`rounded-lg px-2.5 py-0.5 text-[11px] font-semibold transition ${
-                    isSelected
-                      ? 'bg-zinc-200/70 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600'
-                      : 'border border-dashed border-zinc-300 bg-white text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400'
-                  }`}
-                >
-                  + {s}
-                </button>
-              )
-            })}
-          </div>
+          {/* VIEW MODE 1: Thẻ kích cỡ theo từng màu (Color Cards) */}
+          {sizeViewMode === 'by_color' && (
+            <div className="mt-4 space-y-3">
+              {colors.map((colorName) => {
+                const sizesForThisColor = colorSizesMap[colorName] ?? []
+                const customInputVal = customColorSizeInputs[colorName] ?? ''
+
+                return (
+                  <div
+                    key={colorName}
+                    className="rounded-xl border border-zinc-200/80 bg-white p-3.5 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-2.5 dark:border-zinc-800/60">
+                      <div className="flex items-center gap-2">
+                        <span className="h-3 w-3 rounded-full border border-zinc-300 bg-orange-500/80 shadow-2xs" />
+                        <span className="text-xs font-bold text-zinc-900 dark:text-white">
+                          Màu: <span className="text-orange-600 dark:text-orange-400">{colorName}</span>
+                        </span>
+                        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                          {sizesForThisColor.length} size
+                        </span>
+                      </div>
+
+                      {colors.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopySizesToAllColors(colorName)}
+                          className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                          title={`Sao chép toàn bộ size của màu ${colorName} sang các màu khác`}
+                        >
+                          <Copy size={12} weight="bold" />
+                          Sao chép bộ size này sang tất cả màu
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Active Size Chips for this color */}
+                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                      {sizesForThisColor.map((s) => (
+                        <span
+                          key={s}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 bg-orange-50/70 px-2.5 py-1 text-xs font-bold text-orange-900 shadow-2xs dark:border-orange-900/40 dark:bg-orange-950/40 dark:text-orange-300"
+                        >
+                          {s}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSizeFromColor(colorName, s)}
+                            className="rounded-full p-0.5 text-orange-400 hover:bg-orange-100 hover:text-red-600 dark:hover:bg-orange-900"
+                            title={`Xóa size ${s} của màu ${colorName}`}
+                          >
+                            <X size={12} weight="bold" />
+                          </button>
+                        </span>
+                      ))}
+
+                      {/* Custom size input for this color */}
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          placeholder="Nhập size khác..."
+                          value={customInputVal}
+                          onChange={(e) =>
+                            setCustomColorSizeInputs((prev) => ({
+                              ...prev,
+                              [colorName]: e.target.value,
+                            }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              handleAddSizeToColor(colorName, customInputVal)
+                            }
+                          }}
+                          className="w-24 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs outline-none focus:border-orange-500 focus:bg-white dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAddSizeToColor(colorName, customInputVal)}
+                          className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                        >
+                          + Thêm
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Quick pick standard sizes for this color */}
+                    <div className="mt-2.5 flex flex-wrap items-center gap-1 border-t border-zinc-100 pt-2 dark:border-zinc-800/40">
+                      <span className="text-[10px] font-medium text-zinc-400 mr-1">Chọn nhanh:</span>
+                      {COMMON_SIZES.map((sz) => {
+                        const isSelected = sizesForThisColor.some(
+                          (s) => s.toLowerCase() === sz.toLowerCase(),
+                        )
+                        return (
+                          <button
+                            key={sz}
+                            type="button"
+                            disabled={isSelected}
+                            onClick={() => handleAddSizeToColor(colorName, sz)}
+                            className={`rounded-md px-2 py-0.5 text-[10px] font-semibold transition ${
+                              isSelected
+                                ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600'
+                                : 'border border-dashed border-zinc-300 bg-zinc-50 text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-400'
+                            }`}
+                          >
+                            + {sz}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* VIEW MODE 2: Lưới ma trận (Matrix Checkbox Grid) */}
+          {sizeViewMode === 'grid' && (() => {
+            const allUsedSizes: string[] = []
+            for (const c of colors) {
+              for (const s of colorSizesMap[c] ?? []) {
+                if (!allUsedSizes.includes(s)) {
+                  allUsedSizes.push(s)
+                }
+              }
+            }
+            const gridSizes = Array.from(new Set([...COMMON_SIZES, ...allUsedSizes]))
+
+            return (
+              <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-200 bg-white p-3 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900">
+                <table className="w-full text-center text-xs">
+                  <thead>
+                    <tr className="border-b border-zinc-200 text-[11px] font-bold text-zinc-500 uppercase dark:border-zinc-800">
+                      <th scope="col" className="py-2 text-left pl-2">
+                        Màu sắc
+                      </th>
+                      {gridSizes.map((sz) => (
+                        <th key={sz} scope="col" className="py-2 px-2">
+                          {sz}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                    {colors.map((colorName) => {
+                      const sizesForThis = colorSizesMap[colorName] ?? []
+                      return (
+                        <tr key={colorName} className="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30">
+                          <td className="py-2 text-left font-bold text-zinc-900 pl-2 dark:text-white">
+                            {colorName}
+                          </td>
+                          {gridSizes.map((sz) => {
+                            const isChecked = sizesForThis.some(
+                              (s) => s.toLowerCase() === sz.toLowerCase(),
+                            )
+                            return (
+                              <td key={sz} className="py-2 px-2 text-center">
+                                <label className="inline-flex cursor-pointer items-center justify-center p-1">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => handleToggleSizeForColor(colorName, sz)}
+                                    className="h-4 w-4 rounded accent-orange-600"
+                                  />
+                                </label>
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )
+          })()}
         </div>
 
-        {/* 3.3 Công cụ áp dụng hàng loạt (Bulk Apply Tool) */}
-        <div className="mt-4 rounded-2xl border border-orange-200/80 bg-orange-50/50 p-4 dark:border-orange-950/60 dark:bg-orange-950/20">
-          <div className="flex items-center gap-2 text-xs font-bold text-orange-900 dark:text-orange-300">
-            <Lightning size={16} weight="fill" className="text-orange-600 dark:text-orange-400" />
-            <span>Áp dụng thông số hàng loạt cho tất cả {variants.length} phân loại</span>
-          </div>
-          <div className="mt-3 flex flex-wrap items-end gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
-                Giá bán chung (₫)
-              </label>
-              <input
-                type="text"
-                placeholder="Ví dụ: 199.000"
-                value={bulkPrice}
-                onChange={(e) => {
-                  const num = parseNumberFromDots(e.target.value)
-                  setBulkPrice(num !== null ? formatNumberWithDots(num) : '')
-                }}
-                className="mt-1 w-36 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
-              />
+        {/* 3.3 Công cụ áp dụng hàng loạt thông minh (Smart Bulk Apply Tool) */}
+        {(() => {
+          const allSizesInVariants = Array.from(new Set(variants.map((v) => v.size)))
+
+          return (
+            <div className="mt-4 rounded-2xl border border-orange-200/80 bg-orange-50/50 p-4 dark:border-orange-950/60 dark:bg-orange-950/20">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-orange-900 dark:text-orange-300">
+                <div className="flex items-center gap-2">
+                  <Lightning size={16} weight="fill" className="text-orange-600 dark:text-orange-400" />
+                  <span>Áp dụng thông số hàng loạt ({variants.length} phân loại)</span>
+                </div>
+
+                {/* Chọn mục tiêu áp dụng (Target Selector) */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Áp dụng cho:</span>
+                  <select
+                    value={bulkTarget}
+                    onChange={(e) => setBulkTarget(e.target.value)}
+                    className="rounded-xl border border-zinc-300 bg-white px-3 py-1 text-xs font-bold text-zinc-800 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                  >
+                    <option value="ALL">Tất cả {variants.length} phân loại</option>
+                    <optgroup label="Theo Màu sắc">
+                      {colors.map((c) => (
+                        <option key={c} value={`color:${c}`}>
+                          Chỉ màu {c} ({(colorSizesMap[c] ?? []).length} biến thể)
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Theo Kích cỡ">
+                      {allSizesInVariants.map((s) => (
+                        <option key={s} value={`size:${s}`}>
+                          Chỉ size {s}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                    Giá bán chung (₫)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: 199.000"
+                    value={bulkPrice}
+                    onChange={(e) => {
+                      const num = parseNumberFromDots(e.target.value)
+                      setBulkPrice(num !== null ? formatNumberWithDots(num) : '')
+                    }}
+                    className="mt-1 w-36 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                    Giá gốc chung (₫)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: 250.000"
+                    value={bulkCompareAtPrice}
+                    onChange={(e) => {
+                      const num = parseNumberFromDots(e.target.value)
+                      setBulkCompareAtPrice(num !== null ? formatNumberWithDots(num) : '')
+                    }}
+                    className="mt-1 w-36 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                    Kho ban đầu
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Ví dụ: 50"
+                    value={bulkStock}
+                    onChange={(e) => setBulkStock(e.target.value)}
+                    className="mt-1 w-24 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleApplyBulk}
+                  className="flex items-center gap-1.5 rounded-xl bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-orange-700"
+                >
+                  <Lightning size={14} weight="bold" />
+                  Áp dụng thông số
+                </button>
+              </div>
             </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
-                Giá gốc chung (₫)
-              </label>
-              <input
-                type="text"
-                placeholder="Ví dụ: 250.000"
-                value={bulkCompareAtPrice}
-                onChange={(e) => {
-                  const num = parseNumberFromDots(e.target.value)
-                  setBulkCompareAtPrice(num !== null ? formatNumberWithDots(num) : '')
-                }}
-                className="mt-1 w-36 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
-                Kho ban đầu
-              </label>
-              <input
-                type="number"
-                min="0"
-                placeholder="Ví dụ: 50"
-                value={bulkStock}
-                onChange={(e) => setBulkStock(e.target.value)}
-                className="mt-1 w-24 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleApplyBulk}
-              className="flex items-center gap-1.5 rounded-xl bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-orange-700"
-            >
-              <Lightning size={14} weight="bold" />
-              Áp dụng cho tất cả phân loại
-            </button>
-          </div>
-        </div>
+          )
+        })()}
 
         {/* 3.4 Upload ảnh riêng cho từng màu sắc */}
         {distinctColors.length > 0 && (

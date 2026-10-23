@@ -34,20 +34,35 @@ export function checkVideoDuration(file: File, maxSeconds = 60): Promise<number>
   return new Promise((resolve, reject) => {
     const video = document.createElement('video')
     video.preload = 'metadata'
+    let timer: number | null = null
+
+    const cleanup = (url: string) => {
+      if (timer !== null) {
+        window.clearTimeout(timer)
+      }
+      window.URL.revokeObjectURL(url)
+    }
+
+    const blobUrl = URL.createObjectURL(file)
+    timer = window.setTimeout(() => {
+      cleanup(blobUrl)
+      resolve(0)
+    }, 6000)
+
     video.onloadedmetadata = () => {
-      window.URL.revokeObjectURL(video.src)
       const duration = Math.round(video.duration)
-      if (duration > maxSeconds) {
+      cleanup(blobUrl)
+      if (!isNaN(duration) && duration > maxSeconds) {
         reject(new Error(`Video dài ${duration} giây, vượt quá giới hạn tối đa ${maxSeconds} giây.`))
       } else {
-        resolve(duration)
+        resolve(isNaN(duration) ? 0 : duration)
       }
     }
     video.onerror = () => {
-      window.URL.revokeObjectURL(video.src)
-      reject(new Error('Không thể tải hoặc đọc định dạng video.'))
+      cleanup(blobUrl)
+      resolve(0)
     }
-    video.src = URL.createObjectURL(file)
+    video.src = blobUrl
   })
 }
 

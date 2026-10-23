@@ -44,6 +44,8 @@ export default function ProductMediaUploader({
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
   const [videoDuration, setVideoDuration] = useState<number | null>(null)
   const [videoFileName, setVideoFileName] = useState<string | null>(null)
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -109,26 +111,65 @@ export default function ProductMediaUploader({
     }
 
     setErrorMessage(null)
+    setUploadError(null)
+
+    // Tạo preview URL ngay lập tức
     const localPreviewUrl = URL.createObjectURL(file)
     setVideoPreviewUrl(localPreviewUrl)
     setVideoFileName(file.name)
-    setIsUploadingVideo(true)
+    setVideoFile(file)
 
+    // Kiểm tra thời lượng file video (≤ 60s)
+    let dur = 0
     try {
-      const dur = await checkVideoDuration(file, 60)
-      setVideoDuration(dur)
-      const key = await uploadVideo(file)
-      onVideoChange(key)
+      dur = await checkVideoDuration(file, 60)
+      if (dur > 0) {
+        setVideoDuration(dur)
+      }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Upload video thất bại.'
+      const msg = err instanceof Error ? err.message : 'Video không hợp lệ.'
       setErrorMessage(msg)
       setVideoPreviewUrl(null)
       setVideoDuration(null)
       setVideoFileName(null)
+      setVideoFile(null)
       onVideoChange(null)
+      e.target.value = ''
+      return
+    }
+
+    // Video hợp lệ -> Tiến hành upload S3
+    setIsUploadingVideo(true)
+    try {
+      const key = await uploadVideo(file)
+      onVideoChange(key)
+      setUploadError(null)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Tải video lên hệ thống thất bại.'
+      setUploadError(msg)
+      onVideoChange(null)
+      // Giữ nguyên videoPreviewUrl để người dùng xem được video cục bộ
     } finally {
       setIsUploadingVideo(false)
       e.target.value = ''
+    }
+  }
+
+  async function handleRetryUploadVideo() {
+    if (videoFile === null) {
+      return
+    }
+    setIsUploadingVideo(true)
+    setUploadError(null)
+    try {
+      const key = await uploadVideo(videoFile)
+      onVideoChange(key)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Tải video lên hệ thống thất bại.'
+      setUploadError(msg)
+      onVideoChange(null)
+    } finally {
+      setIsUploadingVideo(false)
     }
   }
 
@@ -139,6 +180,8 @@ export default function ProductMediaUploader({
     setVideoPreviewUrl(null)
     setVideoDuration(null)
     setVideoFileName(null)
+    setVideoFile(null)
+    setUploadError(null)
     onVideoChange(null)
   }
 
@@ -343,67 +386,89 @@ export default function ProductMediaUploader({
           />
         </div>
 
-        {(videoKey !== null || videoPreviewUrl !== null) && (
-          <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <div className="relative aspect-video w-full sm:w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-xs dark:border-zinc-800">
-              <video
-                src={videoPreviewUrl ?? imageUrl(videoKey)}
-                controls
-                playsInline
-                className="h-full w-full object-contain"
-              />
-              {isUploadingVideo && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white backdrop-blur-xs">
-                  <SpinnerGap size={24} weight="bold" className="animate-spin text-orange-400" />
-                  <span className="mt-2 text-xs font-semibold">Đang tải lên hệ thống S3...</span>
-                </div>
-              )}
-            </div>
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                <PlayCircle size={18} weight="fill" />
-                <span>Video hợp lệ (thời lượng ≤ 60s)</span>
-                {videoDuration !== null && (
-                  <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                    {videoDuration}s / 60s
-                  </span>
+        {(videoKey !== null || videoPreviewUrl !== null) && (() => {
+          const effectiveVideoSrc = videoPreviewUrl ?? (videoKey !== null ? imageUrl(videoKey) : undefined)
+          return (
+            <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+              <div className="relative aspect-video w-full sm:w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-xs dark:border-zinc-800">
+                {effectiveVideoSrc !== undefined && (
+                  <video
+                    key={effectiveVideoSrc}
+                    src={effectiveVideoSrc}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="h-full w-full object-contain"
+                  />
+                )}
+                {isUploadingVideo && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white backdrop-blur-xs">
+                    <SpinnerGap size={24} weight="bold" className="animate-spin text-orange-400" />
+                    <span className="mt-2 text-xs font-semibold">Đang tải lên hệ thống S3...</span>
+                  </div>
                 )}
               </div>
-              {videoFileName !== null && (
-                <p className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                  File: <span className="font-semibold text-zinc-900 dark:text-white">{videoFileName}</span>
-                </p>
-              )}
-              <p className="text-[11px] text-zinc-500">
-                {isUploadingVideo
-                  ? 'Đang đồng bộ hóa video lên máy chủ lưu trữ S3...'
-                  : 'Video đã được tải lên và sẵn sàng phát trên trang chi tiết sản phẩm.'}
-              </p>
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  disabled={isUploadingVideo}
-                  onClick={function () {
-                    videoInputRef.current?.click()
-                  }}
-                  className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
-                >
-                  <VideoCamera size={14} weight="bold" />
-                  Thay đổi video
-                </button>
-                <button
-                  type="button"
-                  disabled={isUploadingVideo}
-                  onClick={handleRemoveVideo}
-                  className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400"
-                >
-                  <Trash size={14} weight="bold" />
-                  Gỡ video
-                </button>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <PlayCircle size={18} weight="fill" />
+                  <span>Video hợp lệ (thời lượng ≤ 60s)</span>
+                  {videoDuration !== null && videoDuration > 0 && (
+                    <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      {videoDuration}s / 60s
+                    </span>
+                  )}
+                </div>
+                {videoFileName !== null && (
+                  <p className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">
+                    File: <span className="font-semibold text-zinc-900 dark:text-white">{videoFileName}</span>
+                  </p>
+                )}
+                {uploadError !== null ? (
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400">
+                    <WarningCircle size={16} weight="bold" />
+                    <span>{uploadError}</span>
+                    <button
+                      type="button"
+                      disabled={isUploadingVideo}
+                      onClick={() => void handleRetryUploadVideo()}
+                      className="rounded-lg border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+                    >
+                      Thử tải lại
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-zinc-500">
+                    {isUploadingVideo
+                      ? 'Đang đồng bộ hóa video lên máy chủ lưu trữ S3...'
+                      : 'Video đã được tải lên và sẵn sàng phát trên trang chi tiết sản phẩm.'}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    disabled={isUploadingVideo}
+                    onClick={function () {
+                      videoInputRef.current?.click()
+                    }}
+                    className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
+                  >
+                    <VideoCamera size={14} weight="bold" />
+                    Thay đổi video
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isUploadingVideo}
+                    onClick={handleRemoveVideo}
+                    className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400"
+                  >
+                    <Trash size={14} weight="bold" />
+                    Gỡ video
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
 
       {/* C. Ảnh Garment (Trải phẳng trên nền trắng) dùng cho Virtual Try-On */}
