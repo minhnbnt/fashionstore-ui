@@ -85,10 +85,12 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
   // Step 1: Shop Basic Info & Branding
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
+  const [slugSuffix] = useState(function () {
+    return Math.random().toString(36).substring(2, 6)
+  })
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [description, setDescription] = useState('')
-  const [autoSlug, setAutoSlug] = useState(true)
 
   const [logoKey, setLogoKey] = useState('')
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -192,9 +194,12 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
 
   function handleNameChange(val: string) {
     setName(val)
-    if (autoSlug) {
-      setSlug(slugify(val))
+    const clean = slugify(val)
+    if (clean === '') {
+      setSlug('')
+      return
     }
+    setSlug(`${clean}-${slugSuffix}`)
   }
 
   function handleLegalNameChange(val: string) {
@@ -494,8 +499,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
           {currentStep === 1 && (
             <div className="space-y-4">
               <div className="rounded-2xl bg-amber-50/70 p-3.5 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
-                <span className="font-bold">Bước 1/4:</span> Thiết lập thông tin nhận diện gian hàng,
-                ảnh đại diện, ảnh bìa và địa chỉ kho lấy hàng khi phát sinh đơn.
+                <span className="font-bold">Bước 1/4:</span> Thiết lập thông tin nhận diện gian
+                hàng, ảnh đại diện, ảnh bìa và địa chỉ kho lấy hàng khi phát sinh đơn.
               </div>
 
               <div>
@@ -514,24 +519,23 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
 
               <div>
                 <label className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-                  Định danh Shop / Slug (URL) <span className="text-red-500">*</span>
+                  Định danh Shop / Slug (URL){' '}
+                  <span className="font-normal text-zinc-400 normal-case">(Tự sinh độc nhất)</span>{' '}
+                  <span className="text-red-500">*</span>
                   <div className="mt-1 flex items-center rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-1 dark:border-white/10 dark:bg-zinc-800">
                     <span className="text-xs text-zinc-400">net.vn/shop/</span>
                     <input
                       id="input-shop-slug"
                       type="text"
                       value={slug}
-                      onChange={(e) => {
-                        setAutoSlug(false)
-                        setSlug(slugify(e.target.value))
-                      }}
-                      placeholder="VD: net-boutique"
-                      className="w-full bg-transparent px-2 py-1.5 font-normal outline-none placeholder:italic placeholder:opacity-50"
+                      readOnly
+                      placeholder="VD: net-boutique-4f2a"
+                      className="w-full bg-transparent px-2 py-1.5 font-normal text-zinc-600 outline-none placeholder:italic placeholder:opacity-50 dark:text-zinc-300"
                     />
                   </div>
                 </label>
                 <span className="mt-1 block text-[11px] text-zinc-400">
-                  Đường dẫn độc nhất toàn sàn dùng để khách hàng truy cập gian hàng.
+                  Đường dẫn độc nhất toàn sàn được tự động tạo kèm mã định danh để tránh trùng lặp.
                 </span>
               </div>
 
@@ -609,7 +613,9 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                           {logoUploading && 'Đang tải lên…'}
                           {!logoUploading && 'Tải Logo Shop'}
                         </p>
-                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">Vuông 1:1, tối đa 5MB</p>
+                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">
+                          Vuông 1:1, tối đa 5MB
+                        </p>
                       </div>
                     )}
                     {logoPreview && (
@@ -663,7 +669,9 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                           {bannerUploading && 'Đang tải lên…'}
                           {!bannerUploading && 'Tải Ảnh Bìa Shop'}
                         </p>
-                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">Ngang 16:9, tối đa 5MB</p>
+                        <p className="mt-0.5 text-[10px] text-zinc-400 italic">
+                          Ngang 16:9, tối đa 5MB
+                        </p>
                       </div>
                     )}
                     {bannerPreview && (
@@ -786,7 +794,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
               {/* Upload ảnh định danh eKYC */}
               <div>
                 <p className="block text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
-                  Tải lên giấy tờ định danh (Ảnh CCCD & Chân dung) <span className="text-red-500">*</span>
+                  Tải lên giấy tờ định danh (Ảnh CCCD & Chân dung){' '}
+                  <span className="text-red-500">*</span>
                 </p>
                 <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {/* Mặt trước CCCD */}
@@ -888,7 +897,12 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       accept="image/*"
                       disabled={idSelfieUploading}
                       onChange={(e) => {
-                        void handleUpload(e, setIdSelfieKey, setIdSelfiePreview, setIdSelfieUploading)
+                        void handleUpload(
+                          e,
+                          setIdSelfieKey,
+                          setIdSelfiePreview,
+                          setIdSelfieUploading,
+                        )
                       }}
                       className="hidden"
                     />
@@ -1117,8 +1131,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     className="mt-0.5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
                   />
                   <span>
-                    Tôi cam kết chỉ bán sản phẩm thời trang chính hãng, có nguồn gốc xuất xứ rõ ràng,
-                    không kinh doanh hàng giả, hàng nhái hoặc vi phạm quyền sở hữu trí tuệ.
+                    Tôi cam kết chỉ bán sản phẩm thời trang chính hãng, có nguồn gốc xuất xứ rõ
+                    ràng, không kinh doanh hàng giả, hàng nhái hoặc vi phạm quyền sở hữu trí tuệ.
                   </span>
                 </label>
 
