@@ -5,10 +5,12 @@ import Header from './components/Header'
 import RequireAuth from './components/RequireAuth'
 import RequireRole from './components/RequireRole'
 import { Footer } from './components/Sections'
+import AmbientBackground from './components/ui/AmbientBackground'
 
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
 const Account = lazy(() => import('./pages/Account'))
+const Checkout = lazy(() => import('./pages/Checkout'))
 const ProductDetail = lazy(() => import('./pages/ProductDetail'))
 const Search = lazy(() => import('./pages/Search'))
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
@@ -65,6 +67,7 @@ function App() {
 
   return (
     <div className="grain min-h-[100dvh]">
+      <AmbientBackground />
       {!isShopRoute && <Header />}
       <ScrollToHash />
       <Suspense fallback={<PageLoading />}>

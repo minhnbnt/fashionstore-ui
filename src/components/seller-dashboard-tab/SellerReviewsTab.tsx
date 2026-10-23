@@ -281,7 +281,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                             key={idx}
                             src={img}
                             alt=""
-                            className="h-16 w-16 rounded-xl border border-zinc-200 object-cover"
+                            className="h-16 w-16 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
                           />
                         )
                       })}

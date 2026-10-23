@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest'
 
 import {
   calculateDiscountPercent,
+  formatAddressLabel,
   formatDateTime,
   formatFullAddress,
   formatSoldCount,
   formatVnd,
+  splitFullAddress,
 } from './format'
 
 describe('formatVnd', () => {
@@ -31,31 +33,56 @@ describe('formatDateTime', () => {
 })
 
 describe('formatFullAddress', () => {
-  it('ghep dia chi day du', () => {
-    const addr = {
-      houseNumber: '12',
-      street: 'Nguyễn Trãi',
-      ward: 'Bến Thành',
-      district: 'Quận 1',
-      city: 'TP. Hồ Chí Minh',
-    }
-    expect(formatFullAddress(addr)).toBe('12, Nguyễn Trãi, Bến Thành, Quận 1, TP. Hồ Chí Minh')
+  it('tra fullAddress san co', () => {
+    expect(formatFullAddress({ fullAddress: 'Số 18 Duy Tân, Phường Dịch Vọng, Hà Nội' })).toBe(
+      'Số 18 Duy Tân, Phường Dịch Vọng, Hà Nội',
+    )
   })
 
-  it('bo qua cac truong null hoac trong', () => {
-    const addr = {
-      houseNumber: null,
-      street: 'Cầu Giấy',
-      ward: '',
-      district: 'Cầu Giấy',
-      city: 'Hà Nội',
-    }
-    expect(formatFullAddress(addr)).toBe('Cầu Giấy, Cầu Giấy, Hà Nội')
+  it('trim khoang trang thua', () => {
+    expect(formatFullAddress({ fullAddress: '  Số 18 Duy Tân  ' })).toBe('Số 18 Duy Tân')
   })
 
   it('tra chuoi rong khi khong co dia chi', () => {
     expect(formatFullAddress(null)).toBe('')
     expect(formatFullAddress(undefined)).toBe('')
+    expect(formatFullAddress({})).toBe('')
+  })
+})
+
+describe('splitFullAddress', () => {
+  it('tach theo format detail, xa/phuong, tinh/thanh', () => {
+    const parts = splitFullAddress('Số 18 Duy Tân, Phường Dịch Vọng, Hà Nội')
+    expect(parts.detail).toBe('Số 18 Duy Tân')
+    expect(parts.ward).toBe('Phường Dịch Vọng')
+    expect(parts.province).toBe('Hà Nội')
+  })
+
+  it('detail chua dau phay van tach dung', () => {
+    const parts = splitFullAddress('Số 18, Tòa Keangnam, Phường Mễ Trì, Hà Nội')
+    expect(parts.detail).toBe('Số 18, Tòa Keangnam')
+    expect(parts.ward).toBe('Phường Mễ Trì')
+    expect(parts.province).toBe('Hà Nội')
+  })
+
+  it('chung duoi 3 phan thi roi vao detail', () => {
+    const parts = splitFullAddress('Hà Nội')
+    expect(parts.detail).toBe('Hà Nội')
+    expect(parts.ward).toBe('')
+    expect(parts.province).toBe('')
+  })
+
+  it('chuoi rong tra 3 phan rong', () => {
+    expect(splitFullAddress('')).toEqual({ detail: '', ward: '', province: '' })
+  })
+})
+
+describe('formatAddressLabel', () => {
+  it('dich dung cac loai nhan', () => {
+    expect(formatAddressLabel('HOME')).toBe('Nhà riêng')
+    expect(formatAddressLabel('OFFICE')).toBe('Công ty')
+    expect(formatAddressLabel('OTHER')).toBe('Khác')
+    expect(formatAddressLabel(null)).toBe('Nhà riêng')
   })
 })
 

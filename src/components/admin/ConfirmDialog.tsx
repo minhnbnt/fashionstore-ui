@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom'
+
 import { X } from '@phosphor-icons/react'
 
 export default function ConfirmDialog(props: {
@@ -14,7 +16,7 @@ export default function ConfirmDialog(props: {
     return null
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-zinc-950/55 p-4 backdrop-blur-sm">
       <dialog
         open
@@ -68,6 +70,7 @@ export default function ConfirmDialog(props: {
           </button>
         </div>
       </dialog>
-    </div>
+    </div>,
+    document.body,
   )
 }

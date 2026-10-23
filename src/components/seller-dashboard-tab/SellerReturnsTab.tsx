@@ -272,7 +272,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                     <img
                       src={ret.evidenceImage}
                       alt="Chứng từ"
-                      className="h-20 w-20 rounded-xl border border-zinc-200 object-cover shadow-sm"
+                      className="h-20 w-20 rounded-xl border border-zinc-200 object-cover shadow-sm dark:border-white/10"
                     />
                   </div>
                 </div>

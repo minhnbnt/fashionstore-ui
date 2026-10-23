@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom'
+
 import { X } from '@phosphor-icons/react'
 
 export const LABEL_CLASS = 'mb-1.5 block text-sm font-bold'
@@ -35,7 +37,7 @@ export default function ContentDialog({
     onSubmit()
   }
 
-  return (
+  return createPortal(
     <dialog
       open
       aria-label={title}
@@ -80,6 +82,7 @@ export default function ContentDialog({
           </button>
         </div>
       </form>
-    </dialog>
+    </dialog>,
+    document.body,
   )
 }

@@ -315,7 +315,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
                         <img
                           src={v.productImage}
                           alt={v.productName ?? ''}
-                          className="h-9 w-9 rounded-lg border border-zinc-200 object-cover"
+                          className="h-9 w-9 rounded-lg border border-zinc-200 object-cover dark:border-white/10"
                         />
                         <span className="max-w-[220px] truncate font-bold text-zinc-900 dark:text-white">
                           {v.productName}

@@ -10,11 +10,11 @@ export default function ProductGallery(props: { images: ImageResponse[]; name: s
     return (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
   })
   if (imgs.length === 0) {
-    return <div className="rounded-3xl bg-sky-100 p-10">Chưa có ảnh</div>
+    return <div className="rounded-3xl bg-sky-100 p-10 dark:bg-white/5">Chưa có ảnh</div>
   }
   const main = imgs[active]
   if (main === undefined) {
-    return <div className="rounded-3xl bg-sky-100 p-10">Chưa có ảnh</div>
+    return <div className="rounded-3xl bg-sky-100 p-10 dark:bg-white/5">Chưa có ảnh</div>
   }
   return (
     <div>
