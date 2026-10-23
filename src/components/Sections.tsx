@@ -3,14 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useSearch } from '@generated/endpoints/search/search'
 import { useListPageLinks } from '@generated/endpoints/site-content/site-content'
-import {
-  ShoppingBag,
-  Star,
-  Truck,
-  ShieldCheck,
-  ArrowsLeftRight,
-  ArrowRight,
-} from '@phosphor-icons/react'
+import { Star, Truck, ShieldCheck, ArrowsLeftRight, ArrowRight } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
@@ -175,8 +168,7 @@ export function ProductCard(props: { item: ProductSummaryResponse }) {
           }}
           className="btn-primary mt-3 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold"
         >
-          <ShoppingBag size={16} weight="fill" />
-          Thêm giỏ
+          Xem thêm
         </button>
       </div>
     </article>
