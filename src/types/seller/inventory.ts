@@ -8,7 +8,7 @@ export interface ProductItem {
   originalPrice: number
   stock: number
   sold: number
-  status: 'ACTIVE' | 'INACTIVE' | 'DELETED'
+  status: 'ACTIVE' | 'PENDING' | 'INACTIVE' | 'DELETED'
   image: string
   variants: {
     id: string

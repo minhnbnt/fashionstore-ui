@@ -43,7 +43,7 @@ interface Props {
 
 export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Props) {
   const queryClient = useQueryClient()
-  const [activeFilter, setActiveFilter] = useState<'ACTIVE' | 'INACTIVE' | 'DELETED' | 'ALL'>('ACTIVE')
+  const [activeFilter, setActiveFilter] = useState<'ACTIVE' | 'PENDING' | 'INACTIVE' | 'DELETED' | 'ALL'>('ACTIVE')
   const [searchTerm, setSearchTerm] = useState('')
   const [showImportModal, setShowImportModal] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
@@ -188,12 +188,17 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
   }
 
   let countActive = 0
+  let countPending = 0
   let countInactive = 0
   let countDeleted = 0
   let countAll = 0
   for (const p of products) {
     if (p.status === 'ACTIVE') {
       countActive += 1
+      countAll += 1
+    }
+    if (p.status === 'PENDING') {
+      countPending += 1
       countAll += 1
     }
     if (p.status === 'INACTIVE') {
@@ -208,6 +213,9 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
   // Lọc sản phẩm
   const filteredProducts = products.filter(function (p) {
     if (activeFilter === 'ACTIVE' && p.status !== 'ACTIVE') {
+      return false
+    }
+    if (activeFilter === 'PENDING' && p.status !== 'PENDING') {
       return false
     }
     if (activeFilter === 'INACTIVE' && p.status !== 'INACTIVE') {
@@ -236,6 +244,14 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
           Đang hoạt động
+        </span>
+      )
+    }
+    if (status === 'PENDING') {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+          Chưa được duyệt
         </span>
       )
     }
@@ -309,6 +325,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
           <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-2 md:border-b-0 md:pb-0 dark:border-zinc-800">
             {[
               { id: 'ACTIVE', label: 'Đang hoạt động', count: countActive },
+              { id: 'PENDING', label: 'Chưa được duyệt', count: countPending },
               { id: 'INACTIVE', label: 'Đã tạm ẩn', count: countInactive },
               { id: 'DELETED', label: 'Đã xóa', count: countDeleted },
               { id: 'ALL', label: 'Tất cả', count: countAll },
@@ -325,7 +342,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                   key={tab.id}
                   type="button"
                   onClick={function () {
-                    setActiveFilter(tab.id as 'ACTIVE' | 'INACTIVE' | 'DELETED' | 'ALL')
+                    setActiveFilter(tab.id as 'ACTIVE' | 'PENDING' | 'INACTIVE' | 'DELETED' | 'ALL')
                   }}
                   className={tabClasses}
                 >
@@ -457,7 +474,7 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
 
                     <td className="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
-                        {product.status !== 'DELETED' && (
+                        {product.status !== 'DELETED' && product.status !== 'PENDING' && (
                           <button
                             type="button"
                             disabled={updateProductMutation.isPending}
