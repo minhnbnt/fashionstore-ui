@@ -15,6 +15,7 @@ import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { takeData } from '@/lib/apiAdapters'
 import { returnItem } from '@/lib/sellerAdapters'
+import { useSellerPermissions } from '@/lib/sellerPermissions'
 import { sellerStatusMeta } from '@/lib/sellerStatus'
 
 import { formatVnd } from '../../lib/format'
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export default function SellerReturnsTab({ shopId }: Props) {
+  const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<
     'ALL' | 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
@@ -257,7 +259,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
 
                 {/* Action buttons */}
                 <div className="flex justify-end gap-2 border-t border-zinc-100 pt-3 dark:border-white/10">
-                  {ret.status === 'REQUESTED' && (
+                  {ret.status === 'REQUESTED' && can('RETURN_PROCESS') && (
                     <button
                       type="button"
                       onClick={function () {
@@ -268,7 +270,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                       Từ chối yêu cầu
                     </button>
                   )}
-                  {ret.status === 'REQUESTED' && (
+                  {ret.status === 'REQUESTED' && can('RETURN_PROCESS') && (
                     <button
                       type="button"
                       onClick={function () {
@@ -279,7 +281,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                       Phê duyệt phương án
                     </button>
                   )}
-                  {ret.status === 'APPROVED' && (
+                  {ret.status === 'APPROVED' && can('RETURN_PROCESS') && (
                     <button
                       type="button"
                       onClick={function () {

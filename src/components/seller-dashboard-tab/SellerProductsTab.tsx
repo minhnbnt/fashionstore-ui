@@ -28,6 +28,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
 import { productItem } from '@/lib/sellerAdapters'
+import { useSellerPermissions } from '@/lib/sellerPermissions'
 import { sellerStatusMeta } from '@/lib/sellerStatus'
 
 import { formatVnd } from '../../lib/format'
@@ -57,6 +58,7 @@ export default function SellerProductsTab({
   onNavigateAddProduct,
   onNavigateEditProduct,
 }: Props) {
+  const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
   const [activeFilter, setActiveFilter] = useState<
     'ACTIVE' | 'PENDING' | 'INACTIVE' | 'DELETED' | 'ALL'
@@ -283,24 +285,28 @@ export default function SellerProductsTab({
             <DownloadSimple size={16} weight="bold" />
             Xuất CSV
           </button>
-          <button
-            type="button"
-            onClick={function () {
-              setShowImportModal(true)
-            }}
-            className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:bg-[#11182a] dark:text-zinc-300 dark:hover:bg-white/10"
-          >
-            <UploadSimple size={16} weight="bold" />
-            Nhập hàng loạt CSV
-          </button>
-          <button
-            type="button"
-            onClick={onNavigateAddProduct}
-            className="btn-primary flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-bold shadow-md"
-          >
-            <Plus size={16} weight="bold" />
-            Thêm 1 sản phẩm mới
-          </button>
+          {can('PRODUCT_WRITE') && (
+            <button
+              type="button"
+              onClick={function () {
+                setShowImportModal(true)
+              }}
+              className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:bg-[#11182a] dark:text-zinc-300 dark:hover:bg-white/10"
+            >
+              <UploadSimple size={16} weight="bold" />
+              Nhập hàng loạt CSV
+            </button>
+          )}
+          {can('PRODUCT_WRITE') && (
+            <button
+              type="button"
+              onClick={onNavigateAddProduct}
+              className="btn-primary flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-bold shadow-md"
+            >
+              <Plus size={16} weight="bold" />
+              Thêm 1 sản phẩm mới
+            </button>
+          )}
         </div>
       </div>
 
@@ -450,7 +456,7 @@ export default function SellerProductsTab({
 
                     <td className="py-3.5 pr-4 pl-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
-                        {product.status !== 'DELETED' && (
+                        {can('PRODUCT_WRITE') && product.status !== 'DELETED' && (
                           <button
                             type="button"
                             onClick={function () {
@@ -463,22 +469,24 @@ export default function SellerProductsTab({
                             <PencilSimple size={14} weight="bold" />
                           </button>
                         )}
-                        {product.status !== 'DELETED' && product.status !== 'PENDING' && (
-                          <button
-                            type="button"
-                            disabled={updateProductMutation.isPending}
-                            onClick={function () {
-                              handleToggleProductStatus(product.id)
-                            }}
-                            title={toggleStatusTitle(product.status)}
-                            aria-label={toggleStatusTitle(product.status)}
-                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
-                          >
-                            {product.status === 'ACTIVE' && <EyeSlash size={14} weight="bold" />}
-                            {product.status !== 'ACTIVE' && <Eye size={14} weight="bold" />}
-                          </button>
-                        )}
-                        {product.status !== 'DELETED' && (
+                        {can('PRODUCT_WRITE') &&
+                          product.status !== 'DELETED' &&
+                          product.status !== 'PENDING' && (
+                            <button
+                              type="button"
+                              disabled={updateProductMutation.isPending}
+                              onClick={function () {
+                                handleToggleProductStatus(product.id)
+                              }}
+                              title={toggleStatusTitle(product.status)}
+                              aria-label={toggleStatusTitle(product.status)}
+                              className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+                            >
+                              {product.status === 'ACTIVE' && <EyeSlash size={14} weight="bold" />}
+                              {product.status !== 'ACTIVE' && <Eye size={14} weight="bold" />}
+                            </button>
+                          )}
+                        {can('PRODUCT_WRITE') && product.status !== 'DELETED' && (
                           <button
                             type="button"
                             onClick={function () {

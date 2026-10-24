@@ -16,6 +16,7 @@ import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { takeData } from '@/lib/apiAdapters'
 import { orderItem } from '@/lib/sellerAdapters'
+import { useSellerPermissions } from '@/lib/sellerPermissions'
 import { sellerStatusMeta } from '@/lib/sellerStatus'
 
 import { formatVnd } from '../../lib/format'
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export default function SellerOrdersTab({ shopId }: Props) {
+  const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<
     'ALL' | 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED'
@@ -270,7 +272,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {order.status === 'PENDING' && (
+                      {order.status === 'PENDING' && can('ORDER_CANCEL') && (
                         <button
                           type="button"
                           onClick={function () {
@@ -281,7 +283,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                           Hủy đơn
                         </button>
                       )}
-                      {order.status === 'PENDING' && (
+                      {order.status === 'PENDING' && can('ORDER_PROCESS') && (
                         <button
                           type="button"
                           onClick={function () {
@@ -295,7 +297,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                         </button>
                       )}
 
-                      {order.status === 'CONFIRMED' && (
+                      {order.status === 'CONFIRMED' && can('ORDER_PROCESS') && (
                         <button
                           type="button"
                           onClick={function () {
@@ -309,7 +311,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                         </button>
                       )}
 
-                      {order.status === 'SHIPPING' && (
+                      {order.status === 'SHIPPING' && can('ORDER_PROCESS') && (
                         <button
                           type="button"
                           onClick={function () {

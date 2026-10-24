@@ -22,6 +22,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/Modal'
 import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
 import { productItem, stockMovementItem } from '@/lib/sellerAdapters'
+import { useSellerPermissions } from '@/lib/sellerPermissions'
 
 import type { ProductItem, StockMovementItem } from '@/types/seller'
 import type { InventoryItemResponse } from '@generated/model/inventoryItemResponse'
@@ -33,6 +34,7 @@ interface Props {
 type AdjustReason = 'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL'
 
 export default function SellerInventoryTab({ shopId }: Props) {
+  const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [showAdjustModal, setShowAdjustModal] = useState(false)
@@ -342,16 +344,18 @@ export default function SellerInventoryTab({ shopId }: Props) {
                       )}
                     </td>
                     <td className="py-3 pr-2 text-right">
-                      <button
-                        type="button"
-                        onClick={function () {
-                          handleOpenAdjust(v)
-                        }}
-                        className="inline-flex items-center gap-1 rounded-xl border border-zinc-200 px-3 py-1.5 text-[11px] font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300"
-                      >
-                        <PencilSimple size={13} weight="bold" />
-                        Điều chỉnh
-                      </button>
+                      {can('INVENTORY_WRITE') && (
+                        <button
+                          type="button"
+                          onClick={function () {
+                            handleOpenAdjust(v)
+                          }}
+                          className="inline-flex items-center gap-1 rounded-xl border border-zinc-200 px-3 py-1.5 text-[11px] font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300"
+                        >
+                          <PencilSimple size={13} weight="bold" />
+                          Điều chỉnh
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={function () {

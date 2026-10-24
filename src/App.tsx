@@ -31,6 +31,7 @@ const Cart = lazy(() => import('./pages/Cart'))
 const Checkout = lazy(() => import('./pages/Checkout'))
 const Addresses = lazy(() => import('./pages/Addresses'))
 const Wishlist = lazy(() => import('./pages/Wishlist'))
+const InvitationAccept = lazy(() => import('./pages/InvitationAccept'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -79,6 +80,14 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route
+            path="/invitations/:token"
+            element={
+              <RequireAuth>
+                <InvitationAccept />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/account"
             element={

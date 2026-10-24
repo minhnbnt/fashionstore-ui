@@ -26,7 +26,7 @@ import type { ReturnRequestResponse } from '@generated/model/returnRequestRespon
 import type { SellerProductResponse } from '@generated/model/sellerProductResponse'
 import type { SellerReviewResponse } from '@generated/model/sellerReviewResponse'
 import type { SettlementResponse } from '@generated/model/settlementResponse'
-import type { ShopMemberAuditResponse } from '@generated/model/shopMemberAuditResponse'
+import type { ShopActivityResponse } from '@generated/model/shopActivityResponse'
 import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
 import type { ShopResponse } from '@generated/model/shopResponse'
 import type { ShopRoleResponse } from '@generated/model/shopRoleResponse'
@@ -314,23 +314,41 @@ export function roleItem(
 
 export function memberItem(member: ShopMemberDetailResponse): ShopMemberItem {
   let status: ShopMemberItem['status'] = 'ACTIVE'
-  if (member.status !== 'ACTIVE') {
-    status = 'INVITED'
+  if (member.status === 'DEACTIVATED') {
+    status = 'DEACTIVATED'
+  }
+  let email = safeId(member.userId)
+  if (member.email !== null && member.email !== undefined && member.email.trim() !== '') {
+    email = member.email
+  }
+  let displayName = email
+  if (
+    member.displayName !== null &&
+    member.displayName !== undefined &&
+    member.displayName.trim() !== ''
+  ) {
+    displayName = member.displayName
+  }
+  let roleName = safeText(member.roleName)
+  if (roleName === '') {
+    roleName = safeText(member.role)
   }
   return {
     id: safeId(member.userId),
-    // API member chua tra ve email, tam hien userId
-    email: safeId(member.userId),
+    email,
+    displayName,
     roleId: safeId(member.roleId),
-    roleName: safeText(member.roleName) === '' ? safeText(member.role) : safeText(member.roleName),
+    roleName,
     status,
     joinedAt: formatDateTime(member.joinedAt),
   }
 }
 
-export function auditItem(audit: ShopMemberAuditResponse): ShopAuditItem {
+export function auditItem(audit: ShopActivityResponse): ShopAuditItem {
   return {
     id: safeId(audit.id),
+    actorEmail: safeText(audit.actorEmail),
+    actorName: safeText(audit.actorName),
     action: safeText(audit.action),
     detail: safeText(audit.detail),
     targetType: safeText(audit.targetType),

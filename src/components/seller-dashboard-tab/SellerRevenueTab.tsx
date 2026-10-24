@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/Modal'
 import { takeData } from '@/lib/apiAdapters'
 import { settlementItem, withdrawalItem } from '@/lib/sellerAdapters'
+import { useSellerPermissions } from '@/lib/sellerPermissions'
 
 import { formatDateTime, formatVnd } from '../../lib/format'
 
@@ -39,6 +40,7 @@ function settlementTabClass(active: boolean): string {
 }
 
 export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHolder }: Props) {
+  const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
   const [subTab, setSubTab] = useState<'SETTLEMENTS' | 'WITHDRAWALS'>('SETTLEMENTS')
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
@@ -204,16 +206,18 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
             Quản lý dòng tiền bán hàng, các khoản quyết toán holding và rút tiền về ngân hàng
           </p>
         </div>
-        <button
-          type="button"
-          onClick={function () {
-            setShowWithdrawModal(true)
-          }}
-          className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700"
-        >
-          <Bank size={18} weight="bold" />
-          Yêu cầu rút tiền về ngân hàng
-        </button>
+        {can('REVENUE_WITHDRAW') && (
+          <button
+            type="button"
+            onClick={function () {
+              setShowWithdrawModal(true)
+            }}
+            className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-700"
+          >
+            <Bank size={18} weight="bold" />
+            Yêu cầu rút tiền về ngân hàng
+          </button>
+        )}
       </div>
 
       {/* KPI Cards */}

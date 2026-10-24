@@ -24,7 +24,7 @@ import type { ReturnRequestResponse } from '@generated/model/returnRequestRespon
 import type { SellerProductResponse } from '@generated/model/sellerProductResponse'
 import type { SellerReviewResponse } from '@generated/model/sellerReviewResponse'
 import type { SettlementResponse } from '@generated/model/settlementResponse'
-import type { ShopMemberAuditResponse } from '@generated/model/shopMemberAuditResponse'
+import type { ShopActivityResponse } from '@generated/model/shopActivityResponse'
 import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
 import type { ShopResponse } from '@generated/model/shopResponse'
 import type { ShopRoleResponse } from '@generated/model/shopRoleResponse'
@@ -232,16 +232,42 @@ describe('roleItem va memberItem', () => {
   })
 
   it('member khong co roleName thi lay role', () => {
-    const item = memberItem({ userId: 'u9', role: 'STAFF', status: 'PENDING' })
+    const item = memberItem({ userId: 'u9', role: 'STAFF', status: 'ACTIVE' })
     expect(item.roleName).toBe('STAFF')
-    expect(item.status).toBe('INVITED')
+    expect(item.status).toBe('ACTIVE')
+  })
+
+  it('memberItem lay email tu response va status DEACTIVATED map dung', () => {
+    const item = memberItem({
+      userId: 'u10',
+      email: 'staff@example.com',
+      displayName: 'Nguyen Van A',
+      role: 'STAFF',
+      roleName: 'CSKH',
+      status: 'DEACTIVATED',
+    })
+    expect(item.email).toBe('staff@example.com')
+    expect(item.displayName).toBe('Nguyen Van A')
+    expect(item.status).toBe('DEACTIVATED')
+  })
+
+  it('memberItem thieu email thi fallback ve userId', () => {
+    const item = memberItem({
+      userId: 'u11',
+      role: 'STAFF',
+      status: 'ACTIVE',
+    })
+    expect(item.email).toBe('u11')
+    expect(item.displayName).toBe('u11')
   })
 })
 
 describe('auditItem', () => {
   it('map cac truong co ban', () => {
-    const audit: ShopMemberAuditResponse = {
+    const audit: ShopActivityResponse = {
       id: 'a1',
+      actorEmail: 'owner@demo.local',
+      actorName: 'Chủ shop',
       action: 'INVITE_STAFF',
       targetType: 'INVITATION',
       detail: 'Mời hanh@demo.local',
@@ -249,6 +275,8 @@ describe('auditItem', () => {
     }
     const item = auditItem(audit)
     expect(item.id).toBe('a1')
+    expect(item.actorEmail).toBe('owner@demo.local')
+    expect(item.actorName).toBe('Chủ shop')
     expect(item.action).toBe('INVITE_STAFF')
     expect(item.detail).toBe('Mời hanh@demo.local')
     expect(item.targetType).toBe('INVITATION')

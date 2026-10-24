@@ -32,6 +32,7 @@ import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
 import { takeData } from '@/lib/apiAdapters'
 import { decorationBlocks, decorationDraftJson } from '@/lib/sellerAdapters'
+import { useSellerPermissions } from '@/lib/sellerPermissions'
 
 import type { DecorationBlock } from '@/types/seller'
 
@@ -46,6 +47,7 @@ interface SellerDecorationTabProps {
 }
 
 export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabProps) {
+  const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
   const [draftBlocks, setDraftBlocks] = useState<DecorationBlock[] | null>(null)
   const [devicePreview, setDevicePreview] = useState<'MOBILE' | 'DESKTOP'>('MOBILE')
@@ -182,7 +184,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
               Có thay đổi chưa lưu
             </span>
           )}
-          {hasLocalChanges && (
+          {hasLocalChanges && can('DECORATION_WRITE') && (
             <button
               type="button"
               onClick={handleDiscard}
@@ -192,22 +194,26 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
               Bỏ thay đổi
             </button>
           )}
-          <button
-            type="button"
-            onClick={handleSaveDraft}
-            className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
-          >
-            <FloppyDisk size={16} />
-            Lưu nháp
-          </button>
-          <button
-            type="button"
-            onClick={handlePublish}
-            className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition-colors"
-          >
-            <Broadcast size={16} />
-            Áp dụng gian hàng
-          </button>
+          {can('DECORATION_WRITE') && (
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+            >
+              <FloppyDisk size={16} />
+              Lưu nháp
+            </button>
+          )}
+          {can('DECORATION_WRITE') && (
+            <button
+              type="button"
+              onClick={handlePublish}
+              className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition-colors"
+            >
+              <Broadcast size={16} />
+              Áp dụng gian hàng
+            </button>
+          )}
         </div>
       </div>
 
@@ -241,14 +247,16 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                 {blocks.length} khối nội dung đang cấu hình
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-900/40 dark:bg-indigo-900/40 dark:text-indigo-400"
-            >
-              <Plus size={14} />
-              Thêm module
-            </button>
+            {can('DECORATION_WRITE') && (
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-900/40 dark:bg-indigo-900/40 dark:text-indigo-400"
+              >
+                <Plus size={14} />
+                Thêm module
+              </button>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -283,50 +291,52 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1">
-                  {/* Reorder Buttons */}
-                  <button
-                    type="button"
-                    title="Di chuyển lên"
-                    onClick={() => handleMoveUp(idx)}
-                    disabled={idx === 0}
-                    className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
-                  >
-                    <ArrowUp size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    title="Di chuyển xuống"
-                    onClick={() => handleMoveDown(idx)}
-                    disabled={idx === blocks.length - 1}
-                    className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
-                  >
-                    <ArrowDown size={14} />
-                  </button>
+                {can('DECORATION_WRITE') && (
+                  <div className="flex items-center gap-1">
+                    {/* Reorder Buttons */}
+                    <button
+                      type="button"
+                      title="Di chuyển lên"
+                      onClick={() => handleMoveUp(idx)}
+                      disabled={idx === 0}
+                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
+                    >
+                      <ArrowUp size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Di chuyển xuống"
+                      onClick={() => handleMoveDown(idx)}
+                      disabled={idx === blocks.length - 1}
+                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
+                    >
+                      <ArrowDown size={14} />
+                    </button>
 
-                  {/* Toggle Visibility */}
-                  <button
-                    type="button"
-                    title="Ẩn/Hiện module"
-                    onClick={() => handleToggle(block.id)}
-                    className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
-                  >
-                    {block.enabled && <Eye size={15} className="text-emerald-600" />}
-                    {!block.enabled && (
-                      <EyeSlash size={15} className="text-zinc-400 dark:text-zinc-500" />
-                    )}
-                  </button>
+                    {/* Toggle Visibility */}
+                    <button
+                      type="button"
+                      title="Ẩn/Hiện module"
+                      onClick={() => handleToggle(block.id)}
+                      className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
+                    >
+                      {block.enabled && <Eye size={15} className="text-emerald-600" />}
+                      {!block.enabled && (
+                        <EyeSlash size={15} className="text-zinc-400 dark:text-zinc-500" />
+                      )}
+                    </button>
 
-                  {/* Delete */}
-                  <button
-                    type="button"
-                    title="Xóa module"
-                    onClick={() => handleDelete(block.id)}
-                    className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-white/10"
-                  >
-                    <Trash size={14} />
-                  </button>
-                </div>
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      title="Xóa module"
+                      onClick={() => handleDelete(block.id)}
+                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-white/10"
+                    >
+                      <Trash size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

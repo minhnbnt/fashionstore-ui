@@ -14,6 +14,7 @@ import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
 import { takeData } from '@/lib/apiAdapters'
 import { reviewItem } from '@/lib/sellerAdapters'
+import { useSellerPermissions } from '@/lib/sellerPermissions'
 
 import type { ReviewItem } from '@/types/seller'
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export default function SellerReviewsTab({ shopId }: Props) {
+  const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'UNREPLIED' | '5_STAR' | 'LOW_STAR'>(
     'ALL',
@@ -258,16 +260,18 @@ export default function SellerReviewsTab({ shopId }: Props) {
                         Đang khiếu nại
                       </span>
                     )}
-                    <button
-                      type="button"
-                      onClick={function () {
-                        setReportTargetId(rev.id)
-                      }}
-                      title="Báo cáo vi phạm"
-                      className="text-zinc-400 hover:text-red-500"
-                    >
-                      <Flag size={14} weight="bold" />
-                    </button>
+                    {can('REVIEW_REPLY') && (
+                      <button
+                        type="button"
+                        onClick={function () {
+                          setReportTargetId(rev.id)
+                        }}
+                        title="Báo cáo vi phạm"
+                        className="text-zinc-400 hover:text-red-500"
+                      >
+                        <Flag size={14} weight="bold" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -342,7 +346,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                     </div>
                   )}
 
-                  {rev.sellerReply === undefined && !isReplying && (
+                  {rev.sellerReply === undefined && !isReplying && can('REVIEW_REPLY') && (
                     <button
                       type="button"
                       onClick={function () {

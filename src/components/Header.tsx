@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
+import { useMine } from '@generated/endpoints/shops/shops'
 import {
   Heart,
   MagnifyingGlass,
@@ -20,6 +21,7 @@ import { useCart } from '../hooks/useCart'
 import { useSessionQuery } from '../hooks/useSession'
 import { useWishlist } from '../hooks/useWishlist'
 import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
+import NotificationBell from './NotificationBell'
 import ThemeToggle from './ui/ThemeToggle'
 import UserAvatar from './UserAvatar'
 
@@ -100,6 +102,20 @@ export default function Header() {
   }
 
   const isLoggedIn = session !== null && session !== undefined
+  const mineQuery = useMine({
+    query: {
+      enabled: isLoggedIn,
+    },
+  })
+
+  let hasAnyShop = false
+  if (mineQuery.data !== undefined) {
+    const shopList = takeData(mineQuery.data)
+    if (Array.isArray(shopList) && shopList.length > 0) {
+      hasAnyShop = true
+    }
+  }
+
   let role = 'customer'
   let dashboardPath = '/account'
   let dashboardLabel = 'Trang cá nhân'
@@ -109,13 +125,16 @@ export default function Header() {
     if (role === 'admin') {
       dashboardLabel = 'Bảng quản trị'
     }
-    if (role === 'shop') {
+    if (role === 'shop' || hasAnyShop) {
       dashboardLabel = 'Kênh người bán'
+      if (role !== 'admin') {
+        dashboardPath = '/shop'
+      }
     }
   }
 
   let sellerChannelPath = '/account#seller-channel'
-  if (role === 'shop') {
+  if (role === 'shop' || hasAnyShop) {
     sellerChannelPath = '/shop'
   }
 
@@ -164,6 +183,9 @@ export default function Header() {
               <Storefront size={14} weight="bold" />
               <span>Kênh Người Bán</span>
             </Link>
+
+            {/* Notification Bell */}
+            <NotificationBell />
 
             {/* User avatar / dropdown */}
             <div className="relative" ref={dropdownRef} onBlur={handleBlur}>

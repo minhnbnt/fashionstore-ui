@@ -1,5 +1,7 @@
 export interface ShopAuditItem {
   id: string
+  actorEmail?: string
+  actorName?: string
   action: string
   detail: string
   targetType: string
