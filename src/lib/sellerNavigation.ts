@@ -4,6 +4,7 @@ const SELLER_TAB_IDS: readonly SellerTabId[] = [
   'OVERVIEW',
   'PRODUCTS',
   'ADD_PRODUCT',
+  'EDIT_PRODUCT',
   'INVENTORY',
   'ORDERS',
   'RETURNS',

@@ -17,12 +17,16 @@ import {
   EyeSlash,
   Trash,
   CheckCircle,
+  WarningCircle,
+  CircleNotch,
+  PencilSimple,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
-import { takeData } from '@/lib/apiAdapters'
+import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { ApiError } from '@/lib/apiFetch'
 import { productItem } from '@/lib/sellerAdapters'
 import { sellerStatusMeta } from '@/lib/sellerStatus'
 
@@ -45,14 +49,22 @@ function toggleStatusTitle(status: string): string {
 interface Props {
   shopId: string
   onNavigateAddProduct: () => void
+  onNavigateEditProduct: (productId: string) => void
 }
 
-export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Props) {
+export default function SellerProductsTab({
+  shopId,
+  onNavigateAddProduct,
+  onNavigateEditProduct,
+}: Props) {
   const queryClient = useQueryClient()
-  const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL')
+  const [activeFilter, setActiveFilter] = useState<
+    'ACTIVE' | 'PENDING' | 'INACTIVE' | 'DELETED' | 'ALL'
+  >('ACTIVE')
   const [searchTerm, setSearchTerm] = useState('')
   const [showImportModal, setShowImportModal] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null)
   const [importText, setImportText] = useState('')
   const [notification, setNotification] = useState<string | null>(null)
 
@@ -73,6 +85,13 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
     })
   }
 
+  let deleteTargetProduct: ProductItem | undefined
+  if (deleteTargetId !== null) {
+    deleteTargetProduct = products.find(function (p) {
+      return p.id === deleteTargetId
+    })
+  }
+
   const updateProductMutation = useUpdate1({
     mutation: {
       onSuccess: function () {
@@ -84,6 +103,22 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+        setDeleteTargetId(null)
+        setDeleteErrorMessage(null)
+        showToast('Đã xóa mềm sản phẩm vào thùng rác (trạng thái DELETED)')
+      },
+      onError: function (error: unknown) {
+        let status: number | undefined = undefined
+        if (error instanceof ApiError) {
+          status = error.status
+        }
+        if (status === 409) {
+          setDeleteErrorMessage(
+            'Không thể xóa sản phẩm do đang có đơn hàng liên quan đang xử lý (chờ xác nhận hoặc đang vận chuyển). Vui lòng hoàn tất hoặc hủy các đơn hàng trước.',
+          )
+          return
+        }
+        setDeleteErrorMessage('Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau.')
       },
     },
   })
@@ -107,11 +142,28 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
     if (current.status === 'ACTIVE') {
       nextStatus = 'HIDDEN'
     }
-    updateProductMutation.mutate({ shopId, id: productId, data: { status: nextStatus } })
+    updateProductMutation.mutate(
+      { shopId, id: productId, data: { status: nextStatus } },
+      {
+        onSuccess: function () {
+          if (nextStatus === 'HIDDEN') {
+            showToast('Đã tạm ẩn sản phẩm khỏi gian hàng')
+            return
+          }
+          showToast('Đã bật bán sản phẩm thành công')
+        },
+        onError: function () {
+          showToast('Không thể cập nhật trạng thái sản phẩm. Vui lòng thử lại sau.')
+        },
+      },
+    )
   }
 
-  function handleDeleteProduct(productId: string) {
-    deleteProductMutation.mutate({ shopId, id: productId })
+  function handleConfirmDelete() {
+    if (deleteTargetId !== null) {
+      setDeleteErrorMessage(null)
+      deleteProductMutation.mutate({ shopId, id: deleteTargetId })
+    }
   }
 
   function handleBulkImport(csvContent: string) {
@@ -155,15 +207,42 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
     showToast('Đã nhập hàng loạt sản phẩm thành công!')
   }
 
-  function handleConfirmDelete() {
-    if (deleteTargetId !== null) {
-      handleDeleteProduct(deleteTargetId)
-      setDeleteTargetId(null)
-      showToast('Đã xóa mềm sản phẩm vào thùng rác (Trạng thái DELETED)')
+  let countActive = 0
+  let countPending = 0
+  let countInactive = 0
+  let countDeleted = 0
+  let countAll = 0
+  for (const p of products) {
+    if (p.status === 'ACTIVE') {
+      countActive += 1
+      countAll += 1
+    }
+    if (p.status === 'PENDING') {
+      countPending += 1
+      countAll += 1
+    }
+    if (p.status === 'INACTIVE') {
+      countInactive += 1
+      countAll += 1
+    }
+    if (p.status === 'DELETED') {
+      countDeleted += 1
     }
   } // Lọc sản phẩm
   const filteredProducts = products.filter(function (p) {
-    if (activeFilter !== 'ALL' && p.status !== activeFilter) {
+    if (activeFilter === 'ACTIVE' && p.status !== 'ACTIVE') {
+      return false
+    }
+    if (activeFilter === 'PENDING' && p.status !== 'PENDING') {
+      return false
+    }
+    if (activeFilter === 'INACTIVE' && p.status !== 'INACTIVE') {
+      return false
+    }
+    if (activeFilter === 'DELETED' && p.status !== 'DELETED') {
+      return false
+    }
+    if (activeFilter === 'ALL' && p.status === 'DELETED') {
       return false
     }
     if (searchTerm.trim() !== '') {
@@ -230,28 +309,34 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-2 md:border-b-0 md:pb-0 dark:border-white/10">
             {[
-              { id: 'ALL', label: 'Tất cả' },
-              { id: 'ACTIVE', label: 'Đang hoạt động' },
-              { id: 'INACTIVE', label: 'Đã tạm ẩn' },
-              { id: 'DELETED', label: 'Đã xóa' },
+              { id: 'ACTIVE', label: 'Đang hoạt động', count: countActive },
+              { id: 'PENDING', label: 'Chưa được duyệt', count: countPending },
+              { id: 'INACTIVE', label: 'Đã tạm ẩn', count: countInactive },
+              { id: 'DELETED', label: 'Đã xóa', count: countDeleted },
+              { id: 'ALL', label: 'Tất cả', count: countAll },
             ].map(function (tab) {
               const isCurrent = activeFilter === tab.id
-              let tabClass =
-                'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              let tabClasses =
+                'flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              let countBadgeClasses =
+                'rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400'
               if (isCurrent) {
-                tabClass =
-                  'rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+                tabClasses =
+                  'flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+                countBadgeClasses =
+                  'rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white dark:bg-indigo-900/30 dark:text-indigo-950'
               }
               return (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={function () {
-                    setActiveFilter(tab.id as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED')
+                    setActiveFilter(tab.id as 'ACTIVE' | 'PENDING' | 'INACTIVE' | 'DELETED' | 'ALL')
                   }}
-                  className={tabClass}
+                  className={tabClasses}
                 >
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  <span className={countBadgeClasses}>{tab.count}</span>
                 </button>
               )
             })}
@@ -276,8 +361,8 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
         </div>
 
         {/* Bảng danh sách sản phẩm */}
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="mt-5 overflow-x-auto rounded-2xl border border-zinc-200/80 dark:border-zinc-800">
+          <table className="w-full min-w-[1060px] text-left text-xs">
             <thead>
               <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-white/10">
                 <th className="pb-3 pl-2">Sản phẩm & SKU</th>
@@ -296,24 +381,32 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                     key={product.id}
                     className="transition hover:bg-zinc-50/60 dark:hover:bg-white/5"
                   >
-                    <td className="py-3.5 pl-2">
+                    <td className="py-3.5 pr-3 pl-4">
                       <div className="flex items-center gap-3">
                         <img
                           src={product.image}
                           alt={product.name}
+                          onError={function (e) {
+                            e.currentTarget.src = PLACEHOLDER_IMAGE
+                          }}
                           className="h-12 w-12 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
                         />
-                        <div className="max-w-[240px]">
-                          <p className="line-clamp-2 font-bold text-zinc-900 dark:text-white">
+                        <div className="max-w-[220px] min-w-0">
+                          <p
+                            className="line-clamp-2 font-bold text-zinc-900 dark:text-white"
+                            title={product.name}
+                          >
                             {product.name}
                           </p>
-                          <p className="mt-0.5 text-[11px] text-zinc-400">SKU: {product.sku}</p>
+                          <p className="mt-0.5 truncate text-[11px] text-zinc-400">
+                            SKU: {product.sku}
+                          </p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-3.5 text-zinc-600 dark:text-zinc-400">
-                      <div className="flex flex-wrap gap-1">
+                    <td className="px-3 py-3.5 text-zinc-600 dark:text-zinc-400">
+                      <div className="flex max-w-[320px] flex-wrap gap-1">
                         {product.variants.map(function (v) {
                           return (
                             <span
@@ -327,21 +420,27 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                       </div>
                     </td>
 
-                    <td className="py-3.5 font-bold text-zinc-900 dark:text-white">
+                    <td className="px-3 py-3.5 text-right font-bold whitespace-nowrap text-zinc-900 dark:text-white">
                       {formatVnd(product.price)}
                     </td>
 
-                    <td className="py-3.5 text-center font-bold">
+                    <td className="px-3 py-3.5 text-center font-bold whitespace-nowrap">
                       {product.stock <= 15 && product.stock > 0 && (
-                        <span className="text-amber-600">{product.stock} (Sắp hết)</span>
+                        <span className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-400/15 dark:text-amber-200">
+                          {product.stock} <span className="text-[10px] font-normal">(Sắp hết)</span>
+                        </span>
                       )}
-                      {product.stock === 0 && <span className="text-red-500">Hết hàng</span>}
+                      {product.stock === 0 && (
+                        <span className="inline-flex items-center rounded-lg bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:bg-red-400/15 dark:text-red-200">
+                          Hết hàng
+                        </span>
+                      )}
                       {product.stock > 15 && (
                         <span className="text-zinc-700 dark:text-zinc-300">{product.stock}</span>
                       )}
                     </td>
 
-                    <td className="py-3.5 text-center font-semibold text-zinc-600 dark:text-zinc-400">
+                    <td className="px-3 py-3.5 text-center font-semibold whitespace-nowrap text-zinc-600 dark:text-zinc-400">
                       {product.sold}
                     </td>
 
@@ -349,16 +448,31 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                       <StatusBadge status={product.status} meta={sellerStatusMeta} />
                     </td>
 
-                    <td className="py-3.5 pr-2 text-right">
+                    <td className="py-3.5 pr-4 pl-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
                         {product.status !== 'DELETED' && (
                           <button
                             type="button"
                             onClick={function () {
+                              onNavigateEditProduct(product.id)
+                            }}
+                            aria-label="Chỉnh sửa sản phẩm"
+                            title="Chỉnh sửa sản phẩm"
+                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                          >
+                            <PencilSimple size={14} weight="bold" />
+                          </button>
+                        )}
+                        {product.status !== 'DELETED' && product.status !== 'PENDING' && (
+                          <button
+                            type="button"
+                            disabled={updateProductMutation.isPending}
+                            onClick={function () {
                               handleToggleProductStatus(product.id)
                             }}
                             title={toggleStatusTitle(product.status)}
-                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+                            aria-label={toggleStatusTitle(product.status)}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
                           >
                             {product.status === 'ACTIVE' && <EyeSlash size={14} weight="bold" />}
                             {product.status !== 'ACTIVE' && <Eye size={14} weight="bold" />}
@@ -368,9 +482,11 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
                           <button
                             type="button"
                             onClick={function () {
+                              setDeleteErrorMessage(null)
                               setDeleteTargetId(product.id)
                             }}
                             title="Xóa mềm sản phẩm"
+                            aria-label="Xóa mềm sản phẩm"
                             className="flex h-8 w-8 items-center justify-center rounded-xl border border-red-200 text-red-500 transition hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20"
                           >
                             <Trash size={14} weight="bold" />
@@ -392,36 +508,72 @@ export default function SellerProductsTab({ shopId, onNavigateAddProduct }: Prop
         </div>
       </div>
 
-      {/* Modal Xóa mềm */}
+      {/* Modal Xóa mềm nguy hiểm */}
       {deleteTargetId !== null && (
         <Modal
           title="Xác nhận xóa mềm sản phẩm?"
           onClose={function () {
             setDeleteTargetId(null)
+            setDeleteErrorMessage(null)
           }}
           widthClass="max-w-md"
         >
-          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-            Hệ thống sẽ chuyển trạng thái sản phẩm sang <strong>DELETED</strong>. Sản phẩm sẽ không
-            còn hiển thị cho người mua, nhưng lịch sử đơn hàng đã đặt trước đó vẫn được lưu trữ
-            nguyên vẹn.
+          {/* Thông báo lỗi nếu có đơn hàng đang xử lý (409) */}
+          {deleteErrorMessage !== null && (
+            <div className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+              <WarningCircle size={18} weight="bold" className="mt-0.5 shrink-0 text-red-600" />
+              <div className="leading-relaxed">{deleteErrorMessage}</div>
+            </div>
+          )}
+
+          {/* Thông tin sản phẩm cần xóa */}
+          {deleteTargetProduct !== undefined && (
+            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50 p-3 dark:border-white/10 dark:bg-white/5">
+              <img
+                src={deleteTargetProduct.image}
+                alt={deleteTargetProduct.name}
+                className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-bold text-zinc-900 dark:text-white">
+                  {deleteTargetProduct.name}
+                </p>
+                <p className="mt-0.5 text-[11px] text-zinc-400">
+                  SKU: {deleteTargetProduct.sku} • Tồn kho: {deleteTargetProduct.stock}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <p className="mt-4 text-xs leading-relaxed text-zinc-500">
+            Sản phẩm sẽ được chuyển sang trạng thái <strong>DELETED</strong>. Sản phẩm sẽ bị ẩn khỏi
+            gian hàng và người mua không thể đặt hàng mới. Lịch sử đơn hàng và doanh thu quá khứ vẫn
+            được lưu trữ nguyên vẹn.
           </p>
+
           <div className="mt-6 flex justify-end gap-3">
             <button
               type="button"
+              disabled={deleteProductMutation.isPending}
               onClick={function () {
                 setDeleteTargetId(null)
+                setDeleteErrorMessage(null)
               }}
-              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300"
             >
               Hủy bỏ
             </button>
             <button
               type="button"
+              disabled={deleteProductMutation.isPending}
               onClick={handleConfirmDelete}
-              className="rounded-2xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700"
+              className="flex items-center gap-1.5 rounded-2xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
             >
-              Xác nhận xóa
+              {deleteProductMutation.isPending && (
+                <CircleNotch size={14} weight="bold" className="animate-spin" />
+              )}
+              {deleteProductMutation.isPending && <span>Đang xử lý...</span>}
+              {!deleteProductMutation.isPending && <span>Xác nhận xóa</span>}
             </button>
           </div>
         </Modal>

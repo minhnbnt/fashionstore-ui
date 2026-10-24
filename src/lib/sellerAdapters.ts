@@ -84,6 +84,9 @@ export function productItem(
   if (product.status === 'HIDDEN') {
     status = 'INACTIVE'
   }
+  if (product.status === 'PENDING') {
+    status = 'PENDING'
+  }
 
   return {
     id: safeId(product.id),

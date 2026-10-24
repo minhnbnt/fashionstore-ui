@@ -71,6 +71,11 @@ describe('productItem', () => {
     expect(item.category).toBe('')
     expect(item.sold).toBe(0)
   })
+
+  it('PENDING giu nguyen PENDING', () => {
+    const item = productItem({ status: 'PENDING' }, undefined)
+    expect(item.status).toBe('PENDING')
+  })
 })
 
 describe('orderItem', () => {
