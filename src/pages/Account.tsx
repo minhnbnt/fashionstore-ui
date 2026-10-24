@@ -21,12 +21,12 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import StatusBadge from '@/components/ui/StatusBadge'
 import { adminErrorMessage } from '@/lib/admin'
 import { takeData } from '@/lib/apiAdapters'
 import { getRoleFromSession, refreshAuthSession } from '@/lib/auth'
 
 import AddressBookTab from '../components/account/AddressBookTab'
-import StatusBadge from '../components/admin/StatusBadge'
 import ChangePasswordForm from '../components/ChangePasswordForm'
 import ShopKycRegistrationModal from '../components/ShopKycRegistrationModal'
 import UserAvatar from '../components/UserAvatar'

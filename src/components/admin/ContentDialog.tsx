@@ -2,11 +2,9 @@ import { createPortal } from 'react-dom'
 
 import { X } from '@phosphor-icons/react'
 
-export const LABEL_CLASS = 'mb-1.5 block text-sm font-bold'
-export const INPUT_CLASS =
-  'w-full rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10'
-export const TEXTAREA_CLASS =
-  'w-full rounded-2xl border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10'
+import { INPUT_CLASS, LABEL_CLASS, TEXTAREA_CLASS } from '@/components/ui/formStyles'
+
+export { INPUT_CLASS, LABEL_CLASS, TEXTAREA_CLASS }
 export const HINT_CLASS = 'mt-1 text-xs text-zinc-500 dark:text-zinc-400'
 export const ERROR_CLASS = 'mt-1 text-xs text-red-600 dark:text-red-400'
 

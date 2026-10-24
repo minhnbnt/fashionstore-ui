@@ -4,9 +4,9 @@ import { useListAdminShops } from '@generated/endpoints/admin-shops/admin-shops'
 import { MagnifyingGlass, Storefront } from '@phosphor-icons/react'
 
 import AdminShell from '@/components/admin/AdminShell'
-import StatePanel from '@/components/admin/StatePanel'
-import StatusBadge from '@/components/admin/StatusBadge'
 import Pagination from '@/components/search/Pagination'
+import StatePanel from '@/components/ui/StatePanel'
+import StatusBadge from '@/components/ui/StatusBadge'
 import { formatDateTime, pageCount } from '@/lib/admin'
 import { takeData } from '@/lib/apiAdapters'
 

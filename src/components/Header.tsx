@@ -5,12 +5,10 @@ import { useListCategories } from '@generated/endpoints/categories/categories'
 import {
   Heart,
   MagnifyingGlass,
-  Moon,
   ShieldCheck,
   ShoppingBag,
   SignOut,
   Storefront,
-  Sun,
   User,
   UserCircle,
 } from '@phosphor-icons/react'
@@ -20,9 +18,9 @@ import { takeData } from '@/lib/apiAdapters'
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useCart } from '../hooks/useCart'
 import { useSessionQuery } from '../hooks/useSession'
-import { useTheme } from '../hooks/useTheme'
 import { useWishlist } from '../hooks/useWishlist'
 import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
+import ThemeToggle from './ui/ThemeToggle'
 import UserAvatar from './UserAvatar'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
@@ -53,7 +51,6 @@ function RoleBadge({ role }: { role: string }) {
 
 export default function Header() {
   const { data: session } = useSessionQuery()
-  const { theme, toggle } = useTheme()
   const navigate = useNavigate()
   const signOut = useSignOut()
   const { totalQuantity } = useCart()
@@ -248,15 +245,7 @@ export default function Header() {
                 </span>
               )}
             </Link>
-            <button
-              type="button"
-              onClick={toggle}
-              aria-label="Đổi giao diện sáng tối"
-              className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10"
-            >
-              {theme === 'dark' && <Sun size={20} />}
-              {theme !== 'dark' && <Moon size={20} />}
-            </button>
+            <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10" />
             <Link
               to="/cart"
               aria-label="Giỏ hàng"

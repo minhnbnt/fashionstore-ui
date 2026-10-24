@@ -7,9 +7,11 @@ import {
   useReply,
   useReport,
 } from '@generated/endpoints/seller-reviews/seller-reviews'
-import { Star, ChatCircleDots, Flag, CheckCircle, X, PaperPlaneRight } from '@phosphor-icons/react'
+import { Star, ChatCircleDots, Flag, CheckCircle, PaperPlaneRight } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import Modal from '@/components/Modal'
+import UserAvatar from '@/components/UserAvatar'
 import { takeData } from '@/lib/apiAdapters'
 import { reviewItem } from '@/lib/sellerAdapters'
 
@@ -117,12 +119,15 @@ export default function SellerReviewsTab({ shopId }: Props) {
       <div className="flex items-center gap-0.5 text-amber-400">
         {[1, 2, 3, 4, 5].map(function (star) {
           const isFilled = star <= rating
+          if (isFilled) {
+            return <Star key={star} size={14} weight="fill" className="text-amber-400" />
+          }
           return (
             <Star
               key={star}
               size={14}
-              weight={isFilled ? 'fill' : 'regular'}
-              className={isFilled ? 'text-amber-400' : 'text-zinc-300 dark:text-zinc-600'}
+              weight="regular"
+              className="text-zinc-300 dark:text-zinc-600"
             />
           )
         })}
@@ -152,10 +157,10 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
       {/* Thống kê đánh giá */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
           <span className="text-xs font-semibold text-zinc-500">Đánh giá trung bình</span>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-4xl font-black text-orange-600 dark:text-orange-400">4.9</span>
+            <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400">4.9</span>
             <span className="text-xs text-zinc-400">/ 5.0 sao</span>
           </div>
           <div className="mt-2 flex items-center gap-1 text-amber-400">
@@ -166,26 +171,26 @@ export default function SellerReviewsTab({ shopId }: Props) {
           <p className="mt-2 text-xs text-zinc-500">Dựa trên 1,248 lượt đánh giá</p>
         </div>
 
-        <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm sm:col-span-2 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm sm:col-span-2 dark:border-white/10 dark:bg-[#11182a]">
           <span className="text-xs font-semibold text-zinc-500">Tỷ lệ hài lòng của khách hàng</span>
           <div className="mt-4 space-y-2 text-xs">
             <div className="flex items-center gap-3">
               <span className="w-12 font-bold text-zinc-700 dark:text-zinc-300">5 sao</span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/10">
                 <div className="h-full rounded-full bg-amber-400" style={{ width: '92%' }} />
               </div>
               <span className="w-10 text-right font-medium text-zinc-500">92%</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="w-12 font-bold text-zinc-700 dark:text-zinc-300">4 sao</span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/10">
                 <div className="h-full rounded-full bg-amber-400" style={{ width: '6%' }} />
               </div>
               <span className="w-10 text-right font-medium text-zinc-500">6%</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="w-12 font-bold text-zinc-700 dark:text-zinc-300">1-3 sao</span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/10">
                 <div className="h-full rounded-full bg-red-400" style={{ width: '2%' }} />
               </div>
               <span className="w-10 text-right font-medium text-zinc-500">2%</span>
@@ -195,8 +200,8 @@ export default function SellerReviewsTab({ shopId }: Props) {
       </div>
 
       {/* Bộ lọc & Danh sách đánh giá */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-100 pb-3 dark:border-white/10">
           {[
             { id: 'ALL', label: 'Tất cả đánh giá' },
             { id: 'UNREPLIED', label: 'Chưa phản hồi' },
@@ -204,6 +209,12 @@ export default function SellerReviewsTab({ shopId }: Props) {
             { id: 'LOW_STAR', label: '1 - 3 sao cần chú ý' },
           ].map(function (tab) {
             const isCurrent = activeFilter === tab.id
+            let tabClass =
+              'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+            if (isCurrent) {
+              tabClass =
+                'rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+            }
             return (
               <button
                 key={tab.id}
@@ -211,11 +222,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                 onClick={function () {
                   setActiveFilter(tab.id as 'ALL' | 'UNREPLIED' | '5_STAR' | 'LOW_STAR')
                 }}
-                className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
-                  isCurrent
-                    ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
-                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                }`}
+                className={tabClass}
               >
                 {tab.label}
               </button>
@@ -229,13 +236,11 @@ export default function SellerReviewsTab({ shopId }: Props) {
             return (
               <div
                 key={rev.id}
-                className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 transition dark:border-zinc-800 dark:bg-zinc-950/40"
+                className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 transition dark:border-white/10 dark:bg-white/5"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-xs font-bold text-white uppercase">
-                      {rev.buyerName.slice(0, 2)}
-                    </div>
+                    <UserAvatar name={rev.buyerName} size={36} />
                     <div>
                       <p className="text-xs font-bold text-zinc-900 dark:text-white">
                         {rev.buyerName}
@@ -290,9 +295,9 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
                   {/* Phản hồi của shop */}
                   {rev.sellerReply !== undefined && (
-                    <div className="mt-3 rounded-2xl bg-orange-50/80 p-3 text-xs text-orange-900 dark:bg-orange-950/30 dark:text-orange-200">
+                    <div className="mt-3 rounded-2xl bg-indigo-50/80 p-3 text-xs text-indigo-900 dark:bg-indigo-900/30 dark:text-indigo-200">
                       <p className="flex items-center gap-1.5 font-bold">
-                        <ChatCircleDots size={14} weight="bold" className="text-orange-600" />
+                        <ChatCircleDots size={14} weight="bold" className="text-indigo-600" />
                         Phản hồi của Người bán:
                       </p>
                       <p className="mt-1 leading-relaxed text-zinc-700 dark:text-zinc-300">
@@ -303,7 +308,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
                   {/* Form trả lời */}
                   {isReplying && (
-                    <div className="mt-3 rounded-2xl border border-orange-200 bg-white p-3 dark:border-orange-900/40 dark:bg-zinc-900">
+                    <div className="mt-3 rounded-2xl border border-indigo-200 bg-white p-3 dark:border-indigo-900/40 dark:bg-white/10">
                       <textarea
                         rows={2}
                         value={replyContent}
@@ -328,7 +333,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                           onClick={function () {
                             handleSendReply(rev.id)
                           }}
-                          className="flex items-center gap-1 rounded-xl bg-orange-600 px-3.5 py-1 text-[11px] font-bold text-white hover:bg-orange-700"
+                          className="btn-primary flex items-center gap-1 rounded-xl px-3.5 py-1 text-[11px] font-bold"
                         >
                           <PaperPlaneRight size={12} weight="bold" />
                           Gửi phản hồi
@@ -344,7 +349,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                         setReplyTargetId(rev.id)
                         setReplyContent('')
                       }}
-                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-orange-600 hover:underline dark:text-orange-400"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
                     >
                       <ChatCircleDots size={14} weight="bold" />
                       Trả lời đánh giá này
@@ -365,73 +370,62 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
       {/* Modal Báo cáo vi phạm */}
       {reportTargetId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                Báo cáo đánh giá xấu / vi phạm
-              </h3>
-              <button
-                type="button"
-                onClick={function () {
-                  setReportTargetId(null)
-                }}
-                className="text-zinc-400 hover:text-zinc-600"
-              >
-                <X size={18} weight="bold" />
-              </button>
-            </div>
+        <Modal
+          title="Báo cáo đánh giá xấu / vi phạm"
+          onClose={function () {
+            setReportTargetId(null)
+          }}
+          widthClass="max-w-md"
+        >
+          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+            Nếu đánh giá chứa từ ngữ xúc phạm hoặc nghi vấn đối thủ cạnh tranh chơi xấu, ban quản
+            trị sàn sẽ xem xét gỡ bỏ.
+          </p>
 
-            <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-              Nếu đánh giá chứa từ ngữ xúc phạm hoặc nghi vấn đối thủ cạnh tranh chơi xấu, ban quản
-              trị sàn sẽ xem xét gỡ bỏ.
-            </p>
-
-            <div className="mt-4">
-              <label
-                htmlFor="reportReviewReason"
-                className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
-              >
-                Lý do báo cáo
-              </label>
-              <select
-                id="reportReviewReason"
-                value={reportReason}
-                onChange={function (e) {
-                  setReportReason(e.target.value)
-                }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-              >
-                <option value="Đánh giá sai sự thật / Cạnh tranh không lành mạnh">
-                  Đánh giá sai sự thật / Cạnh tranh không lành mạnh
-                </option>
-                <option value="Từ ngữ thô tục, xúc phạm">Từ ngữ thô tục, xúc phạm</option>
-                <option value="Đánh giá không liên quan tới sản phẩm">
-                  Đánh giá không liên quan tới sản phẩm
-                </option>
-              </select>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={function () {
-                  setReportTargetId(null)
-                }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmReport}
-                className="rounded-2xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
-              >
-                Gửi báo cáo
-              </button>
-            </div>
+          <div className="mt-4">
+            <label
+              htmlFor="reportReviewReason"
+              className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+            >
+              Lý do báo cáo
+            </label>
+            <select
+              id="reportReviewReason"
+              value={reportReason}
+              onChange={function (e) {
+                setReportReason(e.target.value)
+              }}
+              className="mt-1.5 w-full rounded-full border border-zinc-300 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+            >
+              <option value="Đánh giá sai sự thật / Cạnh tranh không lành mạnh">
+                Đánh giá sai sự thật / Cạnh tranh không lành mạnh
+              </option>
+              <option value="Từ ngữ thô tục, xúc phạm">Từ ngữ thô tục, xúc phạm</option>
+              <option value="Đánh giá không liên quan tới sản phẩm">
+                Đánh giá không liên quan tới sản phẩm
+              </option>
+            </select>
           </div>
-        </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={function () {
+                setReportTargetId(null)
+              }}
+              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmReport}
+              className="rounded-2xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
+            >
+              Gửi báo cáo
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   )

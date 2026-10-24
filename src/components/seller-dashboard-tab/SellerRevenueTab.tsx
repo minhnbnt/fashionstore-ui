@@ -11,9 +11,10 @@ import {
   useSummary,
   useTopProducts,
 } from '@generated/endpoints/seller-revenue-finance/seller-revenue-finance'
-import { Wallet, Clock, Receipt, TrendUp, Bank, CheckCircle, X } from '@phosphor-icons/react'
+import { Wallet, Clock, Receipt, TrendUp, Bank, CheckCircle } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import Modal from '@/components/Modal'
 import { takeData } from '@/lib/apiAdapters'
 import { settlementItem, withdrawalItem } from '@/lib/sellerAdapters'
 
@@ -28,6 +29,13 @@ interface Props {
   bankName: string
   bankAccount: string
   bankHolder: string
+}
+
+function settlementTabClass(active: boolean): string {
+  if (active) {
+    return 'text-xs font-bold transition text-indigo-600 dark:text-indigo-400'
+  }
+  return 'text-xs font-bold transition text-zinc-400 hover:text-zinc-700'
 }
 
 export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHolder }: Props) {
@@ -210,7 +218,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Số dư ví khả dụng</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40">
@@ -223,7 +231,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
           <p className="mt-1 text-[11px] text-zinc-400">Có thể tạo lệnh rút ngay lập tức</p>
         </div>
 
-        <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Tiền tạm giữ (Escrow)</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/40">
@@ -236,7 +244,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
           <p className="mt-1 text-[11px] text-zinc-400">Tự động cộng ví sau 3 ngày giao hàng</p>
         </div>
 
-        <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Tổng doanh thu tuần</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40">
@@ -249,10 +257,10 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
           <p className="mt-1 text-[11px] text-zinc-400">Tổng doanh thu ghi nhận được</p>
         </div>
 
-        <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Giá trị đơn TB (AOV)</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/40">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40">
               <Receipt size={18} weight="bold" />
             </div>
           </div>
@@ -266,7 +274,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
       {/* Biểu đồ Doanh thu 7 ngày & Top sản phẩm */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Biểu đồ cột */}
-        <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm lg:col-span-2 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm lg:col-span-2 dark:border-white/10 dark:bg-[#11182a]">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-zinc-900 dark:text-white">
@@ -276,12 +284,12 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
                 Doanh thu ghi nhận theo từng ngày sau khi trừ hoàn hủy
               </p>
             </div>
-            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 dark:bg-white/10 dark:text-zinc-300">
               Đơn vị: VNĐ
             </span>
           </div>
 
-          <div className="mt-8 flex h-52 items-end justify-between gap-3 border-b border-zinc-200 px-2 pb-2 dark:border-zinc-800">
+          <div className="mt-8 flex h-52 items-end justify-between gap-3 border-b border-zinc-200 px-2 pb-2 dark:border-white/10">
             {chartBars.map(function (d) {
               return (
                 <div key={d.day} className="group relative flex flex-1 flex-col items-center gap-2">
@@ -290,7 +298,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
                   </div>
                   <div
                     style={{ height: d.height + '%' }}
-                    className="w-full max-w-[36px] rounded-t-xl bg-gradient-to-t from-orange-600 to-amber-500 transition-all duration-300 hover:brightness-110"
+                    className="w-full max-w-[36px] rounded-t-xl bg-gradient-to-t from-blue-700 to-sky-400 transition-all duration-300 hover:brightness-110"
                   />
                   <span className="text-[10px] font-semibold text-zinc-500">{d.day}</span>
                 </div>
@@ -306,7 +314,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
         </div>
 
         {/* Top Sản Phẩm */}
-        <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
           <h3 className="text-base font-bold text-zinc-900 dark:text-white">
             Top Sản Phẩm Bán Chạy
           </h3>
@@ -317,10 +325,10 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
               return (
                 <div
                   key={idx}
-                  className="rounded-2xl border border-zinc-100 p-3 dark:border-zinc-800/80"
+                  className="rounded-2xl border border-zinc-100 p-3 dark:border-white/10"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-[10px] font-black text-orange-600 dark:bg-orange-950/40">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-black text-indigo-600 dark:bg-indigo-900/40">
                       {idx + 1}
                     </span>
                     <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-200">
@@ -347,18 +355,14 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
       </div>
 
       {/* Tabs Quyết toán & Rút tiền */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex items-center gap-4 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+        <div className="flex items-center gap-4 border-b border-zinc-100 pb-3 dark:border-white/10">
           <button
             type="button"
             onClick={function () {
               setSubTab('SETTLEMENTS')
             }}
-            className={`text-xs font-bold transition ${
-              subTab === 'SETTLEMENTS'
-                ? 'text-orange-600 dark:text-orange-400'
-                : 'text-zinc-400 hover:text-zinc-700'
-            }`}
+            className={settlementTabClass(subTab === 'SETTLEMENTS')}
           >
             Phiên quyết toán đơn hàng ({settlements.length})
           </button>
@@ -367,11 +371,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
             onClick={function () {
               setSubTab('WITHDRAWALS')
             }}
-            className={`text-xs font-bold transition ${
-              subTab === 'WITHDRAWALS'
-                ? 'text-orange-600 dark:text-orange-400'
-                : 'text-zinc-400 hover:text-zinc-700'
-            }`}
+            className={settlementTabClass(subTab === 'WITHDRAWALS')}
           >
             Lịch sử rút tiền ({withdrawals.length})
           </button>
@@ -381,7 +381,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-zinc-800">
+                <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-white/10">
                   <th className="pb-3 pl-2">Mã đơn hàng</th>
                   <th className="pb-3">Tiền đơn hàng</th>
                   <th className="pb-3">Phí sàn (5%)</th>
@@ -390,7 +390,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
                   <th className="pr-2 pb-3 text-right">Thời gian mở khóa</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+              <tbody className="divide-y divide-zinc-100 dark:divide-white/10">
                 {settlements.map(function (s) {
                   return (
                     <tr key={s.id}>
@@ -432,7 +432,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-zinc-800">
+                <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-white/10">
                   <th className="pb-3 pl-2">Thời gian</th>
                   <th className="pb-3">Số tiền rút</th>
                   <th className="pb-3">Ngân hàng thụ hưởng</th>
@@ -440,7 +440,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
                   <th className="pr-2 pb-3 text-right">Trạng thái</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+              <tbody className="divide-y divide-zinc-100 dark:divide-white/10">
                 {withdrawals.map(function (w) {
                   return (
                     <tr key={w.id}>
@@ -464,78 +464,67 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
 
       {/* Modal Rút tiền */}
       {showWithdrawModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                Rút tiền về tài khoản ngân hàng
-              </h3>
-              <button
-                type="button"
-                onClick={function () {
-                  setShowWithdrawModal(false)
-                }}
-                className="text-zinc-400 hover:text-zinc-600"
-              >
-                <X size={18} weight="bold" />
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-1 rounded-2xl bg-zinc-50 p-3.5 text-xs text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300">
-              <p className="flex justify-between">
-                <span>Số dư ví khả dụng:</span>
-                <strong className="text-emerald-600">{formatVnd(walletBalance)}</strong>
-              </p>
-              <p className="flex justify-between">
-                <span>Tài khoản nhận tiền:</span>
-                <strong>
-                  {bankName} - {bankAccount}
-                </strong>
-              </p>
-              <p className="flex justify-between">
-                <span>Chủ tài khoản:</span>
-                <strong>{bankHolder}</strong>
-              </p>
-            </div>
-
-            <div className="mt-4">
-              <label
-                htmlFor="withdrawAmountInput"
-                className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
-              >
-                Số tiền muốn rút (VND, tối thiểu 50.000 ₫)
-              </label>
-              <input
-                id="withdrawAmountInput"
-                type="number"
-                value={withdrawAmount}
-                onChange={function (e) {
-                  setWithdrawAmount(Number(e.target.value))
-                }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-sm font-black outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-              />
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={function () {
-                  setShowWithdrawModal(false)
-                }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmWithdraw}
-                className="rounded-2xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white hover:bg-emerald-700"
-              >
-                Tạo lệnh rút tiền ngay
-              </button>
-            </div>
+        <Modal
+          title="Rút tiền về tài khoản ngân hàng"
+          onClose={function () {
+            setShowWithdrawModal(false)
+          }}
+          widthClass="max-w-md"
+        >
+          <div className="mt-4 space-y-1 rounded-2xl bg-zinc-50 p-3.5 text-xs text-zinc-700 dark:bg-white/5 dark:text-zinc-300">
+            <p className="flex justify-between">
+              <span>Số dư ví khả dụng:</span>
+              <strong className="text-emerald-600">{formatVnd(walletBalance)}</strong>
+            </p>
+            <p className="flex justify-between">
+              <span>Tài khoản nhận tiền:</span>
+              <strong>
+                {bankName} - {bankAccount}
+              </strong>
+            </p>
+            <p className="flex justify-between">
+              <span>Chủ tài khoản:</span>
+              <strong>{bankHolder}</strong>
+            </p>
           </div>
-        </div>
+
+          <div className="mt-4">
+            <label
+              htmlFor="withdrawAmountInput"
+              className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+            >
+              Số tiền muốn rút (VND, tối thiểu 50.000 ₫)
+            </label>
+            <input
+              id="withdrawAmountInput"
+              type="number"
+              value={withdrawAmount}
+              onChange={function (e) {
+                setWithdrawAmount(Number(e.target.value))
+              }}
+              className="mt-1.5 w-full rounded-full border border-zinc-300 p-2.5 text-sm font-black outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+            />
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={function () {
+                setShowWithdrawModal(false)
+              }}
+              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmWithdraw}
+              className="rounded-2xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+            >
+              Tạo lệnh rút tiền ngay
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   )
