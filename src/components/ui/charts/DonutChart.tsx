@@ -98,11 +98,7 @@ export function DonutChart({
     <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-around">
       {/* SVG Donut */}
       <div className="relative shrink-0" style={{ width: chartSize, height: chartSize }}>
-        <svg
-          width={chartSize}
-          height={chartSize}
-          className="-rotate-90 transform"
-        >
+        <svg width={chartSize} height={chartSize} className="-rotate-90 transform">
           {/* Background circle track */}
           <circle
             cx={center}
@@ -152,11 +148,9 @@ export function DonutChart({
                 className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: seg.item.color }}
               />
-              <span className="truncate text-zinc-600 dark:text-zinc-300">
-                {seg.item.label}
-              </span>
+              <span className="truncate text-zinc-600 dark:text-zinc-300">{seg.item.label}</span>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex shrink-0 items-center gap-2">
               <span className="font-semibold text-zinc-900 tabular-nums dark:text-white">
                 {displayValue(seg.item.value)}
               </span>

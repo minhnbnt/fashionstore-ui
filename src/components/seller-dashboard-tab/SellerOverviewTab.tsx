@@ -1,4 +1,10 @@
 import {
+  useGetShopAlerts,
+  useGetShopDashboard,
+  useGetShopPerformance,
+  useGetRevenueDetail,
+} from '@generated/endpoints/seller-statistics/seller-statistics'
+import {
   Package,
   Receipt,
   ArrowBendDownLeft,
@@ -17,12 +23,6 @@ import {
   Info,
 } from '@phosphor-icons/react'
 
-import {
-  useGetShopAlerts,
-  useGetShopDashboard,
-  useGetShopPerformance,
-  useGetRevenueDetail,
-} from '@generated/endpoints/seller-statistics/seller-statistics'
 import { CircularProgress, LineChart } from '@/components/ui/charts'
 import { takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
@@ -133,19 +133,33 @@ export default function SellerOverviewTab({
   ]
 
   // KPI cards
-  let revenueChangeLabel = `${liveStats.revenueChangePercent > 0 ? '+' : ''}${liveStats.revenueChangePercent}% so với hôm qua`
+  let revenueSign = ''
+  if (liveStats.revenueChangePercent > 0) {
+    revenueSign = '+'
+  }
+  let revenueChangeLabel = `${revenueSign}${liveStats.revenueChangePercent}% so với hôm qua`
   if (liveStats.yesterdayRevenue === 0 && liveStats.todayRevenue === 0) {
     revenueChangeLabel = 'Chưa có biến động'
   }
 
-  let ordersChangeLabel = `${liveStats.ordersChangeCount > 0 ? '+' : ''}${liveStats.ordersChangeCount} đơn so với hôm qua`
+  let ordersSign = ''
+  if (liveStats.ordersChangeCount > 0) {
+    ordersSign = '+'
+  }
+  let ordersChangeLabel = `${ordersSign}${liveStats.ordersChangeCount} đơn so với hôm qua`
   if (liveStats.ordersChangeCount === 0) {
     ordersChangeLabel = 'Bằng số lượng hôm qua'
   }
 
+  let cancelRateColor = '#10b981'
+  if (livePerf.cancelRate > 0.05) {
+    cancelRateColor = '#f43f5e'
+  }
+
   let conversionRateEstimate = 0
   if (liveStats.shopVisits > 0) {
-    conversionRateEstimate = Math.round((liveStats.todayOrders / liveStats.shopVisits) * 100 * 10) / 10
+    conversionRateEstimate =
+      Math.round((liveStats.todayOrders / liveStats.shopVisits) * 100 * 10) / 10
   }
 
   const metrics = [
@@ -186,7 +200,7 @@ export default function SellerOverviewTab({
         <div className="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold tracking-wider uppercase backdrop-blur-md flex items-center gap-1">
+              <span className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold tracking-wider uppercase backdrop-blur-md">
                 <ShieldCheck size={14} weight="bold" />
                 Shop Uy Tín
               </span>
@@ -255,7 +269,7 @@ export default function SellerOverviewTab({
               >
                 <item.icon size={22} weight="bold" />
               </div>
-              <span className="mt-3 text-2xl font-extrabold text-zinc-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400 tabular-nums">
+              <span className="mt-3 text-2xl font-extrabold text-zinc-900 tabular-nums group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
                 {item.count}
               </span>
               <span className="mt-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
@@ -281,18 +295,18 @@ export default function SellerOverviewTab({
                 <m.icon size={18} weight="bold" />
               </div>
             </div>
-            <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white tabular-nums">
+            <p className="mt-3 text-2xl font-black text-zinc-900 tabular-nums dark:text-white">
               {m.value}
             </p>
             <div className="mt-1 flex items-center gap-1 text-xs">
               {m.isPositive && (
-                <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                <span className="flex items-center gap-0.5 font-medium text-emerald-600 dark:text-emerald-400">
                   <TrendUp size={12} weight="bold" />
                   {m.change}
                 </span>
               )}
               {!m.isPositive && (
-                <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-medium">
+                <span className="flex items-center gap-0.5 font-medium text-rose-600 dark:text-rose-400">
                   <TrendDown size={12} weight="bold" />
                   {m.change}
                 </span>
@@ -305,7 +319,7 @@ export default function SellerOverviewTab({
       {/* Grid: Biểu đồ doanh thu 7 ngày (trái) + Cảnh báo & Hiệu suất (phải) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Biểu đồ doanh thu 7 ngày */}
-        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a] lg:col-span-2">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm lg:col-span-2 dark:border-white/10 dark:bg-[#11182a]">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-zinc-900 dark:text-white">
@@ -337,12 +351,12 @@ export default function SellerOverviewTab({
         </div>
 
         {/* Hiệu suất vận hành Shop */}
-        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a] lg:col-span-1">
+        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm lg:col-span-1 dark:border-white/10 dark:bg-[#11182a]">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-base font-bold text-zinc-900 dark:text-white">
               Hiệu suất vận hành
             </h3>
-            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
               Chuẩn Shop
             </span>
           </div>
@@ -358,7 +372,7 @@ export default function SellerOverviewTab({
               value={livePerf.cancelRate}
               label="Tỷ lệ hủy đơn"
               subLabel="Mục tiêu < 5%"
-              color={livePerf.cancelRate > 0.05 ? '#f43f5e' : '#10b981'}
+              color={cancelRateColor}
             />
             <CircularProgress
               value={livePerf.onTimeDeliveryRate}
@@ -381,7 +395,7 @@ export default function SellerOverviewTab({
       {/* Cảnh báo & Nhắc nhở vận hành */}
       {alertsList.length > 0 && (
         <div className="rounded-3xl border border-amber-200/80 bg-amber-50/50 p-6 shadow-sm dark:border-amber-900/40 dark:bg-amber-950/20">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="mb-3 flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-500 text-white">
               <WarningCircle size={18} weight="bold" />
             </div>

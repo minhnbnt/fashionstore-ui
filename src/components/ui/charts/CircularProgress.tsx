@@ -62,11 +62,7 @@ export function CircularProgress({
   return (
     <div className="flex flex-col items-center text-center">
       <div className="relative" style={{ width: gaugeSize, height: gaugeSize }}>
-        <svg
-          width={gaugeSize}
-          height={gaugeSize}
-          className="-rotate-90 transform"
-        >
+        <svg width={gaugeSize} height={gaugeSize} className="-rotate-90 transform">
           {/* Track */}
           <circle
             cx={center}
@@ -101,13 +97,9 @@ export function CircularProgress({
         </div>
       </div>
 
-      <span className="mt-2 text-xs font-medium text-zinc-700 dark:text-zinc-200">
-        {label}
-      </span>
+      <span className="mt-2 text-xs font-medium text-zinc-700 dark:text-zinc-200">{label}</span>
       {subLabel !== undefined && subLabel !== '' && (
-        <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-          {subLabel}
-        </span>
+        <span className="text-[11px] text-zinc-400 dark:text-zinc-500">{subLabel}</span>
       )}
     </div>
   )

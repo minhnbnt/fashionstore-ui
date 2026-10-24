@@ -15,12 +15,7 @@ export interface BarChartProps {
   formatValue?: (val: number) => string
 }
 
-export function BarChart({
-  data,
-  height,
-  horizontal,
-  formatValue,
-}: BarChartProps) {
+export function BarChart({ data, height, horizontal, formatValue }: BarChartProps) {
   let isHorizontal = true
   if (horizontal !== undefined) {
     isHorizontal = horizontal
@@ -140,9 +135,12 @@ export function BarChart({
         }
 
         return (
-          <div key={item.label + index} className="group relative flex flex-1 flex-col items-center h-full justify-end">
+          <div
+            key={item.label + index}
+            className="group relative flex h-full flex-1 flex-col items-center justify-end"
+          >
             {/* Tooltip on hover */}
-            <div className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-zinc-900 px-2 py-1 text-[11px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-zinc-800 whitespace-nowrap shadow-lg">
+            <div className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-zinc-900 px-2 py-1 text-[11px] font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-zinc-800">
               {displayValue(item.value)}
             </div>
 
@@ -154,7 +152,7 @@ export function BarChart({
               }}
             />
 
-            <span className="mt-2 truncate text-[11px] text-zinc-500 dark:text-zinc-400 w-full text-center">
+            <span className="mt-2 w-full truncate text-center text-[11px] text-zinc-500 dark:text-zinc-400">
               {item.label}
             </span>
           </div>

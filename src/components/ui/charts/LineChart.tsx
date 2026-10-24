@@ -138,13 +138,19 @@ export function LineChart({
         <div className="mb-2 flex items-center gap-4 text-xs">
           {currentLabel !== undefined && (
             <div className="flex items-center gap-1.5 font-medium text-zinc-700 dark:text-zinc-200">
-              <span className="inline-block h-2 w-4 rounded-full" style={{ backgroundColor: strokeColor }} />
+              <span
+                className="inline-block h-2 w-4 rounded-full"
+                style={{ backgroundColor: strokeColor }}
+              />
               <span>{currentLabel}</span>
             </div>
           )}
           {comparisonLabel !== undefined && (
             <div className="flex items-center gap-1.5 font-medium text-zinc-500 dark:text-zinc-400">
-              <span className="inline-block h-0.5 w-4 border-b-2 border-dashed" style={{ borderColor: compColor }} />
+              <span
+                className="inline-block h-0.5 w-4 border-b-2 border-dashed"
+                style={{ borderColor: compColor }}
+              />
               <span>{comparisonLabel}</span>
             </div>
           )}
@@ -218,7 +224,14 @@ export function LineChart({
         {/* Data points & X labels */}
         {currentPoints.map((pt, i) => {
           const isHovered = hoverIndex === i
-          const showLabel = data.length <= 14 || i % Math.ceil(data.length / 7) === 0 || i === data.length - 1
+          let circleRadius = 4
+          let circleStrokeWidth = 2
+          if (isHovered) {
+            circleRadius = 6
+            circleStrokeWidth = 3
+          }
+          const showLabel =
+            data.length <= 14 || i % Math.ceil(data.length / 7) === 0 || i === data.length - 1
           return (
             <g
               key={pt.pt.label + i}
@@ -229,10 +242,10 @@ export function LineChart({
               <circle
                 cx={pt.x}
                 cy={pt.y}
-                r={isHovered ? 6 : 4}
+                r={circleRadius}
                 fill="#ffffff"
                 stroke={strokeColor}
-                strokeWidth={isHovered ? 3 : 2}
+                strokeWidth={circleStrokeWidth}
                 className="transition-all duration-150"
               />
               <circle cx={pt.x} cy={pt.y} r="18" fill="transparent" />
@@ -262,9 +275,7 @@ export function LineChart({
           }}
         >
           <div className="font-semibold">{currentPoints[hoverIndex].pt.label}</div>
-          <div className="text-zinc-200">
-            {displayValue(currentPoints[hoverIndex].pt.value)}
-          </div>
+          <div className="text-zinc-200">{displayValue(currentPoints[hoverIndex].pt.value)}</div>
           {comparisonData !== undefined && comparisonData[hoverIndex] !== undefined && (
             <div className="text-[11px] text-zinc-400">
               Kỳ trước: {displayValue(comparisonData[hoverIndex].value)}

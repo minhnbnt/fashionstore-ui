@@ -86,7 +86,8 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
           Phân Tích Chân Dung Khách Hàng
         </h2>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Theo dõi số lượng khách hàng mới, tỷ lệ khách quay lại và xếp hạng khách hàng thân thiết của Shop
+          Theo dõi số lượng khách hàng mới, tỷ lệ khách quay lại và xếp hạng khách hàng thân thiết
+          của Shop
         </p>
       </div>
 
@@ -102,7 +103,7 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
               <Users size={18} weight="bold" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white tabular-nums">
+          <p className="mt-3 text-2xl font-black text-zinc-900 tabular-nums dark:text-white">
             {stats.totalCustomers.toLocaleString('vi-VN')}
           </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -120,12 +121,10 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
               <UserPlus size={18} weight="bold" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white tabular-nums">
+          <p className="mt-3 text-2xl font-black text-zinc-900 tabular-nums dark:text-white">
             {stats.newCustomers.toLocaleString('vi-VN')}
           </p>
-          <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
-            Mua lần đầu tại Shop
-          </p>
+          <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">Mua lần đầu tại Shop</p>
         </div>
 
         {/* Tỷ lệ quay lại */}
@@ -138,7 +137,7 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
               <UserCheck size={18} weight="bold" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white tabular-nums">
+          <p className="mt-3 text-2xl font-black text-zinc-900 tabular-nums dark:text-white">
             {retentionPercent}%
           </p>
           <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
@@ -156,7 +155,7 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
               <Receipt size={18} weight="bold" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white tabular-nums">
+          <p className="mt-3 text-2xl font-black text-zinc-900 tabular-nums dark:text-white">
             {formatVnd(stats.avgOrderValue)}
           </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -209,14 +208,14 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
                 <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                   Tổng lượt theo dõi hiện tại
                 </span>
-                <p className="mt-1 text-3xl font-black text-zinc-900 dark:text-white tabular-nums">
+                <p className="mt-1 text-3xl font-black text-zinc-900 tabular-nums dark:text-white">
                   {followerCount.toLocaleString('vi-VN')}
                 </p>
                 <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold">
                   {followerChange >= 0 && (
                     <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
-                      <TrendUp size={14} weight="bold" />
-                      +{followerChange} người theo dõi mới trong tháng
+                      <TrendUp size={14} weight="bold" />+{followerChange} người theo dõi mới trong
+                      tháng
                     </span>
                   )}
                   {followerChange < 0 && (
@@ -241,7 +240,8 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
           </div>
 
           <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3.5 text-xs text-indigo-900 dark:border-indigo-900/30 dark:bg-indigo-950/20 dark:text-indigo-200">
-            💡 Mẹo: Tạo thêm mã giảm giá độc quyền cho người theo dõi để gia tăng tỷ lệ chốt đơn và chuyển đổi fan thành khách hàng thân thiết.
+            💡 Mẹo: Tạo thêm mã giảm giá độc quyền cho người theo dõi để gia tăng tỷ lệ chốt đơn và
+            chuyển đổi fan thành khách hàng thân thiết.
           </div>
         </div>
       </div>
@@ -275,9 +275,9 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
                 <tr className="border-b border-zinc-200 text-zinc-500 dark:border-white/10 dark:text-zinc-400">
                   <th className="pb-3 font-semibold">Hạng</th>
                   <th className="pb-3 font-semibold">Khách hàng</th>
-                  <th className="pb-3 font-semibold text-right">Số đơn hoàn thành</th>
-                  <th className="pb-3 font-semibold text-right">Tổng chi tiêu</th>
-                  <th className="pb-3 font-semibold text-right">Đơn gần nhất</th>
+                  <th className="pb-3 text-right font-semibold">Số đơn hoàn thành</th>
+                  <th className="pb-3 text-right font-semibold">Tổng chi tiêu</th>
+                  <th className="pb-3 text-right font-semibold">Đơn gần nhất</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
@@ -294,7 +294,10 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
                   }
 
                   return (
-                    <tr key={cust.buyerId + idx} className="hover:bg-zinc-50/50 dark:hover:bg-white/5">
+                    <tr
+                      key={cust.buyerId + idx}
+                      className="hover:bg-zinc-50/50 dark:hover:bg-white/5"
+                    >
                       <td className="py-3">
                         <span
                           className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${badge}`}
@@ -304,7 +307,7 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
                       </td>
                       <td className="py-3" aria-label="Thông tin khách hàng">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 text-xs">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                             {cust.buyerName.slice(0, 1).toUpperCase() || 'U'}
                           </div>
                           <div>

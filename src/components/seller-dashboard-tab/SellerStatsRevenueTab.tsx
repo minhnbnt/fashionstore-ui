@@ -47,6 +47,13 @@ const CATEGORY_COLORS = [
   '#f97316', // orange
 ]
 
+function periodFilterClass(active: boolean): string {
+  if (active) {
+    return 'bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white'
+  }
+  return 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+}
+
 export default function SellerStatsRevenueTab({ shopId }: Props) {
   const [period, setPeriod] = useState<PeriodType>('WEEK')
   const [fromDate, setFromDate] = useState('')
@@ -77,15 +84,9 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
     { query: { enabled: isEnabled } },
   )
 
-  const categoryQuery = useGetRevenueByCategory(
-    shopId,
-    { query: { enabled: isEnabled } },
-  )
+  const categoryQuery = useGetRevenueByCategory(shopId, { query: { enabled: isEnabled } })
 
-  const paymentQuery = useGetRevenueByPayment(
-    shopId,
-    { query: { enabled: isEnabled } },
-  )
+  const paymentQuery = useGetRevenueByPayment(shopId, { query: { enabled: isEnabled } })
 
   const summaryQuery = useGetOrderStatusSummary(
     shopId,
@@ -114,12 +115,18 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
   if (paymentQuery.data !== undefined) {
     paymentItems = revenuePaymentItems(takeData(paymentQuery.data))
   }
-  const paymentBarData = paymentItems.map((p) => ({
-    label: p.paymentMethod,
-    value: p.revenue,
-    subLabel: `${p.orderCount} đơn`,
-    color: p.paymentMethod === 'COD' ? '#3b82f6' : '#10b981',
-  }))
+  const paymentBarData = paymentItems.map((p) => {
+    let barColor = '#10b981'
+    if (p.paymentMethod === 'COD') {
+      barColor = '#3b82f6'
+    }
+    return {
+      label: p.paymentMethod,
+      value: p.revenue,
+      subLabel: `${p.orderCount} đơn`,
+      color: barColor,
+    }
+  })
 
   let orderSummary = orderStatusSummaryData(null)
   if (summaryQuery.data !== undefined) {
@@ -190,7 +197,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
   return (
     <div className="space-y-6">
       {/* Header + Filter toolbar */}
-      <div className="flex flex-col gap-4 rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a] md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm md:flex-row md:items-center md:justify-between dark:border-white/10 dark:bg-[#11182a]">
         <div>
           <h2 className="text-xl font-black text-zinc-900 dark:text-white">
             Báo Cáo & Thống Kê Doanh Thu
@@ -210,11 +217,9 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
                 setFromDate('')
                 setToDate('')
               }}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                period === 'DAY' && fromDate === ''
-                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white'
-                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-              }`}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${periodFilterClass(
+                period === 'DAY' && fromDate === '',
+              )}`}
             >
               Hôm nay
             </button>
@@ -225,11 +230,9 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
                 setFromDate('')
                 setToDate('')
               }}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                period === 'WEEK' && fromDate === ''
-                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white'
-                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-              }`}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${periodFilterClass(
+                period === 'WEEK' && fromDate === '',
+              )}`}
             >
               7 ngày qua
             </button>
@@ -240,11 +243,9 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
                 setFromDate('')
                 setToDate('')
               }}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                period === 'MONTH' && fromDate === ''
-                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white'
-                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-              }`}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${periodFilterClass(
+                period === 'MONTH' && fromDate === '',
+              )}`}
             >
               Tháng này
             </button>
@@ -255,11 +256,9 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
                 setFromDate('')
                 setToDate('')
               }}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                period === 'YEAR' && fromDate === ''
-                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white'
-                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-              }`}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${periodFilterClass(
+                period === 'YEAR' && fromDate === '',
+              )}`}
             >
               Năm nay
             </button>
@@ -272,7 +271,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="bg-transparent text-zinc-700 outline-none dark:text-zinc-200 text-xs"
+              className="bg-transparent text-xs text-zinc-700 outline-none dark:text-zinc-200"
               title="Từ ngày"
             />
             <span className="text-zinc-400">-</span>
@@ -280,7 +279,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="bg-transparent text-zinc-700 outline-none dark:text-zinc-200 text-xs"
+              className="bg-transparent text-xs text-zinc-700 outline-none dark:text-zinc-200"
               title="Đến ngày"
             />
           </div>
@@ -295,7 +294,8 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
             className="flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md transition hover:bg-indigo-700 disabled:opacity-50"
           >
             <DownloadSimple size={15} weight="bold" />
-            {isExporting ? 'Đang xuất...' : 'Xuất CSV'}
+            {isExporting && 'Đang xuất...'}
+            {!isExporting && 'Xuất CSV'}
           </button>
         </div>
       </div>
@@ -318,18 +318,17 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
               <CurrencyDollar size={18} weight="bold" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white tabular-nums">
+          <p className="mt-3 text-2xl font-black text-zinc-900 tabular-nums dark:text-white">
             {formatVnd(compData.currentRevenue)}
           </p>
           <div className="mt-1 flex items-center gap-1 text-xs">
             {compData.revenueChangePercent >= 0 && (
-              <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <TrendUp size={12} weight="bold" />
-                +{compData.revenueChangePercent}% so kỳ trước
+              <span className="flex items-center gap-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                <TrendUp size={12} weight="bold" />+{compData.revenueChangePercent}% so kỳ trước
               </span>
             )}
             {compData.revenueChangePercent < 0 && (
-              <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-semibold">
+              <span className="flex items-center gap-0.5 font-semibold text-rose-600 dark:text-rose-400">
                 <TrendDown size={12} weight="bold" />
                 {compData.revenueChangePercent}% so kỳ trước
               </span>
@@ -347,18 +346,17 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
               <CheckCircle size={18} weight="bold" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white tabular-nums">
+          <p className="mt-3 text-2xl font-black text-zinc-900 tabular-nums dark:text-white">
             {compData.currentOrders} đơn
           </p>
           <div className="mt-1 flex items-center gap-1 text-xs">
             {compData.ordersChangeCount >= 0 && (
-              <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <TrendUp size={12} weight="bold" />
-                +{compData.ordersChangeCount} đơn so kỳ trước
+              <span className="flex items-center gap-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                <TrendUp size={12} weight="bold" />+{compData.ordersChangeCount} đơn so kỳ trước
               </span>
             )}
             {compData.ordersChangeCount < 0 && (
-              <span className="flex items-center gap-0.5 text-rose-600 dark:text-rose-400 font-semibold">
+              <span className="flex items-center gap-0.5 font-semibold text-rose-600 dark:text-rose-400">
                 <TrendDown size={12} weight="bold" />
                 {compData.ordersChangeCount} đơn so kỳ trước
               </span>
@@ -376,7 +374,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
               <XCircle size={18} weight="bold" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white tabular-nums">
+          <p className="mt-3 text-2xl font-black text-zinc-900 tabular-nums dark:text-white">
             {orderSummary.cancelledOrders + orderSummary.returnedOrders} đơn
           </p>
           <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">
@@ -394,7 +392,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
               <Scales size={18} weight="bold" />
             </div>
           </div>
-          <p className="mt-3 text-2xl font-black text-zinc-900 dark:text-white tabular-nums">
+          <p className="mt-3 text-2xl font-black text-zinc-900 tabular-nums dark:text-white">
             {formatVnd(estimatedProfit)}
           </p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -462,11 +460,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
           </div>
 
           <div className="pt-2">
-            <BarChart
-              data={paymentBarData}
-              horizontal={true}
-              formatValue={formatVnd}
-            />
+            <BarChart data={paymentBarData} horizontal={true} formatValue={formatVnd} />
           </div>
         </div>
       </div>
@@ -489,7 +483,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
               <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
                 Đơn hoàn thành ({orderSummary.completedOrders})
               </p>
-              <p className="mt-0.5 text-lg font-bold text-zinc-900 dark:text-white tabular-nums">
+              <p className="mt-0.5 text-lg font-bold text-zinc-900 tabular-nums dark:text-white">
                 {formatVnd(orderSummary.completedValue)}
               </p>
             </div>
@@ -503,7 +497,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
               <p className="text-xs font-semibold text-rose-800 dark:text-rose-300">
                 Đơn đã hủy ({orderSummary.cancelledOrders})
               </p>
-              <p className="mt-0.5 text-lg font-bold text-zinc-900 dark:text-white tabular-nums">
+              <p className="mt-0.5 text-lg font-bold text-zinc-900 tabular-nums dark:text-white">
                 {formatVnd(orderSummary.cancelledValue)}
               </p>
             </div>
@@ -517,7 +511,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
               <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
                 Đổi trả hoàn tiền ({orderSummary.returnedOrders})
               </p>
-              <p className="mt-0.5 text-lg font-bold text-zinc-900 dark:text-white tabular-nums">
+              <p className="mt-0.5 text-lg font-bold text-zinc-900 tabular-nums dark:text-white">
                 {formatVnd(orderSummary.returnedValue)}
               </p>
             </div>
