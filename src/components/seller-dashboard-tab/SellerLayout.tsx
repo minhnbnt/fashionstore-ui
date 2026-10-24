@@ -154,7 +154,9 @@ export function SellerLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f6f9ff] font-sans dark:bg-[#0a0f1e]">
+    // Không đặt nền ở đây: body (index.css) đã có #f6f9ff / dark #0a0f1e,
+    // nền đặc ở đây sẽ che AmbientBackground (fixed -z-10, gắn ở App.tsx).
+    <div className="flex min-h-screen flex-col font-sans">
       {/* Seller Topbar */}
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#11182a]">
         <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between px-4">
