@@ -81,7 +81,7 @@ export default function AdminContent() {
               'flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
             if (selected) {
               tabClass =
-                'flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition bg-indigo-600 text-white dark:bg-indigo-500'
+                'flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
             }
             return (
               <button

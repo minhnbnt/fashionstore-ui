@@ -121,7 +121,7 @@ export default function AdminBannedKeywords() {
                     type="button"
                     onClick={() => setConfirmId(item.id ?? null)}
                     aria-label={`Xóa từ khóa ${item.keyword ?? ''}`}
-                    className="rounded-full p-2 text-zinc-500 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                    className="rounded-full p-2 text-zinc-500 transition hover:bg-red-50 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-red-500/10"
                   >
                     <Trash size={16} weight="bold" />
                   </button>
@@ -192,7 +192,7 @@ export default function AdminBannedKeywords() {
             maxLength={KEYWORD_MAX}
             placeholder="Ví dụ: replica, like auth, hàng nhái"
             aria-invalid={visibleProblem !== null}
-            className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-white/5"
+            className="w-full rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
           />
           {visibleProblem !== null && (
             <p className="mt-1 text-xs text-red-600 dark:text-red-400">{visibleProblem}</p>
@@ -208,7 +208,7 @@ export default function AdminBannedKeywords() {
             onChange={(event) =>
               setViolationType(event.target.value as BanProductRequestViolationType)
             }
-            className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-zinc-900"
+            className="w-full rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
           >
             {VIOLATION_OPTIONS.map(function (option) {
               return (
@@ -222,7 +222,7 @@ export default function AdminBannedKeywords() {
         <button
           type="submit"
           disabled={create.isPending}
-          className="flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:opacity-50 md:mt-7 dark:bg-indigo-500"
+          className="btn-primary flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold disabled:opacity-50 md:mt-7"
         >
           <Plus size={16} weight="bold" />
           {create.isPending && <span>Đang thêm và quét…</span>}

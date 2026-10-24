@@ -197,6 +197,7 @@ export default function ShopDashboard() {
       {activeTab === 'OVERVIEW' && (
         <SellerOverviewTab
           onNavigateTab={handleOverviewNavigate}
+          shopName={shopName}
           pendingOrdersCount={pendingOrdersCount}
           confirmedOrdersCount={confirmedOrdersCount}
           pendingReturnsCount={pendingReturnsCount}
@@ -254,7 +255,7 @@ export default function ShopDashboard() {
 
       {activeTab === 'CHAT' && <SellerChatTab shopId={shopId} autoReplyText={autoReplyText} />}
 
-      {activeTab === 'DECORATION' && <SellerDecorationTab shopId={shopId} />}
+      {activeTab === 'DECORATION' && <SellerDecorationTab shopId={shopId} shopName={shopName} />}
 
       {activeTab === 'STAFF' && <SellerStaffTab shopId={shopId} />}
 

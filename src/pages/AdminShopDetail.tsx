@@ -35,10 +35,10 @@ import AdminShell from '@/components/admin/AdminShell'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import HistoryTimeline from '@/components/admin/HistoryTimeline'
 import ReasonDialog from '@/components/admin/ReasonDialog'
-import StatePanel from '@/components/admin/StatePanel'
-import StatusBadge from '@/components/admin/StatusBadge'
+import StatePanel from '@/components/ui/StatePanel'
+import StatusBadge from '@/components/ui/StatusBadge'
 import { adminErrorMessage, formatDateTime } from '@/lib/admin'
-import { imageUrl, takeData } from '@/lib/apiAdapters'
+import { PLACEHOLDER_IMAGE, imageUrl, takeData } from '@/lib/apiAdapters'
 
 import type { ConfirmAction, ReasonAction } from '@/types/admin'
 import type { AdminShopDetailResponse } from '@generated/model/adminShopDetailResponse'
@@ -290,6 +290,11 @@ export default function AdminShopDetail() {
                     <img
                       src={imageUrl(shop.bannerKey)}
                       alt={shop.name ?? 'Ảnh bìa shop'}
+                      onError={function (e) {
+                        if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                          e.currentTarget.src = PLACEHOLDER_IMAGE
+                        }
+                      }}
                       className="h-36 w-full object-cover"
                     />
                   </div>
@@ -301,6 +306,11 @@ export default function AdminShopDetail() {
                       <img
                         src={imageUrl(shop.logoKey)}
                         alt={shop.name ?? 'Logo shop'}
+                        onError={function (e) {
+                          if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                            e.currentTarget.src = PLACEHOLDER_IMAGE
+                          }
+                        }}
                         className="h-12 w-12 rounded-2xl border border-zinc-200 object-cover dark:border-white/10"
                       />
                     )}
@@ -311,7 +321,7 @@ export default function AdminShopDetail() {
                     )}
                     <div>
                       <h2 className="text-xl font-extrabold tracking-tight">{shop.name}</h2>
-                      <p className="text-sm text-zinc-500">/{shop.slug}</p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">/{shop.slug}</p>
                     </div>
                   </div>
                   <StatusBadge status={shop.status} />
@@ -325,7 +335,10 @@ export default function AdminShopDetail() {
                   <div className="mt-4 rounded-2xl bg-zinc-50 p-3.5 text-xs text-zinc-700 dark:bg-white/5 dark:text-zinc-300">
                     {shop.address && (
                       <p className="flex items-start gap-2">
-                        <MapPin size={16} className="mt-0.5 shrink-0 text-zinc-500" />
+                        <MapPin
+                          size={16}
+                          className="mt-0.5 shrink-0 text-zinc-500 dark:text-zinc-400"
+                        />
                         <span>
                           <strong>Kho lấy hàng:</strong> {shop.address}
                         </span>
@@ -333,7 +346,7 @@ export default function AdminShopDetail() {
                     )}
                     {shop.phone && (
                       <p className="mt-2 flex items-center gap-2">
-                        <Phone size={16} className="shrink-0 text-zinc-500" />
+                        <Phone size={16} className="shrink-0 text-zinc-500 dark:text-zinc-400" />
                         <span>
                           <strong>Hotline shop:</strong> {shop.phone}
                         </span>
@@ -355,23 +368,31 @@ export default function AdminShopDetail() {
 
                 <dl className="mt-5 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Lần nộp gần nhất</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Lần nộp gần nhất
+                    </dt>
                     <dd className="mt-1 text-sm font-semibold">
                       {formatDateTime(shop.submittedAt)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Được duyệt lúc</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Được duyệt lúc
+                    </dt>
                     <dd className="mt-1 text-sm font-semibold">
                       {formatDateTime(shop.approvedAt)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Ngày tạo</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Ngày tạo
+                    </dt>
                     <dd className="mt-1 text-sm font-semibold">{formatDateTime(shop.createdAt)}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Cập nhật gần nhất</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Cập nhật gần nhất
+                    </dt>
                     <dd className="mt-1 text-sm font-semibold">{formatDateTime(shop.updatedAt)}</dd>
                   </div>
                 </dl>
@@ -385,8 +406,12 @@ export default function AdminShopDetail() {
                       <IdentificationCard size={20} weight="bold" />
                     </span>
                     <div>
-                      <h3 className="font-extrabold tracking-tight">Hồ sơ pháp lý &amp; Định danh eKYC</h3>
-                      <p className="text-xs text-zinc-500">Giấy tờ tùy thân và xác thực danh tính chủ shop</p>
+                      <h3 className="font-extrabold tracking-tight">
+                        Hồ sơ pháp lý &amp; Định danh eKYC
+                      </h3>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        Giấy tờ tùy thân và xác thực danh tính chủ shop
+                      </p>
                     </div>
                   </div>
                   {shop.kycStatus && (
@@ -398,32 +423,42 @@ export default function AdminShopDetail() {
 
                 <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold uppercase text-zinc-500">Họ và tên thật</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Họ và tên thật
+                    </dt>
                     <dd className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
                       {shop.legalName || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold uppercase text-zinc-500">Số CCCD / CMND</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Số CCCD / CMND
+                    </dt>
                     <dd className="mt-1 font-mono text-sm font-bold text-zinc-900 dark:text-white">
                       {shop.idNumber || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold uppercase text-zinc-500">Ngày cấp</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Ngày cấp
+                    </dt>
                     <dd className="mt-1 font-semibold text-zinc-800 dark:text-zinc-200">
                       {shop.idIssuedDate || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold uppercase text-zinc-500">Nơi cấp</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Nơi cấp
+                    </dt>
                     <dd className="mt-1 font-semibold text-zinc-800 dark:text-zinc-200">
                       {shop.idIssuedPlace || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   {shop.taxCode && (
                     <div className="rounded-2xl bg-zinc-50 p-3 sm:col-span-2 dark:bg-white/5">
-                      <dt className="font-bold uppercase text-zinc-500">Mã số thuế</dt>
+                      <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                        Mã số thuế
+                      </dt>
                       <dd className="mt-1 font-mono font-semibold text-zinc-800 dark:text-zinc-200">
                         {shop.taxCode}
                       </dd>
@@ -432,7 +467,7 @@ export default function AdminShopDetail() {
                 </dl>
 
                 <div className="mt-5">
-                  <h4 className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                  <h4 className="text-xs font-bold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
                     Ảnh giấy tờ định danh đã tải lên
                   </h4>
                   <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -445,6 +480,11 @@ export default function AdminShopDetail() {
                           <img
                             src={imageUrl(shop.idFrontKey)}
                             alt="Mặt trước CCCD"
+                            onError={function (e) {
+                              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                                e.currentTarget.src = PLACEHOLDER_IMAGE
+                              }
+                            }}
                             className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
                           />
                           <button
@@ -478,6 +518,11 @@ export default function AdminShopDetail() {
                           <img
                             src={imageUrl(shop.idBackKey)}
                             alt="Mặt sau CCCD"
+                            onError={function (e) {
+                              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                                e.currentTarget.src = PLACEHOLDER_IMAGE
+                              }
+                            }}
                             className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
                           />
                           <button
@@ -511,6 +556,11 @@ export default function AdminShopDetail() {
                           <img
                             src={imageUrl(shop.idSelfieKey)}
                             alt="Selfie cầm CCCD"
+                            onError={function (e) {
+                              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                                e.currentTarget.src = PLACEHOLDER_IMAGE
+                              }
+                            }}
                             className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
                           />
                           <button
@@ -544,6 +594,11 @@ export default function AdminShopDetail() {
                           <img
                             src={imageUrl(shop.businessCertKey)}
                             alt="Giấy phép kinh doanh"
+                            onError={function (e) {
+                              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                                e.currentTarget.src = PLACEHOLDER_IMAGE
+                              }
+                            }}
                             className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
                           />
                           <button
@@ -575,26 +630,36 @@ export default function AdminShopDetail() {
                     <Bank size={20} weight="bold" />
                   </span>
                   <div>
-                    <h3 className="font-extrabold tracking-tight">Tài khoản ngân hàng nhận thanh toán</h3>
-                    <p className="text-xs text-zinc-500">Đối soát và chuyển khoản doanh thu định kỳ</p>
+                    <h3 className="font-extrabold tracking-tight">
+                      Tài khoản ngân hàng nhận thanh toán
+                    </h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Đối soát và chuyển khoản doanh thu định kỳ
+                    </p>
                   </div>
                 </div>
 
                 <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-3">
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold uppercase text-zinc-500">Ngân hàng</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Ngân hàng
+                    </dt>
                     <dd className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
                       {shop.bankName || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold uppercase text-zinc-500">Số tài khoản</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Số tài khoản
+                    </dt>
                     <dd className="mt-1 font-mono text-sm font-bold text-zinc-900 dark:text-white">
                       {shop.bankAccount || 'Chưa cung cấp'}
                     </dd>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-3 dark:bg-white/5">
-                    <dt className="font-bold uppercase text-zinc-500">Tên chủ tài khoản</dt>
+                    <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Tên chủ tài khoản
+                    </dt>
                     <dd className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
                       {shop.bankHolder || 'Chưa cung cấp'}
                     </dd>
@@ -602,9 +667,14 @@ export default function AdminShopDetail() {
                 </dl>
 
                 <div className="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">
-                  <CheckCircle size={16} weight="fill" className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <CheckCircle
+                    size={16}
+                    weight="fill"
+                    className="shrink-0 text-emerald-600 dark:text-emerald-400"
+                  />
                   <span>
-                    Bảo mật 2 lớp: Tên chủ tài khoản ngân hàng ({shop.bankHolder || '—'}) trùng khớp với Họ tên trên CCCD ({shop.legalName || '—'}).
+                    Bảo mật 2 lớp: Tên chủ tài khoản ngân hàng ({shop.bankHolder || '—'}) trùng khớp
+                    với Họ tên trên CCCD ({shop.legalName || '—'}).
                   </span>
                 </div>
               </section>
@@ -632,15 +702,15 @@ export default function AdminShopDetail() {
                 <h2 className="font-extrabold tracking-tight">Chủ sở hữu</h2>
                 <div className="mt-4 space-y-3 text-sm">
                   <p className="flex items-center gap-2">
-                    <User size={17} className="text-zinc-500" />
+                    <User size={17} className="text-zinc-500 dark:text-zinc-400" />
                     <span className="font-semibold">{shop.ownerName ?? 'Chưa có tên'}</span>
                   </p>
                   <p className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
-                    <Envelope size={17} className="text-zinc-500" />
+                    <Envelope size={17} className="text-zinc-500 dark:text-zinc-400" />
                     {shop.ownerEmail ?? '—'}
                   </p>
                   <div className="flex items-center gap-2">
-                    <LockKey size={17} className="text-zinc-500" />
+                    <LockKey size={17} className="text-zinc-500 dark:text-zinc-400" />
                     <StatusBadge status={shop.ownerStatus} />
                   </div>
                 </div>
@@ -727,11 +797,9 @@ export default function AdminShopDetail() {
               setPreviewModal(null)
             }}
           />
-          <div className="relative z-10 max-h-[90vh] max-w-4xl overflow-hidden rounded-3xl bg-white p-4 shadow-2xl dark:bg-zinc-900">
+          <div className="relative z-10 max-h-[90vh] max-w-4xl overflow-hidden rounded-3xl bg-white p-4 shadow-2xl dark:bg-[#11182a]">
             <div className="mb-3 flex items-center justify-between gap-4">
-              <h3 className="font-bold text-zinc-900 dark:text-white">
-                {previewModal.title}
-              </h3>
+              <h3 className="font-bold text-zinc-900 dark:text-white">{previewModal.title}</h3>
               <div className="flex items-center gap-2">
                 <a
                   href={previewModal.url}
@@ -756,6 +824,11 @@ export default function AdminShopDetail() {
               <img
                 src={previewModal.url}
                 alt={previewModal.title}
+                onError={function (e) {
+                  if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                    e.currentTarget.src = PLACEHOLDER_IMAGE
+                  }
+                }}
                 className="mx-auto max-h-[75vh] w-auto object-contain"
               />
             </div>

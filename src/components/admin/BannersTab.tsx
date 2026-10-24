@@ -195,7 +195,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
               'rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
             if (selected) {
               itemClass =
-                'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+                'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
             }
             return (
               <button
@@ -214,7 +214,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
         <button
           type="button"
           onClick={() => setCreating(true)}
-          className="flex w-fit items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 dark:bg-indigo-500"
+          className="btn-primary flex w-fit items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold"
         >
           <Plus size={16} weight="bold" />
           Thêm banner

@@ -12,7 +12,13 @@ import {
   toLocalInput,
 } from '@/lib/siteContent'
 
-import ContentDialog, { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, LABEL_CLASS } from './ContentDialog'
+import ContentDialog, {
+  ERROR_CLASS,
+  HINT_CLASS,
+  INPUT_CLASS,
+  LABEL_CLASS,
+  TEXTAREA_CLASS,
+} from './ContentDialog'
 import ImageUploadField from './ImageUploadField'
 import ScheduleFields from './ScheduleFields'
 
@@ -172,7 +178,7 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
           onChange={(event) => setBody(event.target.value)}
           maxLength={500}
           rows={2}
-          className={`${INPUT_CLASS} resize-y`}
+          className={`${TEXTAREA_CLASS} resize-y`}
         />
       </label>
 

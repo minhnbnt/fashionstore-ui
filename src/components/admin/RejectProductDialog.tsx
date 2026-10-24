@@ -40,10 +40,7 @@ export default function RejectProductDialog({ product, onClose, onDone }: Props)
     if (reasonProblem !== null || product.id === undefined) {
       return
     }
-    reject.mutate(
-      { id: product.id, data: { reason: reason.trim() } },
-      { onSuccess: onDone },
-    )
+    reject.mutate({ id: product.id, data: { reason: reason.trim() } }, { onSuccess: onDone })
   }
 
   return (

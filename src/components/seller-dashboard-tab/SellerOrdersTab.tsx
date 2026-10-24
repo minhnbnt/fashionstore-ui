@@ -9,11 +9,14 @@ import {
   useShip,
 } from '@generated/endpoints/seller-orders/seller-orders'
 import { getInventoryQueryKey } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
-import { MagnifyingGlass, CheckCircle, Truck, X, Phone, MapPin } from '@phosphor-icons/react'
+import { MagnifyingGlass, CheckCircle, Truck, Phone, MapPin } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import Modal from '@/components/Modal'
+import StatusBadge from '@/components/ui/StatusBadge'
 import { takeData } from '@/lib/apiAdapters'
 import { orderItem } from '@/lib/sellerAdapters'
+import { sellerStatusMeta } from '@/lib/sellerStatus'
 
 import { formatVnd } from '../../lib/format'
 
@@ -118,42 +121,6 @@ export default function SellerOrdersTab({ shopId }: Props) {
     return true
   })
 
-  function renderStatusBadge(status: string) {
-    if (status === 'PENDING') {
-      return (
-        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
-          Chờ xác nhận
-        </span>
-      )
-    }
-    if (status === 'CONFIRMED') {
-      return (
-        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-          Chờ lấy hàng
-        </span>
-      )
-    }
-    if (status === 'SHIPPING') {
-      return (
-        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
-          Đang vận chuyển
-        </span>
-      )
-    }
-    if (status === 'DELIVERED') {
-      return (
-        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-          Đã giao (Đã thu COD)
-        </span>
-      )
-    }
-    return (
-      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
-        Đã hủy
-      </span>
-    )
-  }
-
   return (
     <div className="space-y-6">
       {/* Toast */}
@@ -173,9 +140,9 @@ export default function SellerOrdersTab({ shopId }: Props) {
       </div>
 
       {/* Filter Tabs & Search */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-2 md:border-b-0 md:pb-0 dark:border-zinc-800">
+          <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-2 md:border-b-0 md:pb-0 dark:border-white/10">
             {[
               { id: 'ALL', label: 'Tất cả' },
               { id: 'PENDING', label: 'Chờ xác nhận' },
@@ -185,6 +152,12 @@ export default function SellerOrdersTab({ shopId }: Props) {
               { id: 'CANCELLED', label: 'Đã hủy' },
             ].map(function (tab) {
               const isCurrent = activeTab === tab.id
+              let tabClass =
+                'rounded-2xl px-3.5 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              if (isCurrent) {
+                tabClass =
+                  'rounded-2xl px-3.5 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+              }
               return (
                 <button
                   key={tab.id}
@@ -200,11 +173,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                         | 'CANCELLED',
                     )
                   }}
-                  className={`rounded-2xl px-3.5 py-2 text-xs font-bold transition ${
-                    isCurrent
-                      ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
-                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                  }`}
+                  className={tabClass}
                 >
                   {tab.label}
                 </button>
@@ -225,32 +194,34 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 setSearchTerm(e.target.value)
               }}
               placeholder="Mã đơn hàng, tên khách, SĐT..."
-              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="w-full rounded-full border border-zinc-300 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
         </div>
 
-        {/* Danh sách thẻ đơn hàng Shopee-style */}
+        {/* Danh sách thẻ đơn hàng */}
         <div className="mt-5 space-y-4">
           {filteredOrders.map(function (order) {
             return (
               <div
                 key={order.id}
-                className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 transition hover:border-zinc-200 dark:border-zinc-800 dark:bg-zinc-950/40"
+                className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 transition hover:border-zinc-200 dark:border-white/10 dark:bg-white/5"
               >
                 {/* Header đơn */}
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800/80">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-white/10">
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-xs font-bold text-zinc-900 dark:text-white">
                       {order.code}
                     </span>
                     <span className="text-[11px] text-zinc-400">{order.createdAt}</span>
                   </div>
-                  <div>{renderStatusBadge(order.status)}</div>
+                  <div>
+                    <StatusBadge status={order.status} meta={sellerStatusMeta} />
+                  </div>
                 </div>
 
                 {/* Danh sách sản phẩm */}
-                <div className="divide-y divide-zinc-100 py-3 dark:divide-zinc-800/60">
+                <div className="divide-y divide-zinc-100 py-3 dark:divide-white/10">
                   {order.items.map(function (item, idx) {
                     return (
                       <div key={idx} className="flex items-center justify-between py-2 text-xs">
@@ -271,7 +242,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 </div>
 
                 {/* Thông tin giao nhận & Tổng tiền & Nút hành động */}
-                <div className="flex flex-col justify-between gap-4 border-t border-zinc-100 pt-3 sm:flex-row sm:items-center dark:border-zinc-800/80">
+                <div className="flex flex-col justify-between gap-4 border-t border-zinc-100 pt-3 sm:flex-row sm:items-center dark:border-white/10">
                   <div className="text-xs text-zinc-600 dark:text-zinc-400">
                     <p className="flex items-center gap-1.5 font-bold text-zinc-900 dark:text-white">
                       {order.buyerName}
@@ -293,7 +264,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                   <div className="flex flex-col items-end gap-2.5">
                     <div className="text-right">
                       <span className="text-xs text-zinc-500">Tổng thu COD: </span>
-                      <span className="text-base font-black text-orange-600 dark:text-orange-400">
+                      <span className="text-base font-black text-indigo-600 dark:text-indigo-400">
                         {formatVnd(order.totalAmount)}
                       </span>
                     </div>
@@ -317,7 +288,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                             handleConfirmOrder(order.id)
                             showToast('Đã xác nhận đơn hàng thành công!')
                           }}
-                          className="flex items-center gap-1.5 rounded-xl bg-orange-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-orange-700"
+                          className="btn-primary flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold shadow-sm"
                         >
                           <CheckCircle size={14} weight="bold" />
                           Xác nhận đơn
@@ -368,75 +339,64 @@ export default function SellerOrdersTab({ shopId }: Props) {
 
       {/* Modal Hủy Đơn */}
       {cancelTargetId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                Xác nhận hủy đơn hàng
-              </h3>
-              <button
-                type="button"
-                onClick={function () {
-                  setCancelTargetId(null)
-                }}
-                className="text-zinc-400 hover:text-zinc-600"
-              >
-                <X size={18} weight="bold" />
-              </button>
-            </div>
+        <Modal
+          title="Xác nhận hủy đơn hàng"
+          onClose={function () {
+            setCancelTargetId(null)
+          }}
+          widthClass="max-w-md"
+        >
+          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+            Khi hủy đơn hàng, hệ thống sẽ{' '}
+            <strong>tự động hoàn trả số lượng tồn kho nguyên tử</strong> và ghi nhận lý do vào sổ
+            nhật ký biến động kho.
+          </p>
 
-            <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-              Khi hủy đơn hàng, hệ thống sẽ{' '}
-              <strong>tự động hoàn trả số lượng tồn kho nguyên tử</strong> và ghi nhận lý do vào sổ
-              nhật ký biến động kho.
-            </p>
-
-            <div className="mt-4">
-              <label
-                htmlFor="cancelReasonSelect"
-                className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
-              >
-                Lý do hủy đơn
-              </label>
-              <select
-                id="cancelReasonSelect"
-                value={cancelReason}
-                onChange={function (e) {
-                  setCancelReason(e.target.value)
-                }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-              >
-                <option value="Hết hàng trong kho">Hết hàng trong kho</option>
-                <option value="Người mua yêu cầu hủy">Người mua yêu cầu hủy qua chat</option>
-                <option value="Không liên lạc được với khách">
-                  Không liên lạc được với khách để xác nhận
-                </option>
-                <option value="Địa chỉ người nhận không hợp lệ">
-                  Địa chỉ người nhận không hợp lệ
-                </option>
-              </select>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={function () {
-                  setCancelTargetId(null)
-                }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300"
-              >
-                Đóng
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmCancel}
-                className="rounded-2xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
-              >
-                Xác nhận hủy & Hoàn kho
-              </button>
-            </div>
+          <div className="mt-4">
+            <label
+              htmlFor="cancelReasonSelect"
+              className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+            >
+              Lý do hủy đơn
+            </label>
+            <select
+              id="cancelReasonSelect"
+              value={cancelReason}
+              onChange={function (e) {
+                setCancelReason(e.target.value)
+              }}
+              className="mt-1.5 w-full rounded-full border border-zinc-300 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+            >
+              <option value="Hết hàng trong kho">Hết hàng trong kho</option>
+              <option value="Người mua yêu cầu hủy">Người mua yêu cầu hủy qua chat</option>
+              <option value="Không liên lạc được với khách">
+                Không liên lạc được với khách để xác nhận
+              </option>
+              <option value="Địa chỉ người nhận không hợp lệ">
+                Địa chỉ người nhận không hợp lệ
+              </option>
+            </select>
           </div>
-        </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={function () {
+                setCancelTargetId(null)
+              }}
+              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmCancel}
+              className="rounded-2xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
+            >
+              Xác nhận hủy & Hoàn kho
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   )

@@ -24,8 +24,8 @@ import AdminShell from '@/components/admin/AdminShell'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import HistoryTimeline from '@/components/admin/HistoryTimeline'
 import ReasonDialog from '@/components/admin/ReasonDialog'
-import StatePanel from '@/components/admin/StatePanel'
-import StatusBadge from '@/components/admin/StatusBadge'
+import StatePanel from '@/components/ui/StatePanel'
+import StatusBadge from '@/components/ui/StatusBadge'
 import UserAvatar from '@/components/UserAvatar'
 import { adminErrorMessage, formatDateTime, roleLabel } from '@/lib/admin'
 import { takeData } from '@/lib/apiAdapters'
@@ -166,7 +166,9 @@ export default function AdminUserDetail() {
                       <h2 className="truncate text-xl font-extrabold tracking-tight">
                         {user.displayName ?? 'Chưa có tên'}
                       </h2>
-                      <p className="mt-1 truncate text-sm text-zinc-500">{user.email}</p>
+                      <p className="mt-1 truncate text-sm text-zinc-500 dark:text-zinc-400">
+                        {user.email}
+                      </p>
                     </div>
                   </div>
                   <StatusBadge status={user.status} />
@@ -185,18 +187,24 @@ export default function AdminUserDetail() {
 
                 <dl className="mt-5 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Vai trò hệ thống</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Vai trò hệ thống
+                    </dt>
                     <dd className="mt-1 flex items-center gap-2 text-sm font-semibold">
                       <UserCircle size={17} className="text-indigo-700 dark:text-indigo-200" />
                       {roleLabel(user.role)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Ngày tham gia</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Ngày tham gia
+                    </dt>
                     <dd className="mt-1 text-sm font-semibold">{formatDateTime(user.createdAt)}</dd>
                   </div>
                   <div className="sm:col-span-2">
-                    <dt className="text-xs font-bold text-zinc-500 uppercase">Mã tài khoản</dt>
+                    <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                      Mã tài khoản
+                    </dt>
                     <dd className="mt-1 font-mono text-xs break-all text-zinc-600 dark:text-zinc-300">
                       {user.id}
                     </dd>
@@ -227,7 +235,7 @@ export default function AdminUserDetail() {
                       >
                         <div>
                           <p className="font-bold">{shop.name}</p>
-                          <p className="text-xs text-zinc-500">/{shop.slug}</p>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400">/{shop.slug}</p>
                         </div>
                         <StatusBadge status={shop.status} />
                       </Link>

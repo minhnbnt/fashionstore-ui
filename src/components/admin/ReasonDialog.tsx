@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { X } from '@phosphor-icons/react'
 
@@ -36,13 +37,13 @@ function OpenReasonDialog(props: Omit<ReasonDialogProps, 'open'>) {
     props.onConfirm(trimmed)
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-zinc-950/55 p-4 backdrop-blur-sm">
       <dialog
         open
         aria-modal="true"
         aria-labelledby="reason-title"
-        className="w-full max-w-lg rounded-3xl border border-white/30 bg-white p-0 shadow-2xl dark:border-white/10 dark:bg-[#11182a]"
+        className="static w-full max-w-lg rounded-3xl border border-white/30 bg-white p-0 shadow-2xl dark:border-white/10 dark:bg-[#11182a]"
       >
         <form onSubmit={submit} className="p-6">
           <div className="flex items-start justify-between gap-4">
@@ -96,7 +97,7 @@ function OpenReasonDialog(props: Omit<ReasonDialogProps, 'open'>) {
             rows={5}
             autoFocus
             placeholder="Nhập lý do để đối tượng được kiểm duyệt biết cách xử lý…"
-            className="mt-2 w-full resize-none rounded-3xl border border-zinc-200 bg-white px-4 py-3 text-sm transition outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-white/10 dark:bg-white/5"
+            className="mt-2 w-full resize-none rounded-3xl border border-zinc-300 bg-white px-4 py-3 text-sm transition outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 dark:border-white/15 dark:bg-white/10"
           />
           <div className="mt-1 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
             <span>Tối thiểu 5 ký tự</span>
@@ -129,6 +130,7 @@ function OpenReasonDialog(props: Omit<ReasonDialogProps, 'open'>) {
           </div>
         </form>
       </dialog>
-    </div>
+    </div>,
+    document.body,
   )
 }

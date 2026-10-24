@@ -174,7 +174,7 @@ export default function AdminDashboard() {
                     'rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
                   if (selected) {
                     tabClass =
-                      'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-600 text-white dark:bg-indigo-500'
+                      'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
                   }
                   return (
                     <button
@@ -240,7 +240,7 @@ export default function AdminDashboard() {
               to="/admin/shops"
               className="group glass flex items-start gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-300">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
                 <Storefront size={22} weight="bold" />
               </span>
               <span>
@@ -278,7 +278,7 @@ export default function AdminDashboard() {
               to="/admin/products"
               className="group glass flex items-start gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
                 <Package size={22} weight="bold" />
               </span>
               <span>

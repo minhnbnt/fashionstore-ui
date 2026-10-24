@@ -29,7 +29,7 @@ export default function RestoreProductDialog({ product, onClose, onDone }: Props
       className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black/60 p-4 text-inherit backdrop-blur-xs"
       aria-labelledby="restore-product-title"
     >
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
+      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-[#11182a]">
         <h2
           id="restore-product-title"
           className="flex items-center gap-2 text-lg font-extrabold tracking-tighter"
@@ -71,7 +71,7 @@ export default function RestoreProductDialog({ product, onClose, onDone }: Props
             type="button"
             onClick={handleConfirm}
             disabled={restore.isPending}
-            className="rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500"
+            className="btn-primary rounded-full px-5 py-2.5 text-sm font-bold disabled:opacity-50"
           >
             {restore.isPending && <span>Đang khôi phục…</span>}
             {restore.isPending === false && <span>Khôi phục</span>}

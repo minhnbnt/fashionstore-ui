@@ -331,7 +331,7 @@ export default function AdminOrderDetailPanel({
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:hover:bg-white/10"
+            className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-white/10"
           >
             <X size={18} weight="bold" />
           </button>
