@@ -14,6 +14,9 @@ export type SellerTabId =
   | 'DECORATION'
   | 'STAFF'
   | 'PROFILE'
+  | 'STATS_REVENUE'
+  | 'STATS_PRODUCTS'
+  | 'STATS_CUSTOMERS'
 
 export interface MenuItem {
   id: SellerTabId

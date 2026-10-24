@@ -27,6 +27,9 @@ import {
   SellerRevenueTab,
   SellerReviewsTab,
   SellerStaffTab,
+  SellerStatsCustomersTab,
+  SellerStatsProductsTab,
+  SellerStatsRevenueTab,
 } from '../components/seller-dashboard-tab'
 import { SellerLayout } from '../components/seller-dashboard-tab/SellerLayout'
 
@@ -231,12 +234,14 @@ export default function ShopDashboard() {
 
       {isTabAllowed && activeTab === 'OVERVIEW' && (
         <SellerOverviewTab
+          shopId={shopId}
           onNavigateTab={handleOverviewNavigate}
           shopName={shopName}
           pendingOrdersCount={pendingOrdersCount}
           confirmedOrdersCount={confirmedOrdersCount}
           pendingReturnsCount={pendingReturnsCount}
           lowStockCount={lowStockCount}
+          unreadChatCount={unreadChatCount}
         />
       )}
 
@@ -301,6 +306,14 @@ export default function ShopDashboard() {
       {isTabAllowed && activeTab === 'PROFILE' && (
         <SellerProfileTab key={shopId} shopId={shopId} profile={profile} />
       )}
+
+      {activeTab === 'STATS_REVENUE' && <SellerStatsRevenueTab shopId={shopId} />}
+
+      {activeTab === 'STATS_PRODUCTS' && (
+        <SellerStatsProductsTab shopId={shopId} onNavigateTab={handleOverviewNavigate} />
+      )}
+
+      {activeTab === 'STATS_CUSTOMERS' && <SellerStatsCustomersTab shopId={shopId} />}
     </SellerLayout>
   )
 }
