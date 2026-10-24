@@ -14,6 +14,7 @@ import { PaperPlaneRight, MagnifyingGlass, CheckCircle, Robot } from '@phosphor-
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
+import UserAvatar from '@/components/UserAvatar'
 import { takeData } from '@/lib/apiAdapters'
 import { chatConversationItem, chatMessageItem } from '@/lib/sellerAdapters'
 
@@ -232,9 +233,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                   }}
                   className={`flex w-full items-start gap-3 p-3.5 text-left transition ${conversationRowClass(isCurrent)}`}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#312e81] to-[#1d4ed8] text-xs font-bold text-white uppercase">
-                    {conv.buyerName.slice(0, 2)}
-                  </div>
+                  <UserAvatar name={conv.buyerName} size={40} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
                       <p className="truncate text-xs font-bold text-zinc-900 dark:text-white">
@@ -262,9 +261,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
               {/* Header khung chat */}
               <div className="flex items-center justify-between border-b border-zinc-100 p-3.5 dark:border-white/10">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#312e81] to-[#1d4ed8] text-[11px] font-bold text-white uppercase">
-                    {selectedConv.buyerName.slice(0, 2)}
-                  </div>
+                  <UserAvatar name={selectedConv.buyerName} size={32} />
                   <div>
                     <p className="text-xs font-bold text-zinc-900 dark:text-white">
                       {selectedConv.buyerName}

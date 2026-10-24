@@ -22,6 +22,8 @@ import {
   ShieldCheck,
 } from '@phosphor-icons/react'
 
+import UserAvatar from '@/components/UserAvatar'
+
 import type { MenuGroup, SellerTabId } from '@/types/seller'
 
 interface SellerLayoutProps {
@@ -224,9 +226,7 @@ export function SellerLayout({
                 onClick={() => handleSelectTab('PROFILE')}
                 className="group flex cursor-pointer items-center gap-2 text-left"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-900 to-sky-400 text-xs font-bold text-white shadow-sm">
-                  FH
-                </div>
+                <UserAvatar name={shopName} size={32} />
                 <div className="hidden flex-col text-left md:flex">
                   <div className="flex items-center gap-1">
                     <span className="max-w-[140px] truncate text-xs font-bold text-zinc-800 transition-colors group-hover:text-indigo-600 dark:text-zinc-100 dark:group-hover:text-indigo-400">

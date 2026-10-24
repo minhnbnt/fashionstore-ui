@@ -11,6 +11,7 @@ import { Star, ChatCircleDots, Flag, CheckCircle, PaperPlaneRight } from '@phosp
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
+import UserAvatar from '@/components/UserAvatar'
 import { takeData } from '@/lib/apiAdapters'
 import { reviewItem } from '@/lib/sellerAdapters'
 
@@ -239,9 +240,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#312e81] to-[#1d4ed8] text-xs font-bold text-white uppercase">
-                      {rev.buyerName.slice(0, 2)}
-                    </div>
+                    <UserAvatar name={rev.buyerName} size={36} />
                     <div>
                       <p className="text-xs font-bold text-zinc-900 dark:text-white">
                         {rev.buyerName}
