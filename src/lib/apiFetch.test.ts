@@ -38,4 +38,15 @@ describe('customFetch', () => {
     expect(caught).toBeInstanceOf(ApiError)
     expect((caught as ApiError).status).toBe(404)
   })
+
+  it('status loi co detail thi nem ApiError voi message la detail', async () => {
+    stubFetch({ detail: 'SKU already taken' }, 409)
+    const caught = await customFetch('/api/shops/1/products').then(
+      () => null,
+      (e: unknown) => e,
+    )
+    expect(caught).toBeInstanceOf(ApiError)
+    expect((caught as ApiError).status).toBe(409)
+    expect((caught as ApiError).message).toBe('SKU already taken')
+  })
 })

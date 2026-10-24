@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 
 import {
@@ -13,7 +13,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
 import { formatFullAddress } from '@/lib/format'
 
-import AddressForm from '../components/AddressForm'
+import AddressFormModal from '../components/account/AddressFormModal'
 
 import type { AddressResponse } from '@generated/model/addressResponse'
 
@@ -22,7 +22,6 @@ export default function Addresses() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<AddressResponse | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
-  const formRef = useRef<HTMLDivElement>(null)
 
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
@@ -47,16 +46,6 @@ export default function Addresses() {
   if (query.isSuccess) {
     addresses = takeData(query.data)
   }
-
-  useEffect(
-    function () {
-      if (formOpen === false || formRef.current === null) {
-        return
-      }
-      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    },
-    [formOpen],
-  )
 
   function openAdd() {
     setEditing(null)
@@ -87,11 +76,6 @@ export default function Addresses() {
       return
     }
     remove.mutate({ id })
-  }
-
-  let formTitle = 'Thêm địa chỉ'
-  if (editing !== null) {
-    formTitle = 'Sửa địa chỉ'
   }
 
   let body = (
@@ -249,10 +233,12 @@ export default function Addresses() {
       )}
 
       {formOpen && (
-        <div ref={formRef} id="address-form" className="glass mt-6 scroll-mt-24 rounded-3xl p-5">
-          <h2 className="text-lg font-extrabold tracking-tight">{formTitle}</h2>
-          <AddressForm address={editing} onSaved={closeForm} onCancel={closeForm} />
-        </div>
+        <AddressFormModal
+          mode={editing !== null ? 'edit' : 'create'}
+          initial={editing}
+          onClose={closeForm}
+          onSaved={closeForm}
+        />
       )}
 
       <div className="mt-6">{body}</div>

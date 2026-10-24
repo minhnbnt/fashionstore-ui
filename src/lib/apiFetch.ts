@@ -28,12 +28,26 @@ export async function customFetch<T>(url: string, options?: RequestInit): Promis
   const response = await fetch(`${baseUrl}${url}`, { ...options, headers })
   if (response.ok === false) {
     let body: unknown = null
+    let errorDetail = ''
     try {
       body = await response.json()
+      if (body !== null && typeof body === 'object') {
+        const record = body as Record<string, unknown>
+        if (typeof record.detail === 'string' && record.detail.trim() !== '') {
+          errorDetail = record.detail.trim()
+        } else if (typeof record.message === 'string' && record.message.trim() !== '') {
+          errorDetail = record.message.trim()
+        }
+      }
     } catch {
-      // loi khong co body JSON (vd 401 tu security filter)
+      // Lỗi không có body JSON (vd 401 từ security filter)
     }
-    throw new ApiError(response.status, `Request failed with status ${response.status}`, body)
+
+    let errorMessage = `Request failed with status ${response.status}`
+    if (errorDetail !== '') {
+      errorMessage = errorDetail
+    }
+    throw new ApiError(response.status, errorMessage, body)
   }
   if (response.status === 204) {
     return undefined as T

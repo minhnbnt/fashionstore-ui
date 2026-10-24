@@ -1,17 +1,23 @@
 import { useGetAdminProduct } from '@generated/endpoints/admin-products/admin-products'
 import {
   ArrowCounterClockwise,
+  CheckCircle,
   ClockCounterClockwise,
   Flag,
+  Package,
   Prohibit,
   ShieldCheck,
+  Sparkle,
+  VideoCamera,
   X,
 } from '@phosphor-icons/react'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import {
+  canApprove,
   canBan,
+  canReject,
   canRestore,
   formatDateTime,
   reportSourceLabel,
@@ -31,6 +37,8 @@ interface Props {
   onBan: (product: AdminProductResponse) => void
   onRestore: (product: AdminProductResponse) => void
   onDismiss: (product: AdminProductResponse) => void
+  onApprove?: (product: AdminProductResponse) => void
+  onReject?: (product: AdminProductResponse) => void
 }
 
 function historyTitle(entry: ProductModerationHistoryResponse): string {
@@ -40,16 +48,38 @@ function historyTitle(entry: ProductModerationHistoryResponse): string {
   return `${statusLabel(entry.fromStatus)} → ${statusLabel(entry.toStatus)}`
 }
 
+function weightLabel(weightGrams: number | null | undefined): string {
+  if (weightGrams === null || weightGrams === undefined) {
+    return 'Chưa cập nhật'
+  }
+  return `${weightGrams}g`
+}
+
+function dimensionLabel(
+  lengthCm: number | null | undefined,
+  widthCm: number | null | undefined,
+  heightCm: number | null | undefined,
+): string {
+  if (lengthCm === null || lengthCm === undefined) {
+    return 'Chưa cập nhật'
+  }
+  return `${lengthCm}x${widthCm ?? 0}x${heightCm ?? 0} cm`
+}
+
 function DetailBody({
   detail,
   onBan,
   onRestore,
   onDismiss,
+  onApprove,
+  onReject,
 }: {
   detail: AdminProductDetailResponse
   onBan: Props['onBan']
   onRestore: Props['onRestore']
   onDismiss: Props['onDismiss']
+  onApprove: Props['onApprove']
+  onReject: Props['onReject']
 }) {
   const product = detail.product
   const images = detail.images ?? []
@@ -116,7 +146,28 @@ function DetailBody({
         </div>
       )}
 
+      {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
+        {canApprove(product.status) && onApprove !== undefined && (
+          <button
+            type="button"
+            onClick={() => onApprove(product)}
+            className="flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
+          >
+            <CheckCircle size={16} weight="bold" />
+            Phê duyệt sản phẩm
+          </button>
+        )}
+        {canReject(product.status) && onReject !== undefined && (
+          <button
+            type="button"
+            onClick={() => onReject(product)}
+            className="flex items-center gap-2 rounded-full border border-red-300 px-5 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+          >
+            <Prohibit size={16} weight="bold" />
+            Từ chối duyệt
+          </button>
+        )}
         {canBan(product.status) && (
           <button
             type="button"
@@ -148,6 +199,95 @@ function DetailBody({
           </button>
         )}
       </div>
+
+      {/* Video sản phẩm nếu có */}
+      {detail.videoKey !== null && detail.videoKey !== undefined && detail.videoKey !== '' && (
+        <section>
+          <h4 className="mb-2 flex items-center gap-2 text-sm font-bold">
+            <VideoCamera size={16} weight="bold" className="text-orange-600" />
+            Video giới thiệu sản phẩm
+          </h4>
+          <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black">
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track */}
+            <video
+              src={imageUrl(detail.videoKey)}
+              controls
+              playsInline
+              className="h-full w-full object-contain"
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Virtual Try-On Garment image nếu có */}
+      {detail.tryOnEnabled === true && (
+        <section>
+          <h4 className="mb-2 flex items-center gap-2 text-sm font-bold">
+            <Sparkle size={16} weight="fill" className="text-indigo-600" />
+            Ảnh Garment (Virtual Try-On)
+          </h4>
+          <div className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900/30 dark:bg-indigo-950/20">
+            {detail.garmentKey !== null &&
+              detail.garmentKey !== undefined &&
+              detail.garmentKey !== '' && (
+                <img
+                  src={imageUrl(detail.garmentKey)}
+                  alt="Garment Flat Lay"
+                  className="h-20 w-16 rounded-xl border border-indigo-200 bg-white object-contain p-1 dark:border-indigo-500/30"
+                />
+              )}
+            <div className="text-xs text-zinc-600 dark:text-zinc-300">
+              <span className="font-semibold text-indigo-700 dark:text-indigo-300">
+                Đã bật Thử Đồ Ảo AI.
+              </span>
+              <p className="mt-0.5 text-[11px] text-zinc-500">
+                Ảnh phẳng trải trên nền trắng dùng để huấn luyện mô hình ghép trang phục.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Thông tin bổ sung & Vận chuyển */}
+      <section className="space-y-3 rounded-2xl bg-white/70 p-4 text-xs dark:bg-white/5">
+        <h4 className="flex items-center gap-2 text-sm font-bold">
+          <Package size={16} weight="bold" />
+          Thông tin bổ sung & Vận chuyển
+        </h4>
+        <div className="grid grid-cols-2 gap-2 text-zinc-600 dark:text-zinc-400">
+          <div>
+            Chất liệu:{' '}
+            <strong className="text-zinc-900 dark:text-white">
+              {detail.material ?? 'Chưa cập nhật'}
+            </strong>
+          </div>
+          <div>
+            Xuất xứ:{' '}
+            <strong className="text-zinc-900 dark:text-white">
+              {detail.origin ?? 'Chưa cập nhật'}
+            </strong>
+          </div>
+          <div>
+            Cân nặng:{' '}
+            <strong className="text-zinc-900 dark:text-white">
+              {weightLabel(detail.weightGrams)}
+            </strong>
+          </div>
+          <div>
+            Kích thước:{' '}
+            <strong className="text-zinc-900 dark:text-white">
+              {dimensionLabel(detail.lengthCm, detail.widthCm, detail.heightCm)}
+            </strong>
+          </div>
+        </div>
+        {detail.careInstructions !== null &&
+          detail.careInstructions !== undefined &&
+          detail.careInstructions !== '' && (
+            <p className="text-[11px] text-zinc-500">
+              <strong>Bảo quản:</strong> {detail.careInstructions}
+            </p>
+          )}
+      </section>
 
       {reports.length > 0 && (
         <section>
@@ -281,6 +421,8 @@ export default function AdminProductDetailPanel({
   onBan,
   onRestore,
   onDismiss,
+  onApprove,
+  onReject,
 }: Props) {
   const query = useGetAdminProduct(productId)
 
@@ -299,6 +441,8 @@ export default function AdminProductDetailPanel({
         onBan={onBan}
         onRestore={onRestore}
         onDismiss={onDismiss}
+        onApprove={onApprove}
+        onReject={onReject}
       />
     )
   }
