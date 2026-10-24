@@ -57,7 +57,7 @@ export default function SellerOverviewTab({
       count: lowStockCount,
       tab: 'inventory',
       icon: WarningCircle,
-      color: 'text-orange-500 bg-orange-50 dark:bg-orange-950/40',
+      color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40',
     },
   ]
 
@@ -91,7 +91,7 @@ export default function SellerOverviewTab({
   return (
     <div className="space-y-6">
       {/* Banner Chào mừng */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 p-6 text-white shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] p-6 text-white shadow-xl">
         <div className="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-2">
@@ -114,7 +114,7 @@ export default function SellerOverviewTab({
               onClick={function () {
                 onNavigateTab('products')
               }}
-              className="flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-orange-600 shadow-md transition hover:bg-orange-50 dark:bg-zinc-900"
+              className="flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-indigo-600 shadow-md transition hover:bg-indigo-50 dark:bg-[#11182a] dark:text-indigo-400"
             >
               <PlusCircle size={18} weight="bold" />
               Thêm sản phẩm mới
@@ -134,7 +134,7 @@ export default function SellerOverviewTab({
       </div>
 
       {/* Việc cần làm (To-Do List) */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-zinc-900 dark:text-white">
@@ -149,7 +149,7 @@ export default function SellerOverviewTab({
             onClick={function () {
               onNavigateTab('orders')
             }}
-            className="flex items-center gap-1 text-xs font-bold text-orange-600 hover:underline dark:text-orange-400"
+            className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
           >
             Xem tất cả đơn
             <CaretRight size={12} weight="bold" />
@@ -165,14 +165,14 @@ export default function SellerOverviewTab({
                 onClick={function () {
                   onNavigateTab(item.tab)
                 }}
-                className="group flex flex-col items-center justify-center rounded-2xl border border-zinc-100 p-4 text-center transition hover:border-orange-200 hover:bg-orange-50/30 dark:border-zinc-800 dark:hover:border-orange-900/40 dark:hover:bg-orange-950/20"
+                className="group flex flex-col items-center justify-center rounded-2xl border border-zinc-100 p-4 text-center transition hover:border-indigo-200 hover:bg-indigo-50/30 dark:border-white/10 dark:hover:border-indigo-900/40 dark:hover:bg-indigo-900/20"
               >
                 <div
                   className={`flex h-11 w-11 items-center justify-center rounded-2xl ${item.color}`}
                 >
                   <item.icon size={22} weight="bold" />
                 </div>
-                <span className="mt-3 text-2xl font-extrabold text-zinc-900 group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400">
+                <span className="mt-3 text-2xl font-extrabold text-zinc-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
                   {item.count}
                 </span>
                 <span className="mt-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
@@ -190,11 +190,11 @@ export default function SellerOverviewTab({
           return (
             <div
               key={m.label}
-              className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+              className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-zinc-500">{m.label}</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40">
                   <m.icon size={18} weight="bold" />
                 </div>
               </div>
@@ -206,7 +206,7 @@ export default function SellerOverviewTab({
       </div>
 
       {/* Lối tắt nghiệp vụ */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
         <h3 className="text-base font-bold text-zinc-900 dark:text-white">
           Truy cập nhanh các chức năng
         </h3>
@@ -216,7 +216,7 @@ export default function SellerOverviewTab({
             onClick={function () {
               onNavigateTab('revenue')
             }}
-            className="flex items-center gap-3 rounded-2xl border border-zinc-100 p-3.5 text-left transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60"
+            className="flex items-center gap-3 rounded-2xl border border-zinc-100 p-3.5 text-left transition hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-white/10"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40">
               <Wallet size={20} weight="bold" />
@@ -232,7 +232,7 @@ export default function SellerOverviewTab({
             onClick={function () {
               onNavigateTab('decoration')
             }}
-            className="flex items-center gap-3 rounded-2xl border border-zinc-100 p-3.5 text-left transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60"
+            className="flex items-center gap-3 rounded-2xl border border-zinc-100 p-3.5 text-left transition hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-white/10"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-950/40">
               <PaintBrushBroad size={20} weight="bold" />
@@ -248,7 +248,7 @@ export default function SellerOverviewTab({
             onClick={function () {
               onNavigateTab('chat')
             }}
-            className="flex items-center gap-3 rounded-2xl border border-zinc-100 p-3.5 text-left transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60"
+            className="flex items-center gap-3 rounded-2xl border border-zinc-100 p-3.5 text-left transition hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-white/10"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-950/40">
               <ChatCircleDots size={20} weight="bold" />
@@ -264,9 +264,9 @@ export default function SellerOverviewTab({
             onClick={function () {
               onNavigateTab('staff')
             }}
-            className="flex items-center gap-3 rounded-2xl border border-zinc-100 p-3.5 text-left transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60"
+            className="flex items-center gap-3 rounded-2xl border border-zinc-100 p-3.5 text-left transition hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-white/10"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-950/40">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40">
               <Users size={20} weight="bold" />
             </div>
             <div>
