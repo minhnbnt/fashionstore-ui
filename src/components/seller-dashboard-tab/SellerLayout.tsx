@@ -17,15 +17,13 @@ import {
   Bell,
   ArrowSquareOut,
   List,
-  Moon,
   X,
   CaretRight,
   ShieldCheck,
-  Sun,
 } from '@phosphor-icons/react'
 
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import UserAvatar from '@/components/UserAvatar'
-import { useTheme } from '@/hooks/useTheme'
 
 import type { MenuGroup, SellerTabId } from '@/types/seller'
 
@@ -51,7 +49,6 @@ export function SellerLayout({
   unreadChatCount,
 }: SellerLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { theme, toggle } = useTheme()
 
   const menuGroups: MenuGroup[] = [
     {
@@ -215,17 +212,8 @@ export function SellerLayout({
                 <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-indigo-700" />
               </button>
 
-              {/* Theme Toggle — pattern của Header storefront */}
-              <button
-                type="button"
-                onClick={toggle}
-                aria-label="Đổi giao diện sáng tối"
-                className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10"
-                title="Đổi giao diện sáng tối"
-              >
-                {theme === 'dark' && <Sun size={20} />}
-                {theme !== 'dark' && <Moon size={20} />}
-              </button>
+              {/* Theme Toggle — component dùng chung với Header storefront */}
+              <ThemeToggle className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10" />
 
               {/* Back to Marketplace Link */}
               <Link
