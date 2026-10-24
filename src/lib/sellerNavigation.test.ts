@@ -39,5 +39,8 @@ describe('sellerTabParam', () => {
   it('vong tron param <-> tab van ve dung tab', () => {
     expect(parseSellerTab(sellerTabParam('CHAT'))).toBe('CHAT')
     expect(parseSellerTab(sellerTabParam('DECORATION'))).toBe('DECORATION')
+    expect(parseSellerTab(sellerTabParam('STATS_REVENUE'))).toBe('STATS_REVENUE')
+    expect(parseSellerTab(sellerTabParam('STATS_PRODUCTS'))).toBe('STATS_PRODUCTS')
+    expect(parseSellerTab(sellerTabParam('STATS_CUSTOMERS'))).toBe('STATS_CUSTOMERS')
   })
 })

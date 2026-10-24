@@ -14,6 +14,9 @@ const SELLER_TAB_IDS: readonly SellerTabId[] = [
   'DECORATION',
   'STAFF',
   'PROFILE',
+  'STATS_REVENUE',
+  'STATS_PRODUCTS',
+  'STATS_CUSTOMERS',
 ]
 
 // Đọc tab từ URL (?tab=...): thiếu/không hợp lệ thì về OVERVIEW

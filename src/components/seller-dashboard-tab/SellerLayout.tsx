@@ -20,6 +20,8 @@ import {
   X,
   CaretRight,
   ShieldCheck,
+  ChartLineUp,
+  ChartBar,
 } from '@phosphor-icons/react'
 
 import ThemeToggle from '@/components/ui/ThemeToggle'
@@ -109,6 +111,26 @@ export function SellerLayout({
           id: 'REVENUE',
           label: 'Doanh thu & Ví Shop',
           icon: Wallet,
+        },
+      ],
+    },
+    {
+      groupTitle: 'THỐNG KÊ & BÁO CÁO',
+      items: [
+        {
+          id: 'STATS_REVENUE',
+          label: 'Thống kê doanh thu',
+          icon: ChartLineUp,
+        },
+        {
+          id: 'STATS_PRODUCTS',
+          label: 'Phân tích sản phẩm',
+          icon: ChartBar,
+        },
+        {
+          id: 'STATS_CUSTOMERS',
+          label: 'Phân tích khách hàng',
+          icon: UsersThree,
         },
       ],
     },
@@ -392,6 +414,9 @@ export function SellerLayout({
               {activeTab === 'DECORATION' && 'Trang trí gian hàng'}
               {activeTab === 'STAFF' && 'Phân quyền & Quản lý nhân viên'}
               {activeTab === 'PROFILE' && 'Hồ sơ Shop & KYC'}
+              {activeTab === 'STATS_REVENUE' && 'Thống kê & Báo cáo doanh thu'}
+              {activeTab === 'STATS_PRODUCTS' && 'Phân tích hiệu suất sản phẩm'}
+              {activeTab === 'STATS_CUSTOMERS' && 'Phân tích khách hàng & Theo dõi'}
             </span>
           </div>
 
