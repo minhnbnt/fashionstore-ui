@@ -99,6 +99,13 @@ const AUDIT_ACTIONS = [
   'DEACTIVATE_MEMBER',
 ]
 
+function resolveAuditAction(filter: string): string | undefined {
+  if (filter !== '') {
+    return filter
+  }
+  return undefined
+}
+
 function getSubTabClass(isActive: boolean): string {
   if (isActive) {
     return 'flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-all border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-300'
@@ -139,7 +146,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
   const auditQuery = useListAuditLogs(
     shopId,
     {
-      action: auditActionFilter !== '' ? auditActionFilter : undefined,
+      action: resolveAuditAction(auditActionFilter),
       page: auditPage,
       size: 20,
     },
@@ -152,7 +159,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         void queryClient.invalidateQueries({ queryKey: getListRolesQueryKey(shopId) })
         void queryClient.invalidateQueries({
           queryKey: getListAuditLogsQueryKey(shopId, {
-            action: auditActionFilter !== '' ? auditActionFilter : undefined,
+            action: resolveAuditAction(auditActionFilter),
             page: auditPage,
             size: 20,
           }),
@@ -175,7 +182,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         void queryClient.invalidateQueries({ queryKey: getListRolesQueryKey(shopId) })
         void queryClient.invalidateQueries({
           queryKey: getListAuditLogsQueryKey(shopId, {
-            action: auditActionFilter !== '' ? auditActionFilter : undefined,
+            action: resolveAuditAction(auditActionFilter),
             page: auditPage,
             size: 20,
           }),
@@ -200,7 +207,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
         void queryClient.invalidateQueries({
           queryKey: getListAuditLogsQueryKey(shopId, {
-            action: auditActionFilter !== '' ? auditActionFilter : undefined,
+            action: resolveAuditAction(auditActionFilter),
             page: auditPage,
             size: 20,
           }),
@@ -220,7 +227,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         void queryClient.invalidateQueries({ queryKey: getListInvitationsQueryKey(shopId) })
         void queryClient.invalidateQueries({
           queryKey: getListAuditLogsQueryKey(shopId, {
-            action: auditActionFilter !== '' ? auditActionFilter : undefined,
+            action: resolveAuditAction(auditActionFilter),
             page: auditPage,
             size: 20,
           }),
@@ -254,7 +261,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         void queryClient.invalidateQueries({ queryKey: getListInvitationsQueryKey(shopId) })
         void queryClient.invalidateQueries({
           queryKey: getListAuditLogsQueryKey(shopId, {
-            action: auditActionFilter !== '' ? auditActionFilter : undefined,
+            action: resolveAuditAction(auditActionFilter),
             page: auditPage,
             size: 20,
           }),
@@ -274,7 +281,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         void queryClient.invalidateQueries({ queryKey: getListMembersQueryKey(shopId) })
         void queryClient.invalidateQueries({
           queryKey: getListAuditLogsQueryKey(shopId, {
-            action: auditActionFilter !== '' ? auditActionFilter : undefined,
+            action: resolveAuditAction(auditActionFilter),
             page: auditPage,
             size: 20,
           }),
@@ -295,7 +302,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         void queryClient.invalidateQueries({ queryKey: getListRolesQueryKey(shopId) })
         void queryClient.invalidateQueries({
           queryKey: getListAuditLogsQueryKey(shopId, {
-            action: auditActionFilter !== '' ? auditActionFilter : undefined,
+            action: resolveAuditAction(auditActionFilter),
             page: auditPage,
             size: 20,
           }),
