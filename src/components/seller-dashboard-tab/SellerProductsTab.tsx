@@ -26,6 +26,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { ApiError } from '@/lib/apiFetch'
 import { productItem } from '@/lib/sellerAdapters'
 import { sellerStatusMeta } from '@/lib/sellerStatus'
 
@@ -57,7 +58,9 @@ export default function SellerProductsTab({
   onNavigateEditProduct,
 }: Props) {
   const queryClient = useQueryClient()
-  const [activeFilter, setActiveFilter] = useState<'ACTIVE' | 'PENDING' | 'INACTIVE' | 'DELETED' | 'ALL'>('ACTIVE')
+  const [activeFilter, setActiveFilter] = useState<
+    'ACTIVE' | 'PENDING' | 'INACTIVE' | 'DELETED' | 'ALL'
+  >('ACTIVE')
   const [searchTerm, setSearchTerm] = useState('')
   const [showImportModal, setShowImportModal] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
@@ -104,11 +107,14 @@ export default function SellerProductsTab({
         setDeleteErrorMessage(null)
         showToast('Đã xóa mềm sản phẩm vào thùng rác (trạng thái DELETED)')
       },
-      onError: function (error: any) {
-        const status = error?.status ?? error?.response?.status
+      onError: function (error: unknown) {
+        let status: number | undefined = undefined
+        if (error instanceof ApiError) {
+          status = error.status
+        }
         if (status === 409) {
           setDeleteErrorMessage(
-            'Không thể xóa sản phẩm do đang có đơn hàng liên quan đang xử lý (chờ xác nhận hoặc đang vận chuyển). Vui lòng hoàn tất hoặc hủy các đơn hàng trước.'
+            'Không thể xóa sản phẩm do đang có đơn hàng liên quan đang xử lý (chờ xác nhận hoặc đang vận chuyển). Vui lòng hoàn tất hoặc hủy các đơn hàng trước.',
           )
           return
         }
@@ -149,7 +155,7 @@ export default function SellerProductsTab({
         onError: function () {
           showToast('Không thể cập nhật trạng thái sản phẩm. Vui lòng thử lại sau.')
         },
-      }
+      },
     )
   }
 
@@ -310,11 +316,15 @@ export default function SellerProductsTab({
               { id: 'ALL', label: 'Tất cả', count: countAll },
             ].map(function (tab) {
               const isCurrent = activeFilter === tab.id
-              let tabClasses = 'flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-              let countBadgeClasses = 'rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400'
+              let tabClasses =
+                'flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              let countBadgeClasses =
+                'rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400'
               if (isCurrent) {
-                tabClasses = 'flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
-                countBadgeClasses = 'rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white dark:bg-indigo-900/30 dark:text-indigo-950'
+                tabClasses =
+                  'flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+                countBadgeClasses =
+                  'rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white dark:bg-indigo-900/30 dark:text-indigo-950'
               }
               return (
                 <button
@@ -371,7 +381,7 @@ export default function SellerProductsTab({
                     key={product.id}
                     className="transition hover:bg-zinc-50/60 dark:hover:bg-white/5"
                   >
-                    <td className="py-3.5 pl-4 pr-3">
+                    <td className="py-3.5 pr-3 pl-4">
                       <div className="flex items-center gap-3">
                         <img
                           src={product.image}
@@ -381,16 +391,21 @@ export default function SellerProductsTab({
                           }}
                           className="h-12 w-12 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
                         />
-                        <div className="min-w-0 max-w-[220px]">
-                          <p className="line-clamp-2 font-bold text-zinc-900 dark:text-white" title={product.name}>
+                        <div className="max-w-[220px] min-w-0">
+                          <p
+                            className="line-clamp-2 font-bold text-zinc-900 dark:text-white"
+                            title={product.name}
+                          >
                             {product.name}
                           </p>
-                          <p className="mt-0.5 truncate text-[11px] text-zinc-400">SKU: {product.sku}</p>
+                          <p className="mt-0.5 truncate text-[11px] text-zinc-400">
+                            SKU: {product.sku}
+                          </p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-3 text-zinc-600 dark:text-zinc-400">
+                    <td className="px-3 py-3.5 text-zinc-600 dark:text-zinc-400">
                       <div className="flex max-w-[320px] flex-wrap gap-1">
                         {product.variants.map(function (v) {
                           return (
@@ -405,11 +420,11 @@ export default function SellerProductsTab({
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-3 text-right font-bold whitespace-nowrap text-zinc-900 dark:text-white">
+                    <td className="px-3 py-3.5 text-right font-bold whitespace-nowrap text-zinc-900 dark:text-white">
                       {formatVnd(product.price)}
                     </td>
 
-                    <td className="py-3.5 px-3 text-center font-bold whitespace-nowrap">
+                    <td className="px-3 py-3.5 text-center font-bold whitespace-nowrap">
                       {product.stock <= 15 && product.stock > 0 && (
                         <span className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-400/15 dark:text-amber-200">
                           {product.stock} <span className="text-[10px] font-normal">(Sắp hết)</span>
@@ -425,7 +440,7 @@ export default function SellerProductsTab({
                       )}
                     </td>
 
-                    <td className="py-3.5 px-3 text-center font-semibold whitespace-nowrap text-zinc-600 dark:text-zinc-400">
+                    <td className="px-3 py-3.5 text-center font-semibold whitespace-nowrap text-zinc-600 dark:text-zinc-400">
                       {product.sold}
                     </td>
 
@@ -433,7 +448,7 @@ export default function SellerProductsTab({
                       <StatusBadge status={product.status} meta={sellerStatusMeta} />
                     </td>
 
-                    <td className="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+                    <td className="py-3.5 pr-4 pl-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
                         {product.status !== 'DELETED' && (
                           <button
@@ -441,6 +456,7 @@ export default function SellerProductsTab({
                             onClick={function () {
                               onNavigateEditProduct(product.id)
                             }}
+                            aria-label="Chỉnh sửa sản phẩm"
                             title="Chỉnh sửa sản phẩm"
                             className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
                           >
@@ -455,6 +471,7 @@ export default function SellerProductsTab({
                               handleToggleProductStatus(product.id)
                             }}
                             title={toggleStatusTitle(product.status)}
+                            aria-label={toggleStatusTitle(product.status)}
                             className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
                           >
                             {product.status === 'ACTIVE' && <EyeSlash size={14} weight="bold" />}
@@ -469,6 +486,7 @@ export default function SellerProductsTab({
                               setDeleteTargetId(product.id)
                             }}
                             title="Xóa mềm sản phẩm"
+                            aria-label="Xóa mềm sản phẩm"
                             className="flex h-8 w-8 items-center justify-center rounded-xl border border-red-200 text-red-500 transition hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20"
                           >
                             <Trash size={14} weight="bold" />
@@ -528,9 +546,9 @@ export default function SellerProductsTab({
           )}
 
           <p className="mt-4 text-xs leading-relaxed text-zinc-500">
-            Sản phẩm sẽ được chuyển sang trạng thái <strong>DELETED</strong>. Sản phẩm sẽ bị ẩn
-            khỏi gian hàng và người mua không thể đặt hàng mới. Lịch sử đơn hàng và doanh thu quá
-            khứ vẫn được lưu trữ nguyên vẹn.
+            Sản phẩm sẽ được chuyển sang trạng thái <strong>DELETED</strong>. Sản phẩm sẽ bị ẩn khỏi
+            gian hàng và người mua không thể đặt hàng mới. Lịch sử đơn hàng và doanh thu quá khứ vẫn
+            được lưu trữ nguyên vẹn.
           </p>
 
           <div className="mt-6 flex justify-end gap-3">
@@ -558,6 +576,8 @@ export default function SellerProductsTab({
               {!deleteProductMutation.isPending && <span>Xác nhận xóa</span>}
             </button>
           </div>
+        </Modal>
+      )}
 
       {/* Modal Nhập hàng loạt CSV */}
       {showImportModal && (
