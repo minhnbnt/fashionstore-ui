@@ -157,86 +157,90 @@ export function SellerLayout({
     // Không đặt nền ở đây: body (index.css) đã có #f6f9ff / dark #0a0f1e,
     // nền đặc ở đây sẽ che AmbientBackground (fixed -z-10, gắn ở App.tsx).
     <div className="flex min-h-screen flex-col font-sans">
-      {/* Seller Topbar — cùng ngôn ngữ floating glass pill với Header storefront */}
-      <header className="glass sticky top-3 z-40 mx-auto mt-3 flex h-16 max-w-[1600px] items-center justify-between gap-3 rounded-full px-4 md:px-6">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 lg:hidden dark:text-zinc-300 dark:hover:bg-white/10"
-          >
-            <List size={22} />
-          </button>
+      {/* Seller Topbar — floating glass pill dãn hết bề ngang container như Header storefront */}
+      <header className="sticky top-0 z-40">
+        <div className="mx-auto max-w-[1600px] px-4">
+          <div className="glass mt-3 flex h-16 items-center justify-between gap-3 rounded-full px-4 md:px-6">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 lg:hidden dark:text-zinc-300 dark:hover:bg-white/10"
+              >
+                <List size={22} />
+              </button>
 
-          {/* Seller Branding — wordmark nét giống storefront */}
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 text-2xl font-extrabold tracking-tighter">
-              nét
-              <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-indigo-900 to-sky-400" />
-            </span>
-            <span className="hidden rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-indigo-700 uppercase sm:inline dark:bg-indigo-900/40 dark:text-indigo-300">
-              Seller Center
-            </span>
-          </div>
-        </div>
-
-        {/* Right Header Navigation */}
-        <div className="flex items-center gap-3 md:gap-4">
-          {/* Quick Chat Shortcut with Badge */}
-          <button
-            type="button"
-            onClick={() => handleSelectTab('CHAT')}
-            className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10"
-            title="Tin nhắn CSKH"
-          >
-            <ChatCircleDots size={20} />
-            {unreadChatCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-700 text-[10px] font-bold text-white">
-                {unreadChatCount}
-              </span>
-            )}
-          </button>
-
-          {/* Notification Bell */}
-          <button
-            type="button"
-            className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10"
-            title="Thông báo"
-          >
-            <Bell size={20} />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-indigo-700" />
-          </button>
-
-          {/* Back to Marketplace Link */}
-          <Link
-            to="/"
-            className="hidden items-center gap-1.5 rounded-full border border-zinc-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-all hover:border-blue-600 hover:text-indigo-600 sm:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:text-indigo-400"
-          >
-            <span>Xem trang mua sắm</span>
-            <ArrowSquareOut size={14} />
-          </Link>
-
-          {/* Seller Shop Profile Badge */}
-          <button
-            type="button"
-            onClick={() => handleSelectTab('PROFILE')}
-            className="group flex cursor-pointer items-center gap-2 text-left"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-900 to-sky-400 text-xs font-bold text-white shadow-sm">
-              FH
-            </div>
-            <div className="hidden flex-col text-left md:flex">
-              <div className="flex items-center gap-1">
-                <span className="max-w-[140px] truncate text-xs font-bold text-zinc-800 transition-colors group-hover:text-indigo-600 dark:text-zinc-100 dark:group-hover:text-indigo-400">
-                  {shopName}
+              {/* Seller Branding — wordmark nét giống storefront */}
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1 text-2xl font-extrabold tracking-tighter">
+                  nét
+                  <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-indigo-900 to-sky-400" />
                 </span>
-                <ShieldCheck size={14} className="text-blue-500" weight="fill" />
+                <span className="hidden rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-indigo-700 uppercase sm:inline dark:bg-indigo-900/40 dark:text-indigo-300">
+                  Seller Center
+                </span>
               </div>
-              <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                nét Mall • 4.9 ⭐
-              </span>
             </div>
-          </button>
+
+            {/* Right Header Navigation */}
+            <div className="flex items-center gap-3 md:gap-4">
+              {/* Quick Chat Shortcut with Badge */}
+              <button
+                type="button"
+                onClick={() => handleSelectTab('CHAT')}
+                className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10"
+                title="Tin nhắn CSKH"
+              >
+                <ChatCircleDots size={20} />
+                {unreadChatCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-700 text-[10px] font-bold text-white">
+                    {unreadChatCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Bell */}
+              <button
+                type="button"
+                className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10"
+                title="Thông báo"
+              >
+                <Bell size={20} />
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-indigo-700" />
+              </button>
+
+              {/* Back to Marketplace Link */}
+              <Link
+                to="/"
+                className="hidden items-center gap-1.5 rounded-full border border-zinc-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-all hover:border-blue-600 hover:text-indigo-600 sm:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:text-indigo-400"
+              >
+                <span>Xem trang mua sắm</span>
+                <ArrowSquareOut size={14} />
+              </Link>
+
+              {/* Seller Shop Profile Badge */}
+              <button
+                type="button"
+                onClick={() => handleSelectTab('PROFILE')}
+                className="group flex cursor-pointer items-center gap-2 text-left"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-900 to-sky-400 text-xs font-bold text-white shadow-sm">
+                  FH
+                </div>
+                <div className="hidden flex-col text-left md:flex">
+                  <div className="flex items-center gap-1">
+                    <span className="max-w-[140px] truncate text-xs font-bold text-zinc-800 transition-colors group-hover:text-indigo-600 dark:text-zinc-100 dark:group-hover:text-indigo-400">
+                      {shopName}
+                    </span>
+                    <ShieldCheck size={14} className="text-blue-500" weight="fill" />
+                  </div>
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                    nét Mall • 4.9 ⭐
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
