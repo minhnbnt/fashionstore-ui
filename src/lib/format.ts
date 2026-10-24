@@ -1,6 +1,9 @@
 import type { AddressResponse } from '@generated/model/addressResponse'
 
-export function formatVnd(n: number): string {
+export function formatVnd(n: number | null | undefined): string {
+  if (n === null || n === undefined || Number.isNaN(n)) {
+    return '0 ₫'
+  }
   return n.toLocaleString('vi-VN') + ' ₫'
 }
 

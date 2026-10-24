@@ -126,18 +126,23 @@ export default function ShopDashboard() {
   const activeTab = parseSellerTab(searchParams.get('tab'))
   const editProductId = searchParams.get('productId') ?? ''
 
-  function handleSelectTab(tab: SellerTabId) {
+  function handleSelectTab(tab: SellerTabId, extraParams?: Record<string, string>) {
     const param = sellerTabParam(tab)
     if (param === null) {
+      if (extraParams !== undefined) {
+        setSearchParams(extraParams)
+        return
+      }
       setSearchParams({})
       return
     }
-    setSearchParams({ tab: param })
+    const next: Record<string, string> = { tab: param, ...extraParams }
+    setSearchParams(next)
   }
 
   // Card Tổng quan điều hướng bằng tabId kiểu 'orders' — chuẩn hoá về SellerTabId
-  function handleOverviewNavigate(tabId: string) {
-    handleSelectTab(parseSellerTab(tabId))
+  function handleOverviewNavigate(tabId: string, extraParams?: Record<string, string>) {
+    handleSelectTab(parseSellerTab(tabId), extraParams)
   }
 
   if (mineQuery.isPending) {

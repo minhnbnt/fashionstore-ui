@@ -37,7 +37,7 @@ import type { AlertData } from '@/types/seller'
 
 interface Props {
   shopId: string
-  onNavigateTab: (tabId: string) => void
+  onNavigateTab: (tabId: string, params?: Record<string, string>) => void
   shopName: string
   pendingOrdersCount: number
   confirmedOrdersCount: number
@@ -94,11 +94,21 @@ export default function SellerOverviewTab({
     revenueTrendPoints = revenueChartPoints(detail.points)
   }
 
-  const todoItems = [
+  interface TodoItem {
+    label: string
+    count: number
+    tab: string
+    params?: Record<string, string>
+    icon: typeof Receipt
+    color: string
+  }
+
+  const todoItems: TodoItem[] = [
     {
       label: 'Chờ xác nhận',
       count: pendingOrdersCount,
       tab: 'orders',
+      params: { status: 'PENDING' },
       icon: Receipt,
       color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/40',
     },
@@ -106,6 +116,7 @@ export default function SellerOverviewTab({
       label: 'Chờ giao hàng',
       count: confirmedOrdersCount,
       tab: 'orders',
+      params: { status: 'CONFIRMED' },
       icon: Package,
       color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/40',
     },
@@ -113,6 +124,7 @@ export default function SellerOverviewTab({
       label: 'Đổi/Trả cần duyệt',
       count: pendingReturnsCount,
       tab: 'returns',
+      params: { status: 'REQUESTED' },
       icon: ArrowBendDownLeft,
       color: 'text-red-500 bg-red-50 dark:bg-red-950/40',
     },
@@ -120,6 +132,7 @@ export default function SellerOverviewTab({
       label: 'Sản phẩm hết/sắp hết',
       count: lowStockCount,
       tab: 'inventory',
+      params: { filter: 'low_stock' },
       icon: WarningCircle,
       color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40',
     },
@@ -127,6 +140,7 @@ export default function SellerOverviewTab({
       label: 'Tin nhắn chưa đọc',
       count: chatUnread,
       tab: 'chat',
+      params: {},
       icon: ChatCircleDots,
       color: 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40',
     },
@@ -261,7 +275,7 @@ export default function SellerOverviewTab({
             <button
               key={item.label}
               type="button"
-              onClick={() => onNavigateTab(item.tab)}
+              onClick={() => onNavigateTab(item.tab, item.params)}
               className="group flex flex-col items-center justify-center rounded-2xl border border-zinc-100 p-4 text-center transition hover:border-indigo-200 hover:bg-indigo-50/30 dark:border-white/10 dark:hover:border-indigo-900/40 dark:hover:bg-indigo-900/20"
             >
               <div
@@ -417,10 +431,23 @@ export default function SellerOverviewTab({
                 bgClass = 'bg-blue-50/30 dark:bg-blue-950/20'
               }
 
+              function handleAlertClick() {
+                if (alert.type === 'PENDING_ORDER') {
+                  onNavigateTab('orders', { status: 'PENDING' })
+                  return
+                }
+                if (alert.type === 'OUT_OF_STOCK') {
+                  onNavigateTab('inventory', { filter: 'low_stock' })
+                  return
+                }
+              }
+
               return (
-                <div
+                <button
                   key={alert.type + i}
-                  className={`flex items-start gap-3 rounded-2xl border p-4 shadow-sm ${borderClass} ${bgClass}`}
+                  type="button"
+                  onClick={handleAlertClick}
+                  className={`flex w-full items-start gap-3 rounded-2xl border p-4 text-left shadow-sm transition hover:scale-[1.01] ${borderClass} ${bgClass}`}
                 >
                   <div className="mt-0.5 shrink-0">
                     {alert.severity === 'DANGER' && (
@@ -441,7 +468,7 @@ export default function SellerOverviewTab({
                       Số lượng: {alert.count}
                     </span>
                   </div>
-                </div>
+                </button>
               )
             })}
           </div>

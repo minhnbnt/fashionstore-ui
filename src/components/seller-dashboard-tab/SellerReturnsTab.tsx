@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 
 import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
 import {
@@ -30,9 +31,18 @@ interface Props {
 export default function SellerReturnsTab({ shopId }: Props) {
   const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<
-    'ALL' | 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
-  >('ALL')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const statusParam = searchParams.get('status')
+  let activeTab: 'ALL' | 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' = 'ALL'
+  if (
+    statusParam === 'REQUESTED' ||
+    statusParam === 'APPROVED' ||
+    statusParam === 'REJECTED' ||
+    statusParam === 'COMPLETED'
+  ) {
+    activeTab = statusParam
+  }
   const [approveTarget, setApproveTarget] = useState<ReturnItem | null>(null)
   const [rejectTarget, setRejectTarget] = useState<ReturnItem | null>(null)
   const [resolution, setResolution] = useState('REFUND')
@@ -181,9 +191,21 @@ export default function SellerReturnsTab({ shopId }: Props) {
                 key={tab.id}
                 type="button"
                 onClick={function () {
-                  setActiveTab(
-                    tab.id as 'ALL' | 'REQUESTED' | 'APPROVED' | 'COMPLETED' | 'REJECTED',
-                  )
+                  const nextTab = tab.id as
+                    | 'ALL'
+                    | 'REQUESTED'
+                    | 'APPROVED'
+                    | 'COMPLETED'
+                    | 'REJECTED'
+                  setSearchParams(function (prev) {
+                    const next = new URLSearchParams(prev)
+                    if (nextTab === 'ALL') {
+                      next.delete('status')
+                    } else {
+                      next.set('status', nextTab)
+                    }
+                    return next
+                  })
                 }}
                 className={tabClass}
               >
@@ -235,7 +257,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                     {ret.resolution !== undefined && (
                       <div className="rounded-xl bg-blue-50 p-2.5 text-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
                         <p className="font-bold">Phương án đã phê duyệt: {ret.resolution}</p>
-                        {ret.refundAmount !== undefined && (
+                        {ret.refundAmount !== undefined && ret.refundAmount !== null && (
                           <p className="mt-0.5">Số tiền hoàn: {formatVnd(ret.refundAmount)}</p>
                         )}
                       </div>
@@ -249,11 +271,18 @@ export default function SellerReturnsTab({ shopId }: Props) {
 
                   <div className="flex flex-col items-start gap-2 sm:items-end">
                     <span className="text-[11px] font-semibold text-zinc-500">Ảnh chứng từ:</span>
-                    <img
-                      src={ret.evidenceImage}
-                      alt="Chứng từ"
-                      className="h-20 w-20 rounded-xl border border-zinc-200 object-cover shadow-sm dark:border-white/10"
-                    />
+                    {ret.evidenceImage !== '' && (
+                      <img
+                        src={ret.evidenceImage}
+                        alt="Chứng từ"
+                        className="h-20 w-20 rounded-xl border border-zinc-200 object-cover shadow-sm dark:border-white/10"
+                      />
+                    )}
+                    {ret.evidenceImage === '' && (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-xl border border-dashed border-zinc-200 text-[10px] text-zinc-400 dark:border-white/10">
+                        Không có ảnh
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -14,6 +14,12 @@ describe('formatVnd', () => {
   it('dinh dang tien Viet', () => {
     expect(formatVnd(391000)).toBe('391.000 ₫')
   })
+
+  it('an toan khi truyen null hoac undefined hoac NaN', () => {
+    expect(formatVnd(null)).toBe('0 ₫')
+    expect(formatVnd(undefined)).toBe('0 ₫')
+    expect(formatVnd(NaN)).toBe('0 ₫')
+  })
 })
 
 describe('formatDateTime', () => {

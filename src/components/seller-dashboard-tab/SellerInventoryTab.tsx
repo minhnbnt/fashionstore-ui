@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 
 import {
   useMovements,
@@ -36,6 +37,13 @@ type AdjustReason = 'RESTOCK' | 'DAMAGE' | 'RETURN' | 'AUDIT' | 'MANUAL'
 export default function SellerInventoryTab({ shopId }: Props) {
   const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const filterParam = searchParams.get('filter')
+  let activeFilter: 'ALL' | 'LOW_STOCK' = 'ALL'
+  if (filterParam === 'low_stock') {
+    activeFilter = 'LOW_STOCK'
+  }
   const [searchTerm, setSearchTerm] = useState('')
   const [showAdjustModal, setShowAdjustModal] = useState(false)
   const [historyVariant, setHistoryVariant] = useState<InventoryItemResponse | null>(null)
@@ -137,8 +145,28 @@ export default function SellerInventoryTab({ shopId }: Props) {
     }
   })
 
+  const lowStockRows = rows.filter(function (v) {
+    if (v.isLowStock === true) {
+      return true
+    }
+    const stock = v.stockQuantity ?? 0
+    const threshold = v.lowStockThreshold ?? 5
+    if (stock <= threshold || stock === 0) {
+      return true
+    }
+    return false
+  })
+
   // Filter
   const filteredRows = rows.filter(function (v) {
+    if (activeFilter === 'LOW_STOCK') {
+      const stock = v.stockQuantity ?? 0
+      const threshold = v.lowStockThreshold ?? 5
+      const isLow = v.isLowStock === true || stock <= threshold || stock === 0
+      if (isLow === false) {
+        return false
+      }
+    }
     if (searchTerm.trim() !== '') {
       const term = searchTerm.toLowerCase()
       const matchSku = (v.sku ?? '').toLowerCase().includes(term)
@@ -148,10 +176,6 @@ export default function SellerInventoryTab({ shopId }: Props) {
       }
     }
     return true
-  })
-
-  const lowStockRows = rows.filter(function (v) {
-    return v.isLowStock === true
   })
 
   function handleOpenAdjust(row: InventoryItemResponse) {
@@ -270,11 +294,49 @@ export default function SellerInventoryTab({ shopId }: Props) {
 
       {/* Bảng tồn kho */}
       <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
-            Danh sách biến thể ({filteredRows.length})
-          </p>
-          <div className="relative w-72">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-2 md:border-b-0 md:pb-0 dark:border-white/10">
+            {[
+              { id: 'ALL', label: 'Tất cả biến thể', count: rows.length },
+              { id: 'LOW_STOCK', label: 'Hết / Sắp hết hàng', count: lowStockRows.length },
+            ].map(function (tab) {
+              const isCurrent = activeFilter === tab.id
+              let tabClasses =
+                'flex items-center gap-1.5 rounded-2xl px-3.5 py-1.5 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              let countBadgeClasses =
+                'rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400'
+              if (isCurrent) {
+                tabClasses =
+                  'flex items-center gap-1.5 rounded-2xl px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+                countBadgeClasses =
+                  'rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white dark:bg-indigo-900/30 dark:text-indigo-950'
+              }
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={function () {
+                    const next = tab.id as 'ALL' | 'LOW_STOCK'
+                    setSearchParams(function (prev) {
+                      const nextParams = new URLSearchParams(prev)
+                      if (next === 'ALL') {
+                        nextParams.delete('filter')
+                      } else {
+                        nextParams.set('filter', 'low_stock')
+                      }
+                      return nextParams
+                    })
+                  }}
+                  className={tabClasses}
+                >
+                  <span>{tab.label}</span>
+                  <span className={countBadgeClasses}>{tab.count}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="relative w-full md:w-72">
             <MagnifyingGlass
               size={16}
               weight="bold"

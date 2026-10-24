@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 
 import {
   getList5QueryKey,
@@ -30,9 +31,19 @@ interface Props {
 export default function SellerOrdersTab({ shopId }: Props) {
   const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<
-    'ALL' | 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED'
-  >('ALL')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const statusParam = searchParams.get('status')
+  let activeTab: 'ALL' | 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED' = 'ALL'
+  if (
+    statusParam === 'PENDING' ||
+    statusParam === 'CONFIRMED' ||
+    statusParam === 'SHIPPING' ||
+    statusParam === 'DELIVERED' ||
+    statusParam === 'CANCELLED'
+  ) {
+    activeTab = statusParam
+  }
   const [searchTerm, setSearchTerm] = useState('')
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('Hết hàng trong kho')
@@ -165,15 +176,22 @@ export default function SellerOrdersTab({ shopId }: Props) {
                   key={tab.id}
                   type="button"
                   onClick={function () {
-                    setActiveTab(
-                      tab.id as
-                        | 'ALL'
-                        | 'PENDING'
-                        | 'CONFIRMED'
-                        | 'SHIPPING'
-                        | 'DELIVERED'
-                        | 'CANCELLED',
-                    )
+                    const nextTab = tab.id as
+                      | 'ALL'
+                      | 'PENDING'
+                      | 'CONFIRMED'
+                      | 'SHIPPING'
+                      | 'DELIVERED'
+                      | 'CANCELLED'
+                    setSearchParams(function (prev) {
+                      const next = new URLSearchParams(prev)
+                      if (nextTab === 'ALL') {
+                        next.delete('status')
+                      } else {
+                        next.set('status', nextTab)
+                      }
+                      return next
+                    })
                   }}
                   className={tabClass}
                 >
