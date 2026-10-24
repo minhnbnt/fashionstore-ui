@@ -17,6 +17,7 @@ import { formatVnd } from '../../lib/format'
 
 interface Props {
   onNavigateTab: (tabId: string) => void
+  shopName: string
   pendingOrdersCount: number
   confirmedOrdersCount: number
   pendingReturnsCount: number
@@ -25,6 +26,7 @@ interface Props {
 
 export default function SellerOverviewTab({
   onNavigateTab,
+  shopName,
   pendingOrdersCount,
   confirmedOrdersCount,
   pendingReturnsCount,
@@ -91,7 +93,7 @@ export default function SellerOverviewTab({
   return (
     <div className="space-y-6">
       {/* Banner Chào mừng */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] p-6 text-white shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 p-6 text-white shadow-xl">
         <div className="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-2">
@@ -100,9 +102,7 @@ export default function SellerOverviewTab({
               </span>
               <span className="text-xs text-white/80">Điểm vận hành: 4.9/5.0</span>
             </div>
-            <h2 className="mt-2 text-2xl font-black tracking-tight">
-              Xin chào, FashionHub Official Store!
-            </h2>
+            <h2 className="mt-2 text-2xl font-black tracking-tight">Xin chào, {shopName}!</h2>
             <p className="mt-1 text-sm text-white/90">
               Hôm nay bạn có {pendingOrdersCount} đơn hàng mới cần xác nhận và {pendingReturnsCount}{' '}
               yêu cầu đổi trả cần xử lý.

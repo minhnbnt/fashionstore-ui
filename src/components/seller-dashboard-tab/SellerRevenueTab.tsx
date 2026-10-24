@@ -298,7 +298,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
                   </div>
                   <div
                     style={{ height: d.height + '%' }}
-                    className="w-full max-w-[36px] rounded-t-xl bg-gradient-to-t from-[#1d4ed8] to-[#38bdf8] transition-all duration-300 hover:brightness-110"
+                    className="w-full max-w-[36px] rounded-t-xl bg-gradient-to-t from-blue-700 to-sky-400 transition-all duration-300 hover:brightness-110"
                   />
                   <span className="text-[10px] font-semibold text-zinc-500">{d.day}</span>
                 </div>

@@ -29,6 +29,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
+import UserAvatar from '@/components/UserAvatar'
 import { takeData } from '@/lib/apiAdapters'
 import { decorationBlocks, decorationDraftJson } from '@/lib/sellerAdapters'
 
@@ -41,9 +42,10 @@ function newBlockId(): string {
 
 interface SellerDecorationTabProps {
   shopId: string
+  shopName: string
 }
 
-export function SellerDecorationTab({ shopId }: SellerDecorationTabProps) {
+export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabProps) {
   const queryClient = useQueryClient()
   const [draftBlocks, setDraftBlocks] = useState<DecorationBlock[] | null>(null)
   const [devicePreview, setDevicePreview] = useState<'MOBILE' | 'DESKTOP'>('MOBILE')
@@ -373,19 +375,17 @@ export function SellerDecorationTab({ shopId }: SellerDecorationTabProps) {
           {devicePreview === 'MOBILE' && (
             <div className="w-[340px] overflow-hidden rounded-[32px] border-8 border-zinc-800 bg-zinc-100 shadow-2xl dark:bg-white/10">
               {/* Phone Notch / Header */}
-              <div className="flex items-center justify-between bg-gradient-to-r from-[#312e81] to-[#1d4ed8] p-3 text-center text-xs font-bold text-white">
+              <div className="flex items-center justify-between bg-gradient-to-r from-indigo-900 to-sky-400 p-3 text-center text-xs font-bold text-white">
                 <span>9:41</span>
-                <span>FASHION HUB OFFICIAL</span>
+                <span>NÉT</span>
                 <span className="text-[10px]">100%</span>
               </div>
 
               {/* Shop Header Bar in phone */}
-              <div className="flex items-center gap-3 bg-gradient-to-r from-[#312e81] to-[#1d4ed8] p-3 text-white">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-white/20 text-sm font-bold">
-                  FH
-                </div>
+              <div className="flex items-center gap-3 bg-gradient-to-r from-indigo-900 to-sky-400 p-3 text-white">
+                <UserAvatar name={shopName} size={40} />
                 <div>
-                  <h4 className="text-xs font-bold">FashionHub Boutique</h4>
+                  <h4 className="text-xs font-bold">{shopName}</h4>
                   <p className="text-[10px] text-white/80">Online 5 phút trước | 4.9 ⭐</p>
                 </div>
               </div>
