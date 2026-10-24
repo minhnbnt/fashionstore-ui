@@ -63,7 +63,7 @@ export default function BanProductDialog({ product, onClose, onDone }: Props) {
     >
       <form
         onSubmit={handleSubmit}
-        className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-zinc-900"
+        className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#11182a]"
       >
         <div className="flex items-start justify-between gap-3 border-b border-zinc-100 p-5 dark:border-white/10">
           <div className="min-w-0">
@@ -82,7 +82,7 @@ export default function BanProductDialog({ product, onClose, onDone }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:hover:bg-white/10"
+            className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-white/10"
           >
             <X size={18} weight="bold" />
           </button>

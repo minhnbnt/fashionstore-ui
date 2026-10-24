@@ -230,7 +230,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
           </div>
         </div>
 
-        {/* Danh sách thẻ đơn hàng Shopee-style */}
+        {/* Danh sách thẻ đơn hàng */}
         <div className="mt-5 space-y-4">
           {filteredOrders.map(function (order) {
             return (

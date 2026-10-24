@@ -155,29 +155,29 @@ export function SellerLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f6f6f6] font-sans">
-      {/* Shopee-style Topbar */}
-      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
+      {/* Seller Topbar */}
+      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-zinc-900">
         <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="rounded p-1.5 text-gray-600 hover:bg-gray-100 hover:text-black lg:hidden"
+              className="rounded p-1.5 text-gray-600 hover:bg-gray-100 hover:text-black lg:hidden dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               <List size={22} />
             </button>
 
-            {/* Shopee Seller Branding */}
+            {/* Seller Branding */}
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ee4d2d] text-lg font-black text-white shadow-sm">
-                S
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600 text-lg font-black text-white shadow-sm">
+                n
               </div>
               <div className="flex flex-col">
-                <span className="text-sm leading-tight font-bold tracking-tight text-gray-900">
+                <span className="text-sm leading-tight font-bold tracking-tight text-gray-900 dark:text-zinc-100">
                   Kênh Người Bán
                 </span>
-                <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-                  Shopee Seller Centre
+                <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-zinc-500">
+                  nét Seller Center
                 </span>
               </div>
             </div>
@@ -189,7 +189,7 @@ export function SellerLayout({
             <button
               type="button"
               onClick={() => handleSelectTab('CHAT')}
-              className="relative rounded-lg p-2 text-gray-600 transition-colors hover:bg-orange-50 hover:text-[#ee4d2d]"
+              className="relative rounded-lg p-2 text-gray-600 transition-colors hover:bg-orange-50 hover:text-[#ee4d2d] dark:text-zinc-300"
               title="Tin nhắn CSKH"
             >
               <ChatCircleDots size={20} />
@@ -203,7 +203,7 @@ export function SellerLayout({
             {/* Notification Bell */}
             <button
               type="button"
-              className="relative rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              className="relative rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-zinc-100"
               title="Thông báo"
             >
               <Bell size={20} />
@@ -213,7 +213,7 @@ export function SellerLayout({
             {/* Back to Marketplace Link */}
             <Link
               to="/"
-              className="hidden items-center gap-1.5 rounded border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-[#ee4d2d] hover:text-[#ee4d2d] sm:flex"
+              className="hidden items-center gap-1.5 rounded border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-all hover:border-[#ee4d2d] hover:text-[#ee4d2d] sm:flex dark:border-zinc-700 dark:text-zinc-300"
             >
               <span>Xem trang mua sắm</span>
               <ArrowSquareOut size={14} />
@@ -223,19 +223,21 @@ export function SellerLayout({
             <button
               type="button"
               onClick={() => handleSelectTab('PROFILE')}
-              className="group flex cursor-pointer items-center gap-2 border-l border-gray-200 pl-2 text-left"
+              className="group flex cursor-pointer items-center gap-2 border-l border-gray-200 pl-2 text-left dark:border-white/10"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-orange-400 to-[#ee4d2d] text-xs font-bold text-white shadow-sm">
                 FH
               </div>
               <div className="hidden flex-col text-left md:flex">
                 <div className="flex items-center gap-1">
-                  <span className="max-w-[140px] truncate text-xs font-bold text-gray-800 transition-colors group-hover:text-[#ee4d2d]">
+                  <span className="max-w-[140px] truncate text-xs font-bold text-gray-800 transition-colors group-hover:text-[#ee4d2d] dark:text-zinc-100">
                     {shopName}
                   </span>
                   <ShieldCheck size={14} className="text-blue-500" weight="fill" />
                 </div>
-                <span className="text-[10px] text-gray-400">Shopee Mall • 4.9 ⭐</span>
+                <span className="text-[10px] text-gray-400 dark:text-zinc-500">
+                  nét Mall • 4.9 ⭐
+                </span>
               </div>
             </button>
           </div>
@@ -245,11 +247,11 @@ export function SellerLayout({
       {/* Main Container: Sidebar + Content */}
       <div className="mx-auto flex w-full max-w-[1600px] flex-1 gap-4 px-2 py-4 sm:px-4">
         {/* Left Sidebar for Desktop */}
-        <aside className="sticky top-18 hidden max-h-[calc(100vh-80px)] w-64 shrink-0 flex-col overflow-y-auto rounded-lg border border-gray-200 bg-white p-3 shadow-sm lg:flex">
+        <aside className="sticky top-18 hidden max-h-[calc(100vh-80px)] w-64 shrink-0 flex-col overflow-y-auto rounded-lg border border-gray-200 bg-white p-3 shadow-sm lg:flex dark:border-white/10 dark:bg-zinc-900">
           <nav className="space-y-4">
             {menuGroups.map((group) => (
               <div key={group.groupTitle} className="space-y-1">
-                <span className="mb-1 block px-3 text-[10px] font-bold tracking-wider text-gray-400">
+                <span className="mb-1 block px-3 text-[10px] font-bold tracking-wider text-gray-400 dark:text-zinc-500">
                   {group.groupTitle}
                 </span>
                 {group.items.map((item) => {
@@ -262,12 +264,12 @@ export function SellerLayout({
                       onClick={() => handleSelectTab(item.id)}
                       className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${
                         isActive && 'bg-orange-50 font-bold text-[#ee4d2d] shadow-xs'
-                      } ${!isActive && 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                      } ${!isActive && 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-zinc-100'}`}
                     >
                       <div className="flex items-center gap-2.5">
                         <Icon
                           size={16}
-                          className={`${isActive && 'text-[#ee4d2d]'} ${!isActive && 'text-gray-500'}`}
+                          className={`${isActive && 'text-[#ee4d2d]'} ${!isActive && 'text-gray-500 dark:text-zinc-400'}`}
                         />
                         <span>{item.label}</span>
                       </div>
@@ -296,13 +298,15 @@ export function SellerLayout({
               className="fixed inset-0 cursor-default border-0 bg-black/40 backdrop-blur-xs"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <div className="relative flex h-full w-72 flex-col overflow-y-auto bg-white p-4 shadow-2xl">
+            <div className="relative flex h-full w-72 flex-col overflow-y-auto bg-white p-4 shadow-2xl dark:bg-zinc-900">
               <div className="mb-3 flex items-center justify-between border-b pb-3">
-                <span className="text-sm font-bold text-gray-800">Menu Kênh Người Bán</span>
+                <span className="text-sm font-bold text-gray-800 dark:text-zinc-100">
+                  Menu Kênh Người Bán
+                </span>
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="rounded p-1 text-gray-500 hover:bg-gray-100"
+                  className="rounded p-1 text-gray-500 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-white/10"
                 >
                   <X size={20} />
                 </button>
@@ -311,7 +315,7 @@ export function SellerLayout({
               <nav className="space-y-4">
                 {menuGroups.map((group) => (
                   <div key={group.groupTitle} className="space-y-1">
-                    <span className="mb-1 block px-2 text-[10px] font-bold tracking-wider text-gray-400">
+                    <span className="mb-1 block px-2 text-[10px] font-bold tracking-wider text-gray-400 dark:text-zinc-500">
                       {group.groupTitle}
                     </span>
                     {group.items.map((item) => {
@@ -324,12 +328,12 @@ export function SellerLayout({
                           onClick={() => handleSelectTab(item.id)}
                           className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${
                             isActive && 'bg-orange-50 font-bold text-[#ee4d2d]'
-                          } ${!isActive && 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                          } ${!isActive && 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-zinc-100'}`}
                         >
                           <div className="flex items-center gap-2.5">
                             <Icon
                               size={16}
-                              className={`${isActive && 'text-[#ee4d2d]'} ${!isActive && 'text-gray-500'}`}
+                              className={`${isActive && 'text-[#ee4d2d]'} ${!isActive && 'text-gray-500 dark:text-zinc-400'}`}
                             />
                             <span>{item.label}</span>
                           </div>
@@ -354,22 +358,22 @@ export function SellerLayout({
         {/* Center Main Content Area */}
         <main className="min-w-0 flex-1 space-y-4">
           {/* Breadcrumb Bar */}
-          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-xs text-gray-500 shadow-xs">
+          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-xs text-gray-500 shadow-xs dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-400">
             <Link to="/shop" className="flex items-center gap-1 hover:text-[#ee4d2d]">
               <House size={14} />
               <span>Kênh Người Bán</span>
             </Link>
-            <CaretRight size={12} className="text-gray-400" />
-            <span className="font-semibold text-gray-800">
+            <CaretRight size={12} className="text-gray-400 dark:text-zinc-500" />
+            <span className="font-semibold text-gray-800 dark:text-zinc-100">
               {activeTab === 'OVERVIEW' && 'Tổng quan gian hàng'}
               {activeTab === 'PRODUCTS' && 'Tất cả sản phẩm'}
               {activeTab === 'ADD_PRODUCT' && 'Thêm sản phẩm mới'}
               {activeTab === 'INVENTORY' && 'Quản lý tồn kho & Biến thể'}
               {activeTab === 'ORDERS' && 'Quản lý đơn hàng'}
               {activeTab === 'RETURNS' && 'Yêu cầu trả hàng & Hoàn tiền'}
-              {activeTab === 'REVENUE' && 'Doanh thu & Ví Shopee'}
+              {activeTab === 'REVENUE' && 'Doanh thu & Tài chính'}
               {activeTab === 'REVIEWS' && 'Đánh giá từ khách hàng'}
-              {activeTab === 'CHAT' && 'Tin nhắn khách hàng (Shopee Chat)'}
+              {activeTab === 'CHAT' && 'Tin nhắn khách hàng (nét Chat)'}
               {activeTab === 'DECORATION' && 'Trang trí gian hàng'}
               {activeTab === 'STAFF' && 'Phân quyền & Quản lý nhân viên'}
               {activeTab === 'PROFILE' && 'Hồ sơ Shop & KYC'}

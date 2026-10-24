@@ -352,7 +352,7 @@ export default function AdminProducts() {
                 'rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
               if (selected) {
                 tabClass =
-                  'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-600 text-white dark:bg-indigo-500'
+                  'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
               }
               return (
                 <button
@@ -381,10 +381,7 @@ export default function AdminProducts() {
                 className="w-full bg-transparent text-sm outline-none"
               />
             </label>
-            <button
-              type="submit"
-              className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 dark:bg-indigo-500"
-            >
+            <button type="submit" className="btn-primary rounded-full px-4 py-2 text-sm font-bold">
               Tìm
             </button>
           </form>
