@@ -239,7 +239,7 @@ export default function ProductMediaUploader({
       )}
 
       {/* A. Upload ảnh sản phẩm (3 - 9 ảnh) */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="flex items-center gap-2">
@@ -247,14 +247,14 @@ export default function ProductMediaUploader({
                 Ảnh sản phẩm (Gallery)
               </h3>
               <span className="font-bold text-red-500">*</span>
-              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
                 {images.length}/9 ảnh
               </span>
             </div>
             <p className="mt-1 text-xs text-zinc-500">
               Tối thiểu 3 ảnh, tối đa 9 ảnh. Kéo hoặc dùng nút mũi tên để đổi thứ tự. Ảnh đầu tiên
               là{' '}
-              <strong className="text-orange-600 dark:text-orange-400">Ảnh đại diện (Cover)</strong>
+              <strong className="text-indigo-600 dark:text-indigo-400">Ảnh đại diện (Cover)</strong>
               .
             </p>
           </div>
@@ -265,7 +265,7 @@ export default function ProductMediaUploader({
             onClick={function () {
               imageInputRef.current?.click()
             }}
-            className="flex items-center gap-1.5 rounded-2xl bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-orange-700 disabled:opacity-50"
+            className="btn-primary flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold shadow-xs transition disabled:opacity-50"
           >
             {isUploadingImages && <SpinnerGap size={14} weight="bold" className="animate-spin" />}
             {isUploadingImages === false && <UploadSimple size={14} weight="bold" />}
@@ -299,7 +299,7 @@ export default function ProductMediaUploader({
             return (
               <div
                 key={key}
-                className="group relative flex aspect-3/4 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 transition dark:border-zinc-800 dark:bg-zinc-950"
+                className="group relative flex aspect-3/4 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 transition dark:border-white/10 dark:bg-[#0a0f1e]"
               >
                 <img
                   src={imageUrl(key)}
@@ -309,7 +309,7 @@ export default function ProductMediaUploader({
 
                 {/* Cover badge for index 0 */}
                 {index === 0 && (
-                  <span className="absolute top-2 left-2 rounded-lg bg-orange-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs">
+                  <span className="absolute top-2 left-2 rounded-lg bg-gradient-to-r from-[#312e81] to-[#1d4ed8] px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs">
                     Ảnh bìa (Cover)
                   </span>
                 )}
@@ -362,7 +362,7 @@ export default function ProductMediaUploader({
               onClick={function () {
                 imageInputRef.current?.click()
               }}
-              className="flex aspect-3/4 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 text-zinc-400 transition hover:border-orange-500 hover:text-orange-500 dark:border-zinc-800 dark:hover:border-orange-400"
+              className="flex aspect-3/4 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 text-zinc-400 transition hover:border-blue-600 hover:text-indigo-500 dark:border-white/10 dark:hover:border-indigo-400"
             >
               <UploadSimple size={24} weight="bold" />
               <span className="mt-2 text-xs font-semibold">Tải thêm ảnh</span>
@@ -373,14 +373,14 @@ export default function ProductMediaUploader({
       </div>
 
       {/* B. Video sản phẩm (Tối đa 1 video, <= 60s) */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <VideoCamera
                 size={18}
                 weight="bold"
-                className="text-orange-600 dark:text-orange-400"
+                className="text-indigo-600 dark:text-indigo-400"
               />
               <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
                 Video giới thiệu sản phẩm (Tùy chọn)
@@ -398,7 +398,7 @@ export default function ProductMediaUploader({
               onClick={function () {
                 videoInputRef.current?.click()
               }}
-              className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
+              className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
             >
               {isUploadingVideo && <SpinnerGap size={14} weight="bold" className="animate-spin" />}
               {isUploadingVideo === false && <VideoCamera size={14} weight="bold" />}
@@ -418,11 +418,13 @@ export default function ProductMediaUploader({
 
         {(videoKey !== null || videoPreviewUrl !== null) &&
           (() => {
-            const effectiveVideoSrc =
-              videoPreviewUrl ?? (videoKey !== null ? imageUrl(videoKey) : undefined)
+            let effectiveVideoSrc = videoPreviewUrl ?? undefined
+            if (effectiveVideoSrc === undefined && videoKey !== null) {
+              effectiveVideoSrc = imageUrl(videoKey)
+            }
             return (
               <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-xs sm:w-72 dark:border-zinc-800">
+                <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-xs sm:w-72 dark:border-white/10">
                   {effectiveVideoSrc !== undefined && (
                     // eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track
                     <video
@@ -439,7 +441,7 @@ export default function ProductMediaUploader({
                       <SpinnerGap
                         size={24}
                         weight="bold"
-                        className="animate-spin text-orange-400"
+                        className="animate-spin text-indigo-400"
                       />
                       <span className="mt-2 text-xs font-semibold">
                         Đang tải lên hệ thống S3...
@@ -489,7 +491,7 @@ export default function ProductMediaUploader({
                       onClick={function () {
                         videoInputRef.current?.click()
                       }}
-                      className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
+                      className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
                     >
                       <VideoCamera size={14} weight="bold" />
                       Thay đổi video
@@ -511,7 +513,7 @@ export default function ProductMediaUploader({
       </div>
 
       {/* C. Ảnh Garment (Trải phẳng trên nền trắng) dùng cho Virtual Try-On */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
@@ -544,7 +546,7 @@ export default function ProductMediaUploader({
               }}
               className="peer sr-only"
             />
-            <div className="peer h-6 w-11 rounded-full bg-zinc-200 peer-checked:bg-indigo-600 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full dark:border-zinc-600 dark:bg-zinc-700" />
+            <div className="peer h-6 w-11 rounded-full bg-zinc-200 peer-checked:bg-indigo-600 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full dark:bg-white/10" />
           </label>
         </div>
 
@@ -577,7 +579,7 @@ export default function ProductMediaUploader({
                   onClick={function () {
                     garmentInputRef.current?.click()
                   }}
-                  className="flex aspect-3/4 w-32 flex-col items-center justify-center rounded-xl border-2 border-dashed border-indigo-300 bg-white p-2 text-center text-indigo-600 transition hover:border-indigo-500 disabled:opacity-50 dark:border-indigo-800 dark:bg-zinc-900 dark:text-indigo-400"
+                  className="flex aspect-3/4 w-32 flex-col items-center justify-center rounded-xl border-2 border-dashed border-indigo-300 bg-white p-2 text-center text-indigo-600 transition hover:border-indigo-500 disabled:opacity-50 dark:border-indigo-800 dark:bg-white/5 dark:text-indigo-400"
                 >
                   {isUploadingGarment && (
                     <SpinnerGap size={20} weight="bold" className="animate-spin" />
