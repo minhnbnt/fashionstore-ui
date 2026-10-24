@@ -424,8 +424,8 @@ export default function Account() {
                     </p>
                     <p className="mt-0.5">
                       Tên chủ tài khoản ngân hàng nhận tiền doanh thu bắt buộc phải trùng khớp với
-                      Họ và tên trên Căn cước công dân của chủ shop ({currentShop.legalName}). Hồ
-                      sơ đang được Ban quản trị nét thẩm định và phê duyệt trong vòng 1-3 ngày làm
+                      Họ và tên trên Căn cước công dân của chủ shop ({currentShop.legalName}). Hồ sơ
+                      đang được Ban quản trị nét thẩm định và phê duyệt trong vòng 1-3 ngày làm
                       việc.
                     </p>
                   </div>

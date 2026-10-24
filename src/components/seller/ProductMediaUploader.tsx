@@ -223,14 +223,16 @@ export default function ProductMediaUploader({
               <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
                 Ảnh sản phẩm (Gallery)
               </h3>
-              <span className="text-red-500 font-bold">*</span>
+              <span className="font-bold text-red-500">*</span>
               <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                 {images.length}/9 ảnh
               </span>
             </div>
             <p className="mt-1 text-xs text-zinc-500">
-              Tối thiểu 3 ảnh, tối đa 9 ảnh. Kéo hoặc dùng nút mũi tên để đổi thứ tự. Ảnh đầu tiên là{' '}
-              <strong className="text-orange-600 dark:text-orange-400">Ảnh đại diện (Cover)</strong>.
+              Tối thiểu 3 ảnh, tối đa 9 ảnh. Kéo hoặc dùng nút mũi tên để đổi thứ tự. Ảnh đầu tiên
+              là{' '}
+              <strong className="text-orange-600 dark:text-orange-400">Ảnh đại diện (Cover)</strong>
+              .
             </p>
           </div>
 
@@ -262,7 +264,8 @@ export default function ProductMediaUploader({
           <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-3 text-xs text-amber-800 dark:border-amber-900/30 dark:bg-amber-950/30 dark:text-amber-300">
             <WarningCircle size={16} weight="fill" className="shrink-0 text-amber-500" />
             <span>
-              Chưa đủ số lượng ảnh tối thiểu! Vui lòng tải lên thêm ít nhất {3 - images.length} ảnh nữa.
+              Chưa đủ số lượng ảnh tối thiểu! Vui lòng tải lên thêm ít nhất {3 - images.length} ảnh
+              nữa.
             </span>
           </div>
         )}
@@ -351,7 +354,11 @@ export default function ProductMediaUploader({
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <VideoCamera size={18} weight="bold" className="text-orange-600 dark:text-orange-400" />
+              <VideoCamera
+                size={18}
+                weight="bold"
+                className="text-orange-600 dark:text-orange-400"
+              />
               <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
                 Video giới thiệu sản phẩm (Tùy chọn)
               </h3>
@@ -386,89 +393,100 @@ export default function ProductMediaUploader({
           />
         </div>
 
-        {(videoKey !== null || videoPreviewUrl !== null) && (() => {
-          const effectiveVideoSrc = videoPreviewUrl ?? (videoKey !== null ? imageUrl(videoKey) : undefined)
-          return (
-            <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <div className="relative aspect-video w-full sm:w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-xs dark:border-zinc-800">
-                {effectiveVideoSrc !== undefined && (
-                  <video
-                    key={effectiveVideoSrc}
-                    src={effectiveVideoSrc}
-                    controls
-                    playsInline
-                    preload="metadata"
-                    className="h-full w-full object-contain"
-                  />
-                )}
-                {isUploadingVideo && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white backdrop-blur-xs">
-                    <SpinnerGap size={24} weight="bold" className="animate-spin text-orange-400" />
-                    <span className="mt-2 text-xs font-semibold">Đang tải lên hệ thống S3...</span>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  <PlayCircle size={18} weight="fill" />
-                  <span>Video hợp lệ (thời lượng ≤ 60s)</span>
-                  {videoDuration !== null && videoDuration > 0 && (
-                    <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                      {videoDuration}s / 60s
-                    </span>
+        {(videoKey !== null || videoPreviewUrl !== null) &&
+          (() => {
+            const effectiveVideoSrc =
+              videoPreviewUrl ?? (videoKey !== null ? imageUrl(videoKey) : undefined)
+            return (
+              <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-zinc-200 bg-black shadow-xs sm:w-72 dark:border-zinc-800">
+                  {effectiveVideoSrc !== undefined && (
+                    <video
+                      key={effectiveVideoSrc}
+                      src={effectiveVideoSrc}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      className="h-full w-full object-contain"
+                    />
+                  )}
+                  {isUploadingVideo && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white backdrop-blur-xs">
+                      <SpinnerGap
+                        size={24}
+                        weight="bold"
+                        className="animate-spin text-orange-400"
+                      />
+                      <span className="mt-2 text-xs font-semibold">
+                        Đang tải lên hệ thống S3...
+                      </span>
+                    </div>
                   )}
                 </div>
-                {videoFileName !== null && (
-                  <p className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                    File: <span className="font-semibold text-zinc-900 dark:text-white">{videoFileName}</span>
-                  </p>
-                )}
-                {uploadError !== null ? (
-                  <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400">
-                    <WarningCircle size={16} weight="bold" />
-                    <span>{uploadError}</span>
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <PlayCircle size={18} weight="fill" />
+                    <span>Video hợp lệ (thời lượng ≤ 60s)</span>
+                    {videoDuration !== null && videoDuration > 0 && (
+                      <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        {videoDuration}s / 60s
+                      </span>
+                    )}
+                  </div>
+                  {videoFileName !== null && (
+                    <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      File:{' '}
+                      <span className="font-semibold text-zinc-900 dark:text-white">
+                        {videoFileName}
+                      </span>
+                    </p>
+                  )}
+                  {uploadError !== null ? (
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400">
+                      <WarningCircle size={16} weight="bold" />
+                      <span>{uploadError}</span>
+                      <button
+                        type="button"
+                        disabled={isUploadingVideo}
+                        onClick={() => void handleRetryUploadVideo()}
+                        className="rounded-lg border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+                      >
+                        Thử tải lại
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-zinc-500">
+                      {isUploadingVideo
+                        ? 'Đang đồng bộ hóa video lên máy chủ lưu trữ S3...'
+                        : 'Video đã được tải lên và sẵn sàng phát trên trang chi tiết sản phẩm.'}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 pt-1">
                     <button
                       type="button"
                       disabled={isUploadingVideo}
-                      onClick={() => void handleRetryUploadVideo()}
-                      className="rounded-lg border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+                      onClick={function () {
+                        videoInputRef.current?.click()
+                      }}
+                      className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
                     >
-                      Thử tải lại
+                      <VideoCamera size={14} weight="bold" />
+                      Thay đổi video
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isUploadingVideo}
+                      onClick={handleRemoveVideo}
+                      className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400"
+                    >
+                      <Trash size={14} weight="bold" />
+                      Gỡ video
                     </button>
                   </div>
-                ) : (
-                  <p className="text-[11px] text-zinc-500">
-                    {isUploadingVideo
-                      ? 'Đang đồng bộ hóa video lên máy chủ lưu trữ S3...'
-                      : 'Video đã được tải lên và sẵn sàng phát trên trang chi tiết sản phẩm.'}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 pt-1">
-                  <button
-                    type="button"
-                    disabled={isUploadingVideo}
-                    onClick={function () {
-                      videoInputRef.current?.click()
-                    }}
-                    className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
-                  >
-                    <VideoCamera size={14} weight="bold" />
-                    Thay đổi video
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isUploadingVideo}
-                    onClick={handleRemoveVideo}
-                    className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400"
-                  >
-                    <Trash size={14} weight="bold" />
-                    Gỡ video
-                  </button>
                 </div>
               </div>
-            </div>
-          )
-        })()}
+            )
+          })()}
       </div>
 
       {/* C. Ảnh Garment (Trải phẳng trên nền trắng) dùng cho Virtual Try-On */}
@@ -502,7 +520,7 @@ export default function ProductMediaUploader({
               }}
               className="peer sr-only"
             />
-            <div className="peer h-6 w-11 rounded-full bg-zinc-200 peer-checked:bg-indigo-600 peer-focus:outline-none dark:bg-zinc-700 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full dark:border-zinc-600" />
+            <div className="peer h-6 w-11 rounded-full bg-zinc-200 peer-checked:bg-indigo-600 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full dark:border-zinc-600 dark:bg-zinc-700" />
           </label>
         </div>
 
@@ -537,7 +555,9 @@ export default function ProductMediaUploader({
                   }}
                   className="flex aspect-3/4 w-32 flex-col items-center justify-center rounded-xl border-2 border-dashed border-indigo-300 bg-white p-2 text-center text-indigo-600 transition hover:border-indigo-500 disabled:opacity-50 dark:border-indigo-800 dark:bg-zinc-900 dark:text-indigo-400"
                 >
-                  {isUploadingGarment && <SpinnerGap size={20} weight="bold" className="animate-spin" />}
+                  {isUploadingGarment && (
+                    <SpinnerGap size={20} weight="bold" className="animate-spin" />
+                  )}
                   {isUploadingGarment === false && <TShirt size={24} weight="bold" />}
                   <span className="mt-1 text-[11px] font-bold">Tải ảnh garment</span>
                   <span className="text-[9px] text-zinc-400">Nền trắng</span>
@@ -549,9 +569,17 @@ export default function ProductMediaUploader({
                   Yêu cầu quy chuẩn ảnh Garment:
                 </p>
                 <ul className="list-disc space-y-1 pl-4 text-[11px] text-zinc-500">
-                  <li>Ảnh trang phục trải phẳng (Flat Lay) hoặc mặc ma-nơ-canh tàng hình (Ghost Mannequin).</li>
-                  <li>Phải chụp trên <strong>nền trắng tinh khiết (RGB: 255, 255, 255)</strong>, không bóng đổ.</li>
-                  <li>Sản phẩm được là phẳng phiu, căn chính giữa khung hình, không bị che khuất.</li>
+                  <li>
+                    Ảnh trang phục trải phẳng (Flat Lay) hoặc mặc ma-nơ-canh tàng hình (Ghost
+                    Mannequin).
+                  </li>
+                  <li>
+                    Phải chụp trên <strong>nền trắng tinh khiết (RGB: 255, 255, 255)</strong>, không
+                    bóng đổ.
+                  </li>
+                  <li>
+                    Sản phẩm được là phẳng phiu, căn chính giữa khung hình, không bị che khuất.
+                  </li>
                   <li className="font-semibold text-indigo-600 dark:text-indigo-400">
                     Bắt buộc có ảnh Garment khi bật tính năng thử đồ ảo.
                   </li>

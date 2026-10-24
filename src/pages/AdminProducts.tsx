@@ -443,9 +443,7 @@ export default function AdminProducts() {
         <RejectProductDialog
           product={rejectTarget}
           onClose={() => setRejectTarget(null)}
-          onDone={() =>
-            refreshAfterModeration(`Đã từ chối duyệt sản phẩm "${rejectTarget.name}".`)
-          }
+          onDone={() => refreshAfterModeration(`Đã từ chối duyệt sản phẩm "${rejectTarget.name}".`)}
         />
       )}
 

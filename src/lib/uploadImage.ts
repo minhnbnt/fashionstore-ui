@@ -53,7 +53,9 @@ export function checkVideoDuration(file: File, maxSeconds = 60): Promise<number>
       const duration = Math.round(video.duration)
       cleanup(blobUrl)
       if (!isNaN(duration) && duration > maxSeconds) {
-        reject(new Error(`Video dài ${duration} giây, vượt quá giới hạn tối đa ${maxSeconds} giây.`))
+        reject(
+          new Error(`Video dài ${duration} giây, vượt quá giới hạn tối đa ${maxSeconds} giây.`),
+        )
       } else {
         resolve(isNaN(duration) ? 0 : duration)
       }
@@ -91,4 +93,3 @@ export async function uploadVideo(file: File): Promise<string> {
   }
   return signed.key
 }
-
