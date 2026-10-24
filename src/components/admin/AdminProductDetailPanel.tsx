@@ -48,6 +48,24 @@ function historyTitle(entry: ProductModerationHistoryResponse): string {
   return `${statusLabel(entry.fromStatus)} → ${statusLabel(entry.toStatus)}`
 }
 
+function weightLabel(weightGrams: number | null | undefined): string {
+  if (weightGrams === null || weightGrams === undefined) {
+    return 'Chưa cập nhật'
+  }
+  return `${weightGrams}g`
+}
+
+function dimensionLabel(
+  lengthCm: number | null | undefined,
+  widthCm: number | null | undefined,
+  heightCm: number | null | undefined,
+): string {
+  if (lengthCm === null || lengthCm === undefined) {
+    return 'Chưa cập nhật'
+  }
+  return `${lengthCm}x${widthCm ?? 0}x${heightCm ?? 0} cm`
+}
+
 function DetailBody({
   detail,
   onBan,
@@ -190,6 +208,7 @@ function DetailBody({
             Video giới thiệu sản phẩm
           </h4>
           <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black">
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track */}
             <video
               src={imageUrl(detail.videoKey)}
               controls
@@ -214,7 +233,7 @@ function DetailBody({
                 <img
                   src={imageUrl(detail.garmentKey)}
                   alt="Garment Flat Lay"
-                  className="h-20 w-16 rounded-xl border border-indigo-200 bg-white object-contain p-1"
+                  className="h-20 w-16 rounded-xl border border-indigo-200 bg-white object-contain p-1 dark:border-indigo-500/30"
                 />
               )}
             <div className="text-xs text-zinc-600 dark:text-zinc-300">
@@ -251,17 +270,13 @@ function DetailBody({
           <div>
             Cân nặng:{' '}
             <strong className="text-zinc-900 dark:text-white">
-              {detail.weightGrams !== null && detail.weightGrams !== undefined
-                ? `${detail.weightGrams}g`
-                : 'Chưa cập nhật'}
+              {weightLabel(detail.weightGrams)}
             </strong>
           </div>
           <div>
             Kích thước:{' '}
             <strong className="text-zinc-900 dark:text-white">
-              {detail.lengthCm !== null && detail.lengthCm !== undefined
-                ? `${detail.lengthCm}x${detail.widthCm ?? 0}x${detail.heightCm ?? 0} cm`
-                : 'Chưa cập nhật'}
+              {dimensionLabel(detail.lengthCm, detail.widthCm, detail.heightCm)}
             </strong>
           </div>
         </div>

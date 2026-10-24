@@ -78,9 +78,33 @@ function safeSkuPart(str: string): string {
 const COMMON_COLORS = ['Trắng', 'Đen', 'Xanh Navy', 'Be', 'Hồng', 'Xám', 'Đỏ', 'Vàng', 'Nâu']
 const COMMON_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', 'Freesize']
 
+function trimmedOrNull(value: string): string | null {
+  const trimmed = value.trim()
+  if (trimmed === '') {
+    return null
+  }
+  return trimmed
+}
+
+function positiveOrNull(value: number): number | null {
+  if (value > 0) {
+    return value
+  }
+  return null
+}
+
+function sizeViewTabClass(active: boolean): string {
+  if (active) {
+    return 'bg-orange-600 text-white shadow-xs'
+  }
+  return 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+}
 
 function generateVariantSku(prefix: string, color: string, size: string): string {
-  const cleanPrefix = prefix.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
+  const cleanPrefix = prefix
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 6)
   let safePrefix = cleanPrefix
   if (safePrefix === '') {
     safePrefix = 'SP'
@@ -99,6 +123,10 @@ function generateVariantSku(prefix: string, color: string, size: string): string
   return `${safePrefix}-${safeColor}-${safeSize}-${rand}`
 }
 
+function newVariantKeyId(): string {
+  return `var-${Date.now()}-${Math.floor(Math.random() * 100000)}`
+}
+
 function newVariantRow(
   sku: string,
   size: string,
@@ -107,7 +135,7 @@ function newVariantRow(
   imageKey: string | null = null,
 ): VariantRow {
   return {
-    keyId: `var-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+    keyId: newVariantKeyId(),
     sku,
     size,
     color,
@@ -263,10 +291,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     setSlug(`${clean}-${slugSuffix}`)
   }
 
-  function syncVariantsFromColorSizes(
-    activeColors: string[],
-    activeMap: Record<string, string[]>,
-  ) {
+  function syncVariantsFromColorSizes(activeColors: string[], activeMap: Record<string, string[]>) {
     const nextVariants: VariantRow[] = []
     let isFirst = true
 
@@ -300,7 +325,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           const colorImg = colorImages[c] ?? null
 
           nextVariants.push({
-            keyId: `var-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+            keyId: newVariantKeyId(),
             sku,
             size: s,
             color: c,
@@ -330,13 +355,16 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     }
     const updatedColors = [...colors, trimmed]
     // Mặc định màu mới nhận bộ size của màu đầu tiên (nếu có), hoặc ['M', 'L']
-    const templateSizes =
-      colors.length > 0 && colorSizesMap[colors[0]!]
-        ? [...(colorSizesMap[colors[0]!] ?? [])]
-        : ['M', 'L']
+    let templateSizes: string[] = ['M', 'L']
+    if (colors.length > 0 && colorSizesMap[colors[0]!] !== undefined) {
+      const copied = [...(colorSizesMap[colors[0]!] ?? [])]
+      if (copied.length > 0) {
+        templateSizes = copied
+      }
+    }
     const updatedMap = {
       ...colorSizesMap,
-      [trimmed]: templateSizes.length > 0 ? templateSizes : ['M', 'L'],
+      [trimmed]: templateSizes,
     }
     setColors(updatedColors)
     setColorSizesMap(updatedMap)
@@ -443,9 +471,9 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
         return {
           ...v,
-          price: p !== null ? p : v.price,
-          compareAtPrice: cp !== null ? cp : v.compareAtPrice,
-          stockQuantity: stock !== null ? stock : v.stockQuantity,
+          price: p ?? v.price,
+          compareAtPrice: cp ?? v.compareAtPrice,
+          stockQuantity: stock ?? v.stockQuantity,
         }
       }),
     )
@@ -519,7 +547,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         }),
       )
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Tải ảnh màu thất bại.'
+      let msg = 'Tải ảnh màu thất bại.'
+      if (err instanceof Error) {
+        msg = err.message
+      }
       setFormError(msg)
     } finally {
       setUploadingColor(null)
@@ -571,7 +602,9 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       return
     }
     if (tryOnEnabled && (garmentKey === null || garmentKey.trim() === '')) {
-      setFormError('Ảnh garment (trải phẳng trên nền trắng) là bắt buộc khi bật tính năng thử đồ ảo.')
+      setFormError(
+        'Ảnh garment (trải phẳng trên nền trắng) là bắt buộc khi bật tính năng thử đồ ảo.',
+      )
       return
     }
 
@@ -652,14 +685,14 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       videoKey: videoKey ?? null,
       garmentKey: garmentKey ?? null,
       tryOnEnabled,
-      material: material.trim() !== '' ? material.trim() : null,
-      origin: origin.trim() !== '' ? origin.trim() : null,
-      careInstructions: careInstructions.trim() !== '' ? careInstructions.trim() : null,
-      sizeGuide: sizeGuide.trim() !== '' ? sizeGuide.trim() : null,
-      weightGrams: weightGrams > 0 ? weightGrams : null,
-      lengthCm: lengthCm > 0 ? lengthCm : null,
-      widthCm: widthCm > 0 ? widthCm : null,
-      heightCm: heightCm > 0 ? heightCm : null,
+      material: trimmedOrNull(material),
+      origin: trimmedOrNull(origin),
+      careInstructions: trimmedOrNull(careInstructions),
+      sizeGuide: trimmedOrNull(sizeGuide),
+      weightGrams: positiveOrNull(weightGrams),
+      lengthCm: positiveOrNull(lengthCm),
+      widthCm: positiveOrNull(widthCm),
+      heightCm: positiveOrNull(heightCm),
       status: desiredStatus,
     }
 
@@ -733,7 +766,9 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
               >
                 Tên sản phẩm <span className="text-red-500">*</span>
               </label>
-              <span className="text-[11px] text-zinc-400">{name.length}/300 ký tự (Tối thiểu 5)</span>
+              <span className="text-[11px] text-zinc-400">
+                {name.length}/300 ký tự (Tối thiểu 5)
+              </span>
             </div>
             <input
               id="addProductNameInput"
@@ -832,7 +867,8 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
               </span>
             </div>
             <p className="mt-1 text-xs text-zinc-500">
-              Thiết lập màu sắc, kích cỡ, công cụ áp dụng giá hàng loạt và quản lý tồn kho theo biến thể.
+              Thiết lập màu sắc, kích cỡ, công cụ áp dụng giá hàng loạt và quản lý tồn kho theo biến
+              thể.
             </p>
           </div>
 
@@ -849,10 +885,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         {/* 3.1 Nhóm phân loại 1: Màu sắc */}
         <div className="mt-5 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/80 dark:bg-zinc-950/50">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+            <p className="flex items-center gap-1.5 text-xs font-bold text-zinc-900 dark:text-white">
               <Tag size={14} weight="bold" className="text-orange-600 dark:text-orange-400" />
               Nhóm 1: Màu sắc sản phẩm
-            </label>
+            </p>
             <span className="text-[11px] text-zinc-400">Chọn hoặc nhập màu sắc</span>
           </div>
 
@@ -901,21 +937,23 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           </div>
 
           {/* Quick pick colors */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/60">
-            <span className="text-[11px] font-medium text-zinc-400 mr-1">Gợi ý nhanh:</span>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-zinc-200/50 pt-2 dark:border-zinc-800/60">
+            <span className="mr-1 text-[11px] font-medium text-zinc-400">Gợi ý nhanh:</span>
             {COMMON_COLORS.map((c) => {
               const isSelected = colors.some((col) => col.toLowerCase() === c.toLowerCase())
+              let chipClass =
+                'border border-dashed border-zinc-300 bg-white text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400'
+              if (isSelected) {
+                chipClass =
+                  'bg-zinc-200/70 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600'
+              }
               return (
                 <button
                   key={c}
                   type="button"
                   disabled={isSelected}
                   onClick={() => handleAddColor(c)}
-                  className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition ${
-                    isSelected
-                      ? 'bg-zinc-200/70 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600'
-                      : 'border border-dashed border-zinc-300 bg-white text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400'
-                  }`}
+                  className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition ${chipClass}`}
                 >
                   + {c}
                 </button>
@@ -928,12 +966,13 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         <div className="mt-5 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4 dark:border-zinc-800/80 dark:bg-zinc-950/50">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/50 pb-3 dark:border-zinc-800/60">
             <div>
-              <label className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-1.5">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-zinc-900 dark:text-white">
                 <Tag size={14} weight="bold" className="text-orange-600 dark:text-orange-400" />
                 Nhóm 2: Kích cỡ (Size) theo từng màu sắc
-              </label>
+              </p>
               <span className="text-[11px] text-zinc-400">
-                Cho phép mỗi màu sắc sở hữu một tập kích cỡ riêng biệt (Ví dụ: Đen chỉ có XL, 2XL; Trắng có đủ S, M, L, XL, 2XL; Xanh Navy có 4XL)
+                Cho phép mỗi màu sắc sở hữu một tập kích cỡ riêng biệt (Ví dụ: Đen chỉ có XL, 2XL;
+                Trắng có đủ S, M, L, XL, 2XL; Xanh Navy có 4XL)
               </span>
             </div>
 
@@ -942,11 +981,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
               <button
                 type="button"
                 onClick={() => setSizeViewMode('by_color')}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
-                  sizeViewMode === 'by_color'
-                    ? 'bg-orange-600 text-white shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-                }`}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${sizeViewTabClass(sizeViewMode === 'by_color')}`}
               >
                 <ListDashes size={14} weight="bold" />
                 Theo từng màu
@@ -954,11 +989,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
               <button
                 type="button"
                 onClick={() => setSizeViewMode('grid')}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
-                  sizeViewMode === 'grid'
-                    ? 'bg-orange-600 text-white shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-                }`}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${sizeViewTabClass(sizeViewMode === 'grid')}`}
               >
                 <SquaresFour size={14} weight="bold" />
                 Lưới ma trận Màu × Size
@@ -982,7 +1013,8 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                       <div className="flex items-center gap-2">
                         <span className="h-3 w-3 rounded-full border border-zinc-300 bg-orange-500/80 shadow-2xs" />
                         <span className="text-xs font-bold text-zinc-900 dark:text-white">
-                          Màu: <span className="text-orange-600 dark:text-orange-400">{colorName}</span>
+                          Màu:{' '}
+                          <span className="text-orange-600 dark:text-orange-400">{colorName}</span>
                         </span>
                         <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                           {sizesForThisColor.length} size
@@ -1053,22 +1085,26 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
                     {/* Quick pick standard sizes for this color */}
                     <div className="mt-2.5 flex flex-wrap items-center gap-1 border-t border-zinc-100 pt-2 dark:border-zinc-800/40">
-                      <span className="text-[10px] font-medium text-zinc-400 mr-1">Chọn nhanh:</span>
+                      <span className="mr-1 text-[10px] font-medium text-zinc-400">
+                        Chọn nhanh:
+                      </span>
                       {COMMON_SIZES.map((sz) => {
                         const isSelected = sizesForThisColor.some(
                           (s) => s.toLowerCase() === sz.toLowerCase(),
                         )
+                        let sizeChipClass =
+                          'border border-dashed border-zinc-300 bg-zinc-50 text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-400'
+                        if (isSelected) {
+                          sizeChipClass =
+                            'bg-zinc-100 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600'
+                        }
                         return (
                           <button
                             key={sz}
                             type="button"
                             disabled={isSelected}
                             onClick={() => handleAddSizeToColor(colorName, sz)}
-                            className={`rounded-md px-2 py-0.5 text-[10px] font-semibold transition ${
-                              isSelected
-                                ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600'
-                                : 'border border-dashed border-zinc-300 bg-zinc-50 text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-400'
-                            }`}
+                            className={`rounded-md px-2 py-0.5 text-[10px] font-semibold transition ${sizeChipClass}`}
                           >
                             + {sz}
                           </button>
@@ -1082,65 +1118,68 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           )}
 
           {/* VIEW MODE 2: Lưới ma trận (Matrix Checkbox Grid) */}
-          {sizeViewMode === 'grid' && (() => {
-            const allUsedSizes: string[] = []
-            for (const c of colors) {
-              for (const s of colorSizesMap[c] ?? []) {
-                if (!allUsedSizes.includes(s)) {
-                  allUsedSizes.push(s)
+          {sizeViewMode === 'grid' &&
+            (() => {
+              const allUsedSizes: string[] = []
+              for (const c of colors) {
+                for (const s of colorSizesMap[c] ?? []) {
+                  if (!allUsedSizes.includes(s)) {
+                    allUsedSizes.push(s)
+                  }
                 }
               }
-            }
-            const gridSizes = Array.from(new Set([...COMMON_SIZES, ...allUsedSizes]))
+              const gridSizes = Array.from(new Set([...COMMON_SIZES, ...allUsedSizes]))
 
-            return (
-              <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-200 bg-white p-3 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900">
-                <table className="w-full text-center text-xs">
-                  <thead>
-                    <tr className="border-b border-zinc-200 text-[11px] font-bold text-zinc-500 uppercase dark:border-zinc-800">
-                      <th scope="col" className="py-2 text-left pl-2">
-                        Màu sắc
-                      </th>
-                      {gridSizes.map((sz) => (
-                        <th key={sz} scope="col" className="py-2 px-2">
-                          {sz}
+              return (
+                <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-200 bg-white p-3 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900">
+                  <table className="w-full text-center text-xs">
+                    <thead>
+                      <tr className="border-b border-zinc-200 text-[11px] font-bold text-zinc-500 uppercase dark:border-zinc-800">
+                        <th scope="col" className="py-2 pl-2 text-left">
+                          Màu sắc
                         </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
-                    {colors.map((colorName) => {
-                      const sizesForThis = colorSizesMap[colorName] ?? []
-                      return (
-                        <tr key={colorName} className="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30">
-                          <td className="py-2 text-left font-bold text-zinc-900 pl-2 dark:text-white">
-                            {colorName}
-                          </td>
-                          {gridSizes.map((sz) => {
-                            const isChecked = sizesForThis.some(
-                              (s) => s.toLowerCase() === sz.toLowerCase(),
-                            )
-                            return (
-                              <td key={sz} className="py-2 px-2 text-center">
-                                <label className="inline-flex cursor-pointer items-center justify-center p-1">
+                        {gridSizes.map((sz) => (
+                          <th key={sz} scope="col" className="px-2 py-2">
+                            {sz}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                      {colors.map((colorName) => {
+                        const sizesForThis = colorSizesMap[colorName] ?? []
+                        return (
+                          <tr
+                            key={colorName}
+                            className="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30"
+                          >
+                            <td className="py-2 pl-2 text-left font-bold text-zinc-900 dark:text-white">
+                              {colorName}
+                            </td>
+                            {gridSizes.map((sz) => {
+                              const isChecked = sizesForThis.some(
+                                (s) => s.toLowerCase() === sz.toLowerCase(),
+                              )
+                              return (
+                                <td key={sz} className="px-2 py-2 text-center">
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
                                     onChange={() => handleToggleSizeForColor(colorName, sz)}
-                                    className="h-4 w-4 rounded accent-orange-600"
+                                    aria-label={`Kích cỡ ${sz} cho màu ${colorName}`}
+                                    className="h-4 w-4 cursor-pointer rounded accent-orange-600"
                                   />
-                                </label>
-                              </td>
-                            )
-                          })}
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )
-          })()}
+                                </td>
+                              )
+                            })}
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            })()}
         </div>
 
         {/* 3.3 Công cụ áp dụng hàng loạt thông minh (Smart Bulk Apply Tool) */}
@@ -1151,13 +1190,19 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             <div className="mt-4 rounded-2xl border border-orange-200/80 bg-orange-50/50 p-4 dark:border-orange-950/60 dark:bg-orange-950/20">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-orange-900 dark:text-orange-300">
                 <div className="flex items-center gap-2">
-                  <Lightning size={16} weight="fill" className="text-orange-600 dark:text-orange-400" />
+                  <Lightning
+                    size={16}
+                    weight="fill"
+                    className="text-orange-600 dark:text-orange-400"
+                  />
                   <span>Áp dụng thông số hàng loạt ({variants.length} phân loại)</span>
                 </div>
 
                 {/* Chọn mục tiêu áp dụng (Target Selector) */}
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Áp dụng cho:</span>
+                  <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
+                    Áp dụng cho:
+                  </span>
                   <select
                     value={bulkTarget}
                     onChange={(e) => setBulkTarget(e.target.value)}
@@ -1184,40 +1229,60 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
               <div className="mt-3 flex flex-wrap items-end gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                  <label
+                    htmlFor="bulkPriceInput"
+                    className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300"
+                  >
                     Giá bán chung (₫)
                   </label>
                   <input
+                    id="bulkPriceInput"
                     type="text"
                     placeholder="Ví dụ: 199.000"
                     value={bulkPrice}
                     onChange={(e) => {
                       const num = parseNumberFromDots(e.target.value)
-                      setBulkPrice(num !== null ? formatNumberWithDots(num) : '')
+                      if (num === null) {
+                        setBulkPrice('')
+                        return
+                      }
+                      setBulkPrice(formatNumberWithDots(num))
                     }}
                     className="mt-1 w-36 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                  <label
+                    htmlFor="bulkCompareAtPriceInput"
+                    className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300"
+                  >
                     Giá gốc chung (₫)
                   </label>
                   <input
+                    id="bulkCompareAtPriceInput"
                     type="text"
                     placeholder="Ví dụ: 250.000"
                     value={bulkCompareAtPrice}
                     onChange={(e) => {
                       const num = parseNumberFromDots(e.target.value)
-                      setBulkCompareAtPrice(num !== null ? formatNumberWithDots(num) : '')
+                      if (num === null) {
+                        setBulkCompareAtPrice('')
+                        return
+                      }
+                      setBulkCompareAtPrice(formatNumberWithDots(num))
                     }}
                     className="mt-1 w-36 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                  <label
+                    htmlFor="bulkStockInput"
+                    className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-300"
+                  >
                     Kho ban đầu
                   </label>
                   <input
+                    id="bulkStockInput"
                     type="number"
                     min="0"
                     placeholder="Ví dụ: 50"
@@ -1341,6 +1406,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                           handleSetDefaultVariant(v.keyId)
                         }}
                         title="Chọn làm biến thể mặc định"
+                        aria-label={`Chọn biến thể ${v.sku} làm mặc định`}
                         className="h-4 w-4 accent-orange-600"
                       />
                     </td>
@@ -1374,7 +1440,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         onChange={function (e) {
                           handleUpdateVariant(v.keyId, 'sku', e.target.value)
                         }}
-                        className="w-36 rounded-xl border border-zinc-200 p-2 text-xs font-mono outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-36 rounded-xl border border-zinc-200 p-2 font-mono text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
                     <td className="py-2.5">
@@ -1617,7 +1683,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         </h3>
 
         <div className="mt-4 flex flex-wrap gap-4">
-          <label className="flex cursor-pointer items-center gap-2.5 rounded-2xl border border-zinc-200 p-3.5 transition hover:border-orange-500 dark:border-zinc-800">
+          <label
+            aria-label="Đang bán (ACTIVE)"
+            className="flex cursor-pointer items-center gap-2.5 rounded-2xl border border-zinc-200 p-3.5 transition hover:border-orange-500 dark:border-zinc-800"
+          >
             <input
               type="radio"
               name="productStatusRadio"
@@ -1638,7 +1707,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             </div>
           </label>
 
-          <label className="flex cursor-pointer items-center gap-2.5 rounded-2xl border border-zinc-200 p-3.5 transition hover:border-orange-500 dark:border-zinc-800">
+          <label
+            aria-label="Tạm ẩn (HIDDEN)"
+            className="flex cursor-pointer items-center gap-2.5 rounded-2xl border border-zinc-200 p-3.5 transition hover:border-orange-500 dark:border-zinc-800"
+          >
             <input
               type="radio"
               name="productStatusRadio"
