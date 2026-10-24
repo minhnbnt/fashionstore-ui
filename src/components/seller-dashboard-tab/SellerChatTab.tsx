@@ -10,9 +10,10 @@ import {
 } from '@generated/endpoints/chat/chat'
 import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
 import { getMineQueryKey, useUpdateProfile } from '@generated/endpoints/shops/shops'
-import { PaperPlaneRight, MagnifyingGlass, CheckCircle, X, Robot } from '@phosphor-icons/react'
+import { PaperPlaneRight, MagnifyingGlass, CheckCircle, Robot } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import Modal from '@/components/Modal'
 import { takeData } from '@/lib/apiAdapters'
 import { chatConversationItem, chatMessageItem } from '@/lib/sellerAdapters'
 
@@ -22,6 +23,27 @@ import type { ChatConversationResponse } from '@generated/model/chatConversation
 interface Props {
   shopId: string
   autoReplyText: string
+}
+
+function conversationRowClass(active: boolean): string {
+  if (active) {
+    return 'bg-indigo-50/70 dark:bg-indigo-900/30'
+  }
+  return 'hover:bg-zinc-50 dark:hover:bg-white/10'
+}
+
+function messageRowClass(isMine: boolean): string {
+  if (isMine) {
+    return 'flex flex-col items-end'
+  }
+  return 'flex flex-col items-start'
+}
+
+function messageBubbleClass(isMine: boolean): string {
+  if (isMine) {
+    return 'max-w-[70%] rounded-2xl rounded-tr-xs bg-indigo-600 p-3 text-xs leading-relaxed text-white'
+  }
+  return 'max-w-[70%] rounded-2xl rounded-tl-xs bg-zinc-100 p-3 text-xs leading-relaxed text-zinc-900 dark:bg-white/10 dark:text-zinc-100'
 }
 
 export default function SellerChatTab({ shopId, autoReplyText }: Props) {
@@ -168,18 +190,18 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
             setTempAutoReply(autoReplyText)
             setShowAutoReplyModal(true)
           }}
-          className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+          className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
         >
-          <Robot size={16} weight="bold" className="text-orange-600" />
+          <Robot size={16} weight="bold" className="text-indigo-600" />
           Cài đặt Tin nhắn Tự động (Auto-reply)
         </button>
       </div>
 
       {/* Cửa sổ Chat 2 cột */}
-      <div className="grid h-[620px] grid-cols-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm md:grid-cols-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="grid h-[620px] grid-cols-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/80 shadow-sm md:grid-cols-3 dark:border-white/10 dark:bg-[#11182a]">
         {/* Cột trái: Danh sách hội thoại */}
-        <div className="flex flex-col border-r border-zinc-100 md:col-span-1 dark:border-zinc-800">
-          <div className="border-b border-zinc-100 p-3.5 dark:border-zinc-800">
+        <div className="flex flex-col border-r border-zinc-100 md:col-span-1 dark:border-white/10">
+          <div className="border-b border-zinc-100 p-3.5 dark:border-white/10">
             <div className="relative">
               <MagnifyingGlass
                 size={15}
@@ -193,12 +215,12 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                   setSearchTerm(e.target.value)
                 }}
                 placeholder="Tìm khách hàng..."
-                className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 py-1.5 pr-3 pl-8 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="w-full rounded-full border border-zinc-300 bg-zinc-50 py-1.5 pr-3 pl-8 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
               />
             </div>
           </div>
 
-          <div className="flex-1 divide-y divide-zinc-50 overflow-y-auto dark:divide-zinc-800/40">
+          <div className="flex-1 divide-y divide-zinc-100 overflow-y-auto dark:divide-white/10">
             {filteredConversations.map(function (conv) {
               const isCurrent = conv.id === activeConvId
               return (
@@ -208,13 +230,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                   onClick={function () {
                     handleSelectConversation(conv.id)
                   }}
-                  className={`flex w-full items-start gap-3 p-3.5 text-left transition ${
-                    isCurrent
-                      ? 'bg-orange-50/70 dark:bg-orange-950/30'
-                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
-                  }`}
+                  className={`flex w-full items-start gap-3 p-3.5 text-left transition ${conversationRowClass(isCurrent)}`}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-xs font-bold text-white uppercase">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#312e81] to-[#1d4ed8] text-xs font-bold text-white uppercase">
                     {conv.buyerName.slice(0, 2)}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -227,7 +245,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                     <p className="mt-0.5 truncate text-[11px] text-zinc-500">{conv.lastMessage}</p>
                   </div>
                   {conv.unreadCount > 0 && (
-                    <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-orange-600 px-1 text-[9px] font-bold text-white">
+                    <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-indigo-700 px-1 text-[9px] font-bold text-white">
                       {conv.unreadCount}
                     </span>
                   )}
@@ -242,9 +260,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
           {selectedConv !== undefined && (
             <>
               {/* Header khung chat */}
-              <div className="flex items-center justify-between border-b border-zinc-100 p-3.5 dark:border-zinc-800">
+              <div className="flex items-center justify-between border-b border-zinc-100 p-3.5 dark:border-white/10">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-[11px] font-bold text-white uppercase">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#312e81] to-[#1d4ed8] text-[11px] font-bold text-white uppercase">
                     {selectedConv.buyerName.slice(0, 2)}
                   </div>
                   <div>
@@ -263,7 +281,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                   onClick={function () {
                     handleSelectConversation(selectedConv.id)
                   }}
-                  className="rounded-xl border border-zinc-200 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400"
+                  className="rounded-xl border border-zinc-200 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-400"
                 >
                   Đánh dấu đã đọc
                 </button>
@@ -274,19 +292,8 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                 {messages.map(function (msg) {
                   const isMe = msg.senderType === 'SELLER'
                   return (
-                    <div
-                      key={msg.id}
-                      className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                    >
-                      <div
-                        className={`max-w-[70%] rounded-2xl p-3 text-xs leading-relaxed ${
-                          isMe
-                            ? 'rounded-tr-xs bg-orange-600 text-white'
-                            : 'rounded-tl-xs bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
-                        }`}
-                      >
-                        {msg.content}
-                      </div>
+                    <div key={msg.id} className={messageRowClass(isMe)}>
+                      <div className={messageBubbleClass(isMe)}>{msg.content}</div>
                       <span className="mt-1 text-[9px] text-zinc-400">{msg.sentAt}</span>
                     </div>
                   )
@@ -294,7 +301,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
               </div>
 
               {/* Ô nhập tin nhắn */}
-              <div className="border-t border-zinc-100 p-3 dark:border-zinc-800">
+              <div className="border-t border-zinc-100 p-3 dark:border-white/10">
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -308,12 +315,12 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                       }
                     }}
                     placeholder="Nhập tin nhắn trả lời khách hàng (Enter để gửi)..."
-                    className="flex-1 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                    className="flex-1 rounded-full border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
                   />
                   <button
                     type="button"
                     onClick={handleSend}
-                    className="flex h-9 w-9 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-sm hover:bg-orange-700"
+                    className="btn-primary flex h-9 w-9 items-center justify-center rounded-2xl"
                   >
                     <PaperPlaneRight size={16} weight="bold" />
                   </button>
@@ -332,70 +339,56 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
 
       {/* Modal Cài đặt Auto-reply */}
       {showAutoReplyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Robot size={22} weight="bold" className="text-orange-600" />
-                <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                  Cấu hình Tin nhắn Tự động
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={function () {
-                  setShowAutoReplyModal(false)
-                }}
-                className="text-zinc-400 hover:text-zinc-600"
-              >
-                <X size={18} weight="bold" />
-              </button>
-            </div>
+        <Modal
+          title="Cấu hình Tin nhắn Tự động"
+          onClose={function () {
+            setShowAutoReplyModal(false)
+          }}
+          widthClass="max-w-md"
+        >
+          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+            Tin nhắn này sẽ tự động được gửi ngay lập tức khi khách hàng mở cuộc hội thoại đầu tiên
+            hoặc nhắn tin ngoài giờ làm việc.
+          </p>
 
-            <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-              Tin nhắn này sẽ tự động được gửi ngay lập tức khi khách hàng mở cuộc hội thoại đầu
-              tiên hoặc nhắn tin ngoài giờ làm việc.
-            </p>
-
-            <div className="mt-4">
-              <label
-                htmlFor="autoReplyContent"
-                className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
-              >
-                Nội dung tin nhắn tự động:
-              </label>
-              <textarea
-                id="autoReplyContent"
-                rows={4}
-                value={tempAutoReply}
-                onChange={function (e) {
-                  setTempAutoReply(e.target.value)
-                }}
-                placeholder="VD: Cảm ơn bạn đã ghé thăm FashionHub! Chúng tôi sẽ phản hồi trong ít phút..."
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-              />
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={function () {
-                  setShowAutoReplyModal(false)
-                }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveAutoReplyConfirm}
-                className="rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white hover:bg-orange-700"
-              >
-                Lưu cấu hình
-              </button>
-            </div>
+          <div className="mt-4">
+            <label
+              htmlFor="autoReplyContent"
+              className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+            >
+              Nội dung tin nhắn tự động:
+            </label>
+            <textarea
+              id="autoReplyContent"
+              rows={4}
+              value={tempAutoReply}
+              onChange={function (e) {
+                setTempAutoReply(e.target.value)
+              }}
+              placeholder="VD: Cảm ơn bạn đã ghé thăm FashionHub! Chúng tôi sẽ phản hồi trong ít phút..."
+              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+            />
           </div>
-        </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={function () {
+                setShowAutoReplyModal(false)
+              }}
+              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveAutoReplyConfirm}
+              className="btn-primary rounded-2xl px-5 py-2 text-xs font-bold"
+            >
+              Lưu cấu hình
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   )
