@@ -175,7 +175,7 @@ export function getAuditActionBadgeMeta(action: string): AuditBadgeMeta {
   return {
     badgeType: 'neutral',
     colorClass:
-      'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700',
+      'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-white/10 dark:text-zinc-300 dark:border-white/15',
   }
 }
 

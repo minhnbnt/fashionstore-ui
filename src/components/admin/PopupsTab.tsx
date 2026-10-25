@@ -8,7 +8,7 @@ import {
 import { Megaphone, PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, imageUrl, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import {
   audienceLabel,
   frequencyLabel,
@@ -113,7 +113,16 @@ export default function PopupsTab({ onNotice }: { onNotice: (message: string) =>
               >
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 dark:bg-white/10">
                   {imageKey !== '' && (
-                    <img src={imageUrl(imageKey)} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={imageUrl(imageKey)}
+                      alt=""
+                      onError={function (e) {
+                        if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                          e.currentTarget.src = PLACEHOLDER_IMAGE
+                        }
+                      }}
+                      className="h-full w-full object-cover"
+                    />
                   )}
                   {imageKey === '' && <Megaphone size={24} className="text-zinc-400" />}
                 </div>

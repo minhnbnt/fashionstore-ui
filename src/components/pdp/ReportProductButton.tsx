@@ -149,7 +149,7 @@ export default function ReportProductButton({ productId }: { productId: string }
           aria-labelledby="report-product-title"
           className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black/60 p-4 text-inherit backdrop-blur-xs"
         >
-          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#11182a]">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 id="report-product-title" className="text-lg font-extrabold tracking-tighter">
                 Báo cáo sản phẩm

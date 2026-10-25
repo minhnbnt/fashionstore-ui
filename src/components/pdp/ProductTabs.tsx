@@ -20,14 +20,10 @@ function Stars(props: { value: number; size?: number }) {
   return (
     <span className="flex items-center gap-0.5 text-sky-400">
       {[1, 2, 3, 4, 5].map(function (i) {
-        return (
-          <Star
-            key={i}
-            size={s}
-            weight={i <= Math.round(props.value) ? 'fill' : 'regular'}
-            className={i <= Math.round(props.value) ? '' : 'opacity-40'}
-          />
-        )
+        if (i <= Math.round(props.value)) {
+          return <Star key={i} size={s} weight="fill" />
+        }
+        return <Star key={i} size={s} weight="regular" className="opacity-40" />
       })}
     </span>
   )

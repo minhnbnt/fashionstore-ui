@@ -161,7 +161,7 @@ export default function MyShopsTab({ onOpenRegisterModal }: MyShopsTabProps) {
       {query.isLoading === false && query.isError !== true && shops.length === 0 && (
         <div
           id="empty-my-shops"
-          className="rounded-3xl border border-dashed border-zinc-200 bg-gradient-to-br from-zinc-50/50 via-white to-orange-50/30 p-8 text-center dark:border-zinc-800 dark:from-zinc-900/50 dark:via-zinc-900/30 dark:to-orange-950/10"
+          className="rounded-3xl border border-dashed border-zinc-200 bg-gradient-to-br from-zinc-50/50 via-white to-orange-50/30 p-8 text-center dark:border-white/10 dark:from-white/5 dark:via-white/[0.02] dark:to-orange-950/10"
         >
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400">
             <Storefront size={28} weight="bold" />
@@ -196,7 +196,7 @@ export default function MyShopsTab({ onOpenRegisterModal }: MyShopsTabProps) {
             return (
               <div
                 key={shop.shopId}
-                className="group flex flex-col justify-between rounded-3xl border border-zinc-200/80 bg-white/70 p-6 backdrop-blur-md transition-all hover:border-indigo-300 hover:shadow-lg dark:border-white/10 dark:bg-zinc-900/60 dark:hover:border-indigo-500/40"
+                className="group flex flex-col justify-between rounded-3xl border border-zinc-200/80 bg-white/70 p-6 backdrop-blur-md transition-all hover:border-indigo-300 hover:shadow-lg dark:border-white/10 dark:bg-white/5 dark:hover:border-indigo-500/40"
               >
                 <div>
                   {/* Top Bar: Role & Badges */}
@@ -228,7 +228,7 @@ export default function MyShopsTab({ onOpenRegisterModal }: MyShopsTabProps) {
                 </div>
 
                 {/* Footer / Action */}
-                <div className="mt-6 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <div className="mt-6 border-t border-zinc-100 pt-4 dark:border-white/10">
                   {canEnter && (
                     <Link
                       to={`/shop?shopId=${shop.shopId}`}

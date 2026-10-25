@@ -20,12 +20,20 @@ interface ShopDecorationRendererProps {
   blocks: DecorationBlock[]
 }
 
+function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.onerror = null
+  e.currentTarget.src = PLACEHOLDER_IMAGE
+}
+
 function BannerSliderBlock({ block }: { block: DecorationBlock }) {
   const banners = block.banners ?? []
   const [currentIdx, setCurrentIdx] = useState(0)
 
   useEffect(() => {
     if (banners.length <= 1) return
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    if (mediaQuery.matches) return
+
     const timer = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % banners.length)
     }, 4500)
@@ -37,12 +45,23 @@ function BannerSliderBlock({ block }: { block: DecorationBlock }) {
   }
 
   const activeBanner = banners[currentIdx] ?? banners[0]
-  const imageSrc =
-    activeBanner.imageKey !== ''
-      ? activeBanner.imageKey.startsWith('http')
-        ? activeBanner.imageKey
-        : imageUrl(activeBanner.imageKey)
-      : PLACEHOLDER_IMAGE
+  let imageSrc = PLACEHOLDER_IMAGE
+  if (activeBanner.imageKey !== '') {
+    if (activeBanner.imageKey.startsWith('http')) {
+      imageSrc = activeBanner.imageKey
+    } else {
+      imageSrc = imageUrl(activeBanner.imageKey)
+    }
+  }
+
+  const handlePrevSlide = () => {
+    setCurrentIdx((prev) => {
+      if (prev === 0) {
+        return banners.length - 1
+      }
+      return prev - 1
+    })
+  }
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-zinc-900 shadow-md">
@@ -52,6 +71,7 @@ function BannerSliderBlock({ block }: { block: DecorationBlock }) {
             <img
               src={imageSrc}
               alt={activeBanner.title ?? block.title}
+              onError={handleImageError}
               className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
             />
           </Link>
@@ -60,6 +80,7 @@ function BannerSliderBlock({ block }: { block: DecorationBlock }) {
           <img
             src={imageSrc}
             alt={activeBanner.title ?? block.title}
+            onError={handleImageError}
             className="h-full w-full object-cover"
           />
         )}
@@ -77,7 +98,7 @@ function BannerSliderBlock({ block }: { block: DecorationBlock }) {
         <>
           <button
             type="button"
-            onClick={() => setCurrentIdx((prev) => (prev === 0 ? banners.length - 1 : prev - 1))}
+            onClick={handlePrevSlide}
             className="absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
             aria-label="Previous banner"
           >
@@ -97,17 +118,21 @@ function BannerSliderBlock({ block }: { block: DecorationBlock }) {
       {/* Pagination Dots */}
       {banners.length > 1 && (
         <div className="absolute right-0 bottom-3 left-0 flex justify-center gap-1.5">
-          {banners.map((b, idx) => (
-            <button
-              key={b.id}
-              type="button"
-              onClick={() => setCurrentIdx(idx)}
-              className={`h-2 rounded-full transition-all ${
-                idx === currentIdx ? 'w-6 bg-white shadow' : 'w-2 bg-white/50 hover:bg-white/80'
-              }`}
-              aria-label={`Go to slide ${idx + 1}`}
-            />
-          ))}
+          {banners.map((b, idx) => {
+            let dotClass = 'w-2 bg-white/50 hover:bg-white/80'
+            if (idx === currentIdx) {
+              dotClass = 'w-6 bg-white shadow'
+            }
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => setCurrentIdx(idx)}
+                className={`h-2 rounded-full transition-all ${dotClass}`}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            )
+          })}
         </div>
       )}
     </div>
@@ -126,35 +151,35 @@ function ProductCollectionBlock({ block }: { block: DecorationBlock }) {
     badgeText = 'TUYỂN CHỌN'
   }
 
-  // Demo showcase items representing live collection preview
+  // TODO(mock): Dữ liệu sản phẩm mẫu đại diện cho khối bộ sưu tập
   const sampleProducts = [
     {
       id: 'demo-1',
       name: 'Áo Thun Cotton Nét Oversize Form Rộng',
       price: 249000,
       originalPrice: 350000,
-      image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&q=80',
+      image: 'https://picsum.photos/seed/netprod1/500/500',
     },
     {
       id: 'demo-2',
       name: 'Sơ Mi Lụa Hàn Quốc Thiết Kế Tối Giản',
       price: 389000,
       originalPrice: 490000,
-      image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&q=80',
+      image: 'https://picsum.photos/seed/netprod2/500/500',
     },
     {
       id: 'demo-3',
       name: 'Quần Khaki Slim-fit Co Giãn 4 Chiều Cao Cấp',
       price: 450000,
       originalPrice: 590000,
-      image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&q=80',
+      image: 'https://picsum.photos/seed/netprod3/500/500',
     },
     {
       id: 'demo-4',
       name: 'Áo Khoác Blazer Nam Nữ Phong Cách Hàn',
       price: 690000,
       originalPrice: 890000,
-      image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&q=80',
+      image: 'https://picsum.photos/seed/netprod4/500/500',
     },
   ]
 
@@ -191,6 +216,7 @@ function ProductCollectionBlock({ block }: { block: DecorationBlock }) {
               <img
                 src={prod.image}
                 alt={prod.name}
+                onError={handleImageError}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <span className="absolute top-2 right-2 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
@@ -220,6 +246,7 @@ function ProductCollectionBlock({ block }: { block: DecorationBlock }) {
 }
 
 function FlashSaleBlock({ block }: { block: DecorationBlock }) {
+  // TODO(mock): Danh sách sản phẩm Flash sale giả lập
   return (
     <div className="rounded-3xl border border-red-200 bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 p-5 text-white shadow-lg">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -245,8 +272,9 @@ function FlashSaleBlock({ block }: { block: DecorationBlock }) {
           >
             <div className="relative mb-2 aspect-square overflow-hidden rounded-xl bg-zinc-100 dark:bg-white/10">
               <img
-                src={`https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300&q=80`}
+                src={`https://picsum.photos/seed/flashsale${i}/300/300`}
                 alt="Flash sale product"
+                onError={handleImageError}
                 className="h-full w-full object-cover"
               />
               <span className="absolute bottom-1.5 left-1.5 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-bold text-white">

@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 
-import ShopStorefront from '../ShopStorefront'
+import ShopStorefront from './ShopStorefront'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
 

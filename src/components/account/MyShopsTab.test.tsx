@@ -52,7 +52,7 @@ describe('MyShopsTab', () => {
       isLoading: false,
       isPending: false,
       refetch: vi.fn(),
-    } as any)
+    } as unknown as ReturnType<typeof useGetMyShops>)
 
     const html = renderToString(
       createElement(
@@ -77,7 +77,7 @@ describe('MyShopsTab', () => {
       isPending: false,
       isError: false,
       refetch: vi.fn(),
-    } as any)
+    } as unknown as ReturnType<typeof useGetMyShops>)
 
     const html = renderToString(
       createElement(

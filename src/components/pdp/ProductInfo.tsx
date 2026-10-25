@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router'
 import { Minus, Plus, ShoppingBag, Star } from '@phosphor-icons/react'
 
 import { priceInfo } from '@/lib/apiAdapters'
-import { formatVnd } from '@/lib/format'
+import { formatVnd, priceLabel } from '@/lib/format'
 import { findVariant, isOptionAvailable } from '@/lib/variants'
 
 import { useCart } from '../../hooks/useCart'
@@ -143,7 +143,7 @@ export default function ProductInfo(props: { product: ProductResponse }) {
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="text-2xl font-extrabold text-blue-700 dark:text-sky-300">
-          {price !== null && price !== undefined ? formatVnd(price) : 'Liên hệ'}
+          {priceLabel(price)}
         </span>
         {compareAt !== null && compareAt !== undefined && (
           <span className="text-sm text-zinc-400 line-through dark:text-zinc-500">

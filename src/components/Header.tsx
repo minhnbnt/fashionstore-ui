@@ -203,7 +203,7 @@ export default function Header() {
               </button>
 
               {dropdownOpen && isLoggedIn && (
-                <div className="absolute top-full right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-white/30 bg-white/90 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/90">
+                <div className="absolute top-full right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-white/30 bg-white/90 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-[#11182a]/95">
                   {/* User info */}
                   <div className="border-b border-zinc-100 px-4 py-3 dark:border-white/10">
                     <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-100">

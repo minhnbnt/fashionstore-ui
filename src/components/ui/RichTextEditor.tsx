@@ -62,7 +62,7 @@ export default function RichTextEditor({
   let editTabButtonClass =
     'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors '
   if (activeTab === 'edit') {
-    editTabButtonClass += 'bg-white shadow-xs text-zinc-900 dark:bg-zinc-800 dark:text-white'
+    editTabButtonClass += 'bg-white shadow-xs text-zinc-900 dark:bg-white/10 dark:text-white'
   } else {
     editTabButtonClass +=
       'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
@@ -71,16 +71,16 @@ export default function RichTextEditor({
   let previewTabButtonClass =
     'flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors '
   if (activeTab === 'preview') {
-    previewTabButtonClass += 'bg-white shadow-xs text-zinc-900 dark:bg-zinc-800 dark:text-white'
+    previewTabButtonClass += 'bg-white shadow-xs text-zinc-900 dark:bg-white/10 dark:text-white'
   } else {
     previewTabButtonClass +=
       'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-all focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-all focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 dark:border-white/15 dark:bg-[#11182a]">
       {/* Toolbar header */}
-      <div className="flex flex-wrap items-center justify-between border-b border-zinc-100 bg-zinc-50/70 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/60">
+      <div className="flex flex-wrap items-center justify-between border-b border-zinc-100 bg-zinc-50/70 px-3 py-2 dark:border-white/10 dark:bg-white/5">
         <div className="flex flex-wrap items-center gap-1">
           <button
             type="button"
@@ -88,7 +88,7 @@ export default function RichTextEditor({
             onClick={function () {
               insertFormatting('**', '**')
             }}
-            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             <TextB size={16} weight="bold" />
           </button>
@@ -98,18 +98,18 @@ export default function RichTextEditor({
             onClick={function () {
               insertFormatting('*', '*')
             }}
-            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             <TextItalic size={16} weight="bold" />
           </button>
-          <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+          <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-white/10" />
           <button
             type="button"
             title="Tiêu đề 2"
             onClick={function () {
               insertFormatting('## ')
             }}
-            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             <TextHTwo size={16} weight="bold" />
           </button>
@@ -119,18 +119,18 @@ export default function RichTextEditor({
             onClick={function () {
               insertFormatting('### ')
             }}
-            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             <TextHThree size={16} weight="bold" />
           </button>
-          <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+          <div className="mx-1 h-4 w-px bg-zinc-200 dark:bg-white/10" />
           <button
             type="button"
             title="Danh sách gạch đầu dòng"
             onClick={function () {
               insertFormatting('- ')
             }}
-            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             <ListBullets size={16} weight="bold" />
           </button>
@@ -140,7 +140,7 @@ export default function RichTextEditor({
             onClick={function () {
               insertFormatting('1. ')
             }}
-            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             <ListNumbers size={16} weight="bold" />
           </button>
@@ -150,7 +150,7 @@ export default function RichTextEditor({
             onClick={function () {
               insertFormatting('> ')
             }}
-            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             <Quotes size={16} weight="bold" />
           </button>
@@ -158,14 +158,14 @@ export default function RichTextEditor({
             type="button"
             title="Chèn bảng thông số kích cỡ"
             onClick={handleInsertTable}
-            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="rounded-lg p-1.5 text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             <Table size={16} weight="bold" />
           </button>
         </div>
 
         {/* View Switch: Soạn thảo / Xem trước */}
-        <div className="flex items-center rounded-xl bg-zinc-200/70 p-1 dark:bg-zinc-800/80">
+        <div className="flex items-center rounded-xl bg-zinc-200/70 p-1 dark:bg-white/10">
           <button
             type="button"
             onClick={function () {

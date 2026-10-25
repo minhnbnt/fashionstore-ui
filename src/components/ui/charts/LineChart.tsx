@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { niceCeiling } from '@/lib/adminStats'
+import { formatVnd } from '@/lib/format'
 
 export interface LineChartPoint {
   label: string
@@ -181,7 +182,7 @@ export function LineChart({
     if (formatValue !== undefined) {
       return formatValue(val)
     }
-    return val.toLocaleString('vi-VN') + ' ₫'
+    return formatVnd(val)
   }
 
   if (data.length === 0) {
@@ -301,7 +302,7 @@ export function LineChart({
 
     tooltipNode = (
       <div
-        className={`pointer-events-none absolute z-20 rounded-2xl border border-white/20 bg-zinc-900/90 px-3.5 py-2 text-xs text-white shadow-2xl backdrop-blur-md transition-all duration-75 dark:border-white/10 dark:bg-zinc-800/95 ${transformClass}`}
+        className={`pointer-events-none absolute z-20 rounded-2xl border border-white/20 bg-zinc-900/90 px-3.5 py-2 text-xs text-white shadow-2xl backdrop-blur-md transition-all duration-75 dark:border-white/15 dark:bg-[#0a0f1e]/95 ${transformClass}`}
         style={{
           left: `${(activePoint.x / viewWidth) * 100}%`,
           top: `${(activePoint.y / viewHeight) * 100}%`,

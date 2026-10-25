@@ -16,10 +16,15 @@ interface ShopAboutTabProps {
 }
 
 export default function ShopAboutTab({ shop }: ShopAboutTabProps) {
-  const returnPolicyText =
-    shop.returnPolicy && shop.returnPolicy.trim() !== ''
-      ? shop.returnPolicy
-      : 'Gian hàng tuân thủ chính sách tiêu chuẩn của sàn nét: Hỗ trợ khách hàng đổi trả miễn phí trong vòng 7 ngày kể từ ngày nhận hàng với bất kỳ lý do lỗi kỹ thuật từ nhà sản xuất, lỗi đường chỉ, rách hoặc giao sai mẫu / kích cỡ.'
+  let returnPolicyText =
+    'Gian hàng tuân thủ chính sách tiêu chuẩn của sàn nét: Hỗ trợ khách hàng đổi trả miễn phí trong vòng 7 ngày kể từ ngày nhận hàng với bất kỳ lý do lỗi kỹ thuật từ nhà sản xuất, lỗi đường chỉ, rách hoặc giao sai mẫu / kích cỡ.'
+  if (
+    shop.returnPolicy !== null &&
+    shop.returnPolicy !== undefined &&
+    shop.returnPolicy.trim() !== ''
+  ) {
+    returnPolicyText = shop.returnPolicy
+  }
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">

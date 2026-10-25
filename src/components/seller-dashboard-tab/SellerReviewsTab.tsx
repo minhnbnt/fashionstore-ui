@@ -12,11 +12,18 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
-import { takeData } from '@/lib/apiAdapters'
+import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { reviewItem } from '@/lib/sellerAdapters'
 import { useSellerPermissions } from '@/lib/sellerPermissions'
 
 import type { ReviewItem } from '@/types/seller'
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
 
 interface Props {
   shopId: string
@@ -290,6 +297,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                             key={idx}
                             src={img}
                             alt=""
+                            onError={handleImageError}
                             className="h-16 w-16 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
                           />
                         )

@@ -14,7 +14,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
-import { takeData } from '@/lib/apiAdapters'
+import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { returnItem } from '@/lib/sellerAdapters'
 import { useSellerPermissions } from '@/lib/sellerPermissions'
 import { sellerStatusMeta } from '@/lib/sellerStatus'
@@ -23,6 +23,13 @@ import { formatVnd } from '../../lib/format'
 
 import type { ReturnItem } from '@/types/seller'
 import type { OrderResponse } from '@generated/model/orderResponse'
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
 
 interface Props {
   shopId: string
@@ -275,6 +282,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                       <img
                         src={ret.evidenceImage}
                         alt="Chứng từ"
+                        onError={handleImageError}
                         className="h-20 w-20 rounded-xl border border-zinc-200 object-cover shadow-sm dark:border-white/10"
                       />
                     )}

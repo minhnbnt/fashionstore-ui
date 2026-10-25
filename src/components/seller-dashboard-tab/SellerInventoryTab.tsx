@@ -21,12 +21,19 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
-import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
+import { apiErrorMessage, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { productItem, stockMovementItem } from '@/lib/sellerAdapters'
 import { useSellerPermissions } from '@/lib/sellerPermissions'
 
 import type { ProductItem, StockMovementItem } from '@/types/seller'
 import type { InventoryItemResponse } from '@generated/model/inventoryItemResponse'
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
 
 interface Props {
   shopId: string
@@ -379,6 +386,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
                         <img
                           src={v.productImage}
                           alt={v.productName ?? ''}
+                          onError={handleImageError}
                           className="h-9 w-9 rounded-lg border border-zinc-200 object-cover dark:border-white/10"
                         />
                         <span className="max-w-[220px] truncate font-bold text-zinc-900 dark:text-white">

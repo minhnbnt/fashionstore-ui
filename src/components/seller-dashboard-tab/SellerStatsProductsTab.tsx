@@ -33,6 +33,13 @@ function resolveProductImage(key: string | null): string {
   return imageUrl(key)
 }
 
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
+
 function slowDaysClass(active: boolean): string {
   if (active) {
     return 'bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white'
@@ -179,6 +186,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                         <img
                           src={resolveProductImage(item.imageKey)}
                           alt={item.productName}
+                          onError={handleImageError}
                           className="h-10 w-10 shrink-0 rounded-xl object-cover"
                         />
                         <span className="line-clamp-2 font-semibold text-zinc-900 dark:text-white">
@@ -256,6 +264,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                             <img
                               src={resolveProductImage(item.imageKey)}
                               alt={item.productName}
+                              onError={handleImageError}
                               className="h-8 w-8 shrink-0 rounded-lg object-cover"
                             />
                             <span className="line-clamp-1 max-w-[160px] font-medium text-zinc-800 dark:text-zinc-200">
@@ -346,6 +355,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                           <img
                             src={resolveProductImage(item.imageKey)}
                             alt={item.productName}
+                            onError={handleImageError}
                             className="h-8 w-8 shrink-0 rounded-lg object-cover"
                           />
                           <span className="line-clamp-1 max-w-[160px] font-medium text-zinc-800 dark:text-zinc-200">
@@ -412,6 +422,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                 <img
                   src={resolveProductImage(item.imageKey)}
                   alt={item.productName}
+                  onError={handleImageError}
                   className="h-11 w-11 shrink-0 rounded-xl object-cover grayscale"
                 />
                 <div className="flex-1 overflow-hidden">

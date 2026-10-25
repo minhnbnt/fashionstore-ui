@@ -32,25 +32,47 @@ export default function ShopStorefrontHeader({
   onToggleFollow,
   onOpenChat,
 }: ShopStorefrontHeaderProps) {
-  const logoSrc =
-    shop.logoKey !== null && shop.logoKey !== undefined && shop.logoKey !== ''
-      ? imageUrl(shop.logoKey)
-      : PLACEHOLDER_IMAGE
+  let logoSrc = PLACEHOLDER_IMAGE
+  if (shop.logoKey !== null && shop.logoKey !== undefined && shop.logoKey !== '') {
+    logoSrc = imageUrl(shop.logoKey)
+  }
 
-  const bannerSrc =
-    shop.bannerKey !== null && shop.bannerKey !== undefined && shop.bannerKey !== ''
-      ? imageUrl(shop.bannerKey)
-      : 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80'
+  let bannerSrc = 'https://picsum.photos/seed/netshopbanner/1600/500'
+  if (shop.bannerKey !== null && shop.bannerKey !== undefined && shop.bannerKey !== '') {
+    bannerSrc = imageUrl(shop.bannerKey)
+  }
 
-  const ratingDisplay =
-    shop.rating !== null && shop.rating !== undefined ? shop.rating.toFixed(1) : '5.0'
+  let ratingDisplay = '5.0'
+  if (shop.rating !== null && shop.rating !== undefined) {
+    ratingDisplay = shop.rating.toFixed(1)
+  }
   const isMall = shop.sellerType === 'BUSINESS'
+
+  function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
+    e.currentTarget.onerror = null
+    e.currentTarget.src = PLACEHOLDER_IMAGE
+  }
+
+  let followButtonClass = 'btn-primary'
+  let heartWeight: 'fill' | 'regular' = 'regular'
+  let heartClass = ''
+  if (isFollowing) {
+    followButtonClass =
+      'border border-zinc-300 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200'
+    heartWeight = 'fill'
+    heartClass = 'text-rose-500'
+  }
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm dark:border-white/10 dark:bg-[#11182a]">
       {/* Cover Banner with Gradient Overlay */}
       <div className="relative h-48 w-full overflow-hidden bg-zinc-900 md:h-64">
-        <img src={bannerSrc} alt={shop.name} className="h-full w-full object-cover opacity-80" />
+        <img
+          src={bannerSrc}
+          alt={shop.name}
+          onError={handleImageError}
+          className="h-full w-full object-cover opacity-80"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/20" />
 
         {/* Top Badges */}
@@ -75,8 +97,13 @@ export default function ShopStorefrontHeader({
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           {/* Avatar and Basic Details */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-white shadow-xl sm:h-28 sm:w-28 dark:border-[#11182a] dark:bg-zinc-800">
-              <img src={logoSrc} alt={shop.name} className="h-full w-full object-cover" />
+            <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-white shadow-xl sm:h-28 sm:w-28 dark:border-[#11182a] dark:bg-white/10">
+              <img
+                src={logoSrc}
+                alt={shop.name}
+                onError={handleImageError}
+                className="h-full w-full object-cover"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -122,16 +149,9 @@ export default function ShopStorefrontHeader({
               <button
                 type="button"
                 onClick={onToggleFollow}
-                className={`flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-bold shadow-sm transition-all ${
-                  isFollowing &&
-                  'border border-zinc-300 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200'
-                } ${!isFollowing && 'btn-primary'}`}
+                className={`flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-bold shadow-sm transition-all ${followButtonClass}`}
               >
-                <Heart
-                  size={16}
-                  weight={isFollowing ? 'fill' : 'regular'}
-                  className={isFollowing ? 'text-rose-500' : ''}
-                />
+                <Heart size={16} weight={heartWeight} className={heartClass} />
                 {isFollowing && 'Đang theo dõi'}
                 {!isFollowing && '+ Theo dõi Shop'}
               </button>

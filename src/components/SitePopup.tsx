@@ -4,12 +4,19 @@ import { Link } from 'react-router'
 import { useListPopups } from '@generated/endpoints/site-content/site-content'
 import { X } from '@phosphor-icons/react'
 
-import { imageUrl, takeData } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { browserSeenStore, isInternalLink, markPopupSeen, pickPopup } from '@/lib/siteContent'
 
 import { useSessionQuery } from '../hooks/useSession'
 
 import type { PublicPopupResponse } from '@generated/model/publicPopupResponse'
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
 
 function PopupAction({
   popup,
@@ -136,7 +143,7 @@ export default function SitePopup() {
       aria-label={ariaLabel}
       className="fixed inset-0 z-[60] m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black/60 p-4 text-inherit backdrop-blur-xs"
     >
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-zinc-900">
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-2xl dark:border-white/10 dark:bg-[#11182a]">
         <button
           type="button"
           onClick={close}
@@ -153,6 +160,7 @@ export default function SitePopup() {
               alt={title}
               width={800}
               height={800}
+              onError={handleImageError}
               className="aspect-square w-full object-cover"
             />
           </PopupAction>

@@ -130,7 +130,7 @@ export default function ShopSwitcher({ currentShopId, onSwitchShop }: ShopSwitch
       {isOpen && (
         <div
           id="shop-switcher-dropdown"
-          className="glass absolute top-full left-0 z-50 mt-2 w-72 rounded-3xl border border-zinc-200/90 bg-white/95 p-3 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/95"
+          className="glass absolute top-full left-0 z-50 mt-2 w-72 rounded-3xl border border-zinc-200/90 bg-white/95 p-3 shadow-xl backdrop-blur-xl dark:border-white/15 dark:bg-[#0a0f1e]"
         >
           <div className="flex items-center justify-between px-3 py-2">
             <span className="text-[11px] font-extrabold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">

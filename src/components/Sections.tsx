@@ -7,7 +7,7 @@ import { Star, Truck, ShieldCheck, ArrowsLeftRight, ArrowRight } from '@phosphor
 import { motion, useReducedMotion } from 'motion/react'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
-import { formatVnd } from '@/lib/format'
+import { priceLabel } from '@/lib/format'
 
 import UserAvatar from './UserAvatar'
 import WishlistButton from './WishlistButton'
@@ -31,6 +31,13 @@ function Reveal(props: { children: React.ReactNode; delay?: number }) {
       {props.children}
     </motion.div>
   )
+}
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
 }
 
 export function LogoStrip() {
@@ -96,6 +103,7 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
             src={categoryImage(first.slug)}
             alt={first.name}
             loading="lazy"
+            onError={handleImageError}
             className="h-64 w-full object-cover transition duration-500 group-hover:scale-105 lg:h-[420px]"
           />
           <span className="glass absolute bottom-4 left-4 rounded-full px-5 py-2 text-sm font-bold">
@@ -116,6 +124,7 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
                 src={categoryImage(c.slug)}
                 alt={c.name}
                 loading="lazy"
+                onError={handleImageError}
                 className="h-44 w-full object-cover transition duration-500 group-hover:scale-105 lg:h-[202px]"
               />
               <span className="glass absolute bottom-3 left-3 rounded-full px-4 py-1.5 text-xs font-bold">
@@ -158,7 +167,7 @@ export function ProductCard(props: { item: ProductSummaryResponse }) {
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <span className="font-extrabold text-blue-700 dark:text-sky-300">
-            {p.minPrice !== undefined && p.minPrice !== null ? formatVnd(p.minPrice) : 'Liên hệ'}
+            {priceLabel(p.minPrice)}
           </span>
         </div>
         <button
@@ -258,6 +267,7 @@ export function Editorial() {
         src="https://picsum.photos/seed/net-editorial/900/700"
         alt="Bộ sưu tập nét thu đông"
         loading="lazy"
+        onError={handleImageError}
         className="h-80 w-full rounded-3xl object-cover shadow-xl shadow-sky-200 lg:h-[440px] dark:shadow-black/60"
       />
       <Reveal>

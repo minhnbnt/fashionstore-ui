@@ -816,7 +816,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                     {role.permissions.map((p) => (
                       <span
                         key={p}
-                        className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
+                        className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
                       >
                         {permissionLabel(p)}
                       </span>
@@ -931,7 +931,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                         {permissionLabel(log.action)}
                       </span>
 
-                      <span className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium text-zinc-600 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+                      <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-medium text-zinc-600 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                         {formatTargetType(log.targetType)}
                       </span>
 

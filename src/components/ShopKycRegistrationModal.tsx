@@ -15,11 +15,19 @@ import {
   WarningCircle,
 } from '@phosphor-icons/react'
 
+import { PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
 import { uploadImage } from '@/lib/uploadImage'
 
 import Modal from './Modal'
 
 import type { Step } from '@/types/seller'
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
 
 interface Props {
   isOpen: boolean
@@ -610,6 +618,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       <img
                         src={logoPreview}
                         alt="Logo Shop"
+                        onError={handleImageError}
                         className="h-full w-full rounded-xl object-cover"
                       />
                       <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
@@ -663,6 +672,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       <img
                         src={bannerPreview}
                         alt="Banner Shop"
+                        onError={handleImageError}
                         className="h-full w-full rounded-xl object-cover"
                       />
                       <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
@@ -812,10 +822,11 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       <img
                         src={idFrontPreview}
                         alt="Mặt trước CCCD"
+                        onError={handleImageError}
                         className="h-24 w-full rounded-xl object-cover"
                       />
                       <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow dark:bg-zinc-900 dark:text-zinc-100">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow dark:bg-[#11182a] dark:text-zinc-100">
                           Đổi ảnh
                         </span>
                       </div>
@@ -853,10 +864,11 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       <img
                         src={idBackPreview}
                         alt="Mặt sau CCCD"
+                        onError={handleImageError}
                         className="h-24 w-full rounded-xl object-cover"
                       />
                       <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow dark:bg-zinc-900 dark:text-zinc-100">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow dark:bg-[#11182a] dark:text-zinc-100">
                           Đổi ảnh
                         </span>
                       </div>
@@ -894,10 +906,11 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       <img
                         src={idSelfiePreview}
                         alt="Ảnh Selfie cầm CCCD"
+                        onError={handleImageError}
                         className="h-24 w-full rounded-xl object-cover"
                       />
                       <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow dark:bg-zinc-900 dark:text-zinc-100">
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-900 shadow dark:bg-[#11182a] dark:text-zinc-100">
                           Đổi ảnh
                         </span>
                       </div>
@@ -945,6 +958,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     <img
                       src={businessCertPreview}
                       alt="Giấy phép kinh doanh"
+                      onError={handleImageError}
                       className="h-full w-full rounded-xl object-cover"
                     />
                     <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">

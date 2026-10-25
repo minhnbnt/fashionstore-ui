@@ -51,7 +51,7 @@ export default function RejectProductDialog({ product, onClose, onDone }: Props)
     >
       <form
         onSubmit={handleSubmit}
-        className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-zinc-900"
+        className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:border dark:border-white/10 dark:bg-[#11182a]"
       >
         <div className="flex items-start justify-between gap-3 border-b border-zinc-100 p-5 dark:border-white/10">
           <div className="min-w-0">

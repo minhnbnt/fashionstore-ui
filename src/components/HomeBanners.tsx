@@ -5,10 +5,17 @@ import { useListBanners } from '@generated/endpoints/site-content/site-content'
 import { CaretLeft, CaretRight, Pause, Play } from '@phosphor-icons/react'
 import { useReducedMotion } from 'motion/react'
 
-import { imageUrl, takeData } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { isInternalLink } from '@/lib/siteContent'
 
 import type { PublicBannerResponse } from '@generated/model/publicBannerResponse'
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
 
 const AUTOPLAY_MS = 5000
 const CONTENT_STALE_MS = 5 * 60_000
@@ -67,6 +74,7 @@ function BannerPicture({
         width={width}
         height={height}
         loading={loading}
+        onError={handleImageError}
         className={className}
       />
     </picture>

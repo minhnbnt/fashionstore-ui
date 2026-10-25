@@ -41,7 +41,13 @@ export default function BannerSliderConfigModal({
   }
 
   const handleUpdateSlide = (id: string, patch: Partial<BannerSlideItem>) => {
-    setBanners(banners.map((b) => (b.id === id ? { ...b, ...patch } : b)))
+    const nextBanners = banners.map((b) => {
+      if (b.id === id) {
+        return { ...b, ...patch }
+      }
+      return b
+    })
+    setBanners(nextBanners)
   }
 
   const handleDeleteSlide = (id: string) => {
@@ -49,7 +55,10 @@ export default function BannerSliderConfigModal({
   }
 
   const handleMoveSlide = (index: number, direction: 'UP' | 'DOWN') => {
-    const targetIndex = direction === 'UP' ? index - 1 : index + 1
+    let targetIndex = index + 1
+    if (direction === 'UP') {
+      targetIndex = index - 1
+    }
     if (targetIndex < 0 || targetIndex >= banners.length) {
       return
     }

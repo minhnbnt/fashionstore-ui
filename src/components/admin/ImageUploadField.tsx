@@ -2,7 +2,7 @@ import { useId, useState } from 'react'
 
 import { ImageSquare, Trash, UploadSimple } from '@phosphor-icons/react'
 
-import { imageUrl } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
 import { uploadImage } from '@/lib/uploadImage'
 
 import { ERROR_CLASS, HINT_CLASS, LABEL_CLASS } from './ContentDialog'
@@ -81,6 +81,11 @@ export default function ImageUploadField({
           <img
             src={imageUrl(value)}
             alt=""
+            onError={(e) => {
+              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                e.currentTarget.src = PLACEHOLDER_IMAGE
+              }
+            }}
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}

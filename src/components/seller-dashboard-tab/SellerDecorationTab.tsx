@@ -32,7 +32,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
-import { takeData } from '@/lib/apiAdapters'
+import { takeData, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
 import { decorationBlocks, decorationDraftJson } from '@/lib/sellerAdapters'
 import { useSellerPermissions } from '@/lib/sellerPermissions'
 
@@ -40,6 +40,11 @@ import BannerSliderConfigModal from './decoration/BannerSliderConfigModal'
 import CollectionConfigModal from './decoration/CollectionConfigModal'
 
 import type { DecorationBlock } from '@/types/seller'
+
+function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.onerror = null
+  e.currentTarget.src = PLACEHOLDER_IMAGE
+}
 
 // Id block chỉ dùng cho React key — sinh ở module-level để khỏi gọi Date.now trong render
 function newBlockId(): string {
@@ -164,7 +169,13 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
   }
 
   const handleSaveConfig = (updated: DecorationBlock) => {
-    setDraftBlocks(blocks.map((b) => (b.id === updated.id ? updated : b)))
+    const nextBlocks = blocks.map((b) => {
+      if (b.id === updated.id) {
+        return updated
+      }
+      return b
+    })
+    setDraftBlocks(nextBlocks)
     setEditingBlock(null)
     setIsSliderModalOpen(false)
     setIsCollectionModalOpen(false)
@@ -461,7 +472,10 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   if (!b.enabled) return null
 
                   if (b.type === 'BANNER_SLIDER') {
-                    const slideCount = b.banners ? b.banners.length : 0
+                    let slideCount = 0
+                    if (b.banners !== undefined) {
+                      slideCount = b.banners.length
+                    }
                     return (
                       <div
                         key={b.id}
@@ -475,14 +489,18 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                           </span>
                         </div>
                         <div className="absolute right-0 bottom-2 left-0 flex justify-center gap-1.5">
-                          {Array.from({ length: Math.max(1, slideCount) }).map((_, dotIdx) => (
-                            <span
-                              key={dotIdx}
-                              className={`h-1.5 rounded-full transition-all ${
-                                dotIdx === 0 ? 'w-3.5 bg-white' : 'w-1.5 bg-white/40'
-                              }`}
-                            />
-                          ))}
+                          {Array.from({ length: Math.max(1, slideCount) }).map((_, dotIdx) => {
+                            let dotClass = 'w-1.5 bg-white/40'
+                            if (dotIdx === 0) {
+                              dotClass = 'w-3.5 bg-white'
+                            }
+                            return (
+                              <span
+                                key={dotIdx}
+                                className={`h-1.5 rounded-full transition-all ${dotClass}`}
+                              />
+                            )
+                          })}
                         </div>
                       </div>
                     )
@@ -538,8 +556,9 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                     return (
                       <div key={b.id} className="relative overflow-hidden rounded shadow-sm">
                         <img
-                          src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&q=80"
+                          src="https://picsum.photos/seed/sellerbanner/500/300"
                           alt="Banner"
+                          onError={handleImageError}
                           className="h-28 w-full object-cover"
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/30 px-4 text-center text-xs font-bold text-white">

@@ -13,8 +13,15 @@ import {
   PlayCircle,
 } from '@phosphor-icons/react'
 
-import { imageUrl } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
 import { checkVideoDuration, uploadImage, uploadVideo } from '@/lib/uploadImage'
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
 
 interface Props {
   images: string[]
@@ -304,6 +311,7 @@ export default function ProductMediaUploader({
                 <img
                   src={imageUrl(key)}
                   alt={`Sản phẩm ${index + 1}`}
+                  onError={handleImageError}
                   className="h-full w-full object-cover"
                 />
 
@@ -324,7 +332,7 @@ export default function ProductMediaUploader({
                         handleMoveImage(index, 'left')
                       }}
                       title="Chuyển sang trái"
-                      className="rounded-md bg-white/20 p-1 text-white hover:bg-white/40 disabled:opacity-20"
+                      className="rounded-full bg-white/20 p-1 text-white hover:bg-white/40 disabled:opacity-20"
                     >
                       <ArrowLeft size={12} weight="bold" />
                     </button>
@@ -335,7 +343,7 @@ export default function ProductMediaUploader({
                         handleMoveImage(index, 'right')
                       }}
                       title="Chuyển sang phải"
-                      className="rounded-md bg-white/20 p-1 text-white hover:bg-white/40 disabled:opacity-20"
+                      className="rounded-full bg-white/20 p-1 text-white hover:bg-white/40 disabled:opacity-20"
                     >
                       <ArrowRight size={12} weight="bold" />
                     </button>
@@ -347,7 +355,7 @@ export default function ProductMediaUploader({
                       handleRemoveImage(index)
                     }}
                     title="Xóa ảnh này"
-                    className="rounded-md bg-red-600/80 p-1 text-white hover:bg-red-600"
+                    className="rounded-full bg-red-600/80 p-1 text-white hover:bg-red-600"
                   >
                     <Trash size={12} weight="bold" />
                   </button>
@@ -454,7 +462,7 @@ export default function ProductMediaUploader({
                     <PlayCircle size={18} weight="fill" />
                     <span>Video hợp lệ (thời lượng ≤ 60s)</span>
                     {videoDuration !== null && videoDuration > 0 && (
-                      <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                         {videoDuration}s / 60s
                       </span>
                     )}
@@ -558,6 +566,7 @@ export default function ProductMediaUploader({
                   <img
                     src={imageUrl(garmentKey)}
                     alt="Ảnh Garment phẳng nền trắng"
+                    onError={handleImageError}
                     className="h-full w-full object-contain p-1"
                   />
                   <button
@@ -565,7 +574,7 @@ export default function ProductMediaUploader({
                     onClick={function () {
                       onGarmentChange(null)
                     }}
-                    className="absolute top-1 right-1 rounded-md bg-red-600/80 p-1 text-white hover:bg-red-600"
+                    className="absolute top-1 right-1 rounded-full bg-red-600/80 p-1 text-white hover:bg-red-600"
                   >
                     <Trash size={12} weight="bold" />
                   </button>

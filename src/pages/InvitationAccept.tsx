@@ -129,7 +129,7 @@ export default function InvitationAccept() {
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-lg items-center justify-center px-4 py-16">
-      <div className="glass w-full rounded-3xl border border-zinc-200/80 p-6 shadow-xl sm:p-8 dark:border-white/10 dark:bg-zinc-900/90">
+      <div className="glass w-full rounded-3xl border border-zinc-200/80 p-6 shadow-xl sm:p-8 dark:border-white/10 dark:bg-[#11182a]/95">
         <div className="flex flex-col items-center text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 shadow-sm dark:bg-indigo-950 dark:text-indigo-300">
             <Buildings size={32} weight="duotone" />

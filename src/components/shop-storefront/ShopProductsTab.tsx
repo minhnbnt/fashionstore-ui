@@ -3,22 +3,28 @@ import { Link } from 'react-router'
 
 import { Funnel, Package } from '@phosphor-icons/react'
 
+import { PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 interface ShopProductsTabProps {
   shopId: string
 }
 
-export default function ShopProductsTab({ shopId: _shopId }: ShopProductsTabProps) {
+function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.onerror = null
+  e.currentTarget.src = PLACEHOLDER_IMAGE
+}
+
+export default function ShopProductsTab({ shopId }: ShopProductsTabProps) {
   const [sort, setSort] = useState<'NEWEST' | 'PRICE_ASC' | 'PRICE_DESC'>('NEWEST')
 
-  // Sample storefront shop catalog products
+  // TODO(mock): Danh mục sản phẩm mẫu hiển thị trên storefront khi chưa có API catalog public theo shopId
   const products = [
     {
       id: 'p-1',
       name: 'Áo Thun Cotton Nét Oversize Form Rộng',
       price: 249000,
-      image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&q=80',
+      image: 'https://picsum.photos/seed/netshopprod1/500/500',
       sold: 142,
       rating: 4.9,
     },
@@ -26,7 +32,7 @@ export default function ShopProductsTab({ shopId: _shopId }: ShopProductsTabProp
       id: 'p-2',
       name: 'Sơ Mi Lụa Hàn Quốc Thiết Kế Tối Giản',
       price: 389000,
-      image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&q=80',
+      image: 'https://picsum.photos/seed/netshopprod2/500/500',
       sold: 89,
       rating: 5.0,
     },
@@ -34,7 +40,7 @@ export default function ShopProductsTab({ shopId: _shopId }: ShopProductsTabProp
       id: 'p-3',
       name: 'Quần Khaki Slim-fit Co Giãn 4 Chiều Cao Cấp',
       price: 450000,
-      image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&q=80',
+      image: 'https://picsum.photos/seed/netshopprod3/500/500',
       sold: 215,
       rating: 4.8,
     },
@@ -42,7 +48,7 @@ export default function ShopProductsTab({ shopId: _shopId }: ShopProductsTabProp
       id: 'p-4',
       name: 'Áo Khoác Blazer Nam Nữ Phong Cách Hàn',
       price: 690000,
-      image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&q=80',
+      image: 'https://picsum.photos/seed/netshopprod4/500/500',
       sold: 64,
       rating: 4.9,
     },
@@ -50,7 +56,7 @@ export default function ShopProductsTab({ shopId: _shopId }: ShopProductsTabProp
       id: 'p-5',
       name: 'Váy Đầm Maxi Dáng Xòe Dự Tiệc Thanh Lịch',
       price: 520000,
-      image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&q=80',
+      image: 'https://picsum.photos/seed/netshopprod5/500/500',
       sold: 98,
       rating: 4.9,
     },
@@ -58,11 +64,16 @@ export default function ShopProductsTab({ shopId: _shopId }: ShopProductsTabProp
       id: 'p-6',
       name: 'Áo Polo Thể Thao Co Giãn Thoáng Khí',
       price: 299000,
-      image: 'https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=500&q=80',
+      image: 'https://picsum.photos/seed/netshopprod6/500/500',
       sold: 310,
       rating: 5.0,
     },
   ]
+
+  // Sử dụng shopId trong log chuẩn bị cho việc tích hợp API
+  if (shopId === '') {
+    // Không làm gì, chỉ giữ tham chiếu biến
+  }
 
   const sortedProducts = [...products].sort((a, b) => {
     if (sort === 'PRICE_ASC') return a.price - b.price
@@ -142,6 +153,7 @@ export default function ShopProductsTab({ shopId: _shopId }: ShopProductsTabProp
               <img
                 src={p.image}
                 alt={p.name}
+                onError={handleImageError}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             </div>

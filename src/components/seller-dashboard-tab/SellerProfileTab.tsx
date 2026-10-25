@@ -45,23 +45,36 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
   })
 
   function handleSaveProfile(next: ShopProfileData) {
+    let logoKey: string | null = null
+    if (next.logoUrl !== '') {
+      logoKey = next.logoUrl
+    }
+    let bannerKey: string | null = null
+    if (next.bannerUrl !== '') {
+      bannerKey = next.bannerUrl
+    }
+
     updateShopMutation.mutate({
       id: shopId,
       data: {
         name: next.shopName,
         description: next.bio,
-        logoKey: next.logoUrl !== '' ? next.logoUrl : null,
-        bannerKey: next.bannerUrl !== '' ? next.bannerUrl : null,
+        logoKey,
+        bannerKey,
       },
     })
+
+    let returnPolicy: string | null = null
+    if (next.returnPolicy !== undefined && next.returnPolicy !== '') {
+      returnPolicy = next.returnPolicy
+    }
 
     updateProfileMutation.mutate({
       id: shopId,
       data: {
         phone: next.phone,
         address: next.pickupAddress,
-        returnPolicy:
-          next.returnPolicy !== undefined && next.returnPolicy !== '' ? next.returnPolicy : null,
+        returnPolicy,
         processingDays: next.daysToShip,
         bankName: next.bankName,
         bankAccount: next.bankAccount,
@@ -75,6 +88,11 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
     e.preventDefault()
     handleSaveProfile(formData)
     setSaveSuccess(true)
+  }
+
+  let returnPolicyValue = ''
+  if (formData.returnPolicy !== undefined && formData.returnPolicy !== null) {
+    returnPolicyValue = formData.returnPolicy
   }
 
   return (
@@ -235,11 +253,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
             <textarea
               id="returnPolicyField"
               rows={3}
-              value={
-                formData.returnPolicy !== undefined && formData.returnPolicy !== null
-                  ? formData.returnPolicy
-                  : ''
-              }
+              value={returnPolicyValue}
               onChange={(e) => setFormData({ ...formData, returnPolicy: e.target.value })}
               placeholder="Nhập chi tiết điều kiện đổi trả, hoàn tiền, hỗ trợ đổi size của shop..."
               className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"

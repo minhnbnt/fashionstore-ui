@@ -7,6 +7,13 @@ export function formatVnd(n: number | null | undefined): string {
   return n.toLocaleString('vi-VN') + ' ₫'
 }
 
+export function priceLabel(price: number | null | undefined): string {
+  if (price === null || price === undefined) {
+    return 'Liên hệ'
+  }
+  return formatVnd(price)
+}
+
 export function formatDateTime(iso: string | null | undefined): string {
   if (iso === null || iso === undefined || iso === '') {
     return ''

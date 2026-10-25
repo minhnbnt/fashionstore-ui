@@ -171,7 +171,10 @@ export function returnItem(
   request: ReturnRequestResponse,
   orderById: Map<string, OrderResponse>,
 ): ReturnItem {
-  const order = request.orderId === undefined ? undefined : orderById.get(request.orderId)
+  let order: OrderResponse | undefined
+  if (request.orderId !== undefined) {
+    order = orderById.get(request.orderId)
+  }
   const evidenceKeys = request.evidenceKeys ?? []
   const firstKey = evidenceKeys[0]
 
@@ -184,13 +187,25 @@ export function returnItem(
     status = request.status
   }
 
+  let orderCode = ''
+  let buyerName = ''
+  if (order !== undefined) {
+    orderCode = safeText(order.code)
+    buyerName = safeText(order.shippingName)
+  }
+
+  let evidenceImage = ''
+  if (firstKey !== undefined) {
+    evidenceImage = imageFromKey(firstKey)
+  }
+
   return {
     id: safeId(request.id),
-    orderCode: order === undefined ? '' : safeText(order.code),
-    buyerName: order === undefined ? '' : safeText(order.shippingName),
+    orderCode,
+    buyerName,
     reason: safeText(request.reason),
     description: safeText(request.description),
-    evidenceImage: firstKey === undefined ? '' : imageFromKey(firstKey),
+    evidenceImage,
     status,
     resolution: safeText(request.resolution),
     refundAmount: request.refundAmount,
@@ -221,20 +236,32 @@ export function settlementItem(
   settlement: SettlementResponse,
   orderById: Map<string, OrderResponse>,
 ): SettlementItem {
-  const order = settlement.orderId === undefined ? undefined : orderById.get(settlement.orderId)
-  const status: SettlementItem['status'] = settlement.status === 'RELEASED' ? 'RELEASED' : 'HOLDING'
+  let order: OrderResponse | undefined
+  if (settlement.orderId !== undefined) {
+    order = orderById.get(settlement.orderId)
+  }
+  let status: SettlementItem['status'] = 'HOLDING'
+  if (settlement.status === 'RELEASED') {
+    status = 'RELEASED'
+  }
+  let orderCode = ''
+  if (order !== undefined) {
+    orderCode = safeText(order.code)
+  }
+  let releasedAt: string | undefined
+  if (settlement.releasedAt !== null && settlement.releasedAt !== undefined) {
+    releasedAt = formatDateTime(settlement.releasedAt)
+  }
+
   return {
     id: safeId(settlement.id),
-    orderCode: order === undefined ? '' : safeText(order.code),
+    orderCode,
     grossAmount: settlement.grossAmount ?? 0,
     platformFee: settlement.platformFee ?? 0,
     netAmount: settlement.netAmount ?? 0,
     status,
     holdUntil: formatDateTime(settlement.holdUntil),
-    releasedAt:
-      settlement.releasedAt === null || settlement.releasedAt === undefined
-        ? undefined
-        : formatDateTime(settlement.releasedAt),
+    releasedAt,
   }
 }
 
@@ -380,9 +407,13 @@ export function chatConversationItem(
 }
 
 export function chatMessageItem(message: ChatMessageResponse): ChatMessageItem {
+  let senderType: ChatMessageItem['senderType'] = 'SELLER'
+  if (message.senderType === 'BUYER') {
+    senderType = 'BUYER'
+  }
   return {
     id: safeId(message.id),
-    senderType: message.senderType === 'BUYER' ? 'BUYER' : 'SELLER',
+    senderType,
     content: safeText(message.content),
     sentAt: formatDateTime(message.sentAt),
   }
@@ -390,10 +421,10 @@ export function chatMessageItem(message: ChatMessageResponse): ChatMessageItem {
 
 /** Parse draft hoặc layout JSON thanh block list, JSON loi thi tra ve mang rong */
 export function decorationBlocks(decoration: DecorationResponse | undefined): DecorationBlock[] {
-  const jsonStr =
-    decoration?.draft !== null && decoration?.draft !== undefined && decoration?.draft !== ''
-      ? decoration.draft
-      : decoration?.layout
+  let jsonStr = decoration?.layout
+  if (decoration?.draft !== null && decoration?.draft !== undefined && decoration?.draft !== '') {
+    jsonStr = decoration.draft
+  }
   if (jsonStr === null || jsonStr === undefined || jsonStr === '') {
     return []
   }
@@ -430,11 +461,27 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
         for (const b of record['banners']) {
           if (typeof b === 'object' && b !== null) {
             const bRec = b as Record<string, unknown>
+            let bannerId = `slide-${banners.length + 1}`
+            if (typeof bRec['id'] === 'string') {
+              bannerId = bRec['id']
+            }
+            let imageKey = ''
+            if (typeof bRec['imageKey'] === 'string') {
+              imageKey = bRec['imageKey']
+            }
+            let title: string | undefined
+            if (typeof bRec['title'] === 'string') {
+              title = bRec['title']
+            }
+            let linkUrl: string | undefined
+            if (typeof bRec['linkUrl'] === 'string') {
+              linkUrl = bRec['linkUrl']
+            }
             banners.push({
-              id: typeof bRec['id'] === 'string' ? bRec['id'] : `slide-${banners.length + 1}`,
-              imageKey: typeof bRec['imageKey'] === 'string' ? bRec['imageKey'] : '',
-              title: typeof bRec['title'] === 'string' ? bRec['title'] : undefined,
-              linkUrl: typeof bRec['linkUrl'] === 'string' ? bRec['linkUrl'] : undefined,
+              id: bannerId,
+              imageKey,
+              title,
+              linkUrl,
             })
           }
         }
@@ -458,10 +505,19 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
         displayStyle = record['displayStyle']
       }
 
+      let blockId = `block-${blocks.length + 1}`
+      if (typeof record['id'] === 'string') {
+        blockId = record['id']
+      }
+      let blockTitle = ''
+      if (typeof record['title'] === 'string') {
+        blockTitle = record['title']
+      }
+
       const block: DecorationBlock = {
-        id: typeof record['id'] === 'string' ? record['id'] : `block-${blocks.length + 1}`,
+        id: blockId,
         type,
-        title: typeof record['title'] === 'string' ? record['title'] : '',
+        title: blockTitle,
         enabled: record['enabled'] === true,
       }
       if (banners !== undefined) {
@@ -493,6 +549,10 @@ export function shopProfile(shop: ShopResponse): ShopProfileData {
   if (shop.sellerType === 'BUSINESS') {
     businessType = 'BUSINESS'
   }
+  let taxOrIdNumber = safeText(shop.taxCode)
+  if (taxOrIdNumber === '') {
+    taxOrIdNumber = safeText(shop.idNumber)
+  }
   return {
     shopName: safeText(shop.name),
     slug: safeText(shop.slug),
@@ -506,7 +566,7 @@ export function shopProfile(shop: ShopResponse): ShopProfileData {
     city: '',
     daysToShip: shop.processingDays ?? 2,
     businessType,
-    taxOrIdNumber: safeText(shop.taxCode) === '' ? safeText(shop.idNumber) : safeText(shop.taxCode),
+    taxOrIdNumber,
     isVerified: shop.status === 'APPROVED',
     bankName: safeText(shop.bankName),
     bankAccount: safeText(shop.bankAccount),

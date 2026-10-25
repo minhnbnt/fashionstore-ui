@@ -56,7 +56,10 @@ export default function ProductDetail() {
     if (error instanceof ApiError && error.status === 404) {
       return <NotFound />
     }
-    const status = error instanceof ApiError ? error.status : 0
+    let status = 0
+    if (error instanceof ApiError) {
+      status = error.status
+    }
     return (
       <main className="mx-auto max-w-[1400px] px-4 py-24 text-center">
         <p className="text-sm text-red-600">{apiErrorMessage('productDetail', status)}</p>

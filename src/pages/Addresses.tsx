@@ -22,6 +22,10 @@ export default function Addresses() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<AddressResponse | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  let formMode: 'edit' | 'create' = 'create'
+  if (editing !== null) {
+    formMode = 'edit'
+  }
 
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
@@ -234,7 +238,7 @@ export default function Addresses() {
 
       {formOpen && (
         <AddressFormModal
-          mode={editing !== null ? 'edit' : 'create'}
+          mode={formMode}
           initial={editing}
           onClose={closeForm}
           onSaved={closeForm}

@@ -1460,6 +1460,11 @@ export default function SellerProductsTab({
                 <img
                   src={singleSelectedProduct.image}
                   alt={singleSelectedProduct.name}
+                  onError={function (e) {
+                    if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                      e.currentTarget.src = PLACEHOLDER_IMAGE
+                    }
+                  }}
                   className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
                 />
                 <div className="min-w-0 flex-1">
@@ -1614,6 +1619,11 @@ export default function SellerProductsTab({
                 <img
                   src={singleSelectedProduct.image}
                   alt={singleSelectedProduct.name}
+                  onError={function (e) {
+                    if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                      e.currentTarget.src = PLACEHOLDER_IMAGE
+                    }
+                  }}
                   className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
                 />
                 <div className="min-w-0 flex-1">
@@ -1919,6 +1929,11 @@ export default function SellerProductsTab({
               <img
                 src={deleteTargetProduct.image}
                 alt={deleteTargetProduct.name}
+                onError={function (e) {
+                  if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                    e.currentTarget.src = PLACEHOLDER_IMAGE
+                  }
+                }}
                 className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
               />
               <div className="min-w-0 flex-1">
