@@ -348,7 +348,7 @@ export default function AdminHolidays() {
             type="button"
             onClick={handleSync}
             disabled={syncConfigured === false || sync.isPending}
-            className="flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500"
+            className="btn-primary flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold disabled:opacity-50"
           >
             <ArrowClockwise size={16} weight="bold" />
             {sync.isPending && <span>Đang đồng bộ…</span>}
@@ -405,7 +405,7 @@ export default function AdminHolidays() {
             <button
               type="submit"
               disabled={canSave === false}
-              className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500"
+              className="btn-primary rounded-full px-5 py-2 text-sm font-bold disabled:opacity-50"
             >
               {save.isPending && <span>Đang lưu…</span>}
               {save.isPending === false && <span>Lưu</span>}
@@ -430,7 +430,7 @@ export default function AdminHolidays() {
               'rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
             if (selected) {
               tabClass =
-                'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-600 text-white dark:bg-indigo-500'
+                'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
             }
             return (
               <button

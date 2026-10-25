@@ -84,6 +84,12 @@ export function productItem(
   if (product.status === 'HIDDEN') {
     status = 'INACTIVE'
   }
+  if (product.status === 'PENDING') {
+    status = 'PENDING'
+  }
+  if (product.status === 'BANNED') {
+    status = 'BANNED'
+  }
 
   return {
     id: safeId(product.id),
@@ -92,13 +98,16 @@ export function productItem(
     sku: variants[0]?.sku ?? '',
     // API chi tra categoryId, ten danh muc resolve o ngoai (categories query)
     category: categoryName ?? '',
+    categoryId: product.categoryId,
     price: product.minPrice ?? 0,
     originalPrice: maxCompareAt ?? product.minPrice ?? 0,
     stock: product.totalStock ?? 0,
-    // API chua co so luong da ban
-    sold: 0,
+    sold: product.soldCount ?? 0,
     status,
+    violationType: product.violationType,
+    statusReason: product.statusReason,
     image: imageFromKey(product.defaultImageKey),
+    createdAt: product.createdAt,
     variants,
   }
 }

@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   appendTemplate,
   BUYER_REPORT_REASONS,
+  canApprove,
   canBan,
+  canReject,
   canRestore,
   keywordError,
   priceRangeLabel,
@@ -43,6 +45,7 @@ describe('status rules', () => {
   it('bans only active or hidden products', () => {
     expect(canBan('ACTIVE')).toBe(true)
     expect(canBan('HIDDEN')).toBe(true)
+    expect(canBan('PENDING')).toBe(false)
     expect(canBan('BANNED')).toBe(false)
     expect(canBan('DELETED')).toBe(false)
   })
@@ -52,7 +55,15 @@ describe('status rules', () => {
     expect(canRestore('HIDDEN')).toBe(false)
   })
 
+  it('approves or rejects only pending products', () => {
+    expect(canApprove('PENDING')).toBe(true)
+    expect(canApprove('ACTIVE')).toBe(false)
+    expect(canReject('PENDING')).toBe(true)
+    expect(canReject('ACTIVE')).toBe(false)
+  })
+
   it('labels statuses in Vietnamese', () => {
+    expect(statusLabel('PENDING')).toBe('Chờ duyệt')
     expect(statusLabel('BANNED')).toBe('Bị gỡ')
     expect(statusLabel('DELETED')).toBe('Shop đã xóa')
   })

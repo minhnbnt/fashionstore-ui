@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
-import { useListAdminProducts } from '@generated/endpoints/admin-products/admin-products'
+import {
+  useApproveProduct,
+  useListAdminProducts,
+} from '@generated/endpoints/admin-products/admin-products'
 import {
   ArrowCounterClockwise,
+  CheckCircle,
   Flag,
   MagnifyingGlass,
   Prohibit,
@@ -15,7 +19,9 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import {
+  canApprove,
   canBan,
+  canReject,
   canRestore,
   formatDateTime,
   priceRangeLabel,
@@ -29,6 +35,7 @@ import AdminProductDetailPanel from '../components/admin/AdminProductDetailPanel
 import AdminShell from '../components/admin/AdminShell'
 import BanProductDialog from '../components/admin/BanProductDialog'
 import DismissReportsDialog from '../components/admin/DismissReportsDialog'
+import RejectProductDialog from '../components/admin/RejectProductDialog'
 import RestoreProductDialog from '../components/admin/RestoreProductDialog'
 import Pagination from '../components/search/Pagination'
 
@@ -87,11 +94,15 @@ function ProductRow({
   onOpen,
   onBan,
   onRestore,
+  onApprove,
+  onReject,
 }: {
   product: AdminProductResponse
   onOpen: () => void
   onBan: () => void
   onRestore: () => void
+  onApprove?: () => void
+  onReject?: () => void
 }) {
   return (
     <li className="flex flex-col gap-3 rounded-2xl bg-white/70 p-3 sm:flex-row sm:items-center dark:bg-white/5">
@@ -146,6 +157,26 @@ function ProductRow({
             {formatDateTime(product.updatedAt)}
           </span>
         </div>
+        {canApprove(product.status) && onApprove !== undefined && (
+          <button
+            type="button"
+            onClick={onApprove}
+            className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700"
+          >
+            <CheckCircle size={14} weight="bold" />
+            Duyệt
+          </button>
+        )}
+        {canReject(product.status) && onReject !== undefined && (
+          <button
+            type="button"
+            onClick={onReject}
+            className="flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+          >
+            <Prohibit size={14} weight="bold" />
+            Từ chối
+          </button>
+        )}
         {canBan(product.status) && (
           <button
             type="button"
@@ -183,9 +214,11 @@ export default function AdminProducts() {
   const [banTarget, setBanTarget] = useState<AdminProductResponse | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<AdminProductResponse | null>(null)
   const [dismissTarget, setDismissTarget] = useState<AdminProductResponse | null>(null)
+  const [rejectTarget, setRejectTarget] = useState<AdminProductResponse | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const listQuery = useListAdminProducts(paramsOf(status, q, shopId, page))
+  const approveMutation = useApproveProduct()
 
   function updateUrl(changes: Record<string, string | null>) {
     const next = new URLSearchParams(searchParams)
@@ -208,8 +241,26 @@ export default function AdminProducts() {
     setBanTarget(null)
     setRestoreTarget(null)
     setDismissTarget(null)
+    setRejectTarget(null)
     setNotice(message)
     void queryClient.invalidateQueries({ predicate: (query) => isAdminProductKey(query.queryKey) })
+  }
+
+  function handleApprove(product: AdminProductResponse) {
+    if (product.id === undefined || product.id === null) {
+      return
+    }
+    approveMutation.mutate(
+      { id: product.id },
+      {
+        onSuccess: () => {
+          refreshAfterModeration(`Đã phê duyệt sản phẩm "${product.name}".`)
+        },
+        onError: (err) => {
+          setNotice(hookErrorMessage('adminProducts', err))
+        },
+      },
+    )
   }
 
   let listBody = (
@@ -242,6 +293,9 @@ export default function AdminProducts() {
     if (status === 'REPORTED') {
       emptyText = 'Không có báo cáo nào chờ xử lý.'
     }
+    if (status === 'PENDING') {
+      emptyText = 'Không có sản phẩm nào chờ duyệt.'
+    }
     listBody = (
       <p className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">{emptyText}</p>
     )
@@ -256,6 +310,8 @@ export default function AdminProducts() {
                 onOpen={() => setOpenId(product.id ?? null)}
                 onBan={() => setBanTarget(product)}
                 onRestore={() => setRestoreTarget(product)}
+                onApprove={() => handleApprove(product)}
+                onReject={() => setRejectTarget(product)}
               />
             )
           })}
@@ -296,7 +352,7 @@ export default function AdminProducts() {
                 'rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
               if (selected) {
                 tabClass =
-                  'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-600 text-white dark:bg-indigo-500'
+                  'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
               }
               return (
                 <button
@@ -325,10 +381,7 @@ export default function AdminProducts() {
                 className="w-full bg-transparent text-sm outline-none"
               />
             </label>
-            <button
-              type="submit"
-              className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 dark:bg-indigo-500"
-            >
+            <button type="submit" className="btn-primary rounded-full px-4 py-2 text-sm font-bold">
               Tìm
             </button>
           </form>
@@ -366,6 +419,8 @@ export default function AdminProducts() {
           onBan={(product) => setBanTarget(product)}
           onRestore={(product) => setRestoreTarget(product)}
           onDismiss={(product) => setDismissTarget(product)}
+          onApprove={(product) => handleApprove(product)}
+          onReject={(product) => setRejectTarget(product)}
         />
       )}
 
@@ -378,6 +433,14 @@ export default function AdminProducts() {
               `Đã đóng ${count} báo cáo của "${dismissTarget.name}": không vi phạm.`,
             )
           }
+        />
+      )}
+
+      {rejectTarget !== null && (
+        <RejectProductDialog
+          product={rejectTarget}
+          onClose={() => setRejectTarget(null)}
+          onDone={() => refreshAfterModeration(`Đã từ chối duyệt sản phẩm "${rejectTarget.name}".`)}
         />
       )}
 

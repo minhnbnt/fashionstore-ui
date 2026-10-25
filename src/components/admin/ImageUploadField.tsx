@@ -70,7 +70,9 @@ export default function ImageUploadField({
     <div>
       <p className={LABEL_CLASS}>
         {label}
-        {optional && <span className="font-normal text-zinc-500"> (không bắt buộc)</span>}
+        {optional && (
+          <span className="font-normal text-zinc-500 dark:text-zinc-400"> (không bắt buộc)</span>
+        )}
       </p>
       <div
         className={`relative flex w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 dark:border-white/15 dark:bg-white/5 ${aspectClass}`}

@@ -1,6 +1,7 @@
 export * from './admin'
 export * from './auth'
 export * from './cart'
+export * from './chat'
 export * from './order'
 export * from './product'
 export * from './search'

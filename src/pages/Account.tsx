@@ -21,11 +21,12 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import StatusBadge from '@/components/ui/StatusBadge'
 import { adminErrorMessage } from '@/lib/admin'
 import { takeData } from '@/lib/apiAdapters'
 import { getRoleFromSession, refreshAuthSession } from '@/lib/auth'
 
-import StatusBadge from '../components/admin/StatusBadge'
+import AddressBookTab from '../components/account/AddressBookTab'
 import ChangePasswordForm from '../components/ChangePasswordForm'
 import ShopKycRegistrationModal from '../components/ShopKycRegistrationModal'
 import UserAvatar from '../components/UserAvatar'
@@ -250,8 +251,11 @@ export default function Account() {
 
           {/* Case 1: Loading state */}
           {mineQuery.isLoading && (
-            <div className="mt-6 flex items-center justify-center py-12 text-sm text-zinc-500">
-              <ArrowClockwise size={20} className="mr-2 animate-spin text-orange-600" />
+            <div className="mt-6 flex items-center justify-center py-12 text-sm text-zinc-500 dark:text-zinc-400">
+              <ArrowClockwise
+                size={20}
+                className="mr-2 animate-spin text-orange-600 dark:text-orange-400"
+              />
               <span>Đang kiểm tra hồ sơ gian hàng…</span>
             </div>
           )}
@@ -260,7 +264,7 @@ export default function Account() {
           {mineQuery.isLoading === false && currentShop === null && (
             <div
               id="card-no-shop"
-              className="mt-6 rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50/70 via-white to-amber-50/50 p-6 dark:border-orange-500/20 dark:bg-zinc-800/60"
+              className="mt-6 rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50/70 via-white to-amber-50/50 p-6 dark:border-orange-500/20 dark:bg-zinc-800/60 dark:bg-none"
             >
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-xs font-extrabold text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
@@ -277,7 +281,8 @@ export default function Account() {
               <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
                 Khởi tạo gian hàng chỉ trong 3 phút và tiếp cận hàng triệu tín đồ thời trang trẻ.
                 Tận hưởng hệ sinh thái thương mại toàn diện: công nghệ thử đồ ảo Virtual Try-On,
-                quản lý sản phẩm & đơn hàng đa kênh thông minh, cùng bộ công cụ trang trí gian hàng chuyên nghiệp.
+                quản lý sản phẩm & đơn hàng đa kênh thông minh, cùng bộ công cụ trang trí gian hàng
+                chuyên nghiệp.
               </p>
               <div className="mt-6">
                 <button
@@ -426,8 +431,8 @@ export default function Account() {
                     </p>
                     <p className="mt-0.5">
                       Tên chủ tài khoản ngân hàng nhận tiền doanh thu bắt buộc phải trùng khớp với
-                      Họ và tên trên Căn cước công dân của chủ shop ({currentShop.legalName}). Hồ
-                      sơ đang được Ban quản trị nét thẩm định và phê duyệt trong vòng 1-3 ngày làm
+                      Họ và tên trên Căn cước công dân của chủ shop ({currentShop.legalName}). Hồ sơ
+                      đang được Ban quản trị nét thẩm định và phê duyệt trong vòng 1-3 ngày làm
                       việc.
                     </p>
                   </div>
@@ -597,6 +602,11 @@ export default function Account() {
             )}
         </div>
       </div>
+
+      {/* Address Book */}
+      <section id="address-book" className="glass mt-6 rounded-3xl p-6 md:p-8">
+        <AddressBookTab />
+      </section>
 
       {/* Shop eKYC Registration Modal */}
       <ShopKycRegistrationModal

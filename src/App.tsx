@@ -1,10 +1,12 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
 
+import BuyerChatWidget from './components/chat/BuyerChatWidget'
 import Header from './components/Header'
 import RequireAuth from './components/RequireAuth'
 import RequireRole from './components/RequireRole'
 import { Footer } from './components/Sections'
+import AmbientBackground from './components/ui/AmbientBackground'
 
 const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
@@ -26,6 +28,10 @@ const AdminHolidays = lazy(() => import('./pages/AdminHolidays'))
 const AdminBannedKeywords = lazy(() => import('./pages/AdminBannedKeywords'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const Cart = lazy(() => import('./pages/Cart'))
+const Checkout = lazy(() => import('./pages/Checkout'))
+const Addresses = lazy(() => import('./pages/Addresses'))
+const Wishlist = lazy(() => import('./pages/Wishlist'))
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -61,6 +67,7 @@ function App() {
 
   return (
     <div className="grain min-h-[100dvh]">
+      <AmbientBackground />
       {!isShopRoute && <Header />}
       <ScrollToHash />
       <Suspense fallback={<PageLoading />}>
@@ -78,6 +85,38 @@ function App() {
             element={
               <RequireAuth>
                 <Account />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/account/addresses"
+            element={
+              <RequireAuth>
+                <Addresses />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/wishlist"
+            element={
+              <RequireAuth>
+                <Wishlist />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/cart"
+            element={
+              <RequireAuth>
+                <Cart />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <RequireAuth>
+                <Checkout />
               </RequireAuth>
             }
           />
@@ -172,6 +211,7 @@ function App() {
         </Routes>
       </Suspense>
       {!isShopRoute && <Footer />}
+      <BuyerChatWidget />
     </div>
   )
 }

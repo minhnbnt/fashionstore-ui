@@ -1,10 +1,15 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 
 import { Minus, Plus, ShoppingBag, Star } from '@phosphor-icons/react'
 
 import { priceInfo } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import { findVariant, isOptionAvailable } from '@/lib/variants'
+
+import { useCart } from '../../hooks/useCart'
+import Markdown from '../Markdown'
+import WishlistButton from '../WishlistButton'
 
 import type { ProductResponse } from '@generated/model/productResponse'
 
@@ -27,6 +32,8 @@ function unavailableTitle(available: boolean): string | undefined {
 
 export default function ProductInfo(props: { product: ProductResponse }) {
   const p = props.product
+  const { isLoggedIn, addItem } = useCart()
+  const navigate = useNavigate()
   const info = priceInfo(p)
   const variants = p.variants ?? []
   const [color, setColor] = useState<string | null>(null)
@@ -86,6 +93,31 @@ export default function ProductInfo(props: { product: ProductResponse }) {
     }
   }
 
+  function addToCart() {
+    if (requireSelection() === false) {
+      return
+    }
+    if (isLoggedIn === false) {
+      void navigate('/login', { state: { from: '/product/' + (p.id ?? '') } })
+      return
+    }
+    if (match === undefined || match.id === undefined) {
+      showToast('Vui lòng chọn màu sắc và kích cỡ')
+      return
+    }
+    addItem.mutate(
+      { data: { variantId: match.id, quantity: qty } },
+      {
+        onSuccess: function () {
+          showToast('Đã thêm ' + qty + ' × ' + (p.name ?? '') + ' vào giỏ')
+        },
+        onError: function () {
+          showToast('Không thêm được vào giỏ, vui lòng thử lại')
+        },
+      },
+    )
+  }
+
   if (info.totalStock === 0) {
     return (
       <div>
@@ -120,9 +152,9 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         )}
       </div>
       {p.description !== undefined && (
-        <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-          {p.description}
-        </p>
+        <div className="mt-3">
+          <Markdown source={p.description} />
+        </div>
       )}
       {info.colors.length > 0 && (
         <div className="mt-4">
@@ -191,13 +223,9 @@ export default function ProductInfo(props: { product: ProductResponse }) {
       <div className="mt-5 flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
-          onClick={function () {
-            if (requireSelection() === false) {
-              return
-            }
-            showToast('Đã thêm ' + qty + ' × ' + (p.name ?? '') + ' vào giỏ')
-          }}
-          className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold"
+          onClick={addToCart}
+          disabled={addItem.isPending}
+          className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold disabled:opacity-60"
         >
           <ShoppingBag size={16} weight="fill" />
           Thêm giỏ
@@ -214,6 +242,7 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         >
           Mua ngay
         </button>
+        <WishlistButton productId={p.id} variant="action" />
       </div>
       {toast && (
         <p className="glass fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full px-5 py-2 text-sm font-bold">

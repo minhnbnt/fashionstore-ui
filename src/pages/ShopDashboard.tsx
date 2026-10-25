@@ -14,6 +14,7 @@ import {
   SellerAddProductTab,
   SellerChatTab,
   SellerDecorationTab,
+  SellerEditProductTab,
   SellerInventoryTab,
   SellerOrdersTab,
   SellerOverviewTab,
@@ -116,6 +117,7 @@ export default function ShopDashboard() {
   // Tab đang mở nằm trên URL (/shop?tab=orders) để F5/gửi link giữ nguyên tab.
   // Thiếu hoặc sai param thì về OVERVIEW; OVERVIEW không cần param cho URL gọn.
   const activeTab = parseSellerTab(searchParams.get('tab'))
+  const editProductId = searchParams.get('productId') ?? ''
 
   function handleSelectTab(tab: SellerTabId) {
     const param = sellerTabParam(tab)
@@ -195,6 +197,7 @@ export default function ShopDashboard() {
       {activeTab === 'OVERVIEW' && (
         <SellerOverviewTab
           onNavigateTab={handleOverviewNavigate}
+          shopName={shopName}
           pendingOrdersCount={pendingOrdersCount}
           confirmedOrdersCount={confirmedOrdersCount}
           pendingReturnsCount={pendingReturnsCount}
@@ -208,12 +211,25 @@ export default function ShopDashboard() {
           onNavigateAddProduct={function () {
             handleSelectTab('ADD_PRODUCT')
           }}
+          onNavigateEditProduct={function (id: string) {
+            setSearchParams({ tab: 'edit_product', productId: id })
+          }}
         />
       )}
 
       {activeTab === 'ADD_PRODUCT' && (
         <SellerAddProductTab
           shopId={shopId}
+          onBack={function () {
+            handleSelectTab('PRODUCTS')
+          }}
+        />
+      )}
+
+      {activeTab === 'EDIT_PRODUCT' && (
+        <SellerEditProductTab
+          shopId={shopId}
+          productId={editProductId}
           onBack={function () {
             handleSelectTab('PRODUCTS')
           }}
@@ -239,7 +255,7 @@ export default function ShopDashboard() {
 
       {activeTab === 'CHAT' && <SellerChatTab shopId={shopId} autoReplyText={autoReplyText} />}
 
-      {activeTab === 'DECORATION' && <SellerDecorationTab shopId={shopId} />}
+      {activeTab === 'DECORATION' && <SellerDecorationTab shopId={shopId} shopName={shopName} />}
 
       {activeTab === 'STAFF' && <SellerStaffTab shopId={shopId} />}
 

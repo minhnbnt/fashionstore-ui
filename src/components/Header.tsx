@@ -5,12 +5,10 @@ import { useListCategories } from '@generated/endpoints/categories/categories'
 import {
   Heart,
   MagnifyingGlass,
-  Moon,
   ShieldCheck,
   ShoppingBag,
   SignOut,
   Storefront,
-  Sun,
   User,
   UserCircle,
 } from '@phosphor-icons/react'
@@ -18,9 +16,11 @@ import {
 import { takeData } from '@/lib/apiAdapters'
 
 import { useSignOut } from '../hooks/useAuthMutations'
+import { useCart } from '../hooks/useCart'
 import { useSessionQuery } from '../hooks/useSession'
-import { useTheme } from '../hooks/useTheme'
+import { useWishlist } from '../hooks/useWishlist'
 import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
+import ThemeToggle from './ui/ThemeToggle'
 import UserAvatar from './UserAvatar'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
@@ -51,9 +51,10 @@ function RoleBadge({ role }: { role: string }) {
 
 export default function Header() {
   const { data: session } = useSessionQuery()
-  const { theme, toggle } = useTheme()
   const navigate = useNavigate()
   const signOut = useSignOut()
+  const { totalQuantity } = useCart()
+  const { count: wishlistCount } = useWishlist()
   const [keyword, setKeyword] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -141,7 +142,7 @@ export default function Header() {
           </nav>
           <form
             onSubmit={submitSearch}
-            className="ml-auto hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-white bg-white/80 px-4 py-2 text-sm text-zinc-500 md:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-300"
+            className="ml-auto hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2 text-sm text-zinc-500 md:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-300"
           >
             <MagnifyingGlass size={16} weight="bold" />
             <input
@@ -232,30 +233,32 @@ export default function Header() {
               )}
             </div>
 
-            <button
-              type="button"
-              aria-label="Yêu thích"
-              className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10"
+            <Link
+              to="/wishlist"
+              aria-label="Sản phẩm yêu thích"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10"
             >
               <Heart size={20} />
-            </button>
-            <button
-              type="button"
-              onClick={toggle}
-              aria-label="Đổi giao diện sáng tối"
-              className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10"
-            >
-              {theme === 'dark' && <Sun size={20} />}
-              {theme !== 'dark' && <Moon size={20} />}
-            </button>
-            <button
-              type="button"
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-700 px-1 text-[11px] font-extrabold text-white shadow">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+            <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10" />
+            <Link
+              to="/cart"
               aria-label="Giỏ hàng"
-              className="btn-primary flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold"
+              className="btn-primary relative flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold"
             >
               <ShoppingBag size={18} weight="fill" />
               <span className="hidden sm:inline">Giỏ</span>
-            </button>
+              {totalQuantity > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-extrabold text-indigo-700 shadow">
+                  {totalQuantity}
+                </span>
+              )}
+            </Link>
           </div>
         </div>
       </div>

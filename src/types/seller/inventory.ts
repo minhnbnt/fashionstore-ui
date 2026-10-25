@@ -8,8 +8,12 @@ export interface ProductItem {
   originalPrice: number
   stock: number
   sold: number
-  status: 'ACTIVE' | 'INACTIVE' | 'DELETED'
+  status: 'ACTIVE' | 'PENDING' | 'HIDDEN' | 'INACTIVE' | 'BANNED' | 'DELETED'
+  violationType?: string | null
+  statusReason?: string | null
   image: string
+  createdAt?: string
+  categoryId?: string | null
   variants: {
     id: string
     size: string
