@@ -59,6 +59,7 @@ const PERMISSION_LABELS: Record<string, string> = {
   ACCEPT_INVITATION: 'Chấp nhận lời mời',
   REVOKE_INVITATION: 'Thu hồi lời mời',
   CHANGE_ROLE: 'Đổi vai trò nhân viên',
+  CHANGE_MEMBER_ROLE: 'Đổi vai trò nhân viên',
   CREATE_ROLE: 'Tạo vai trò mới',
   UPDATE_ROLE: 'Cập nhật vai trò',
   DELETE_ROLE: 'Xóa vai trò',
@@ -71,12 +72,12 @@ export function canSeeTab(tab: SellerTabId, permissions: string[], isOwner: bool
     return true
   }
 
-  if (tab === 'OVERVIEW' || tab === 'PROFILE') {
-    return true
+  if (tab === 'PROFILE' || tab === 'STAFF') {
+    return false
   }
 
-  if (tab === 'STAFF') {
-    return false
+  if (tab === 'OVERVIEW') {
+    return permissions.includes('REVENUE_READ')
   }
 
   if (tab === 'PRODUCTS') {
