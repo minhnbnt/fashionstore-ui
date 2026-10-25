@@ -27,7 +27,6 @@ import {
   LockKey,
   MagnifyingGlass,
   PencilSimple,
-  Robot,
   Shield,
   ShieldCheck,
   Trash,
@@ -917,68 +916,70 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
 
             {filteredAuditLogs.map((log) => {
               const badgeMeta = getAuditActionBadgeMeta(log.action)
-              const hasActor = Boolean(log.actorName || log.actorEmail)
-              let initialLetter = 'H'
-              if (log.actorName) {
-                initialLetter = log.actorName.trim().charAt(0).toUpperCase()
-              } else if (log.actorEmail) {
-                initialLetter = log.actorEmail.trim().charAt(0).toUpperCase()
-              }
+              const detailSections = (log.detail || '')
+                .split(' | ')
+                .map((s) => s.trim())
+                .filter(Boolean)
 
               return (
-                <div key={log.id} className="group relative flex items-start gap-3.5">
-                  {/* Timeline Node / Avatar */}
-                  <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-zinc-200/80 bg-white shadow-sm ring-4 ring-zinc-50 transition-transform group-hover:scale-105 group-hover:border-indigo-300 dark:border-white/15 dark:bg-[#182235] dark:ring-[#11182a]">
-                    {hasActor && (
-                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                        {initialLetter}
+                <div
+                  key={log.id}
+                  className="space-y-2.5 rounded-2xl border border-zinc-200/80 bg-white/95 p-4 shadow-sm transition hover:border-zinc-300 hover:shadow-md dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20"
+                >
+                  {/* Header Row */}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${badgeMeta.colorClass}`}
+                      >
+                        {permissionLabel(log.action)}
                       </span>
-                    )}
-                    {!hasActor && (
-                      <Robot size={18} className="text-zinc-500 dark:text-zinc-400" />
-                    )}
-                  </div>
 
-                  {/* Timeline Content Card */}
-                  <div className="flex-1 space-y-2 rounded-2xl border border-zinc-200/80 bg-white/95 p-4 shadow-sm transition hover:border-zinc-300 group-hover:shadow dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20">
-                    {/* Header Row */}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${badgeMeta.colorClass}`}
-                        >
-                          {permissionLabel(log.action)}
+                      <span className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium text-zinc-600 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+                        {formatTargetType(log.targetType)}
+                      </span>
+
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-100">
+                          {log.actorName || 'Hệ thống tự động'}
                         </span>
-
-                        <span className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium text-zinc-600 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
-                          {formatTargetType(log.targetType)}
-                        </span>
-
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-100">
-                            {log.actorName || 'Hệ thống tự động'}
+                        {log.actorEmail && (
+                          <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                            ({log.actorEmail})
                           </span>
-                          {log.actorEmail && (
-                            <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                              ({log.actorEmail})
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1 text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
-                        <Clock size={13} />
-                        <span>{log.createdAt}</span>
+                        )}
                       </div>
                     </div>
 
-                    {/* Detail Box */}
-                    {log.detail && (
-                      <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/70 p-3 text-xs leading-relaxed text-zinc-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-300">
-                        {log.detail}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1 text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
+                      <Clock size={13} />
+                      <span>{log.createdAt}</span>
+                    </div>
                   </div>
+
+                  {/* Detail Box */}
+                  {log.detail && (
+                    <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/70 p-3 text-xs leading-relaxed text-zinc-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-300">
+                      {detailSections.length <= 1 && <div>{log.detail}</div>}
+                      {detailSections.length > 1 && (
+                        <div className="space-y-1.5">
+                          <div className="font-semibold text-zinc-800 dark:text-zinc-200">
+                            {detailSections[0]}
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-0.5">
+                            {detailSections.slice(1).map((section, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center rounded-lg border border-zinc-200/90 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-700 shadow-2xs dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
+                              >
+                                {section}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
