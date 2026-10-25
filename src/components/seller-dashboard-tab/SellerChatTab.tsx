@@ -15,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
+import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
 import { takeData } from '@/lib/apiAdapters'
 import { chatConversationItem, chatMessageItem } from '@/lib/sellerAdapters'
 
@@ -84,6 +85,10 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
   const messagesQuery = useMessages(activeConvId, {
     query: { enabled: activeConvId !== '' },
   })
+
+  // Realtime: nhận tin nhắn mới + read receipt qua WebSocket thay vì chờ refetch
+  useConversationListRealtime()
+  useChatMessagesRealtime(activeConvId, 'SELLER')
 
   const sendMessageMutation = useSendMessage({
     mutation: {
