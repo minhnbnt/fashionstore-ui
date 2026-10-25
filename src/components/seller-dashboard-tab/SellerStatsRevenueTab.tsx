@@ -153,6 +153,11 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
     color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] ?? '#6366f1',
   }))
 
+  let categoryTotalRevenue = 0
+  for (const cat of categoryDonutData) {
+    categoryTotalRevenue += cat.value
+  }
+
   let paymentItems = revenuePaymentItems(null)
   if (paymentQuery.data !== undefined) {
     paymentItems = revenuePaymentItems(takeData(paymentQuery.data))
@@ -516,7 +521,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
             <DonutChart
               data={categoryDonutData}
               centerLabel="Tổng danh mục"
-              centerValue={formatVnd(compData.currentRevenue)}
+              centerValue={formatVnd(categoryTotalRevenue)}
               formatValue={formatVnd}
             />
           </div>

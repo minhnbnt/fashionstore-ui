@@ -18,12 +18,84 @@ export interface LineChartProps {
   formatValue?: (val: number) => string
 }
 
-const VIEW_WIDTH = 640
-const VIEW_HEIGHT = 220
-const PAD_LEFT = 60
-const PAD_RIGHT = 24
-const PAD_TOP = 24
-const PAD_BOTTOM = 36
+const VIEW_WIDTH = 700
+const VIEW_HEIGHT = 240
+const PAD_LEFT = 70
+const PAD_RIGHT = 30
+const PAD_TOP = 25
+const PAD_BOTTOM = 40
+
+function formatAxisLabel(label: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(label)) {
+    const parts = label.split('-')
+    const day = parts[2] ?? ''
+    const month = parts[1] ?? ''
+    return `${day}/${month}`
+  }
+  if (/^\d{4}-W\d{2}$/.test(label)) {
+    const parts = label.split('-W')
+    return `T${parts[1] ?? ''}`
+  }
+  if (/^\d{4}-\d{2}$/.test(label)) {
+    const parts = label.split('-')
+    return `T${parts[1] ?? ''}`
+  }
+  return label
+}
+
+function formatCompactAxis(val: number): string {
+  if (val >= 1_000_000_000) {
+    const b = val / 1_000_000_000
+    let bStr = b.toFixed(1)
+    if (b % 1 === 0) {
+      bStr = b.toString()
+    }
+    return `${bStr} tỷ`
+  }
+  if (val >= 1_000_000) {
+    const m = val / 1_000_000
+    let mStr = m.toFixed(1)
+    if (m % 1 === 0) {
+      mStr = m.toString()
+    }
+    return `${mStr} tr`
+  }
+  if (val >= 1_000) {
+    const k = Math.round(val / 1_000)
+    return `${k} k`
+  }
+  if (val === 0) {
+    return '0 ₫'
+  }
+  return `${val} ₫`
+}
+
+function createSmoothPath(points: Array<{ x: number; y: number }>): string {
+  if (points.length === 0) {
+    return ''
+  }
+  const first = points[0]
+  if (points.length === 1 && first !== undefined) {
+    return `M ${first.x} ${first.y}`
+  }
+  if (first === undefined) {
+    return ''
+  }
+  let path = `M ${first.x.toFixed(1)} ${first.y.toFixed(1)}`
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i]
+    const p1 = points[i + 1]
+    if (p0 !== undefined && p1 !== undefined) {
+      const dx = p1.x - p0.x
+      const cp1x = p0.x + dx * 0.4
+      const cp1y = p0.y
+      const cp2x = p0.x + dx * 0.6
+      const cp2y = p1.y
+      path += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`
+    }
+  }
+  return path
+}
 
 export function LineChart({
   data,
@@ -47,7 +119,7 @@ export function LineChart({
     compColor = comparisonColor
   }
 
-  let chartHeight = 220
+  let chartHeight = 240
   if (height !== undefined && height > 0) {
     chartHeight = height
   }
@@ -56,7 +128,7 @@ export function LineChart({
     if (formatValue !== undefined) {
       return formatValue(val)
     }
-    return val.toLocaleString('vi-VN')
+    return val.toLocaleString('vi-VN') + ' ₫'
   }
 
   if (data.length === 0) {
@@ -109,37 +181,40 @@ export function LineChart({
     pt,
   }))
 
-  const polylineStr = currentPoints.map((p) => `${p.x},${p.y}`).join(' ')
+  const smoothPathStr = createSmoothPath(currentPoints)
 
-  let polygonStr = ''
+  let polygonPathStr = ''
   if (currentPoints.length > 0) {
-    const firstX = currentPoints[0]?.x ?? PAD_LEFT
-    const lastX = currentPoints[currentPoints.length - 1]?.x ?? PAD_LEFT + plotWidth
+    const first = currentPoints[0]
+    const last = currentPoints[currentPoints.length - 1]
     const bottomY = PAD_TOP + plotHeight
-    polygonStr = `${firstX},${bottomY} ${polylineStr} ${lastX},${bottomY}`
+    if (first !== undefined && last !== undefined) {
+      polygonPathStr = `${smoothPathStr} L ${last.x.toFixed(1)} ${bottomY} L ${first.x.toFixed(1)} ${bottomY} Z`
+    }
   }
 
-  let compPolylineStr = ''
+  let compPoints: Array<{ x: number; y: number }> = []
   if (comparisonData !== undefined && comparisonData.length > 0) {
-    const compPoints = comparisonData.map((pt, i) => {
-      const x = getX(i, comparisonData.length)
-      const y = getY(pt.value)
-      return `${x},${y}`
-    })
-    compPolylineStr = compPoints.join(' ')
+    compPoints = comparisonData.map((pt, i) => ({
+      x: getX(i, comparisonData.length),
+      y: getY(pt.value),
+    }))
   }
+  const compSmoothPathStr = createSmoothPath(compPoints)
 
-  const gridSteps = [ceiling, ceiling / 2, 0]
+  const gridSteps = [ceiling, Math.round(ceiling / 2), 0]
   const gradId = `line-grad-${strokeColor.replace('#', '')}`
 
+  const hasHeader = currentLabel !== undefined || comparisonLabel !== undefined
+
   return (
-    <div className="relative w-full" style={{ height: chartHeight }}>
-      {(currentLabel !== undefined || comparisonLabel !== undefined) && (
+    <div className="relative flex w-full flex-col select-none" style={{ height: chartHeight }}>
+      {hasHeader && (
         <div className="mb-2 flex items-center gap-4 text-xs">
           {currentLabel !== undefined && (
-            <div className="flex items-center gap-1.5 font-medium text-zinc-700 dark:text-zinc-200">
+            <div className="flex items-center gap-1.5 font-semibold text-zinc-700 dark:text-zinc-200">
               <span
-                className="inline-block h-2 w-4 rounded-full"
+                className="inline-block h-2.5 w-2.5 rounded-full shadow-sm"
                 style={{ backgroundColor: strokeColor }}
               />
               <span>{currentLabel}</span>
@@ -148,7 +223,7 @@ export function LineChart({
           {comparisonLabel !== undefined && (
             <div className="flex items-center gap-1.5 font-medium text-zinc-500 dark:text-zinc-400">
               <span
-                className="inline-block h-0.5 w-4 border-b-2 border-dashed"
+                className="inline-block h-0.5 w-3.5 border-b-2 border-dashed"
                 style={{ borderColor: compColor }}
               />
               <span>{comparisonLabel}</span>
@@ -157,132 +232,172 @@ export function LineChart({
         </div>
       )}
 
-      <svg
-        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-        className="h-full w-full overflow-visible select-none"
-        preserveAspectRatio="none"
-      >
-        <defs>
-          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.25" />
-            <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
-          </linearGradient>
-        </defs>
-
-        {/* Y Grid lines and labels */}
-        {gridSteps.map((val) => {
-          const y = getY(val)
-          return (
-            <g key={val}>
-              <line
-                x1={PAD_LEFT}
-                y1={y}
-                x2={VIEW_WIDTH - PAD_RIGHT}
-                y2={y}
-                stroke="currentColor"
-                strokeDasharray="3 3"
-                className="text-zinc-200 dark:text-white/10"
-              />
-              <text
-                x={PAD_LEFT - 8}
-                y={y + 4}
-                textAnchor="end"
-                className="fill-zinc-400 text-[10px] tabular-nums dark:fill-zinc-500"
-              >
-                {displayValue(val)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* Gradient fill area */}
-        {polygonStr !== '' && <polygon points={polygonStr} fill={`url(#${gradId})`} />}
-
-        {/* Comparison polyline */}
-        {compPolylineStr !== '' && (
-          <polyline
-            points={compPolylineStr}
-            fill="none"
-            stroke={compColor}
-            strokeWidth="2"
-            strokeDasharray="4 4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )}
-
-        {/* Main polyline */}
-        <polyline
-          points={polylineStr}
-          fill="none"
-          stroke={strokeColor}
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Data points & X labels */}
-        {currentPoints.map((pt, i) => {
-          const isHovered = hoverIndex === i
-          let circleRadius = 4
-          let circleStrokeWidth = 2
-          if (isHovered) {
-            circleRadius = 6
-            circleStrokeWidth = 3
-          }
-          const showLabel =
-            data.length <= 14 || i % Math.ceil(data.length / 7) === 0 || i === data.length - 1
-          return (
-            <g
-              key={pt.pt.label + i}
-              className="cursor-pointer"
-              onMouseEnter={() => setHoverIndex(i)}
-              onMouseLeave={() => setHoverIndex(null)}
-            >
-              <circle
-                cx={pt.x}
-                cy={pt.y}
-                r={circleRadius}
-                fill="#ffffff"
-                stroke={strokeColor}
-                strokeWidth={circleStrokeWidth}
-                className="transition-all duration-150"
-              />
-              <circle cx={pt.x} cy={pt.y} r="18" fill="transparent" />
-
-              {showLabel && (
-                <text
-                  x={pt.x}
-                  y={VIEW_HEIGHT - 10}
-                  textAnchor="middle"
-                  className="fill-zinc-400 text-[10px] tabular-nums dark:fill-zinc-500"
-                >
-                  {pt.pt.label}
-                </text>
-              )}
-            </g>
-          )
-        })}
-      </svg>
-
-      {/* Floating tooltip */}
-      {hoverIndex !== null && currentPoints[hoverIndex] !== undefined && (
-        <div
-          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-xl bg-zinc-900/90 px-3 py-1.5 text-xs text-white shadow-xl backdrop-blur-md dark:bg-zinc-800/95"
-          style={{
-            left: `${(currentPoints[hoverIndex].x / VIEW_WIDTH) * 100}%`,
-            top: `${(currentPoints[hoverIndex].y / VIEW_HEIGHT) * 100 - 8}%`,
-          }}
+      <div className="relative flex-1 w-full overflow-visible">
+        <svg
+          viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+          className="h-full w-full overflow-visible"
         >
-          <div className="font-semibold">{currentPoints[hoverIndex].pt.label}</div>
-          <div className="text-zinc-200">{displayValue(currentPoints[hoverIndex].pt.value)}</div>
-          {comparisonData !== undefined && comparisonData[hoverIndex] !== undefined && (
-            <div className="text-[11px] text-zinc-400">
-              Kỳ trước: {displayValue(comparisonData[hoverIndex].value)}
-            </div>
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={strokeColor} stopOpacity="0.28" />
+              <stop offset="60%" stopColor={strokeColor} stopOpacity="0.08" />
+              <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
+            </linearGradient>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor={strokeColor} floodOpacity="0.3" />
+            </filter>
+          </defs>
+
+          {/* Y Grid lines and labels */}
+          {gridSteps.map((val) => {
+            const y = getY(val)
+            return (
+              <g key={val}>
+                <line
+                  x1={PAD_LEFT}
+                  y1={y}
+                  x2={VIEW_WIDTH - PAD_RIGHT}
+                  y2={y}
+                  stroke="currentColor"
+                  strokeDasharray="4 4"
+                  className="text-zinc-200/80 dark:text-white/10"
+                />
+                <text
+                  x={PAD_LEFT - 10}
+                  y={y + 3.5}
+                  textAnchor="end"
+                  className="fill-zinc-400 text-[11px] font-medium tabular-nums dark:fill-zinc-500"
+                >
+                  {formatCompactAxis(val)}
+                </text>
+              </g>
+            )
+          })}
+
+          {/* Gradient area fill */}
+          {polygonPathStr !== '' && (
+            <path d={polygonPathStr} fill={`url(#${gradId})`} />
           )}
-        </div>
-      )}
+
+          {/* Comparison smooth line */}
+          {compSmoothPathStr !== '' && (
+            <path
+              d={compSmoothPathStr}
+              fill="none"
+              stroke={compColor}
+              strokeWidth="2"
+              strokeDasharray="4 4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+
+          {/* Main smooth line with subtle glow */}
+          {smoothPathStr !== '' && (
+            <path
+              d={smoothPathStr}
+              fill="none"
+              stroke={strokeColor}
+              strokeWidth="3.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter="url(#glow)"
+            />
+          )}
+
+          {/* Hover vertical crosshair */}
+          {hoverIndex !== null && currentPoints[hoverIndex] !== undefined && (
+            <line
+              x1={currentPoints[hoverIndex].x}
+              y1={PAD_TOP}
+              x2={currentPoints[hoverIndex].x}
+              y2={PAD_TOP + plotHeight}
+              stroke={strokeColor}
+              strokeWidth="1.5"
+              strokeDasharray="3 3"
+              strokeOpacity="0.6"
+            />
+          )}
+
+          {/* Data points & X-axis labels */}
+          {currentPoints.map((pt, i) => {
+            const isHovered = hoverIndex === i
+            let circleRadius = 4
+            let circleStrokeWidth = 2
+            if (isHovered) {
+              circleRadius = 5.5
+              circleStrokeWidth = 3
+            }
+            const showLabel =
+              data.length <= 14 || i % Math.ceil(data.length / 8) === 0 || i === data.length - 1
+
+            return (
+              <g
+                key={pt.pt.label + i}
+                className="cursor-pointer"
+                onMouseEnter={() => setHoverIndex(i)}
+                onMouseLeave={() => setHoverIndex(null)}
+              >
+                {/* Glow ring on hover */}
+                {isHovered && (
+                  <circle
+                    cx={pt.x}
+                    cy={pt.y}
+                    r="12"
+                    fill={strokeColor}
+                    fillOpacity="0.18"
+                  />
+                )}
+
+                <circle
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={circleRadius}
+                  fill="#ffffff"
+                  stroke={strokeColor}
+                  strokeWidth={circleStrokeWidth}
+                  className="transition-all duration-150"
+                />
+                <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
+
+                {showLabel && (
+                  <text
+                    x={pt.x}
+                    y={VIEW_HEIGHT - 12}
+                    textAnchor="middle"
+                    className="fill-zinc-500 text-[11px] font-semibold tabular-nums dark:fill-zinc-400"
+                  >
+                    {formatAxisLabel(pt.pt.label)}
+                  </text>
+                )}
+              </g>
+            )
+          })}
+        </svg>
+
+        {/* Floating glassmorphic tooltip */}
+        {hoverIndex !== null && currentPoints[hoverIndex] !== undefined && (
+          <div
+            className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-2xl border border-white/20 bg-zinc-900/90 px-3.5 py-2 text-xs text-white shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-zinc-800/95"
+            style={{
+              left: `${(currentPoints[hoverIndex].x / VIEW_WIDTH) * 100}%`,
+              top: `${(currentPoints[hoverIndex].y / VIEW_HEIGHT) * 100 - 6}%`,
+            }}
+          >
+            <div className="text-[10px] font-semibold tracking-wider text-zinc-400 uppercase">
+              {currentPoints[hoverIndex].pt.label}
+            </div>
+            <div className="mt-0.5 text-sm font-black text-white">
+              {displayValue(currentPoints[hoverIndex].pt.value)}
+            </div>
+            {comparisonData !== undefined && comparisonData[hoverIndex] !== undefined && (
+              <div className="mt-0.5 text-[10px] text-zinc-400">
+                Kỳ trước: {displayValue(comparisonData[hoverIndex].value)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
