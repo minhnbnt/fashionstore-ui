@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseSellerTab, sellerTabParam } from './sellerNavigation'
+import { getFirstAllowedTab, parseSellerTab, sellerTabParam } from './sellerNavigation'
 
 describe('parseSellerTab', () => {
   it('thieu param mac dinh OVERVIEW', () => {
@@ -44,3 +44,26 @@ describe('sellerTabParam', () => {
     expect(parseSellerTab(sellerTabParam('STATS_CUSTOMERS'))).toBe('STATS_CUSTOMERS')
   })
 })
+
+describe('getFirstAllowedTab', () => {
+  it('owner luon duoc mac dinh OVERVIEW', () => {
+    expect(getFirstAllowedTab([], true)).toBe('OVERVIEW')
+  })
+
+  it('staff co REVENUE_READ duoc vao OVERVIEW', () => {
+    expect(getFirstAllowedTab(['REVENUE_READ'], false)).toBe('OVERVIEW')
+  })
+
+  it('staff chi co CHAT_ACCESS thi auto-nav sang CHAT', () => {
+    expect(getFirstAllowedTab(['CHAT_ACCESS'], false)).toBe('CHAT')
+  })
+
+  it('staff co ORDER_READ thi auto-nav sang ORDERS', () => {
+    expect(getFirstAllowedTab(['ORDER_READ'], false)).toBe('ORDERS')
+  })
+
+  it('staff khong co quyen gi tra ve null', () => {
+    expect(getFirstAllowedTab([], false)).toBeNull()
+  })
+})
+

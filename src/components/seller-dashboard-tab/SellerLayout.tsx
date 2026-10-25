@@ -24,6 +24,7 @@ import {
 } from '@phosphor-icons/react'
 
 import NotificationBell from '@/components/NotificationBell'
+import ShopSwitcher from '@/components/seller/ShopSwitcher'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import UserAvatar from '@/components/UserAvatar'
 import { canSeeTab } from '@/lib/sellerPermissions'
@@ -41,6 +42,8 @@ interface SellerLayoutProps {
   unreadChatCount: number
   permissions?: string[]
   isOwner?: boolean
+  shopId?: string
+  onSwitchShop?: (shopId: string) => void
 }
 
 export function SellerLayout({
@@ -54,6 +57,8 @@ export function SellerLayout({
   unreadChatCount,
   permissions = [],
   isOwner = false,
+  shopId,
+  onSwitchShop,
 }: SellerLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -219,6 +224,12 @@ export function SellerLayout({
                   Seller Center
                 </span>
               </div>
+
+              {shopId !== undefined && shopId !== '' && onSwitchShop !== undefined && (
+                <div className="ml-1 sm:ml-2">
+                  <ShopSwitcher currentShopId={shopId} onSwitchShop={onSwitchShop} />
+                </div>
+              )}
             </div>
 
             {/* Right Header Navigation */}

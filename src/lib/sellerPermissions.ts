@@ -116,6 +116,14 @@ export function canSeeTab(tab: SellerTabId, permissions: string[], isOwner: bool
     return permissions.includes('DECORATION_WRITE')
   }
 
+  if (tab === 'CHAT') {
+    return permissions.includes('CHAT_ACCESS')
+  }
+
+  if (tab === 'STATS_REVENUE' || tab === 'STATS_PRODUCTS' || tab === 'STATS_CUSTOMERS') {
+    return permissions.includes('REVENUE_READ')
+  }
+
   return false
 }
 

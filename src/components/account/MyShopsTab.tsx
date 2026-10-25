@@ -203,19 +203,19 @@ export default function MyShopsTab({ onOpenRegisterModal }: MyShopsTabProps) {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       {getRoleBadge(shop)}
-                      {shop.role === 'STAFF' && getMemberStatusBadge(shop.memberStatus)}
+                      {shop.role === 'STAFF' && getMemberStatusBadge(shop.memberStatus ?? '')}
                     </div>
-                    <div>{getShopStatusBadge(shop.shopStatus)}</div>
+                    <div>{getShopStatusBadge(shop.shopStatus ?? '')}</div>
                   </div>
 
                   {/* Shop Details */}
                   <div className="mt-4 flex items-start gap-3.5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-500 font-extrabold text-white shadow-md shadow-indigo-500/20">
-                      {shop.shopName.charAt(0).toUpperCase()}
+                      {(shop.shopName ?? '').charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate text-base font-extrabold text-zinc-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
-                        {shop.shopName}
+                        {shop.shopName ?? ''}
                       </h3>
                       <p className="truncate font-mono text-xs text-zinc-400 dark:text-zinc-500">
                         net.vn/shop/{shop.shopSlug}

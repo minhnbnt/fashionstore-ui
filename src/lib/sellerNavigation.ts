@@ -1,3 +1,5 @@
+import { canSeeTab } from './sellerPermissions'
+
 import type { SellerTabId } from '@/types/seller'
 
 const SELLER_TAB_IDS: readonly SellerTabId[] = [
@@ -41,3 +43,30 @@ export function sellerTabParam(tab: SellerTabId): string | null {
   }
   return tab.toLowerCase()
 }
+
+const DEFAULT_TAB_PREFERENCE: readonly SellerTabId[] = [
+  'OVERVIEW',
+  'PRODUCTS',
+  'INVENTORY',
+  'ORDERS',
+  'RETURNS',
+  'REVIEWS',
+  'CHAT',
+  'DECORATION',
+  'REVENUE',
+  'STAFF',
+  'PROFILE',
+]
+
+export function getFirstAllowedTab(permissions: string[], isOwner: boolean): SellerTabId | null {
+  if (isOwner) {
+    return 'OVERVIEW'
+  }
+  for (const tab of DEFAULT_TAB_PREFERENCE) {
+    if (canSeeTab(tab, permissions, false)) {
+      return tab
+    }
+  }
+  return null
+}
+
