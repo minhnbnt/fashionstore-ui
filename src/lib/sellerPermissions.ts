@@ -65,6 +65,118 @@ const PERMISSION_LABELS: Record<string, string> = {
   DELETE_ROLE: 'Xóa vai trò',
   ACTIVATE_MEMBER: 'Kích hoạt nhân viên',
   DEACTIVATE_MEMBER: 'Vô hiệu hóa nhân viên',
+  REVIEW_REPORT: 'Báo cáo đánh giá vi phạm',
+  PRODUCT_STATUS_BULK: 'Đổi trạng thái hàng loạt',
+}
+
+export interface AuditBadgeMeta {
+  colorClass: string
+  badgeType: 'danger' | 'success' | 'info' | 'warning' | 'neutral'
+}
+
+const TARGET_TYPE_LABELS: Record<string, string> = {
+  PRODUCT: 'Sản phẩm',
+  ORDER: 'Đơn hàng',
+  RETURN: 'Yêu cầu đổi trả',
+  RETURN_REQUEST: 'Yêu cầu đổi trả',
+  ROLE: 'Vai trò',
+  MEMBER: 'Thành viên',
+  SHOP_MEMBER: 'Thành viên',
+  INVITATION: 'Lời mời',
+  DECORATION: 'Trang trí shop',
+  CONVERSATION: 'Hội thoại',
+  WITHDRAWAL: 'Yêu cầu rút tiền',
+  REVIEW: 'Đánh giá',
+}
+
+export function formatTargetType(targetType: string | null | undefined): string {
+  if (targetType === null || targetType === undefined || targetType.trim() === '') {
+    return 'Hệ thống'
+  }
+  const clean = targetType.trim()
+  if (TARGET_TYPE_LABELS[clean] !== undefined) {
+    return TARGET_TYPE_LABELS[clean]
+  }
+  return clean
+}
+
+const DANGER_ACTIONS = new Set([
+  'PRODUCT_DELETE',
+  'PRODUCT_DELETE_BULK',
+  'PRODUCT_IMAGE_DELETE',
+  'ORDER_CANCEL',
+  'RETURN_REJECT',
+  'REVOKE_INVITATION',
+  'DELETE_ROLE',
+  'DEACTIVATE_MEMBER',
+])
+
+const SUCCESS_ACTIONS = new Set([
+  'ORDER_DELIVER',
+  'RETURN_APPROVE',
+  'RETURN_COMPLETE',
+  'ACCEPT_INVITATION',
+  'ACTIVATE_MEMBER',
+  'DECORATION_PUBLISH',
+  'PRODUCT_IMPORT',
+])
+
+const INFO_ACTIONS = new Set([
+  'PRODUCT_CREATE',
+  'PRODUCT_UPDATE',
+  'PRODUCT_STATUS',
+  'PRODUCT_STATUS_BULK',
+  'PRODUCT_PRICE_BULK',
+  'CREATE_ROLE',
+  'UPDATE_ROLE',
+  'CHANGE_ROLE',
+  'CHANGE_MEMBER_ROLE',
+  'INVITE_STAFF',
+  'ORDER_SHIP',
+])
+
+const WARNING_ACTIONS = new Set([
+  'INVENTORY_ADJUST',
+  'INVENTORY_ADJUST_BULK',
+  'WITHDRAWAL_CREATE',
+  'ORDER_CONFIRM',
+  'REVIEW_REPORT',
+])
+
+export function getAuditActionBadgeMeta(action: string): AuditBadgeMeta {
+  if (DANGER_ACTIONS.has(action)) {
+    return {
+      badgeType: 'danger',
+      colorClass:
+        'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
+    }
+  }
+  if (SUCCESS_ACTIONS.has(action)) {
+    return {
+      badgeType: 'success',
+      colorClass:
+        'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
+    }
+  }
+  if (INFO_ACTIONS.has(action)) {
+    return {
+      badgeType: 'info',
+      colorClass:
+        'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20',
+    }
+  }
+  if (WARNING_ACTIONS.has(action)) {
+    return {
+      badgeType: 'warning',
+      colorClass:
+        'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
+    }
+  }
+  return {
+    badgeType: 'neutral',
+    colorClass:
+      'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700',
+  }
 }
 
 export function canSeeTab(tab: SellerTabId, permissions: string[], isOwner: boolean): boolean {
