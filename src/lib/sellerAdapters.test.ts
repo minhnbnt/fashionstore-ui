@@ -76,6 +76,21 @@ describe('productItem', () => {
     const item = productItem({ status: 'PENDING' }, undefined)
     expect(item.status).toBe('PENDING')
   })
+
+  it('DELETED giu nguyen DELETED', () => {
+    const item = productItem({ status: 'DELETED' }, undefined)
+    expect(item.status).toBe('DELETED')
+  })
+
+  it('BANNED giu nguyen BANNED kem statusReason va violationType', () => {
+    const item = productItem(
+      { status: 'BANNED', statusReason: 'Sản phẩm cấm bán', violationType: 'COUNTERFEIT' },
+      undefined,
+    )
+    expect(item.status).toBe('BANNED')
+    expect(item.statusReason).toBe('Sản phẩm cấm bán')
+    expect(item.violationType).toBe('COUNTERFEIT')
+  })
 })
 
 describe('orderItem', () => {

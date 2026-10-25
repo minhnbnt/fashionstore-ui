@@ -90,3 +90,16 @@ export function sellerStatusMeta(status: string | null | undefined): StatusMeta 
     className: 'bg-zinc-100 text-zinc-700 dark:bg-white/10 dark:text-zinc-200',
   }
 }
+
+// Meta cho bảng SẢN PHẨM của seller: PENDING của sản phẩm nghĩa là "Chờ duyệt" (sản phẩm của
+// shop chưa tin cậy chờ admin duyệt), khác PENDING của đơn hàng "Chờ xác nhận" — cùng mã,
+// khác ngữ cảnh, nên bảng sản phẩm dùng hàm này thay cho sellerStatusMeta.
+export function sellerProductStatusMeta(status: string | null | undefined): StatusMeta {
+  if (status === 'PENDING') {
+    return {
+      label: 'Chờ duyệt',
+      className: 'bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200',
+    }
+  }
+  return sellerStatusMeta(status)
+}

@@ -55,6 +55,18 @@ describe('friendlyAuthError', () => {
     )
   })
 
+  it('mat khau moi phai khac mat khau cu', () => {
+    expect(
+      friendlyAuthError({ message: 'New password should be different from the old password.' }),
+    ).toBe('Mật khẩu mới phải khác mật khẩu cũ.')
+  })
+
+  it('link recovery het han', () => {
+    expect(friendlyAuthError({ message: 'Token has expired' })).toBe(
+      'Liên kết khôi phục đã hết hạn. Vui lòng yêu cầu lại.',
+    )
+  })
+
   it('loi la thi bao chung', () => {
     expect(friendlyAuthError({ message: 'Something weird' })).toBe(
       'Đã xảy ra lỗi. Vui lòng thử lại sau.',
