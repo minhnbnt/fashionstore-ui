@@ -357,8 +357,8 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
     const q = auditSearchQuery.trim().toLowerCase()
     filteredAuditLogs = auditLogs.filter(function (log) {
       const matchDetail = log.detail.toLowerCase().includes(q)
-      const matchActor = log.actorName.toLowerCase().includes(q)
-      const matchEmail = log.actorEmail.toLowerCase().includes(q)
+      const matchActor = (log.actorName ?? '').toLowerCase().includes(q)
+      const matchEmail = (log.actorEmail ?? '').toLowerCase().includes(q)
       const matchAction = permissionLabel(log.action).toLowerCase().includes(q)
       return matchDetail || matchActor || matchEmail || matchAction
     })
