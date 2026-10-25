@@ -40,14 +40,8 @@ import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
 import { formatDateTime, formatVnd } from '@/lib/format'
 import { productItem } from '@/lib/sellerAdapters'
-<<<<<<< HEAD
 import { useSellerPermissions } from '@/lib/sellerPermissions'
-import { sellerStatusMeta } from '@/lib/sellerStatus'
-
-import { formatVnd } from '../../lib/format'
-=======
 import { sellerProductStatusMeta } from '@/lib/sellerStatus'
->>>>>>> master
 
 import type { ProductItem } from '@/types/seller'
 import type { BulkOperationResult, SellerProductResponse } from '@generated/model'
@@ -836,7 +830,6 @@ export default function SellerProductsTab({
               Đăng sản phẩm mới
             </button>
           )}
-        </div>
         </div>
       </div>
 

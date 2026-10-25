@@ -28,7 +28,7 @@ export function useWebSocket(destination: string, onMessage: WebSocketMessageHan
         return
       }
 
-      const subscription = client.subscribe(destination, function (message) {
+      const subscription = client.subscribe(destination, function (message: IMessage) {
         handlerRef.current(message)
       })
 
