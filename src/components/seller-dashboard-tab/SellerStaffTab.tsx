@@ -19,11 +19,15 @@ import {
 } from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
 import {
   CheckCircle,
+  Clock,
   ClockCounterClockwise,
   EnvelopeSimple,
+  Funnel,
   Key,
   LockKey,
+  MagnifyingGlass,
   PencilSimple,
+  Robot,
   Shield,
   ShieldCheck,
   Trash,
@@ -32,6 +36,7 @@ import {
   UserPlus,
   UsersThree,
   WarningCircle,
+  X,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -39,7 +44,11 @@ import Modal from '@/components/Modal'
 import { takeData } from '@/lib/apiAdapters'
 import { formatDateTime } from '@/lib/format'
 import { auditItem, memberItem, roleItem } from '@/lib/sellerAdapters'
-import { permissionLabel } from '@/lib/sellerPermissions'
+import {
+  formatTargetType,
+  getAuditActionBadgeMeta,
+  permissionLabel,
+} from '@/lib/sellerPermissions'
 
 import type { ShopAuditItem, ShopMemberItem, ShopRoleItem } from '@/types/seller'
 import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
@@ -134,6 +143,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
 
   // Audit filter state
   const [auditActionFilter, setAuditActionFilter] = useState<string>('')
+  const [auditSearchQuery, setAuditSearchQuery] = useState('')
   const [auditPage, setAuditPage] = useState(0)
 
   const [notification, setNotification] = useState('')
@@ -340,6 +350,18 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
     const pageData = takeData(auditQuery.data)
     auditLogs = (pageData.items ?? []).map(auditItem)
     totalAuditLogs = pageData.total ?? 0
+  }
+
+  let filteredAuditLogs = auditLogs
+  if (auditSearchQuery.trim() !== '') {
+    const q = auditSearchQuery.trim().toLowerCase()
+    filteredAuditLogs = auditLogs.filter(function (log) {
+      const matchDetail = log.detail.toLowerCase().includes(q)
+      const matchActor = log.actorName.toLowerCase().includes(q)
+      const matchEmail = log.actorEmail.toLowerCase().includes(q)
+      const matchAction = permissionLabel(log.action).toLowerCase().includes(q)
+      return matchDetail || matchActor || matchEmail || matchAction
+    })
   }
 
   const handleTogglePermission = (key: string) => {
@@ -814,75 +836,152 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
 
       {/* TAB 4: AUDIT TRAIL */}
       {activeSubTab === 'AUDIT' && (
-        <div className="space-y-4 rounded-b-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-          <div className="flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
+        <div className="space-y-5 rounded-b-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+          {/* Header & Filter Bar */}
+          <div className="flex flex-col gap-3.5 border-b border-zinc-200/80 pb-4 dark:border-white/10">
             <div>
-              <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
+              <span className="text-base font-bold text-zinc-800 dark:text-zinc-100">
                 Nhật ký hoạt động gian hàng
               </span>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                Ghi nhận mọi thao tác nghiệp vụ và phân quyền trong shop
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                Ghi nhận mọi thao tác nghiệp vụ, phân quyền và dữ liệu thay đổi trong shop
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">Lọc hành động:</span>
-              <select
-                value={auditActionFilter}
-                onChange={(e) => {
-                  setAuditActionFilter(e.target.value)
-                  setAuditPage(0)
-                }}
-                className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs text-zinc-700 focus:border-indigo-600 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
-              >
-                <option value="">Tất cả hành động</option>
-                {AUDIT_ACTIONS.map((action) => (
-                  <option key={action} value={action}>
-                    {permissionLabel(action)} ({action})
-                  </option>
-                ))}
-              </select>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              {/* Search Bar */}
+              <div className="relative flex-1">
+                <MagnifyingGlass
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
+                />
+                <input
+                  type="text"
+                  value={auditSearchQuery}
+                  onChange={(e) => setAuditSearchQuery(e.target.value)}
+                  placeholder="Tìm kiếm hành động, người thực hiện, chi tiết thay đổi..."
+                  className="w-full rounded-full border border-zinc-200 bg-white py-2 pl-9 pr-9 text-xs text-zinc-800 placeholder-zinc-400 transition-colors focus:border-indigo-600 focus:outline-none dark:border-white/15 dark:bg-white/5 dark:text-zinc-200 dark:placeholder-zinc-500"
+                />
+                {auditSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setAuditSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    title="Xóa tìm kiếm"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Action Filter */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  <Funnel size={14} />
+                  <span>Lọc loại:</span>
+                </div>
+                <select
+                  value={auditActionFilter}
+                  onChange={(e) => {
+                    setAuditActionFilter(e.target.value)
+                    setAuditPage(0)
+                  }}
+                  className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors focus:border-indigo-600 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                >
+                  <option value="">Tất cả ({totalAuditLogs})</option>
+                  {AUDIT_ACTIONS.map((action) => (
+                    <option key={action} value={action}>
+                      {permissionLabel(action)}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="divide-y divide-zinc-100 text-xs dark:divide-white/5">
-            {auditLogs.length === 0 && (
-              <div className="py-8 text-center text-zinc-400 dark:text-zinc-500">
-                Không tìm thấy nhật ký thao tác nào.
+          {/* Activity Timeline List */}
+          <div className="space-y-4">
+            {filteredAuditLogs.length === 0 && (
+              <div className="py-12 text-center">
+                <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400 dark:bg-white/5 dark:text-zinc-500">
+                  <ClockCounterClockwise size={24} />
+                </div>
+                <div className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  Không tìm thấy nhật ký hoạt động nào
+                </div>
+                <p className="mt-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+                  Thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc hành động.
+                </p>
               </div>
             )}
-            {auditLogs.map((log) => (
-              <div
-                key={log.id}
-                className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 font-mono text-[11px] font-bold text-indigo-700 dark:border-indigo-900/40 dark:bg-indigo-950/40 dark:text-indigo-300">
-                      {permissionLabel(log.action)}
-                    </span>
-                    <span className="font-medium text-zinc-800 dark:text-zinc-100">
-                      {log.detail}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-[11px] text-zinc-400 dark:text-zinc-500">
-                    {log.actorName && (
-                      <span>
-                        Người thực hiện:{' '}
-                        <strong className="text-zinc-600 dark:text-zinc-300">
-                          {log.actorName}
-                        </strong>{' '}
-                        ({log.actorEmail})
+
+            {filteredAuditLogs.map((log) => {
+              const badgeMeta = getAuditActionBadgeMeta(log.action)
+              const hasActor = Boolean(log.actorName || log.actorEmail)
+              let initialLetter = 'H'
+              if (log.actorName) {
+                initialLetter = log.actorName.trim().charAt(0).toUpperCase()
+              } else if (log.actorEmail) {
+                initialLetter = log.actorEmail.trim().charAt(0).toUpperCase()
+              }
+
+              return (
+                <div key={log.id} className="group relative flex items-start gap-3.5">
+                  {/* Timeline Node / Avatar */}
+                  <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-zinc-200/80 bg-white shadow-sm ring-4 ring-zinc-50 transition-transform group-hover:scale-105 group-hover:border-indigo-300 dark:border-white/15 dark:bg-[#182235] dark:ring-[#11182a]">
+                    {hasActor && (
+                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                        {initialLetter}
                       </span>
                     )}
-                    {log.targetType && <span>Đối tượng: {log.targetType}</span>}
+                    {!hasActor && (
+                      <Robot size={18} className="text-zinc-500 dark:text-zinc-400" />
+                    )}
+                  </div>
+
+                  {/* Timeline Content Card */}
+                  <div className="flex-1 space-y-2 rounded-2xl border border-zinc-200/80 bg-white/95 p-4 shadow-sm transition hover:border-zinc-300 group-hover:shadow dark:border-white/10 dark:bg-white/[0.02] dark:hover:border-white/20">
+                    {/* Header Row */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${badgeMeta.colorClass}`}
+                        >
+                          {permissionLabel(log.action)}
+                        </span>
+
+                        <span className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-medium text-zinc-600 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+                          {formatTargetType(log.targetType)}
+                        </span>
+
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="font-semibold text-zinc-800 dark:text-zinc-100">
+                            {log.actorName || 'Hệ thống tự động'}
+                          </span>
+                          {log.actorEmail && (
+                            <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                              ({log.actorEmail})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
+                        <Clock size={13} />
+                        <span>{log.createdAt}</span>
+                      </div>
+                    </div>
+
+                    {/* Detail Box */}
+                    {log.detail && (
+                      <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/70 p-3 text-xs leading-relaxed text-zinc-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-300">
+                        {log.detail}
+                      </div>
+                    )}
                   </div>
                 </div>
-                <span className="shrink-0 text-[11px] text-zinc-400 dark:text-zinc-500">
-                  {log.createdAt}
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Pagination controls */}
