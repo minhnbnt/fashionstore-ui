@@ -8,11 +8,14 @@ import {
   useList4,
   useReject,
 } from '@generated/endpoints/seller-returns/seller-returns'
-import { CheckCircle, X } from '@phosphor-icons/react'
+import { CheckCircle } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import Modal from '@/components/Modal'
+import StatusBadge from '@/components/ui/StatusBadge'
 import { takeData } from '@/lib/apiAdapters'
 import { returnItem } from '@/lib/sellerAdapters'
+import { sellerStatusMeta } from '@/lib/sellerStatus'
 
 import { formatVnd } from '../../lib/format'
 
@@ -134,35 +137,6 @@ export default function SellerReturnsTab({ shopId }: Props) {
     return true
   })
 
-  function renderStatusBadge(status: string) {
-    if (status === 'REQUESTED') {
-      return (
-        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
-          Chờ người bán duyệt
-        </span>
-      )
-    }
-    if (status === 'APPROVED') {
-      return (
-        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-          Đã duyệt (Chờ khách gửi hàng)
-        </span>
-      )
-    }
-    if (status === 'COMPLETED') {
-      return (
-        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-          Đã nhận hàng hoàn tất
-        </span>
-      )
-    }
-    return (
-      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
-        Đã từ chối
-      </span>
-    )
-  }
-
   return (
     <div className="space-y-6">
       {/* Toast */}
@@ -184,8 +158,8 @@ export default function SellerReturnsTab({ shopId }: Props) {
       </div>
 
       {/* Filter Tabs */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-3 dark:border-zinc-800">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+        <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-3 dark:border-white/10">
           {[
             { id: 'ALL', label: 'Tất cả' },
             { id: 'REQUESTED', label: 'Chờ xử lý' },
@@ -194,6 +168,12 @@ export default function SellerReturnsTab({ shopId }: Props) {
             { id: 'REJECTED', label: 'Đã từ chối' },
           ].map(function (tab) {
             const isCurrent = activeTab === tab.id
+            let tabClass =
+              'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+            if (isCurrent) {
+              tabClass =
+                'rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+            }
             return (
               <button
                 key={tab.id}
@@ -203,11 +183,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                     tab.id as 'ALL' | 'REQUESTED' | 'APPROVED' | 'COMPLETED' | 'REJECTED',
                   )
                 }}
-                className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
-                  isCurrent
-                    ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400'
-                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-                }`}
+                className={tabClass}
               >
                 {tab.label}
               </button>
@@ -221,9 +197,9 @@ export default function SellerReturnsTab({ shopId }: Props) {
             return (
               <div
                 key={ret.id}
-                className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 transition hover:border-zinc-200 dark:border-zinc-800 dark:bg-zinc-950/40"
+                className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 transition hover:border-zinc-200 dark:border-white/10 dark:bg-white/5"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800/80">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-white/10">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-bold text-zinc-900 dark:text-white">
                       Mã đơn: {ret.orderCode}
@@ -231,7 +207,9 @@ export default function SellerReturnsTab({ shopId }: Props) {
                     <span className="text-[11px] text-zinc-400">• Người mua: {ret.buyerName}</span>
                     <span className="text-[11px] text-zinc-400">• {ret.createdAt}</span>
                   </div>
-                  <div>{renderStatusBadge(ret.status)}</div>
+                  <div>
+                    <StatusBadge status={ret.status} meta={sellerStatusMeta} />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 py-3 sm:grid-cols-4">
@@ -272,13 +250,13 @@ export default function SellerReturnsTab({ shopId }: Props) {
                     <img
                       src={ret.evidenceImage}
                       alt="Chứng từ"
-                      className="h-20 w-20 rounded-xl border border-zinc-200 object-cover shadow-sm"
+                      className="h-20 w-20 rounded-xl border border-zinc-200 object-cover shadow-sm dark:border-white/10"
                     />
                   </div>
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex justify-end gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800/80">
+                <div className="flex justify-end gap-2 border-t border-zinc-100 pt-3 dark:border-white/10">
                   {ret.status === 'REQUESTED' && (
                     <button
                       type="button"
@@ -296,7 +274,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
                       onClick={function () {
                         setApproveTarget(ret)
                       }}
-                      className="rounded-xl bg-orange-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-orange-700"
+                      className="btn-primary rounded-xl px-4 py-1.5 text-xs font-bold shadow-sm"
                     >
                       Phê duyệt phương án
                     </button>
@@ -329,161 +307,139 @@ export default function SellerReturnsTab({ shopId }: Props) {
 
       {/* Modal Phê duyệt */}
       {approveTarget !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                Phê duyệt yêu cầu đổi trả
-              </h3>
-              <button
-                type="button"
-                onClick={function () {
-                  setApproveTarget(null)
-                }}
-                className="text-zinc-400 hover:text-zinc-600"
+        <Modal
+          title="Phê duyệt yêu cầu đổi trả"
+          onClose={function () {
+            setApproveTarget(null)
+          }}
+          widthClass="max-w-md"
+        >
+          <div className="mt-4 space-y-4 text-xs">
+            <div>
+              <label
+                htmlFor="returnResolutionSelect"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
               >
-                <X size={18} weight="bold" />
-              </button>
+                Phương án giải quyết
+              </label>
+              <select
+                id="returnResolutionSelect"
+                value={resolution}
+                onChange={function (e) {
+                  setResolution(e.target.value)
+                }}
+                className="mt-1 w-full rounded-full border border-zinc-300 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              >
+                <option value="REFUND">Hoàn tiền 100% khi nhận lại hàng</option>
+                <option value="EXCHANGE">Đổi sản phẩm mới cho khách</option>
+                <option value="PARTIAL_REFUND">Hoàn tiền một phần (khách giữ hàng)</option>
+              </select>
             </div>
 
-            <div className="mt-4 space-y-4 text-xs">
-              <div>
-                <label
-                  htmlFor="returnResolutionSelect"
-                  className="block font-semibold text-zinc-700 dark:text-zinc-300"
-                >
-                  Phương án giải quyết
-                </label>
-                <select
-                  id="returnResolutionSelect"
-                  value={resolution}
-                  onChange={function (e) {
-                    setResolution(e.target.value)
-                  }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-                >
-                  <option value="REFUND">Hoàn tiền 100% khi nhận lại hàng</option>
-                  <option value="EXCHANGE">Đổi sản phẩm mới cho khách</option>
-                  <option value="PARTIAL_REFUND">Hoàn tiền một phần (khách giữ hàng)</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="returnRefundAmountInput"
-                  className="block font-semibold text-zinc-700 dark:text-zinc-300"
-                >
-                  Số tiền hoàn (VND)
-                </label>
-                <input
-                  id="returnRefundAmountInput"
-                  type="number"
-                  value={refundAmount}
-                  onChange={function (e) {
-                    setRefundAmount(Number(e.target.value))
-                  }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="returnWarehouseAddress"
-                  className="block font-semibold text-zinc-700 dark:text-zinc-300"
-                >
-                  Địa chỉ kho nhận hàng gửi về
-                </label>
-                <textarea
-                  id="returnWarehouseAddress"
-                  rows={2}
-                  value={returnAddress}
-                  onChange={function (e) {
-                    setReturnAddress(e.target.value)
-                  }}
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-                />
-              </div>
+            <div>
+              <label
+                htmlFor="returnRefundAmountInput"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
+              >
+                Số tiền hoàn (VND)
+              </label>
+              <input
+                id="returnRefundAmountInput"
+                type="number"
+                value={refundAmount}
+                onChange={function (e) {
+                  setRefundAmount(Number(e.target.value))
+                }}
+                className="mt-1 w-full rounded-full border border-zinc-300 p-2.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              />
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={function () {
-                  setApproveTarget(null)
+            <div>
+              <label
+                htmlFor="returnWarehouseAddress"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
+              >
+                Địa chỉ kho nhận hàng gửi về
+              </label>
+              <textarea
+                id="returnWarehouseAddress"
+                rows={2}
+                value={returnAddress}
+                onChange={function (e) {
+                  setReturnAddress(e.target.value)
                 }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmApprove}
-                className="rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white hover:bg-orange-700"
-              >
-                Xác nhận phê duyệt
-              </button>
+                className="mt-1 w-full rounded-2xl border border-zinc-300 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              />
             </div>
           </div>
-        </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={function () {
+                setApproveTarget(null)
+              }}
+              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmApprove}
+              className="btn-primary rounded-2xl px-5 py-2 text-xs font-bold"
+            >
+              Xác nhận phê duyệt
+            </button>
+          </div>
+        </Modal>
       )}
 
       {/* Modal Từ chối */}
       {rejectTarget !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                Từ chối yêu cầu đổi trả
-              </h3>
-              <button
-                type="button"
-                onClick={function () {
-                  setRejectTarget(null)
-                }}
-                className="text-zinc-400 hover:text-zinc-600"
-              >
-                <X size={18} weight="bold" />
-              </button>
-            </div>
-
-            <div className="mt-4 text-xs">
-              <label
-                htmlFor="rejectNoteContent"
-                className="block font-semibold text-zinc-700 dark:text-zinc-300"
-              >
-                Lý do từ chối gửi cho khách
-              </label>
-              <textarea
-                id="rejectNoteContent"
-                rows={3}
-                value={rejectNote}
-                onChange={function (e) {
-                  setRejectNote(e.target.value)
-                }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-2.5 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
-              />
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={function () {
-                  setRejectTarget(null)
-                }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmReject}
-                className="rounded-2xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
-              >
-                Xác nhận từ chối
-              </button>
-            </div>
+        <Modal
+          title="Từ chối yêu cầu đổi trả"
+          onClose={function () {
+            setRejectTarget(null)
+          }}
+          widthClass="max-w-md"
+        >
+          <div className="mt-4 text-xs">
+            <label
+              htmlFor="rejectNoteContent"
+              className="block font-semibold text-zinc-700 dark:text-zinc-300"
+            >
+              Lý do từ chối gửi cho khách
+            </label>
+            <textarea
+              id="rejectNoteContent"
+              rows={3}
+              value={rejectNote}
+              onChange={function (e) {
+                setRejectNote(e.target.value)
+              }}
+              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+            />
           </div>
-        </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={function () {
+                setRejectTarget(null)
+              }}
+              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmReject}
+              className="rounded-2xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
+            >
+              Xác nhận từ chối
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   )

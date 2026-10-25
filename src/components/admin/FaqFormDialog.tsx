@@ -6,7 +6,12 @@ import { hookErrorMessage } from '@/lib/apiAdapters'
 import { FAQ_CATEGORY_OPTIONS } from '@/lib/siteContent'
 
 import Markdown from '../Markdown'
-import ContentDialog, { HINT_CLASS, INPUT_CLASS, LABEL_CLASS } from './ContentDialog'
+import ContentDialog, {
+  HINT_CLASS,
+  INPUT_CLASS,
+  LABEL_CLASS,
+  TEXTAREA_CLASS,
+} from './ContentDialog'
 
 import type { FaqCategoryValue } from '@/lib/siteContent'
 import type { FaqRequest } from '@generated/model/faqRequest'
@@ -128,7 +133,7 @@ export default function FaqFormDialog({ faq, defaultCategory, onClose, onDone }:
           onChange={(event) => setAnswer(event.target.value)}
           maxLength={5000}
           rows={5}
-          className={`${INPUT_CLASS} resize-y font-mono`}
+          className={`${TEXTAREA_CLASS} resize-y font-mono`}
         />
         <span className={HINT_CLASS}>
           Markdown: **đậm**, - gạch đầu dòng, [chữ](/pages/chinh-sach-doi-tra) để chèn link.

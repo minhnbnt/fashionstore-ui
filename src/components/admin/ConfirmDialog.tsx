@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom'
+
 import { X } from '@phosphor-icons/react'
 
 export default function ConfirmDialog(props: {
@@ -14,13 +16,13 @@ export default function ConfirmDialog(props: {
     return null
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-zinc-950/55 p-4 backdrop-blur-sm">
       <dialog
         open
         aria-modal="true"
         aria-labelledby="confirm-title"
-        className="w-full max-w-md rounded-3xl border border-white/30 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#11182a]"
+        className="static w-full max-w-md rounded-3xl border border-white/30 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#11182a]"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -68,6 +70,7 @@ export default function ConfirmDialog(props: {
           </button>
         </div>
       </dialog>
-    </div>
+    </div>,
+    document.body,
   )
 }

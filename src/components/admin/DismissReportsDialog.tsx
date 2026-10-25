@@ -43,7 +43,7 @@ export default function DismissReportsDialog({ product, onClose, onDone }: Props
       aria-labelledby="dismiss-reports-title"
       className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black/60 p-4 text-inherit backdrop-blur-xs"
     >
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900">
+      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-[#11182a]">
         <h2
           id="dismiss-reports-title"
           className="flex items-center gap-2 text-lg font-extrabold tracking-tighter"
@@ -58,7 +58,8 @@ export default function DismissReportsDialog({ product, onClose, onDone }: Props
         </p>
 
         <label htmlFor="dismiss-note" className="mt-4 mb-2 block text-sm font-bold">
-          Ghi chú <span className="font-normal text-zinc-500">(không bắt buộc)</span>
+          Ghi chú{' '}
+          <span className="font-normal text-zinc-500 dark:text-zinc-400">(không bắt buộc)</span>
         </label>
         <textarea
           id="dismiss-note"

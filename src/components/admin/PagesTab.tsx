@@ -161,7 +161,7 @@ export default function PagesTab({ onNotice }: { onNotice: (message: string) => 
         <button
           type="button"
           onClick={() => setEditor({ id: null })}
-          className="flex w-fit shrink-0 items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 dark:bg-indigo-500"
+          className="btn-primary flex w-fit shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold"
         >
           <Plus size={16} weight="bold" />
           Thêm trang

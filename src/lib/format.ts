@@ -24,27 +24,41 @@ export function formatFullAddress(addr: AddressResponse | null | undefined): str
   if (addr === null || addr === undefined) {
     return ''
   }
-  const parts: string[] = []
-  if (
-    addr.houseNumber !== null &&
-    addr.houseNumber !== undefined &&
-    addr.houseNumber.trim() !== ''
-  ) {
-    parts.push(addr.houseNumber.trim())
+  const full = addr.fullAddress ?? ''
+  return full.trim()
+}
+
+export function splitFullAddress(full: string): {
+  detail: string
+  ward: string
+  province: string
+} {
+  const trimmed = full.trim()
+  if (trimmed === '') {
+    return { detail: '', ward: '', province: '' }
   }
-  if (addr.street !== null && addr.street !== undefined && addr.street.trim() !== '') {
-    parts.push(addr.street.trim())
+  const parts = trimmed.split(',').map(function (p) {
+    return p.trim()
+  })
+  if (parts.length < 3) {
+    return { detail: trimmed, ward: '', province: '' }
   }
-  if (addr.ward !== null && addr.ward !== undefined && addr.ward.trim() !== '') {
-    parts.push(addr.ward.trim())
+  const province = parts[parts.length - 1]
+  const ward = parts[parts.length - 2]
+  const detail = parts.slice(0, parts.length - 2).join(', ')
+  return { detail: detail, ward: ward, province: province }
+}
+
+export function formatAddressLabel(label: string | null | undefined): string {
+  switch (label) {
+    case 'OFFICE':
+      return 'Công ty'
+    case 'OTHER':
+      return 'Khác'
+    case 'HOME':
+    default:
+      return 'Nhà riêng'
   }
-  if (addr.district !== null && addr.district !== undefined && addr.district.trim() !== '') {
-    parts.push(addr.district.trim())
-  }
-  if (addr.city !== null && addr.city !== undefined && addr.city.trim() !== '') {
-    parts.push(addr.city.trim())
-  }
-  return parts.join(', ')
 }
 
 export function calculateDiscountPercent(

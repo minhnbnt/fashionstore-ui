@@ -6,11 +6,11 @@ import {
   getListProductsQueryKey,
 } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
 import {
-  getGetProductAuditLogsQueryKey,
-  getGetSellerProductQueryKey,
-  useGetProductAuditLogs,
-  useGetSellerProduct,
-  useToggleProductStatus,
+  getGetAuditLogsQueryKey,
+  getGetDetailQueryKey,
+  useGetAuditLogs,
+  useGetDetail,
+  useToggleStatus,
   useUpdate1,
 } from '@generated/endpoints/shop-products/shop-products'
 import {
@@ -32,6 +32,7 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import Modal from '@/components/Modal'
 import ProductMediaUploader from '@/components/seller/ProductMediaUploader'
 import RichTextEditor from '@/components/ui/RichTextEditor'
 import { takeData } from '@/lib/apiAdapters'
@@ -112,7 +113,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
   const queryClient = useQueryClient()
 
   // Queries
-  const productQuery = useGetSellerProduct(shopId, productId, {
+  const productQuery = useGetDetail(shopId, productId, {
     query: { enabled: shopId !== '' && productId !== '' },
   })
   const categoriesQuery = useListCategories()
@@ -158,7 +159,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
   const [heightCm, setHeightCm] = useState(5)
 
   // Audit Logs Query
-  const auditLogsQuery = useGetProductAuditLogs(shopId, productId, {
+  const auditLogsQuery = useGetAuditLogs(shopId, productId, {
     query: { enabled: showAuditModal && shopId !== '' && productId !== '' },
   })
 
@@ -170,6 +171,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       }
 
       const p = takeData(productQuery.data)
+      /* eslint-disable react/set-state-in-effect -- prefill form từ dữ liệu server khi query xong; chạy đúng 1 lần per mount (guard `initialized`) */
       setName(p.name ?? '')
       setSlug(p.slug ?? '')
       setCategoryId(p.categoryId ?? '')
@@ -218,6 +220,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       }
       setVariants(initialVariants)
       setInitialized(true)
+      /* eslint-enable react/set-state-in-effect -- hết vùng prefill */
     },
     [productQuery.data, initialized],
   )
@@ -227,10 +230,10 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
         void queryClient.invalidateQueries({
-          queryKey: getGetSellerProductQueryKey(shopId, productId),
+          queryKey: getGetDetailQueryKey(shopId, productId),
         })
         void queryClient.invalidateQueries({
-          queryKey: getGetProductAuditLogsQueryKey(shopId, productId),
+          queryKey: getGetAuditLogsQueryKey(shopId, productId),
         })
         void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
         showToast('Cập nhật sản phẩm thành công!')
@@ -247,15 +250,15 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
     },
   })
 
-  const toggleStatusMutation = useToggleProductStatus({
+  const toggleStatusMutation = useToggleStatus({
     mutation: {
       onSuccess: function (resp) {
         void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
         void queryClient.invalidateQueries({
-          queryKey: getGetSellerProductQueryKey(shopId, productId),
+          queryKey: getGetDetailQueryKey(shopId, productId),
         })
         void queryClient.invalidateQueries({
-          queryKey: getGetProductAuditLogsQueryKey(shopId, productId),
+          queryKey: getGetAuditLogsQueryKey(shopId, productId),
         })
         setIsTogglingStatus(false)
         if (resp.data.status !== undefined && resp.data.status !== null) {
@@ -462,8 +465,8 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         setErrorMessage(`Vui lòng nhập màu sắc cho biến thể SKU "${v.sku}".`)
         return
       }
-      if (v.price < 0) {
-        setErrorMessage(`Giá bán của biến thể SKU "${v.sku}" không được âm.`)
+      if (v.price <= 0) {
+        setErrorMessage(`Giá bán của biến thể SKU "${v.sku}" phải lớn hơn 0.`)
         return
       }
       if (v.compareAtPrice !== null && v.compareAtPrice < v.price) {
@@ -540,7 +543,12 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
   }
 
   // Categories map
-  const categoriesList = categoriesQuery.data !== undefined ? takeData(categoriesQuery.data) : []
+  let categoriesList: { id: string; name: string }[] = []
+  if (categoriesQuery.data !== undefined) {
+    categoriesList = takeData(categoriesQuery.data).map(function (c) {
+      return { id: c.id ?? '', name: c.name ?? '' }
+    })
+  }
 
   // Extract distinct colors for bulk filter
   const distinctColors: string[] = []
@@ -559,7 +567,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
   if (productQuery.isPending) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-zinc-500">
-        <SpinnerGap size={36} weight="bold" className="animate-spin text-orange-600" />
+        <SpinnerGap size={36} weight="bold" className="animate-spin text-indigo-600" />
         <p className="mt-3 text-sm font-semibold">Đang tải thông tin sản phẩm...</p>
       </div>
     )
@@ -607,6 +615,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
           </div>
           <button
             type="button"
+            aria-label="Đóng thông báo lỗi"
             onClick={function () {
               setErrorMessage(null)
             }}
@@ -692,7 +701,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             type="button"
             disabled={isSaving}
             onClick={handleSave}
-            className="flex items-center gap-1.5 rounded-2xl bg-orange-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-orange-600/20 transition hover:bg-orange-700 disabled:opacity-60"
+            className="btn-primary flex items-center gap-2 rounded-2xl px-5 py-2 text-xs font-bold shadow-md transition disabled:opacity-50"
           >
             {isSaving && <SpinnerGap size={14} weight="bold" className="animate-spin" />}
             {!isSaving && <FloppyDisk size={16} weight="bold" />}
@@ -723,7 +732,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setName(e.target.value)
               }}
               placeholder="Nhập tên sản phẩm thời trang..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
 
@@ -751,6 +760,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                     void navigator.clipboard.writeText(slug)
                     showToast('Đã sao chép đường dẫn slug!')
                   }}
+                  aria-label="Sao chép slug"
                   title="Sao chép slug"
                   className="ml-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                 >
@@ -776,7 +786,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setCategoryId(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               >
                 <option value="">-- Chọn danh mục --</option>
                 {categoriesList.map(function (cat) {
@@ -803,7 +813,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setStatus(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
               >
                 <option value="ACTIVE">ACTIVE - Đang bán công khai</option>
                 <option value="HIDDEN">HIDDEN - Tạm ẩn khỏi sàn</option>
@@ -851,7 +861,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
               <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
                 3. Quản lý biến thể & tồn kho
               </h3>
-              <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-bold text-orange-700 dark:bg-orange-950/60 dark:text-orange-400">
+              <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400">
                 {variants.length} biến thể
               </span>
             </div>
@@ -863,7 +873,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
           <button
             type="button"
             onClick={handleAddNewVariant}
-            className="flex items-center gap-1.5 rounded-2xl border border-orange-200 bg-orange-50 px-3.5 py-2 text-xs font-bold text-orange-600 transition hover:bg-orange-100 dark:border-orange-900/40 dark:bg-orange-950/40 dark:text-orange-400"
+            className="flex items-center gap-1.5 rounded-2xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-600 transition hover:bg-indigo-100 dark:border-indigo-900/40 dark:bg-indigo-950/40 dark:text-indigo-400"
           >
             <Plus size={14} weight="bold" />
             Thêm biến thể mới
@@ -873,21 +883,25 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         {/* Công cụ Áp dụng hàng loạt (Bulk Apply Bar) */}
         <div className="mt-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-4 dark:border-zinc-800/80 dark:bg-zinc-950/50">
           <div className="flex items-center gap-2 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-            <Lightning size={16} weight="bold" className="text-orange-600 dark:text-orange-400" />
+            <Lightning size={16} weight="bold" className="text-indigo-600 dark:text-indigo-400" />
             <span>Công cụ áp dụng hàng loạt (Bulk Apply):</span>
           </div>
 
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
+              <label
+                htmlFor="editBulkTarget"
+                className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400"
+              >
                 Áp dụng cho
               </label>
               <select
+                id="editBulkTarget"
                 value={bulkTarget}
                 onChange={function (e) {
                   setBulkTarget(e.target.value)
                 }}
-                className="mt-1 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+                className="mt-1 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900"
               >
                 <option value="ALL">Tất cả {variants.length} biến thể</option>
                 {distinctColors.map(function (c) {
@@ -901,10 +915,14 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
+              <label
+                htmlFor="editBulkPrice"
+                className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400"
+              >
                 Giá bán (₫)
               </label>
               <input
+                id="editBulkPrice"
                 type="text"
                 placeholder="VD: 199.000"
                 value={bulkPrice}
@@ -916,15 +934,19 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                     setBulkPrice('')
                   }
                 }}
-                className="mt-1 w-32 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+                className="mt-1 w-32 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
+              <label
+                htmlFor="editBulkCompareAtPrice"
+                className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400"
+              >
                 Giá gốc (₫)
               </label>
               <input
+                id="editBulkCompareAtPrice"
                 type="text"
                 placeholder="VD: 250.000"
                 value={bulkCompareAtPrice}
@@ -936,15 +958,19 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                     setBulkCompareAtPrice('')
                   }
                 }}
-                className="mt-1 w-32 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+                className="mt-1 w-32 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
+              <label
+                htmlFor="editBulkStock"
+                className="block text-[11px] font-semibold text-zinc-600 dark:text-zinc-400"
+              >
                 Số lượng tồn
               </label>
               <input
+                id="editBulkStock"
                 type="number"
                 min="0"
                 placeholder="VD: 50"
@@ -952,14 +978,14 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setBulkStock(e.target.value)
                 }}
-                className="mt-1 w-24 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+                className="mt-1 w-24 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900"
               />
             </div>
 
             <button
               type="button"
               onClick={handleApplyBulk}
-              className="flex items-center gap-1.5 rounded-xl bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-orange-700"
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-indigo-700"
             >
               <Lightning size={14} weight="bold" />
               Áp dụng hàng loạt
@@ -1010,8 +1036,9 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         onChange={function () {
                           handleSetDefaultVariant(v.keyId)
                         }}
+                        aria-label={`Chọn biến thể ${v.sku} làm mặc định`}
                         title="Chọn làm biến thể mặc định"
-                        className="h-4 w-4 accent-orange-600"
+                        className="h-4 w-4 accent-indigo-600"
                       />
                     </td>
 
@@ -1022,8 +1049,9 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         onChange={function (e) {
                           handleUpdateVariantField(v.keyId, 'color', e.target.value)
                         }}
+                        aria-label="Màu sắc"
                         placeholder="VD: Trắng"
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
 
@@ -1034,8 +1062,9 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         onChange={function (e) {
                           handleUpdateVariantField(v.keyId, 'size', e.target.value)
                         }}
+                        aria-label="Kích cỡ"
                         placeholder="VD: M, L"
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
 
@@ -1046,8 +1075,9 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         onChange={function (e) {
                           handleUpdateVariantField(v.keyId, 'sku', e.target.value)
                         }}
+                        aria-label="Mã SKU"
                         placeholder="SKU"
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 font-mono text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 font-mono text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
 
@@ -1063,7 +1093,8 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                           }
                           handleUpdateVariantField(v.keyId, 'price', val)
                         }}
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-bold text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                        aria-label="Giá bán"
+                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-bold text-zinc-900 outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
                       />
                     </td>
 
@@ -1075,8 +1106,9 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                           const num = parseNumberFromDots(e.target.value)
                           handleUpdateVariantField(v.keyId, 'compareAtPrice', num)
                         }}
+                        aria-label="Giá gốc"
                         placeholder="Không có"
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold text-zinc-500 outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400"
+                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold text-zinc-500 outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400"
                       />
                     </td>
 
@@ -1092,7 +1124,8 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                             Math.max(0, parseInt(e.target.value, 10) || 0),
                           )
                         }}
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-center text-xs font-bold outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                        aria-label="Tồn kho"
+                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-center text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
                       />
                     </td>
 
@@ -1103,6 +1136,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                           onClick={function () {
                             handleRemoveVariant(v.keyId)
                           }}
+                          aria-label="Xóa biến thể mới thêm"
                           title="Xóa biến thể mới thêm"
                           className="flex h-8 w-8 items-center justify-center rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20"
                         >
@@ -1143,7 +1177,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setMaterial(e.target.value)
               }}
               placeholder="VD: 100% Cotton Organic, Lụa Satin, Kaki..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
 
@@ -1162,7 +1196,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setOrigin(e.target.value)
               }}
               placeholder="VD: Việt Nam, Hàn Quốc, Nhật Bản..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
         </div>
@@ -1183,7 +1217,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setCareInstructions(e.target.value)
               }}
               placeholder="Cách giặt, nhiệt độ là ủi, lưu ý bảo quản..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
 
@@ -1202,7 +1236,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setSizeGuide(e.target.value)
               }}
               placeholder="Quy đổi chiều cao, cân nặng, số đo các vòng..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
             />
           </div>
         </div>
@@ -1228,7 +1262,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setWeightGrams(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
               />
             </div>
             <div>
@@ -1246,7 +1280,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setLengthCm(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
               />
             </div>
             <div>
@@ -1264,7 +1298,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setWidthCm(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
               />
             </div>
             <div>
@@ -1282,7 +1316,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setHeightCm(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-950"
+                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
               />
             </div>
           </div>
@@ -1305,7 +1339,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             type="button"
             disabled={isSaving}
             onClick={handleSave}
-            className="flex items-center gap-2 rounded-2xl bg-orange-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-orange-600/30 transition hover:bg-orange-700 disabled:opacity-60"
+            className="btn-primary flex items-center gap-2 rounded-2xl px-6 py-2.5 text-xs font-bold shadow-md transition disabled:opacity-50"
           >
             {isSaving && <SpinnerGap size={16} weight="bold" className="animate-spin" />}
             {!isSaving && <FloppyDisk size={16} weight="bold" />}
@@ -1316,119 +1350,84 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
 
       {/* Audit Log Modal */}
       {showAuditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-3xl bg-white shadow-2xl dark:bg-zinc-900">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-zinc-100 p-5 dark:border-zinc-800">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400">
-                  <ClockCounterClockwise size={20} weight="bold" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
-                    Lịch sử chỉnh sửa sản phẩm (Audit Log)
-                  </h3>
-                  <p className="text-[11px] text-zinc-400">
-                    Ghi nhận mọi lần cập nhật thông tin, thay đổi giá, tồn kho và trạng thái.
-                  </p>
-                </div>
-              </div>
+        <Modal
+          title="Lịch sử chỉnh sửa sản phẩm (Audit Log)"
+          onClose={function () {
+            setShowAuditModal(false)
+          }}
+          widthClass="max-w-2xl"
+        >
+          <p className="mt-1 text-[11px] text-zinc-400">
+            Ghi nhận mọi lần cập nhật thông tin, thay đổi giá, tồn kho và trạng thái.
+          </p>
 
-              <button
-                type="button"
-                onClick={function () {
-                  setShowAuditModal(false)
-                }}
-                className="rounded-full p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-              >
-                <X size={16} weight="bold" />
-              </button>
+          {auditLogsQuery.isPending && (
+            <div className="mt-4 py-12 text-center text-zinc-400">
+              <SpinnerGap size={24} weight="bold" className="mx-auto animate-spin" />
+              <p className="mt-2 text-xs">Đang tải lịch sử chỉnh sửa...</p>
             </div>
+          )}
 
-            {/* Modal Content */}
-            <div className="flex-1 space-y-4 overflow-y-auto p-5">
-              {auditLogsQuery.isPending && (
-                <div className="py-12 text-center text-zinc-400">
-                  <SpinnerGap size={24} weight="bold" className="mx-auto animate-spin" />
-                  <p className="mt-2 text-xs">Đang tải lịch sử chỉnh sửa...</p>
-                </div>
-              )}
+          {!auditLogsQuery.isPending && auditLogs.length === 0 && (
+            <div className="mt-4 py-12 text-center text-zinc-400">
+              <Info size={32} weight="bold" className="mx-auto mb-2 text-zinc-300" />
+              <p className="text-xs">Chưa có lịch sử chỉnh sửa nào được ghi nhận.</p>
+            </div>
+          )}
 
-              {!auditLogsQuery.isPending && auditLogs.length === 0 && (
-                <div className="py-12 text-center text-zinc-400">
-                  <Info size={32} weight="bold" className="mx-auto mb-2 text-zinc-300" />
-                  <p className="text-xs">Chưa có lịch sử chỉnh sửa nào được ghi nhận.</p>
-                </div>
-              )}
+          {!auditLogsQuery.isPending && auditLogs.length > 0 && (
+            <div className="relative mt-4 space-y-6 border-l-2 border-zinc-200 pl-4 dark:border-white/10">
+              {auditLogs.map(function (log) {
+                return (
+                  <div key={log.id} className="group relative">
+                    {/* Dot on timeline */}
+                    <div className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full border-2 border-white bg-indigo-600 dark:border-zinc-900" />
 
-              {!auditLogsQuery.isPending && auditLogs.length > 0 && (
-                <div className="relative space-y-6 border-l-2 border-zinc-200 pl-4 dark:border-zinc-800">
-                  {auditLogs.map(function (log) {
-                    return (
-                      <div key={log.id} className="group relative">
-                        {/* Dot on timeline */}
-                        <div className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full border-2 border-white bg-orange-600 dark:border-zinc-900" />
+                    <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-3.5 dark:border-white/10 dark:bg-white/5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {renderActionBadge(log.action ?? '')}
+                          <span className="text-[11px] font-bold text-zinc-900 dark:text-zinc-200">
+                            {log.changesSummary ?? 'Thay đổi sản phẩm'}
+                          </span>
+                        </div>
+                        <span className="font-mono text-[11px] text-zinc-400">
+                          {formatDateTime(log.createdAt)}
+                        </span>
+                      </div>
 
-                        <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-950/40">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              {renderActionBadge(log.action ?? '')}
-                              <span className="text-[11px] font-bold text-zinc-900 dark:text-zinc-200">
-                                {log.changesSummary ?? 'Thay đổi sản phẩm'}
+                      {/* Old values / New values snippet if present */}
+                      {(log.oldValues !== null || log.newValues !== null) && (
+                        <div className="mt-2.5 grid grid-cols-1 gap-2 border-t border-zinc-100 pt-2 sm:grid-cols-2 dark:border-white/10">
+                          {log.oldValues !== null && log.oldValues !== '' && (
+                            <div className="rounded-xl bg-red-50/50 p-2 text-[11px] text-red-900 dark:bg-red-950/20 dark:text-red-300">
+                              <span className="block text-[10px] font-bold text-red-600 uppercase dark:text-red-400">
+                                Giá trị cũ:
                               </span>
+                              <pre className="mt-0.5 font-mono text-[10px] leading-tight whitespace-pre-wrap">
+                                {log.oldValues}
+                              </pre>
                             </div>
-                            <span className="font-mono text-[11px] text-zinc-400">
-                              {formatDateTime(log.createdAt)}
-                            </span>
-                          </div>
-
-                          {/* Old values / New values snippet if present */}
-                          {(log.oldValues !== null || log.newValues !== null) && (
-                            <div className="mt-2.5 grid grid-cols-1 gap-2 border-t border-zinc-100 pt-2 sm:grid-cols-2 dark:border-zinc-800/80">
-                              {log.oldValues !== null && log.oldValues !== '' && (
-                                <div className="rounded-xl bg-red-50/50 p-2 text-[11px] text-red-900 dark:bg-red-950/20 dark:text-red-300">
-                                  <span className="block text-[10px] font-bold text-red-600 uppercase dark:text-red-400">
-                                    Giá trị cũ:
-                                  </span>
-                                  <pre className="mt-0.5 font-mono text-[10px] leading-tight whitespace-pre-wrap">
-                                    {log.oldValues}
-                                  </pre>
-                                </div>
-                              )}
-                              {log.newValues !== null && log.newValues !== '' && (
-                                <div className="rounded-xl bg-emerald-50/50 p-2 text-[11px] text-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
-                                  <span className="block text-[10px] font-bold text-emerald-600 uppercase dark:text-emerald-400">
-                                    Giá trị mới:
-                                  </span>
-                                  <pre className="mt-0.5 font-mono text-[10px] leading-tight whitespace-pre-wrap">
-                                    {log.newValues}
-                                  </pre>
-                                </div>
-                              )}
+                          )}
+                          {log.newValues !== null && log.newValues !== '' && (
+                            <div className="rounded-xl bg-emerald-50/50 p-2 text-[11px] text-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
+                              <span className="block text-[10px] font-bold text-emerald-600 uppercase dark:text-emerald-400">
+                                Giá trị mới:
+                              </span>
+                              <pre className="mt-0.5 font-mono text-[10px] leading-tight whitespace-pre-wrap">
+                                {log.newValues}
+                              </pre>
                             </div>
                           )}
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-
-            {/* Modal Footer */}
-            <div className="flex justify-end border-t border-zinc-100 p-4 dark:border-zinc-800">
-              <button
-                type="button"
-                onClick={function () {
-                  setShowAuditModal(false)
-                }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
+          )}
+        </Modal>
       )}
     </div>
   )

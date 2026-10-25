@@ -64,7 +64,8 @@ export default function RichTextEditor({
   if (activeTab === 'edit') {
     editTabButtonClass += 'bg-white shadow-xs text-zinc-900 dark:bg-zinc-800 dark:text-white'
   } else {
-    editTabButtonClass += 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
+    editTabButtonClass +=
+      'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
   }
 
   let previewTabButtonClass =
@@ -72,7 +73,8 @@ export default function RichTextEditor({
   if (activeTab === 'preview') {
     previewTabButtonClass += 'bg-white shadow-xs text-zinc-900 dark:bg-zinc-800 dark:text-white'
   } else {
-    previewTabButtonClass += 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
+    previewTabButtonClass +=
+      'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
   }
 
   return (
@@ -205,7 +207,7 @@ export default function RichTextEditor({
       {activeTab === 'preview' && (
         <div className="min-h-[160px] p-4 text-xs">
           {value.trim() === '' && (
-            <p className="italic text-zinc-400 dark:text-zinc-600">
+            <p className="text-zinc-400 italic dark:text-zinc-600">
               (Chưa có nội dung mô tả để xem trước)
             </p>
           )}
