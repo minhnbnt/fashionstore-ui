@@ -99,10 +99,12 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
   // Step 1: Shop Basic Info & Branding
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
+  const [slugSuffix] = useState(function () {
+    return Math.random().toString(36).substring(2, 6)
+  })
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [description, setDescription] = useState('')
-  const [autoSlug, setAutoSlug] = useState(true)
 
   const [logoKey, setLogoKey] = useState('')
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -206,9 +208,12 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
 
   function handleNameChange(val: string) {
     setName(val)
-    if (autoSlug) {
-      setSlug(slugify(val))
+    const clean = slugify(val)
+    if (clean === '') {
+      setSlug('')
+      return
     }
+    setSlug(`${clean}-${slugSuffix}`)
   }
 
   function handleLegalNameChange(val: string) {
@@ -504,24 +509,23 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
 
             <div>
               <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                Định danh Shop / Slug (URL) <span className="text-red-500">*</span>
+                Định danh Shop / Slug (URL){' '}
+                <span className="font-normal text-zinc-400">(Tự sinh độc nhất)</span>{' '}
+                <span className="text-red-500">*</span>
                 <div className="mt-1 flex items-center rounded-full border border-zinc-300 bg-white/80 px-4 py-2 dark:border-white/15 dark:bg-white/10">
                   <span className="text-xs text-zinc-400">net.vn/shop/</span>
                   <input
                     id="input-shop-slug"
                     type="text"
                     value={slug}
-                    onChange={(e) => {
-                      setAutoSlug(false)
-                      setSlug(slugify(e.target.value))
-                    }}
-                    placeholder="VD: net-boutique"
+                    readOnly
+                    placeholder="VD: net-boutique-4f2a"
                     className="w-full bg-transparent px-2 text-xs font-medium text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-white dark:placeholder:text-zinc-500"
                   />
                 </div>
               </label>
               <span className="mt-1 block text-[11px] text-zinc-400">
-                Đường dẫn độc nhất toàn sàn dùng để khách hàng truy cập gian hàng.
+                Đường dẫn độc nhất toàn sàn được tự động tạo kèm mã định danh để tránh trùng lặp.
               </span>
             </div>
 
