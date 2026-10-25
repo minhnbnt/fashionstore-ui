@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 import {
   exportRevenueReport,
@@ -10,14 +10,11 @@ import {
 } from '@generated/endpoints/seller-statistics/seller-statistics'
 import {
   CalendarBlank,
-  CaretDown,
   CheckCircle,
   CurrencyDollar,
   DownloadSimple,
-  FileText,
   Receipt,
   Scales,
-  Table,
   TrendDown,
   TrendUp,
   WarningCircle,
@@ -78,20 +75,6 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
   const [exportSuccessMessage, setExportSuccessMessage] = useState<string | null>(null)
-  const [showExportMenu, setShowExportMenu] = useState(false)
-  const exportDropdownRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
-        setShowExportMenu(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
 
   const isEnabled = shopId !== ''
 
@@ -228,7 +211,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
     estimatedProfit = 0
   }
 
-  async function handleExport(exportFormat: 'xlsx' | 'csv' = 'xlsx') {
+  async function handleExportExcel() {
     if (dateError !== null) {
       setExportError(dateError)
       return
@@ -236,10 +219,9 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
     setIsExporting(true)
     setExportError(null)
     setExportSuccessMessage(null)
-    setShowExportMenu(false)
     try {
       const res = await exportRevenueReport(shopId, {
-        format: exportFormat,
+        format: 'xlsx',
         from: queryFrom,
         to: queryTo,
       })
@@ -250,30 +232,16 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
         }
         const todayStr = new Date().toISOString().slice(0, 10)
         let downloadBlob: Blob
-        let filename: string
 
-        if (exportFormat === 'xlsx') {
-          const rawData = res.data as unknown
-          if (rawData instanceof Blob) {
-            downloadBlob = rawData
-          } else {
-            downloadBlob = new Blob([rawData as BlobPart], {
-              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            })
-          }
-          filename = `bao-cao-doanh-thu-${fileSuffix}-${todayStr}.xlsx`
+        const rawData = res.data as unknown
+        if (rawData instanceof Blob) {
+          downloadBlob = rawData
         } else {
-          let rawText = String(res.data)
-          if (typeof res.data === 'string') {
-            rawText = res.data
-          }
-          let textWithBom = rawText
-          if (!rawText.startsWith('\uFEFF')) {
-            textWithBom = '\uFEFF' + rawText
-          }
-          downloadBlob = new Blob([textWithBom], { type: 'text/csv;charset=utf-8;' })
-          filename = `bao-cao-doanh-thu-${fileSuffix}-${todayStr}.csv`
+          downloadBlob = new Blob([rawData as BlobPart], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
         }
+        const filename = `bao-cao-doanh-thu-${fileSuffix}-${todayStr}.xlsx`
 
         const url = URL.createObjectURL(downloadBlob)
         const link = document.createElement('a')
@@ -284,11 +252,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
         document.body.removeChild(link)
         URL.revokeObjectURL(url)
 
-        let msg = 'Đã xuất file CSV (tích hợp UTF-8 BOM) thành công!'
-        if (exportFormat === 'xlsx') {
-          msg = 'Đã xuất file Excel (.xlsx) 4 sheet chi tiết thành công!'
-        }
-        setExportSuccessMessage(msg)
+        setExportSuccessMessage('Đã xuất file Excel (.xlsx) 4 sheet chi tiết thành công!')
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -371,126 +335,57 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
             </button>
           </div>
 
-          {/* Date range picker */}
-          <div className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs dark:border-white/10 dark:bg-[#11182a]">
-            <CalendarBlank size={14} className="text-zinc-400" />
-            <input
-              type="date"
-              value={fromDate}
-              max={maxFromDateProp}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="bg-transparent text-xs text-zinc-700 outline-none dark:text-zinc-200"
-              title="Từ ngày"
-            />
-            <span className="text-zinc-400">-</span>
-            <input
-              type="date"
-              value={toDate}
-              min={minToDateProp}
-              onChange={(e) => setToDate(e.target.value)}
-              className="bg-transparent text-xs text-zinc-700 outline-none dark:text-zinc-200"
-              title="Đến ngày"
-            />
-            {(fromDate !== '' || toDate !== '') && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFromDate('')
-                  setToDate('')
-                  setExportError(null)
-                }}
-                className="rounded-full p-0.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-zinc-200"
-                title="Xóa bộ lọc ngày"
-              >
-                <X size={12} weight="bold" />
-              </button>
-            )}
-          </div>
-
-          {/* Export Dropdown */}
-          <div ref={exportDropdownRef} className="relative">
-            <div className="flex items-center rounded-full bg-indigo-600 shadow-md transition hover:bg-indigo-700">
-              <button
-                type="button"
-                onClick={() => {
-                  void handleExport('xlsx')
-                }}
-                disabled={isExporting || dateError !== null}
-                className="flex items-center gap-2 rounded-l-full py-2 pl-4 pr-2 text-xs font-bold text-white disabled:opacity-50"
-                title="Tải về file Excel (.xlsx) 4 sheet đầy đủ"
-              >
-                <DownloadSimple size={15} weight="bold" />
-                {isExporting && <span>Đang xuất...</span>}
-                {!isExporting && <span>Xuất Excel</span>}
-                <span className="rounded bg-white/20 px-1 py-0.5 text-[10px] font-semibold text-white">
-                  .xlsx
-                </span>
-              </button>
-              <div className="h-4 w-[1px] bg-white/25" />
-              <button
-                type="button"
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                disabled={isExporting || dateError !== null}
-                className="rounded-r-full p-2 text-white transition hover:bg-white/10 disabled:opacity-50"
-                title="Tùy chọn định dạng xuất báo cáo"
-              >
-                <CaretDown size={14} weight="bold" />
-              </button>
+          {/* Date range picker + Export Excel button on same line */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs dark:border-white/10 dark:bg-[#11182a]">
+              <CalendarBlank size={14} className="text-zinc-400" />
+              <input
+                type="date"
+                value={fromDate}
+                max={maxFromDateProp}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="bg-transparent text-xs text-zinc-700 outline-none dark:text-zinc-200"
+                title="Từ ngày"
+              />
+              <span className="text-zinc-400">-</span>
+              <input
+                type="date"
+                value={toDate}
+                min={minToDateProp}
+                onChange={(e) => setToDate(e.target.value)}
+                className="bg-transparent text-xs text-zinc-700 outline-none dark:text-zinc-200"
+                title="Đến ngày"
+              />
+              {(fromDate !== '' || toDate !== '') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFromDate('')
+                    setToDate('')
+                    setExportError(null)
+                  }}
+                  className="rounded-full p-0.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-zinc-200"
+                  title="Xóa bộ lọc ngày"
+                >
+                  <X size={12} weight="bold" />
+                </button>
+              )}
             </div>
 
-            {showExportMenu && (
-              <div className="absolute right-0 top-full z-30 mt-2 w-72 rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-[#161f36]">
-                <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                  Chọn định dạng xuất
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void handleExport('xlsx')
-                  }}
-                  className="flex w-full items-start gap-3 rounded-xl p-2.5 text-left transition hover:bg-zinc-50 dark:hover:bg-white/5"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
-                    <Table size={18} weight="bold" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-zinc-900 dark:text-white">
-                        Excel (.xlsx)
-                      </span>
-                      <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[9px] font-bold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
-                        Khuyên dùng
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-                      Báo cáo 4 sheet chi tiết: Tổng quan, Biểu đồ ngày, Top sản phẩm, Đơn hàng. Chuẩn font tiếng Việt 100%.
-                    </p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    void handleExport('csv')
-                  }}
-                  className="mt-1 flex w-full items-start gap-3 rounded-xl p-2.5 text-left transition hover:bg-zinc-50 dark:hover:bg-white/5"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
-                    <FileText size={18} weight="bold" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-zinc-900 dark:text-white">
-                        CSV (.csv)
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-                      Xuất nhanh dữ liệu nhẹ, tích hợp UTF-8 BOM giúp mở trực tiếp trên Excel không bị lỗi font.
-                    </p>
-                  </div>
-                </button>
-              </div>
-            )}
+            {/* Export Excel button */}
+            <button
+              type="button"
+              onClick={() => {
+                void handleExportExcel()
+              }}
+              disabled={isExporting || dateError !== null}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+              title="Xuất file báo cáo Excel (.xlsx)"
+            >
+              <DownloadSimple size={14} weight="bold" />
+              {isExporting && <span>Đang xuất...</span>}
+              {!isExporting && <span>Xuất Excel</span>}
+            </button>
           </div>
         </div>
       </div>
