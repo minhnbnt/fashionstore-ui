@@ -40,7 +40,7 @@ import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
 import { formatDateTime, formatVnd } from '@/lib/format'
 import { productItem } from '@/lib/sellerAdapters'
-import { sellerStatusMeta } from '@/lib/sellerStatus'
+import { sellerProductStatusMeta } from '@/lib/sellerStatus'
 
 import type { ProductItem } from '@/types/seller'
 import type { BulkOperationResult, SellerProductResponse } from '@generated/model'
@@ -778,7 +778,8 @@ export default function SellerProductsTab({
     sortBy !== 'createdAt_desc'
 
   function renderStatusBadge(product: ProductItem) {
-    // StatusBadge dung sellerStatusMeta: ACTIVE/HIDDEN-INACTIVE/BANNED/DELETED deu co san.
+    // StatusBadge dung sellerProductStatusMeta: ACTIVE/HIDDEN-INACTIVE/PENDING/BANNED/DELETED
+    // deu co san, PENDING cua san pham la "Cho duyet" (khac PENDING don hang "Cho xac nhan").
     // voi BANNED them title reason de hover xem ly do goc.
     let reasonTitle: string | undefined = undefined
     if (
@@ -791,7 +792,7 @@ export default function SellerProductsTab({
     }
     return (
       <span title={reasonTitle}>
-        <StatusBadge status={product.status} meta={sellerStatusMeta} />
+        <StatusBadge status={product.status} meta={sellerProductStatusMeta} />
       </span>
     )
   }
