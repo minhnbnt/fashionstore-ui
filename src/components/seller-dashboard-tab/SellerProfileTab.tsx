@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { getMineQueryKey, useUpdateProfile } from '@generated/endpoints/shops/shops'
+import { getMineQueryKey, useUpdate2, useUpdateProfile } from '@generated/endpoints/shops/shops'
 import {
   Storefront,
   FloppyDisk,
@@ -12,6 +12,9 @@ import {
   ShieldCheck,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
+
+import ImageUploadField from '@/components/admin/ImageUploadField'
+import RichTextEditor from '@/components/ui/RichTextEditor'
 
 import type { ShopProfileData } from '@/types/seller'
 
@@ -33,12 +36,32 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
     },
   })
 
+  const updateShopMutation = useUpdate2({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getMineQueryKey() })
+      },
+    },
+  })
+
   function handleSaveProfile(next: ShopProfileData) {
+    updateShopMutation.mutate({
+      id: shopId,
+      data: {
+        name: next.shopName,
+        description: next.bio,
+        logoKey: next.logoUrl !== '' ? next.logoUrl : null,
+        bannerKey: next.bannerUrl !== '' ? next.bannerUrl : null,
+      },
+    })
+
     updateProfileMutation.mutate({
       id: shopId,
       data: {
         phone: next.phone,
         address: next.pickupAddress,
+        returnPolicy:
+          next.returnPolicy !== undefined && next.returnPolicy !== '' ? next.returnPolicy : null,
         processingDays: next.daysToShip,
         bankName: next.bankName,
         bankAccount: next.bankAccount,
@@ -66,8 +89,8 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
             </h2>
           </div>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Quản lý tên shop, logo, địa chỉ kho lấy hàng, thông tin tài khoản ngân hàng và chính
-            sách vận hành.
+            Quản lý tên shop, logo, ảnh bìa, chính sách đổi trả, địa chỉ kho lấy hàng, thông tin tài
+            khoản ngân hàng và chính sách vận hành.
           </p>
         </div>
 
@@ -160,49 +183,66 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
 
           <div className="md:col-span-2">
             <label
-              htmlFor="bioField"
+              htmlFor="bioEditor"
               className="mb-1 block text-xs font-semibold text-zinc-700 dark:text-zinc-200"
             >
               Mô tả Shop & Giới thiệu
             </label>
-            <textarea
-              id="bioField"
-              rows={3}
+            <RichTextEditor
+              id="bioEditor"
               value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
+              onChange={(bio) => setFormData({ ...formData, bio })}
+              placeholder="Giới thiệu về nét riêng của shop, phong cách thời trang, cam kết chất lượng..."
+              rows={4}
             />
           </div>
 
           <div>
-            <label
-              htmlFor="logoUrlField"
-              className="mb-1 block text-xs font-semibold text-zinc-700 dark:text-zinc-200"
-            >
-              Ảnh đại diện Shop (Avatar URL)
-            </label>
-            <input
-              id="logoUrlField"
-              type="url"
+            <ImageUploadField
+              label="Ảnh đại diện Shop (Avatar)"
+              hint="Ảnh vuông tỉ lệ 1:1, tối đa 5MB. Định dạng JPG, PNG, WEBP."
+              aspectClass="aspect-square max-w-[120px]"
               value={formData.logoUrl}
-              onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-              className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
+              onChange={(key) => setFormData({ ...formData, logoUrl: key })}
+              optional
             />
           </div>
 
           <div>
-            <label
-              htmlFor="bannerUrlField"
-              className="mb-1 block text-xs font-semibold text-zinc-700 dark:text-zinc-200"
-            >
-              Ảnh bìa gian hàng (Banner URL)
-            </label>
-            <input
-              id="bannerUrlField"
-              type="url"
+            <ImageUploadField
+              label="Ảnh bìa gian hàng (Banner)"
+              hint="Tỉ lệ 3:1 (khuyên dùng 1200x400px), tối đa 5MB."
+              aspectClass="aspect-[3/1] max-w-full"
               value={formData.bannerUrl}
-              onChange={(e) => setFormData({ ...formData, bannerUrl: e.target.value })}
-              className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
+              onChange={(key) => setFormData({ ...formData, bannerUrl: key })}
+              optional
+            />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <label
+              htmlFor="returnPolicyField"
+              className="block text-xs font-semibold text-zinc-700 dark:text-zinc-200"
+            >
+              Chính sách đổi trả riêng của Shop
+            </label>
+            <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-200">
+              <span className="font-semibold">Quy định tối thiểu của sàn:</span> Khách hàng được
+              quyền đổi trả hàng trong vòng tối thiểu 7 ngày kể từ khi nhận kiện đối với sản phẩm bị
+              lỗi do nhà sản xuất hoặc giao sai mẫu / kích thước. Chính sách riêng của Shop có thể
+              kéo dài thời hạn (ví dụ 15 - 30 ngày) để tăng độ uy tín với khách hàng.
+            </div>
+            <textarea
+              id="returnPolicyField"
+              rows={3}
+              value={
+                formData.returnPolicy !== undefined && formData.returnPolicy !== null
+                  ? formData.returnPolicy
+                  : ''
+              }
+              onChange={(e) => setFormData({ ...formData, returnPolicy: e.target.value })}
+              placeholder="Nhập chi tiết điều kiện đổi trả, hoàn tiền, hỗ trợ đổi size của shop..."
+              className="w-full rounded-2xl border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
             />
           </div>
         </div>
@@ -216,7 +256,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
             2. Địa chỉ lấy hàng & Thời gian chuẩn bị hàng (Warehouse & DTS)
           </h3>
           <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-            Đơn vị vận chuyển (SPX Express, GHTK, ViettelPost) sẽ đến địa chỉ này để lấy kiện hàng.
+            Đơn vị vận chuyển sẽ đến địa chỉ này để lấy kiện hàng.
           </p>
         </div>
 
@@ -300,9 +340,9 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               onChange={(e) => setFormData({ ...formData, daysToShip: Number(e.target.value) })}
               className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
             >
-              <option value={1}>1 ngày (Giao hàng nhanh hỏa tốc)</option>
-              <option value={2}>2 ngày (Tiêu chuẩn)</option>
-              <option value={7}>7 ngày (Hàng đặt trước / Pre-order)</option>
+              <option value={1}>1 ngày (Giao hàng hỏa tốc / Chuẩn bị ngay trong ngày)</option>
+              <option value={2}>2 ngày (Tiêu chuẩn sàn nét)</option>
+              <option value={3}>3 ngày (Mức tối đa cho phép)</option>
             </select>
           </div>
         </div>

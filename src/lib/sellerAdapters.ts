@@ -382,14 +382,17 @@ export function chatMessageItem(message: ChatMessageResponse): ChatMessageItem {
   }
 }
 
-/** Parse draft JSON thanh block list, JSON loi thi tra ve mang rong */
+/** Parse draft hoặc layout JSON thanh block list, JSON loi thi tra ve mang rong */
 export function decorationBlocks(decoration: DecorationResponse | undefined): DecorationBlock[] {
-  const draft = decoration?.draft
-  if (draft === null || draft === undefined || draft === '') {
+  const jsonStr =
+    decoration?.draft !== null && decoration?.draft !== undefined && decoration?.draft !== ''
+      ? decoration.draft
+      : decoration?.layout
+  if (jsonStr === null || jsonStr === undefined || jsonStr === '') {
     return []
   }
   try {
-    const parsed: unknown = JSON.parse(draft)
+    const parsed: unknown = JSON.parse(jsonStr)
     if (Array.isArray(parsed) === false) {
       return []
     }
@@ -399,16 +402,75 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
         continue
       }
       const record = item as Record<string, unknown>
-      const type = record['type']
-      if (type !== 'BANNER' && type !== 'COLLECTION' && type !== 'FLASH_SALE' && type !== 'VIDEO') {
+      const rawType = record['type']
+      const allowedTypes = [
+        'BANNER_SLIDER',
+        'PRODUCT_COLLECTION',
+        'CATEGORY_GRID',
+        'VOUCHER_CAROUSEL',
+        'BANNER',
+        'COLLECTION',
+        'FLASH_SALE',
+        'VIDEO',
+      ]
+      if (typeof rawType !== 'string' || !allowedTypes.includes(rawType)) {
         continue
       }
-      blocks.push({
+      const type = rawType as DecorationBlock['type']
+
+      let banners: DecorationBlock['banners']
+      if (Array.isArray(record['banners'])) {
+        banners = []
+        for (const b of record['banners']) {
+          if (typeof b === 'object' && b !== null) {
+            const bRec = b as Record<string, unknown>
+            banners.push({
+              id: typeof bRec['id'] === 'string' ? bRec['id'] : `slide-${banners.length + 1}`,
+              imageKey: typeof bRec['imageKey'] === 'string' ? bRec['imageKey'] : '',
+              title: typeof bRec['title'] === 'string' ? bRec['title'] : undefined,
+              linkUrl: typeof bRec['linkUrl'] === 'string' ? bRec['linkUrl'] : undefined,
+            })
+          }
+        }
+      }
+
+      let collectionType: DecorationBlock['collectionType']
+      if (typeof record['collectionType'] === 'string') {
+        const ct = record['collectionType']
+        if (ct === 'NEW_ARRIVALS' || ct === 'BEST_SELLER' || ct === 'SALE_OFF' || ct === 'CUSTOM') {
+          collectionType = ct
+        }
+      }
+
+      let itemLimit: number | undefined
+      if (typeof record['itemLimit'] === 'number') {
+        itemLimit = record['itemLimit']
+      }
+
+      let displayStyle: DecorationBlock['displayStyle']
+      if (record['displayStyle'] === 'GRID' || record['displayStyle'] === 'SLIDER') {
+        displayStyle = record['displayStyle']
+      }
+
+      const block: DecorationBlock = {
         id: typeof record['id'] === 'string' ? record['id'] : `block-${blocks.length + 1}`,
         type,
         title: typeof record['title'] === 'string' ? record['title'] : '',
         enabled: record['enabled'] === true,
-      })
+      }
+      if (banners !== undefined) {
+        block.banners = banners
+      }
+      if (collectionType !== undefined) {
+        block.collectionType = collectionType
+      }
+      if (itemLimit !== undefined) {
+        block.itemLimit = itemLimit
+      }
+      if (displayStyle !== undefined) {
+        block.displayStyle = displayStyle
+      }
+      blocks.push(block)
     }
     return blocks
   } catch {
@@ -444,6 +506,7 @@ export function shopProfile(shop: ShopResponse): ShopProfileData {
     bankAccount: safeText(shop.bankAccount),
     bankHolder: safeText(shop.bankHolder),
     workingHours: safeText(shop.workingHours),
+    returnPolicy: safeText(shop.returnPolicy),
   }
 }
 

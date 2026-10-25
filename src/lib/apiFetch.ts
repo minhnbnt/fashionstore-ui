@@ -64,10 +64,7 @@ export async function customFetch<T>(url: string, options?: RequestInit): Promis
     contentType.includes('application/octet-stream')
   ) {
     body = (await response.blob()) as unknown
-  } else if (
-    contentType.includes('text/csv') ||
-    contentType.includes('text/plain')
-  ) {
+  } else if (contentType.includes('text/csv') || contentType.includes('text/plain')) {
     body = (await response.text()) as unknown
   } else {
     try {

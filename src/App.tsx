@@ -26,6 +26,7 @@ const AdminOrders = lazy(() => import('./pages/AdminOrders'))
 const AdminHolidays = lazy(() => import('./pages/AdminHolidays'))
 const AdminBannedKeywords = lazy(() => import('./pages/AdminBannedKeywords'))
 const ShopDashboard = lazy(() => import('./pages/ShopDashboard'))
+const ShopStorefront = lazy(() => import('./pages/ShopStorefront'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const Cart = lazy(() => import('./pages/Cart'))
 const Checkout = lazy(() => import('./pages/Checkout'))
@@ -63,17 +64,18 @@ function ScrollToHash() {
 
 function App() {
   const location = useLocation()
-  const isShopRoute = location.pathname.startsWith('/shop')
+  const isSellerDashboard = location.pathname === '/shop'
 
   return (
     <div className="grain min-h-[100dvh]">
       <AmbientBackground />
-      {!isShopRoute && <Header />}
+      {!isSellerDashboard && <Header />}
       <ScrollToHash />
       <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/shops/:slug" element={<ShopStorefront />} />
           <Route path="/search" element={<Search />} />
           <Route path="/pages/:slug" element={<StaticPage />} />
           <Route path="/faq" element={<Faq />} />
@@ -218,7 +220,7 @@ function App() {
           />
         </Routes>
       </Suspense>
-      {!isShopRoute && <Footer />}
+      {!isSellerDashboard && <Footer />}
     </div>
   )
 }

@@ -69,4 +69,3 @@ export function getFirstAllowedTab(permissions: string[], isOwner: boolean): Sel
   }
   return null
 }
-

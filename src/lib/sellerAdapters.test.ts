@@ -305,6 +305,29 @@ describe('decoration adapter', () => {
   const blocks: DecorationBlock[] = [
     { id: 'b-1', type: 'BANNER', title: 'Banner', enabled: true },
     { id: 'b-2', type: 'VIDEO', title: 'Video', enabled: false },
+    {
+      id: 'b-3',
+      type: 'BANNER_SLIDER',
+      title: 'Slider Chính',
+      enabled: true,
+      banners: [
+        {
+          id: 'slide-1',
+          imageKey: 'banners/slide1.jpg',
+          title: 'Khuyến mãi hè',
+          linkUrl: '/search?category=he',
+        },
+      ],
+    },
+    {
+      id: 'b-4',
+      type: 'PRODUCT_COLLECTION',
+      title: 'Hàng Mới Về',
+      enabled: true,
+      collectionType: 'NEW_ARRIVALS',
+      itemLimit: 8,
+      displayStyle: 'GRID',
+    },
   ]
 
   it('vong tron stringify -> parse', () => {
@@ -329,6 +352,7 @@ describe('shopProfile', () => {
       status: 'APPROVED',
       phone: '0901',
       address: 'Hà Nội',
+      returnPolicy: 'Đổi trả miễn phí trong 7 ngày',
       processingDays: 2,
       sellerType: 'BUSINESS',
       taxCode: '0123',
@@ -346,5 +370,6 @@ describe('shopProfile', () => {
     expect(profile.taxOrIdNumber).toBe('0123')
     expect(profile.isVerified).toBe(true)
     expect(profile.city).toBe('')
+    expect(profile.returnPolicy).toBe('Đổi trả miễn phí trong 7 ngày')
   })
 })

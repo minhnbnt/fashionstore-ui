@@ -66,4 +66,3 @@ describe('getFirstAllowedTab', () => {
     expect(getFirstAllowedTab([], false)).toBeNull()
   })
 })
-

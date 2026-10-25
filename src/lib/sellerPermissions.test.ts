@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { canSeeTab, formatTargetType, getAuditActionBadgeMeta, permissionLabel } from './sellerPermissions'
+import {
+  canSeeTab,
+  formatTargetType,
+  getAuditActionBadgeMeta,
+  permissionLabel,
+} from './sellerPermissions'
 
 describe('canSeeTab', () => {
   it('owner thấy tất cả các tab', () => {
@@ -59,7 +64,9 @@ describe('canSeeTab', () => {
 
   it('chỉ OWNER mới được thấy PROFILE, staff dù có quyền gì cũng không thấy PROFILE', () => {
     expect(canSeeTab('PROFILE', [], true)).toBe(true)
-    expect(canSeeTab('PROFILE', ['PRODUCT_WRITE', 'REVENUE_READ', 'ORDER_PROCESS'], false)).toBe(false)
+    expect(canSeeTab('PROFILE', ['PRODUCT_WRITE', 'REVENUE_READ', 'ORDER_PROCESS'], false)).toBe(
+      false,
+    )
   })
 })
 
@@ -103,4 +110,3 @@ describe('getAuditActionBadgeMeta', () => {
     expect(getAuditActionBadgeMeta('UNKNOWN_SOMETHING').badgeType).toBe('neutral')
   })
 })
-

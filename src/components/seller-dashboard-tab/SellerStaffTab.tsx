@@ -43,11 +43,7 @@ import Modal from '@/components/Modal'
 import { takeData } from '@/lib/apiAdapters'
 import { formatDateTime } from '@/lib/format'
 import { auditItem, memberItem, roleItem } from '@/lib/sellerAdapters'
-import {
-  formatTargetType,
-  getAuditActionBadgeMeta,
-  permissionLabel,
-} from '@/lib/sellerPermissions'
+import { formatTargetType, getAuditActionBadgeMeta, permissionLabel } from '@/lib/sellerPermissions'
 
 import type { ShopAuditItem, ShopMemberItem, ShopRoleItem } from '@/types/seller'
 import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
@@ -852,20 +848,20 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
               <div className="relative flex-1">
                 <MagnifyingGlass
                   size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
+                  className="absolute top-1/2 left-3.5 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
                 />
                 <input
                   type="text"
                   value={auditSearchQuery}
                   onChange={(e) => setAuditSearchQuery(e.target.value)}
                   placeholder="Tìm kiếm hành động, người thực hiện, chi tiết thay đổi..."
-                  className="w-full rounded-full border border-zinc-200 bg-white py-2 pl-9 pr-9 text-xs text-zinc-800 placeholder-zinc-400 transition-colors focus:border-indigo-600 focus:outline-none dark:border-white/15 dark:bg-white/5 dark:text-zinc-200 dark:placeholder-zinc-500"
+                  className="w-full rounded-full border border-zinc-200 bg-white py-2 pr-9 pl-9 text-xs text-zinc-800 placeholder-zinc-400 transition-colors focus:border-indigo-600 focus:outline-none dark:border-white/15 dark:bg-white/5 dark:text-zinc-200 dark:placeholder-zinc-500"
                 />
                 {auditSearchQuery && (
                   <button
                     type="button"
                     onClick={() => setAuditSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                     title="Xóa tìm kiếm"
                   >
                     <X size={14} />
