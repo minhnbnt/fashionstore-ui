@@ -57,9 +57,16 @@ export async function customFetch<T>(url: string, options?: RequestInit): Promis
   const contentType = response.headers.get('content-type') ?? ''
   let body: unknown = null
   if (
-    contentType.includes('text/csv') ||
-    contentType.includes('text/plain') ||
+    contentType.includes('application/vnd.openxmlformats-officedocument') ||
+    contentType.includes('application/vnd.ms-excel') ||
+    contentType.includes('application/pdf') ||
+    contentType.includes('application/zip') ||
     contentType.includes('application/octet-stream')
+  ) {
+    body = (await response.blob()) as unknown
+  } else if (
+    contentType.includes('text/csv') ||
+    contentType.includes('text/plain')
   ) {
     body = (await response.text()) as unknown
   } else {

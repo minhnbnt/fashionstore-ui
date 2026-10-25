@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
   exportRevenueReport,
@@ -10,11 +10,14 @@ import {
 } from '@generated/endpoints/seller-statistics/seller-statistics'
 import {
   CalendarBlank,
+  CaretDown,
   CheckCircle,
   CurrencyDollar,
   DownloadSimple,
+  FileText,
   Receipt,
   Scales,
+  Table,
   TrendDown,
   TrendUp,
   WarningCircle,
@@ -74,6 +77,21 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
   const [toDate, setToDate] = useState('')
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
+  const [exportSuccessMessage, setExportSuccessMessage] = useState<string | null>(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const exportDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   const isEnabled = shopId !== ''
 
@@ -210,34 +228,67 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
     estimatedProfit = 0
   }
 
-  async function handleExportExcel() {
+  async function handleExport(exportFormat: 'xlsx' | 'csv' = 'xlsx') {
     if (dateError !== null) {
       setExportError(dateError)
       return
     }
     setIsExporting(true)
     setExportError(null)
+    setExportSuccessMessage(null)
+    setShowExportMenu(false)
     try {
       const res = await exportRevenueReport(shopId, {
-        format: 'CSV',
+        format: exportFormat,
         from: queryFrom,
         to: queryTo,
       })
       if (res.status === 200) {
-        const csvData = typeof res.data === 'string' ? res.data : String(res.data)
-        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
         let fileSuffix = period.toLowerCase()
         if (isCustomRangeActive) {
           fileSuffix = `${fromDate}_den_${toDate}`
         }
-        link.download = `bao-cao-doanh-thu-${fileSuffix}-${new Date().toISOString().slice(0, 10)}.csv`
+        const todayStr = new Date().toISOString().slice(0, 10)
+        let downloadBlob: Blob
+        let filename: string
+
+        if (exportFormat === 'xlsx') {
+          const rawData = res.data as unknown
+          if (rawData instanceof Blob) {
+            downloadBlob = rawData
+          } else {
+            downloadBlob = new Blob([rawData as BlobPart], {
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            })
+          }
+          filename = `bao-cao-doanh-thu-${fileSuffix}-${todayStr}.xlsx`
+        } else {
+          let rawText = String(res.data)
+          if (typeof res.data === 'string') {
+            rawText = res.data
+          }
+          let textWithBom = rawText
+          if (!rawText.startsWith('\uFEFF')) {
+            textWithBom = '\uFEFF' + rawText
+          }
+          downloadBlob = new Blob([textWithBom], { type: 'text/csv;charset=utf-8;' })
+          filename = `bao-cao-doanh-thu-${fileSuffix}-${todayStr}.csv`
+        }
+
+        const url = URL.createObjectURL(downloadBlob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
         URL.revokeObjectURL(url)
+
+        let msg = 'Đã xuất file CSV (tích hợp UTF-8 BOM) thành công!'
+        if (exportFormat === 'xlsx') {
+          msg = 'Đã xuất file Excel (.xlsx) 4 sheet chi tiết thành công!'
+        }
+        setExportSuccessMessage(msg)
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -356,19 +407,91 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
             )}
           </div>
 
-          {/* Export Excel button */}
-          <button
-            type="button"
-            onClick={() => {
-              void handleExportExcel()
-            }}
-            disabled={isExporting || dateError !== null}
-            className="flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md transition hover:bg-indigo-700 disabled:opacity-50"
-          >
-            <DownloadSimple size={15} weight="bold" />
-            {isExporting && 'Đang xuất...'}
-            {!isExporting && 'Xuất Excel'}
-          </button>
+          {/* Export Dropdown */}
+          <div ref={exportDropdownRef} className="relative">
+            <div className="flex items-center rounded-full bg-indigo-600 shadow-md transition hover:bg-indigo-700">
+              <button
+                type="button"
+                onClick={() => {
+                  void handleExport('xlsx')
+                }}
+                disabled={isExporting || dateError !== null}
+                className="flex items-center gap-2 rounded-l-full py-2 pl-4 pr-2 text-xs font-bold text-white disabled:opacity-50"
+                title="Tải về file Excel (.xlsx) 4 sheet đầy đủ"
+              >
+                <DownloadSimple size={15} weight="bold" />
+                {isExporting && <span>Đang xuất...</span>}
+                {!isExporting && <span>Xuất Excel</span>}
+                <span className="rounded bg-white/20 px-1 py-0.5 text-[10px] font-semibold text-white">
+                  .xlsx
+                </span>
+              </button>
+              <div className="h-4 w-[1px] bg-white/25" />
+              <button
+                type="button"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={isExporting || dateError !== null}
+                className="rounded-r-full p-2 text-white transition hover:bg-white/10 disabled:opacity-50"
+                title="Tùy chọn định dạng xuất báo cáo"
+              >
+                <CaretDown size={14} weight="bold" />
+              </button>
+            </div>
+
+            {showExportMenu && (
+              <div className="absolute right-0 top-full z-30 mt-2 w-72 rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-[#161f36]">
+                <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                  Chọn định dạng xuất
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleExport('xlsx')
+                  }}
+                  className="flex w-full items-start gap-3 rounded-xl p-2.5 text-left transition hover:bg-zinc-50 dark:hover:bg-white/5"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                    <Table size={18} weight="bold" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-zinc-900 dark:text-white">
+                        Excel (.xlsx)
+                      </span>
+                      <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[9px] font-bold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
+                        Khuyên dùng
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      Báo cáo 4 sheet chi tiết: Tổng quan, Biểu đồ ngày, Top sản phẩm, Đơn hàng. Chuẩn font tiếng Việt 100%.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleExport('csv')
+                  }}
+                  className="mt-1 flex w-full items-start gap-3 rounded-xl p-2.5 text-left transition hover:bg-zinc-50 dark:hover:bg-white/5"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+                    <FileText size={18} weight="bold" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-zinc-900 dark:text-white">
+                        CSV (.csv)
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      Xuất nhanh dữ liệu nhẹ, tích hợp UTF-8 BOM giúp mở trực tiếp trên Excel không bị lỗi font.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -382,6 +505,13 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
       {exportError !== null && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400">
           {exportError}
+        </div>
+      )}
+
+      {exportSuccessMessage !== null && (
+        <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300">
+          <CheckCircle size={16} weight="bold" className="shrink-0 text-emerald-600" />
+          <span>{exportSuccessMessage}</span>
         </div>
       )}
 
