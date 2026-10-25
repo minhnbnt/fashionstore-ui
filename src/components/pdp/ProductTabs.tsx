@@ -8,6 +8,7 @@ import { ApiError } from '@/lib/apiFetch'
 import { formatDateTime } from '@/lib/format'
 import { ratingSummary } from '@/lib/ratingSummary'
 
+import Markdown from '../Markdown'
 import UserAvatar from '../UserAvatar'
 
 import type { Tab } from '@/types/product'
@@ -86,9 +87,7 @@ export default function ProductTabs(props: { product: ProductResponse }) {
       </div>
       {tab === 'mo-ta' && (
         <div className="mt-5">
-          <p className="max-w-[65ch] text-lg leading-relaxed font-semibold tracking-tight">
-            “{p.description ?? p.name}”
-          </p>
+          <Markdown source={p.description ?? p.name ?? ''} />
         </div>
       )}
       {tab === 'thong-so' && (

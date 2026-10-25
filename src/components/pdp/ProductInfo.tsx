@@ -8,6 +8,7 @@ import { formatVnd } from '@/lib/format'
 import { findVariant, isOptionAvailable } from '@/lib/variants'
 
 import { useCart } from '../../hooks/useCart'
+import Markdown from '../Markdown'
 import WishlistButton from '../WishlistButton'
 
 import type { ProductResponse } from '@generated/model/productResponse'
@@ -151,9 +152,9 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         )}
       </div>
       {p.description !== undefined && (
-        <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-          {p.description}
-        </p>
+        <div className="mt-3">
+          <Markdown source={p.description} />
+        </div>
       )}
       {info.colors.length > 0 && (
         <div className="mt-4">
