@@ -17,6 +17,8 @@ import {
   Scales,
   TrendDown,
   TrendUp,
+  WarningCircle,
+  X,
   XCircle,
 } from '@phosphor-icons/react'
 
@@ -54,6 +56,18 @@ function periodFilterClass(active: boolean): string {
   return 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
 }
 
+function addDays(dateStr: string, days: number): string {
+  const parts = dateStr.split('-').map(Number)
+  const y = parts[0]
+  const m = parts[1]
+  const d = parts[2]
+  if (!y || !m || !d) {
+    return ''
+  }
+  const dt = new Date(Date.UTC(y, m - 1, d + days))
+  return dt.toISOString().slice(0, 10)
+}
+
 export default function SellerStatsRevenueTab({ shopId }: Props) {
   const [period, setPeriod] = useState<PeriodType>('WEEK')
   const [fromDate, setFromDate] = useState('')
@@ -63,19 +77,47 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
 
   const isEnabled = shopId !== ''
 
-  let queryFrom: string | undefined = undefined
+  let minToDate = ''
   if (fromDate !== '') {
-    queryFrom = fromDate
+    minToDate = addDays(fromDate, 1)
   }
-  let queryTo: string | undefined = undefined
+  let maxFromDate = ''
   if (toDate !== '') {
+    maxFromDate = addDays(toDate, -1)
+  }
+
+  let minToDateProp: string | undefined = undefined
+  if (minToDate !== '') {
+    minToDateProp = minToDate
+  }
+  let maxFromDateProp: string | undefined = undefined
+  if (maxFromDate !== '') {
+    maxFromDateProp = maxFromDate
+  }
+
+  let dateError: string | null = null
+  let isCustomRangeActive = false
+  if (fromDate !== '' && toDate !== '') {
+    if (toDate <= fromDate) {
+      dateError = 'Ngày kết thúc phải lớn hơn ngày bắt đầu'
+    } else {
+      isCustomRangeActive = true
+    }
+  } else if (fromDate !== '' || toDate !== '') {
+    dateError = 'Vui lòng chọn cả từ ngày và đến ngày'
+  }
+
+  let queryFrom: string | undefined = undefined
+  let queryTo: string | undefined = undefined
+  if (isCustomRangeActive) {
+    queryFrom = fromDate
     queryTo = toDate
   }
 
   const detailQuery = useGetRevenueDetail(
     shopId,
     { period, from: queryFrom, to: queryTo },
-    { query: { enabled: isEnabled } },
+    { query: { enabled: isEnabled && dateError === null } },
   )
 
   const comparisonQuery = useGetPeriodComparison(
@@ -163,7 +205,11 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
     estimatedProfit = 0
   }
 
-  async function handleExportCsv() {
+  async function handleExportExcel() {
+    if (dateError !== null) {
+      setExportError(dateError)
+      return
+    }
     setIsExporting(true)
     setExportError(null)
     try {
@@ -173,11 +219,16 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
         to: queryTo,
       })
       if (res.status === 200) {
-        const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' })
+        const csvData = typeof res.data === 'string' ? res.data : String(res.data)
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `revenue-report-${period.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`
+        let fileSuffix = period.toLowerCase()
+        if (isCustomRangeActive) {
+          fileSuffix = `${fromDate}_den_${toDate}`
+        }
+        link.download = `bao-cao-doanh-thu-${fileSuffix}-${new Date().toISOString().slice(0, 10)}.csv`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
@@ -218,7 +269,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
                 setToDate('')
               }}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${periodFilterClass(
-                period === 'DAY' && fromDate === '',
+                !isCustomRangeActive && period === 'DAY' && fromDate === '' && toDate === '',
               )}`}
             >
               Hôm nay
@@ -231,7 +282,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
                 setToDate('')
               }}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${periodFilterClass(
-                period === 'WEEK' && fromDate === '',
+                !isCustomRangeActive && period === 'WEEK' && fromDate === '' && toDate === '',
               )}`}
             >
               7 ngày qua
@@ -244,7 +295,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
                 setToDate('')
               }}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${periodFilterClass(
-                period === 'MONTH' && fromDate === '',
+                !isCustomRangeActive && period === 'MONTH' && fromDate === '',
               )}`}
             >
               Tháng này
@@ -257,7 +308,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
                 setToDate('')
               }}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${periodFilterClass(
-                period === 'YEAR' && fromDate === '',
+                !isCustomRangeActive && period === 'YEAR' && fromDate === '',
               )}`}
             >
               Năm nay
@@ -270,6 +321,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
             <input
               type="date"
               value={fromDate}
+              max={maxFromDateProp}
               onChange={(e) => setFromDate(e.target.value)}
               className="bg-transparent text-xs text-zinc-700 outline-none dark:text-zinc-200"
               title="Từ ngày"
@@ -278,27 +330,49 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
             <input
               type="date"
               value={toDate}
+              min={minToDateProp}
               onChange={(e) => setToDate(e.target.value)}
               className="bg-transparent text-xs text-zinc-700 outline-none dark:text-zinc-200"
               title="Đến ngày"
             />
+            {(fromDate !== '' || toDate !== '') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFromDate('')
+                  setToDate('')
+                  setExportError(null)
+                }}
+                className="rounded-full p-0.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-zinc-200"
+                title="Xóa bộ lọc ngày"
+              >
+                <X size={12} weight="bold" />
+              </button>
+            )}
           </div>
 
-          {/* Export CSV button */}
+          {/* Export Excel button */}
           <button
             type="button"
             onClick={() => {
-              void handleExportCsv()
+              void handleExportExcel()
             }}
-            disabled={isExporting}
+            disabled={isExporting || dateError !== null}
             className="flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md transition hover:bg-indigo-700 disabled:opacity-50"
           >
             <DownloadSimple size={15} weight="bold" />
             {isExporting && 'Đang xuất...'}
-            {!isExporting && 'Xuất CSV'}
+            {!isExporting && 'Xuất Excel'}
           </button>
         </div>
       </div>
+
+      {dateError !== null && (
+        <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
+          <WarningCircle size={16} weight="bold" className="shrink-0 text-amber-600" />
+          <span>{dateError}</span>
+        </div>
+      )}
 
       {exportError !== null && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400">

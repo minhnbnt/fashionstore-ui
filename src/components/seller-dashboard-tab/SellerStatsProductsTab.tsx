@@ -23,7 +23,7 @@ import type { ProductAnalyticsItem } from '@/types/seller'
 
 interface Props {
   shopId: string
-  onNavigateTab?: (tabId: string) => void
+  onNavigateTab?: (tabId: string, params?: Record<string, string>) => void
 }
 
 function resolveProductImage(key: string | null): string {
@@ -394,7 +394,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
             {onNavigateTab !== undefined && (
               <button
                 type="button"
-                onClick={() => onNavigateTab('inventory')}
+                onClick={() => onNavigateTab('inventory', { filter: 'low_stock' })}
                 className="flex items-center gap-1.5 rounded-full bg-rose-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700"
               >
                 <Package size={14} weight="bold" />

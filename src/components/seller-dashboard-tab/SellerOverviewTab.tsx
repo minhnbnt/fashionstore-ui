@@ -1,7 +1,6 @@
 import {
   useGetShopAlerts,
   useGetShopDashboard,
-  useGetShopPerformance,
   useGetRevenueDetail,
 } from '@generated/endpoints/seller-statistics/seller-statistics'
 import {
@@ -23,15 +22,10 @@ import {
   Info,
 } from '@phosphor-icons/react'
 
-import { CircularProgress, LineChart } from '@/components/ui/charts'
+import { LineChart } from '@/components/ui/charts'
 import { takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
-import {
-  alertItems,
-  dashboardData,
-  performanceData,
-  revenueChartPoints,
-} from '@/lib/sellerStatsAdapters'
+import { alertItems, dashboardData, revenueChartPoints } from '@/lib/sellerStatsAdapters'
 
 import type { AlertData } from '@/types/seller'
 
@@ -59,7 +53,6 @@ export default function SellerOverviewTab({
   const isEnabled = shopId !== ''
 
   const dashboardQuery = useGetShopDashboard(shopId, { query: { enabled: isEnabled } })
-  const performanceQuery = useGetShopPerformance(shopId, { query: { enabled: isEnabled } })
   const alertsQuery = useGetShopAlerts(shopId, { query: { enabled: isEnabled } })
   const revenueQuery = useGetRevenueDetail(
     shopId,
@@ -76,11 +69,6 @@ export default function SellerOverviewTab({
   let liveStats = dashboardData(null)
   if (dashboardQuery.data !== undefined) {
     liveStats = dashboardData(takeData(dashboardQuery.data))
-  }
-
-  let livePerf = performanceData(null)
-  if (performanceQuery.data !== undefined) {
-    livePerf = performanceData(takeData(performanceQuery.data))
   }
 
   let alertsList: AlertData[] = []
@@ -165,11 +153,6 @@ export default function SellerOverviewTab({
     ordersChangeLabel = 'Bằng số lượng hôm qua'
   }
 
-  let cancelRateColor = '#10b981'
-  if (livePerf.cancelRate > 0.05) {
-    cancelRateColor = '#f43f5e'
-  }
-
   let conversionRateEstimate = 0
   if (liveStats.shopVisits > 0) {
     conversionRateEstimate =
@@ -217,9 +200,6 @@ export default function SellerOverviewTab({
               <span className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-bold tracking-wider uppercase backdrop-blur-md">
                 <ShieldCheck size={14} weight="bold" />
                 Shop Uy Tín
-              </span>
-              <span className="text-xs text-white/80">
-                Đánh giá TB: {livePerf.avgRating.toFixed(1)} / 5.0 ⭐
               </span>
             </div>
             <h2 className="mt-2 text-2xl font-black tracking-tight">Xin chào, {shopName}!</h2>
@@ -330,79 +310,35 @@ export default function SellerOverviewTab({
         ))}
       </div>
 
-      {/* Grid: Biểu đồ doanh thu 7 ngày (trái) + Cảnh báo & Hiệu suất (phải) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Biểu đồ doanh thu 7 ngày */}
-        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm lg:col-span-2 dark:border-white/10 dark:bg-[#11182a]">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                Xu hướng doanh thu 7 ngày gần nhất
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Theo dõi biến động dòng tiền bán hàng theo ngày
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => onNavigateTab('stats_revenue')}
-              className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
-            >
-              Báo cáo chi tiết
-              <CaretRight size={12} weight="bold" />
-            </button>
+      {/* Biểu đồ doanh thu 7 ngày */}
+      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+              Xu hướng doanh thu 7 ngày gần nhất
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Theo dõi biến động dòng tiền bán hàng theo ngày
+            </p>
           </div>
-
-          <div className="pt-2">
-            <LineChart
-              data={revenueTrendPoints}
-              currentLabel="Doanh thu (VND)"
-              height={230}
-              color="#6366f1"
-              formatValue={formatVnd}
-            />
-          </div>
+          <button
+            type="button"
+            onClick={() => onNavigateTab('stats_revenue')}
+            className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+          >
+            Báo cáo chi tiết
+            <CaretRight size={12} weight="bold" />
+          </button>
         </div>
 
-        {/* Hiệu suất vận hành Shop */}
-        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm lg:col-span-1 dark:border-white/10 dark:bg-[#11182a]">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-              Hiệu suất vận hành
-            </h3>
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-              Chuẩn Shop
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <CircularProgress
-              value={livePerf.chatResponseRate}
-              label="Phản hồi chat"
-              subLabel="Mục tiêu > 80%"
-              color="#10b981"
-            />
-            <CircularProgress
-              value={livePerf.cancelRate}
-              label="Tỷ lệ hủy đơn"
-              subLabel="Mục tiêu < 5%"
-              color={cancelRateColor}
-            />
-            <CircularProgress
-              value={livePerf.onTimeDeliveryRate}
-              label="Giao đúng hạn"
-              subLabel="Mục tiêu > 90%"
-              color="#3b82f6"
-            />
-            <CircularProgress
-              value={livePerf.avgRating}
-              max={5}
-              label="Đánh giá TB"
-              subLabel="Thang điểm 5.0"
-              color="#f59e0b"
-              formatDisplay={(val) => `${val.toFixed(1)} ⭐`}
-            />
-          </div>
+        <div className="pt-2">
+          <LineChart
+            data={revenueTrendPoints}
+            currentLabel="Doanh thu (VND)"
+            height={240}
+            color="#6366f1"
+            formatValue={formatVnd}
+          />
         </div>
       </div>
 
