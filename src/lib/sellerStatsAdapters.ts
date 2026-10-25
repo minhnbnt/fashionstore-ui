@@ -14,6 +14,7 @@ import type { AlertResponse } from '@generated/model/alertResponse'
 import type { CustomerStatsResponse } from '@generated/model/customerStatsResponse'
 import type { DailyRevenueResponse } from '@generated/model/dailyRevenueResponse'
 import type { OrderStatusSummaryResponse } from '@generated/model/orderStatusSummaryResponse'
+import type { Point } from '@generated/model/point'
 import type { ProductStatsResponse } from '@generated/model/productStatsResponse'
 import type { RevenueByCategoryResponse } from '@generated/model/revenueByCategoryResponse'
 import type { RevenueByPaymentResponse } from '@generated/model/revenueByPaymentResponse'
@@ -98,15 +99,33 @@ export function alertItems(alerts?: AlertResponse[] | null): AlertData[] {
   return result
 }
 
-export function revenueChartPoints(list?: DailyRevenueResponse[] | null): RevenueChartPoint[] {
+export function revenueChartPoints(
+  list?: Array<DailyRevenueResponse | Point> | null,
+): RevenueChartPoint[] {
   if (list === null || list === undefined) {
     return []
   }
-  return list.map((item) => ({
-    label: item.date ?? '',
-    value: item.revenue ?? 0,
-    orders: item.orderCount ?? 0,
-  }))
+  return list.map((item) => {
+    let label = ''
+    if ('label' in item && typeof item.label === 'string' && item.label !== '') {
+      label = item.label
+    } else if ('date' in item && typeof item.date === 'string' && item.date !== '') {
+      label = item.date
+    }
+
+    let orders = 0
+    if ('orders' in item && typeof item.orders === 'number') {
+      orders = item.orders
+    } else if ('orderCount' in item && typeof item.orderCount === 'number') {
+      orders = item.orderCount
+    }
+
+    return {
+      label,
+      value: item.revenue ?? 0,
+      orders,
+    }
+  })
 }
 
 export function revenueCategoryItems(

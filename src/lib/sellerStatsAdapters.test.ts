@@ -116,6 +116,18 @@ describe('revenueChartPoints', () => {
     expect(points[0]?.value).toBe(500000)
     expect(points[0]?.orders).toBe(5)
   })
+
+  it('chuyen doi Point (RevenueDetailResponse) thanh RevenueChartPoint', () => {
+    const list = [
+      { label: '2026-W43', revenue: 1200000, orders: 12 },
+      { label: '2026-W44', revenue: 1500000, orders: 15 },
+    ]
+    const points = revenueChartPoints(list)
+    expect(points.length).toBe(2)
+    expect(points[0]?.label).toBe('2026-W43')
+    expect(points[0]?.value).toBe(1200000)
+    expect(points[0]?.orders).toBe(12)
+  })
 })
 
 describe('revenueCategoryItems', () => {

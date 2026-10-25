@@ -311,7 +311,7 @@ export default function SellerOverviewTab({
       </div>
 
       {/* Biểu đồ doanh thu 7 ngày */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+      <div className="overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-zinc-900 dark:text-white">

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { niceCeiling } from '@/lib/adminStats'
 
@@ -18,12 +18,10 @@ export interface LineChartProps {
   formatValue?: (val: number) => string
 }
 
-const VIEW_WIDTH = 700
-const VIEW_HEIGHT = 240
-const PAD_LEFT = 70
-const PAD_RIGHT = 30
-const PAD_TOP = 25
-const PAD_BOTTOM = 40
+const PAD_LEFT = 65
+const PAD_RIGHT = 24
+const PAD_TOP = 24
+const PAD_BOTTOM = 38
 
 function formatAxisLabel(label: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(label)) {
@@ -76,7 +74,7 @@ function createSmoothPath(points: Array<{ x: number; y: number }>): string {
   }
   const first = points[0]
   if (points.length === 1 && first !== undefined) {
-    return `M ${first.x} ${first.y}`
+    return `M ${first.x.toFixed(1)} ${first.y.toFixed(1)}`
   }
   if (first === undefined) {
     return ''
@@ -108,6 +106,7 @@ export function LineChart({
   formatValue,
 }: LineChartProps) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   let strokeColor = '#6366f1'
   if (color !== undefined && color !== '') {
@@ -123,6 +122,60 @@ export function LineChart({
   if (height !== undefined && height > 0) {
     chartHeight = height
   }
+
+  let initialH = 200
+  if (chartHeight > 40) {
+    initialH = chartHeight - 40
+  }
+
+  const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
+    width: 700,
+    height: initialH,
+  })
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) {
+      return
+    }
+
+    function updateSize() {
+      if (el) {
+        const rect = el.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) {
+          setDimensions({
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+          })
+        }
+      }
+    }
+
+    updateSize()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect
+          if (width > 0 && height > 0) {
+            setDimensions({
+              width: Math.round(width),
+              height: Math.round(height),
+            })
+          }
+        }
+      })
+      ro.observe(el)
+      return () => {
+        ro.disconnect()
+      }
+    }
+
+    window.addEventListener('resize', updateSize)
+    return () => {
+      window.removeEventListener('resize', updateSize)
+    }
+  }, [])
 
   function displayValue(val: number): string {
     if (formatValue !== undefined) {
@@ -157,8 +210,11 @@ export function LineChart({
   }
 
   const ceiling = niceCeiling(maxValue)
-  const plotWidth = VIEW_WIDTH - PAD_LEFT - PAD_RIGHT
-  const plotHeight = VIEW_HEIGHT - PAD_TOP - PAD_BOTTOM
+
+  const viewWidth = Math.max(300, dimensions.width)
+  const viewHeight = Math.max(120, dimensions.height)
+  const plotWidth = Math.max(10, viewWidth - PAD_LEFT - PAD_RIGHT)
+  const plotHeight = Math.max(10, viewHeight - PAD_TOP - PAD_BOTTOM)
 
   function getX(index: number, total: number): number {
     if (total <= 1) {
@@ -171,7 +227,7 @@ export function LineChart({
     if (ceiling === 0) {
       return PAD_TOP + plotHeight
     }
-    const ratio = value / ceiling
+    const ratio = Math.max(0, Math.min(1, value / ceiling))
     return PAD_TOP + (1 - ratio) * plotHeight
   }
 
@@ -184,12 +240,12 @@ export function LineChart({
   const smoothPathStr = createSmoothPath(currentPoints)
 
   let polygonPathStr = ''
-  if (currentPoints.length > 0) {
+  if (currentPoints.length > 1) {
     const first = currentPoints[0]
     const last = currentPoints[currentPoints.length - 1]
     const bottomY = PAD_TOP + plotHeight
     if (first !== undefined && last !== undefined) {
-      polygonPathStr = `${smoothPathStr} L ${last.x.toFixed(1)} ${bottomY} L ${first.x.toFixed(1)} ${bottomY} Z`
+      polygonPathStr = `${smoothPathStr} L ${last.x.toFixed(1)} ${bottomY.toFixed(1)} L ${first.x.toFixed(1)} ${bottomY.toFixed(1)} Z`
     }
   }
 
@@ -207,10 +263,68 @@ export function LineChart({
 
   const hasHeader = currentLabel !== undefined || comparisonLabel !== undefined
 
+  let tooltipNode = null
+  if (hoverIndex !== null && currentPoints[hoverIndex] !== undefined) {
+    const activePoint = currentPoints[hoverIndex]
+    let isNearTop = false
+    if (activePoint.y < 55) {
+      isNearTop = true
+    }
+
+    let transformClass = '-translate-x-1/2 -translate-y-full -mt-2'
+    if (isNearTop) {
+      transformClass = '-translate-x-1/2 mt-3'
+    }
+    if (activePoint.x < 70) {
+      if (isNearTop) {
+        transformClass = 'translate-x-0 mt-3'
+      } else {
+        transformClass = 'translate-x-0 -translate-y-full -mt-2'
+      }
+    }
+    if (activePoint.x > viewWidth - 70) {
+      if (isNearTop) {
+        transformClass = '-translate-x-full mt-3'
+      } else {
+        transformClass = '-translate-x-full -translate-y-full -mt-2'
+      }
+    }
+
+    let compValueNode = null
+    if (comparisonData !== undefined && comparisonData[hoverIndex] !== undefined) {
+      compValueNode = (
+        <div className="mt-0.5 text-[10px] text-zinc-400">
+          Kỳ trước: {displayValue(comparisonData[hoverIndex].value)}
+        </div>
+      )
+    }
+
+    tooltipNode = (
+      <div
+        className={`pointer-events-none absolute z-20 rounded-2xl border border-white/20 bg-zinc-900/90 px-3.5 py-2 text-xs text-white shadow-2xl backdrop-blur-md transition-all duration-75 dark:border-white/10 dark:bg-zinc-800/95 ${transformClass}`}
+        style={{
+          left: `${(activePoint.x / viewWidth) * 100}%`,
+          top: `${(activePoint.y / viewHeight) * 100}%`,
+        }}
+      >
+        <div className="text-[10px] font-semibold tracking-wider text-zinc-400 uppercase">
+          {activePoint.pt.label}
+        </div>
+        <div className="mt-0.5 text-sm font-black text-white">
+          {displayValue(activePoint.pt.value)}
+        </div>
+        {compValueNode}
+      </div>
+    )
+  }
+
   return (
-    <div className="relative flex w-full flex-col select-none" style={{ height: chartHeight }}>
+    <div
+      className="relative flex w-full flex-col overflow-hidden select-none"
+      style={{ height: chartHeight }}
+    >
       {hasHeader && (
-        <div className="mb-2 flex items-center gap-4 text-xs">
+        <div className="mb-2 flex shrink-0 items-center gap-4 text-xs">
           {currentLabel !== undefined && (
             <div className="flex items-center gap-1.5 font-semibold text-zinc-700 dark:text-zinc-200">
               <span
@@ -232,10 +346,10 @@ export function LineChart({
         </div>
       )}
 
-      <div className="relative flex-1 w-full overflow-visible">
+      <div ref={containerRef} className="relative min-h-0 w-full flex-1 overflow-hidden">
         <svg
-          viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-          className="h-full w-full overflow-visible"
+          viewBox={`0 0 ${viewWidth} ${viewHeight}`}
+          className="block h-full w-full overflow-hidden"
         >
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
@@ -244,7 +358,13 @@ export function LineChart({
               <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
             </linearGradient>
             <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor={strokeColor} floodOpacity="0.3" />
+              <feDropShadow
+                dx="0"
+                dy="2"
+                stdDeviation="3"
+                floodColor={strokeColor}
+                floodOpacity="0.3"
+              />
             </filter>
           </defs>
 
@@ -256,7 +376,7 @@ export function LineChart({
                 <line
                   x1={PAD_LEFT}
                   y1={y}
-                  x2={VIEW_WIDTH - PAD_RIGHT}
+                  x2={viewWidth - PAD_RIGHT}
                   y2={y}
                   stroke="currentColor"
                   strokeDasharray="4 4"
@@ -275,9 +395,7 @@ export function LineChart({
           })}
 
           {/* Gradient area fill */}
-          {polygonPathStr !== '' && (
-            <path d={polygonPathStr} fill={`url(#${gradId})`} />
-          )}
+          {polygonPathStr !== '' && <path d={polygonPathStr} fill={`url(#${gradId})`} />}
 
           {/* Comparison smooth line */}
           {compSmoothPathStr !== '' && (
@@ -340,13 +458,7 @@ export function LineChart({
               >
                 {/* Glow ring on hover */}
                 {isHovered && (
-                  <circle
-                    cx={pt.x}
-                    cy={pt.y}
-                    r="12"
-                    fill={strokeColor}
-                    fillOpacity="0.18"
-                  />
+                  <circle cx={pt.x} cy={pt.y} r="12" fill={strokeColor} fillOpacity="0.18" />
                 )}
 
                 <circle
@@ -363,7 +475,7 @@ export function LineChart({
                 {showLabel && (
                   <text
                     x={pt.x}
-                    y={VIEW_HEIGHT - 12}
+                    y={viewHeight - 12}
                     textAnchor="middle"
                     className="fill-zinc-500 text-[11px] font-semibold tabular-nums dark:fill-zinc-400"
                   >
@@ -375,28 +487,7 @@ export function LineChart({
           })}
         </svg>
 
-        {/* Floating glassmorphic tooltip */}
-        {hoverIndex !== null && currentPoints[hoverIndex] !== undefined && (
-          <div
-            className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-2xl border border-white/20 bg-zinc-900/90 px-3.5 py-2 text-xs text-white shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-zinc-800/95"
-            style={{
-              left: `${(currentPoints[hoverIndex].x / VIEW_WIDTH) * 100}%`,
-              top: `${(currentPoints[hoverIndex].y / VIEW_HEIGHT) * 100 - 6}%`,
-            }}
-          >
-            <div className="text-[10px] font-semibold tracking-wider text-zinc-400 uppercase">
-              {currentPoints[hoverIndex].pt.label}
-            </div>
-            <div className="mt-0.5 text-sm font-black text-white">
-              {displayValue(currentPoints[hoverIndex].pt.value)}
-            </div>
-            {comparisonData !== undefined && comparisonData[hoverIndex] !== undefined && (
-              <div className="mt-0.5 text-[10px] text-zinc-400">
-                Kỳ trước: {displayValue(comparisonData[hoverIndex].value)}
-              </div>
-            )}
-          </div>
-        )}
+        {tooltipNode}
       </div>
     </div>
   )
