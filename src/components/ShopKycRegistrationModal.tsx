@@ -1028,8 +1028,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
               banks={banksList}
               selectedBankBin={selectedBankBin}
               onSelectBank={(bank) => {
-                setSelectedBankBin(bank.bin)
-                setBankName(bank.shortName || bank.name)
+                setSelectedBankBin(bank.bin ?? '')
+                setBankName(bank.shortName ?? bank.name ?? '')
                 setIsNapasVerified(false)
                 setBankLookupError(null)
               }}

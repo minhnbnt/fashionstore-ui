@@ -16,10 +16,10 @@ export function filterBanks(banks: BankResponse[], query: string): BankResponse[
   }
 
   return banks.filter((b) => {
-    const codeMatch = b.code.toLowerCase().includes(q)
-    const binMatch = b.bin.includes(q)
-    const shortNameMatch = removeVietnameseAccents(b.shortName).includes(q)
-    const nameMatch = removeVietnameseAccents(b.name).includes(q)
+    const codeMatch = (b.code ?? '').toLowerCase().includes(q)
+    const binMatch = (b.bin ?? '').includes(q)
+    const shortNameMatch = removeVietnameseAccents(b.shortName ?? '').includes(q)
+    const nameMatch = removeVietnameseAccents(b.name ?? '').includes(q)
     return codeMatch || binMatch || shortNameMatch || nameMatch
   })
 }
