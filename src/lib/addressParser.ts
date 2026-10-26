@@ -26,10 +26,7 @@ export function isLikelyWard(str: string): boolean {
   return WARD_PREFIXES.some((prefix) => s.startsWith(prefix))
 }
 
-export function parseAddressForSelector(
-  raw: string,
-  knownProvinces: string[] = [],
-): ParsedAddress {
+export function parseAddressForSelector(raw: string, knownProvinces: string[] = []): ParsedAddress {
   const trimmed = raw.trim()
   if (trimmed === '') {
     return { detail: '', ward: '', province: '' }

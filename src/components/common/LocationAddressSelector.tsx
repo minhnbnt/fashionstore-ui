@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useListProvinces, useListWards } from '@generated/endpoints/locations/locations'
 import { CaretDown, Check, MagnifyingGlass, X } from '@phosphor-icons/react'
 
-import { takeData } from '@/lib/apiAdapters'
 import { parseAddressForSelector } from '@/lib/addressParser'
+import { takeData } from '@/lib/apiAdapters'
 import { removeVietnameseAccents } from '@/lib/bankSearch'
 
 import type { ProvinceResponse } from '@generated/model/provinceResponse'

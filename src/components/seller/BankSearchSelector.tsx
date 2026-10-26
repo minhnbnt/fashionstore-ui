@@ -86,14 +86,14 @@ export default function BankSearchSelector({
         type="button"
         disabled={disabled}
         onClick={handleToggleOpen}
-        className="mt-1 flex w-full items-center justify-between rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none transition hover:border-blue-500 focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+        className="mt-1 flex w-full items-center justify-between rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs font-medium text-zinc-900 transition outline-none hover:border-blue-500 focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
       >
         <div className="flex min-w-0 items-center gap-2.5">
           {selectedBank && selectedBank.logo && (
             <img
               src={selectedBank.logo}
               alt={selectedBank.shortName}
-              className="h-6 w-6 shrink-0 rounded object-contain bg-white p-0.5 shadow-xs"
+              className="h-6 w-6 shrink-0 rounded bg-white object-contain p-0.5 shadow-xs"
             />
           )}
           {selectedBank && !selectedBank.logo && (
@@ -184,7 +184,7 @@ export default function BankSearchSelector({
                       <img
                         src={b.logo}
                         alt={b.shortName}
-                        className="h-6 w-6 shrink-0 rounded object-contain bg-white p-0.5 shadow-2xs"
+                        className="h-6 w-6 shrink-0 rounded bg-white object-contain p-0.5 shadow-2xs"
                       />
                     )}
                     {!b.logo && <Bank size={16} className="shrink-0 text-zinc-400" />}
@@ -194,7 +194,7 @@ export default function BankSearchSelector({
                         <span className="font-bold text-zinc-900 dark:text-white">
                           {b.shortName}
                         </span>
-                        <span className="rounded bg-zinc-100 px-1 py-0.2 text-[9px] font-semibold text-zinc-500 dark:bg-white/10 dark:text-zinc-300">
+                        <span className="py-0.2 rounded bg-zinc-100 px-1 text-[9px] font-semibold text-zinc-500 dark:bg-white/10 dark:text-zinc-300">
                           {b.code}
                         </span>
                         <span className="text-[10px] text-zinc-400">BIN: {b.bin}</span>

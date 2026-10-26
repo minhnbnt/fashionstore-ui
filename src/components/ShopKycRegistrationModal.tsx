@@ -20,8 +20,8 @@ import {
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { uploadImage } from '@/lib/uploadImage'
 
-import Modal from './Modal'
 import LocationAddressSelector from './common/LocationAddressSelector'
+import Modal from './Modal'
 import BankSearchSelector from './seller/BankSearchSelector'
 
 import type { BankResponse } from '@/types/bank'
@@ -187,7 +187,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
       }
     } catch (err: unknown) {
       setIsNapasVerified(false)
-      let msg = 'Không tìm thấy tài khoản tại ngân hàng đã chọn. Vui lòng kiểm tra lại số tài khoản.'
+      let msg =
+        'Không tìm thấy tài khoản tại ngân hàng đã chọn. Vui lòng kiểm tra lại số tài khoản.'
       if (err !== null && typeof err === 'object' && 'message' in err) {
         const raw = String((err as { message?: string }).message)
         if (raw) {
@@ -1047,7 +1048,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       }
                     }}
                     placeholder="VD: 0011001234567 (STK chính chủ)"
-                    className={`${INPUT_BASE} font-mono font-bold pr-28`}
+                    className={`${INPUT_BASE} pr-28 font-mono font-bold`}
                   />
                   <button
                     type="button"
@@ -1062,9 +1063,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
               </label>
 
               {bankLookupError && (
-                <p className="mt-1.5 text-xs font-medium text-red-500">
-                  ⚠️ {bankLookupError}
-                </p>
+                <p className="mt-1.5 text-xs font-medium text-red-500">⚠️ {bankLookupError}</p>
               )}
             </div>
 
@@ -1090,7 +1089,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                 readOnly
                 value={bankHolder}
                 placeholder="Tự động điền sau khi tra cứu Napas"
-                className={`${INPUT_BASE} font-bold tracking-wider uppercase bg-zinc-100 dark:bg-white/5 cursor-not-allowed`}
+                className={`${INPUT_BASE} cursor-not-allowed bg-zinc-100 font-bold tracking-wider uppercase dark:bg-white/5`}
               />
 
               {/* Real-time Match Validation Alert */}
