@@ -14,7 +14,9 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import ImageUploadField from '@/components/admin/ImageUploadField'
+import LocationAddressSelector from '@/components/common/LocationAddressSelector'
 import RichTextEditor from '@/components/ui/RichTextEditor'
+import { splitFullAddress } from '@/lib/format'
 
 import type { ShopProfileData } from '@/types/seller'
 
@@ -309,35 +311,18 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
           </div>
 
           <div className="md:col-span-2">
-            <label
-              htmlFor="pickupAddressField"
-              className="mb-1 block text-xs font-semibold text-zinc-700 dark:text-zinc-200"
-            >
-              Địa chỉ chi tiết kho hàng *
-            </label>
-            <input
-              id="pickupAddressField"
-              type="text"
+            <LocationAddressSelector
+              idPrefix="seller-profile"
               required
               value={formData.pickupAddress}
-              onChange={(e) => setFormData({ ...formData, pickupAddress: e.target.value })}
-              className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="cityField"
-              className="mb-1 block text-xs font-semibold text-zinc-700 dark:text-zinc-200"
-            >
-              Tỉnh / Thành phố
-            </label>
-            <input
-              id="cityField"
-              type="text"
-              value={formData.city}
-              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-              className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
+              onChange={(fullAddress) => {
+                const parsed = splitFullAddress(fullAddress)
+                setFormData({
+                  ...formData,
+                  pickupAddress: fullAddress,
+                  city: parsed.province,
+                })
+              }}
             />
           </div>
 
