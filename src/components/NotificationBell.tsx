@@ -17,6 +17,7 @@ import { useSessionQuery } from '@/hooks/useSession'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { takeData } from '@/lib/apiAdapters'
 import { formatDateTime } from '@/lib/format'
+import { getTargetNotificationLink } from '@/lib/notificationLinks'
 
 import type { GetUnreadNotificationCountParams, ListNotificationsParams } from '@generated/model'
 import type { NotificationResponse } from '@generated/model/notificationResponse'
@@ -178,8 +179,9 @@ export default function NotificationBell(props: NotificationBellProps) {
       window.dispatchEvent(new CustomEvent('fashionstore:open-chat'))
       return
     }
-    if (item.link) {
-      void navigate(item.link)
+    const targetLink = getTargetNotificationLink(item)
+    if (targetLink !== null) {
+      void navigate(targetLink)
     }
   }
 

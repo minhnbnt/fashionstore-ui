@@ -138,7 +138,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
   let filteredOrders = orders
   if (isSingleOrderDetail) {
     filteredOrders = orders.filter(function (o) {
-      return o.id === orderIdParam || o.code === orderIdParam
+      return o.id === orderIdParam || o.code.toLowerCase() === orderIdParam.toLowerCase()
     })
   } else {
     filteredOrders = orders.filter(function (o) {
