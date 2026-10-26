@@ -10,7 +10,14 @@ import {
   useShip,
 } from '@generated/endpoints/seller-orders/seller-orders'
 import { getInventoryQueryKey } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
-import { MagnifyingGlass, CheckCircle, Truck, Phone, MapPin } from '@phosphor-icons/react'
+import {
+  ArrowLeft,
+  CheckCircle,
+  MagnifyingGlass,
+  MapPin,
+  Phone,
+  Truck,
+} from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
@@ -23,6 +30,7 @@ import { sellerStatusMeta } from '@/lib/sellerStatus'
 import { formatVnd } from '../../lib/format'
 
 import type { OrderItem } from '@/types/seller'
+import type { List5Params } from '@generated/model'
 
 interface Props {
   shopId: string
@@ -32,6 +40,9 @@ export default function SellerOrdersTab({ shopId }: Props) {
   const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
+
+  const orderIdParam = searchParams.get('orderId')
+  const isSingleOrderDetail = orderIdParam !== null && orderIdParam !== ''
 
   const statusParam = searchParams.get('status')
   let activeTab: 'ALL' | 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED' = 'ALL'
@@ -49,7 +60,12 @@ export default function SellerOrdersTab({ shopId }: Props) {
   const [cancelReason, setCancelReason] = useState('Hết hàng trong kho')
   const [notification, setNotification] = useState<string | null>(null)
 
-  const ordersQuery = useList5({ shopId }, { query: { enabled: shopId !== '' } })
+  let queryParams: List5Params = { shopId, limit: 100 }
+  if (isSingleOrderDetail) {
+    queryParams = { shopId, q: orderIdParam, limit: 100 }
+  }
+
+  const ordersQuery = useList5(queryParams, { query: { enabled: shopId !== '' } })
 
   const confirmMutation = useConfirm({
     mutation: {
@@ -117,22 +133,37 @@ export default function SellerOrdersTab({ shopId }: Props) {
     }
   }
 
+  function handleBackToAllOrders() {
+    setSearchParams(function (prev) {
+      const next = new URLSearchParams(prev)
+      next.delete('orderId')
+      return next
+    })
+  }
+
   // Lọc
-  const filteredOrders = orders.filter(function (o) {
-    if (activeTab !== 'ALL' && o.status !== activeTab) {
-      return false
-    }
-    if (searchTerm.trim() !== '') {
-      const term = searchTerm.toLowerCase()
-      const matchCode = o.code.toLowerCase().includes(term)
-      const matchBuyer = o.buyerName.toLowerCase().includes(term)
-      const matchPhone = o.buyerPhone.includes(term)
-      if (matchCode === false && matchBuyer === false && matchPhone === false) {
+  let filteredOrders = orders
+  if (isSingleOrderDetail) {
+    filteredOrders = orders.filter(function (o) {
+      return o.id === orderIdParam || o.code.toLowerCase() === orderIdParam.toLowerCase()
+    })
+  } else {
+    filteredOrders = orders.filter(function (o) {
+      if (activeTab !== 'ALL' && o.status !== activeTab) {
         return false
       }
-    }
-    return true
-  })
+      if (searchTerm.trim() !== '') {
+        const term = searchTerm.toLowerCase()
+        const matchCode = o.code.toLowerCase().includes(term)
+        const matchBuyer = o.buyerName.toLowerCase().includes(term)
+        const matchPhone = o.buyerPhone.includes(term)
+        if (matchCode === false && matchBuyer === false && matchPhone === false) {
+          return false
+        }
+      }
+      return true
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -145,79 +176,107 @@ export default function SellerOrdersTab({ shopId }: Props) {
       )}
 
       {/* Header bar */}
-      <div>
-        <h2 className="text-xl font-black text-zinc-900 dark:text-white">Quản lý Đơn hàng</h2>
-        <p className="text-xs text-zinc-500">
-          Xử lý chu trình đơn hàng từ xác nhận, bàn giao vận chuyển đến hoàn tất thu tiền COD
-        </p>
-      </div>
+      {isSingleOrderDetail && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                id="btn-back-to-orders"
+                onClick={handleBackToAllOrders}
+                className="inline-flex items-center gap-1.5 rounded-2xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:bg-white/10"
+              >
+                <ArrowLeft size={16} weight="bold" />
+                <span>Tất cả đơn hàng</span>
+              </button>
+              <h2 className="text-xl font-black text-zinc-900 dark:text-white">
+                Chi tiết đơn hàng
+              </h2>
+            </div>
+            <p className="mt-1 text-xs text-zinc-500">
+              Đang xem chi tiết đơn hàng được chọn từ thông báo. Không hiển thị các đơn hàng khác.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!isSingleOrderDetail && (
+        <div>
+          <h2 className="text-xl font-black text-zinc-900 dark:text-white">Quản lý Đơn hàng</h2>
+          <p className="text-xs text-zinc-500">
+            Xử lý chu trình đơn hàng từ xác nhận, bàn giao vận chuyển đến hoàn tất thu tiền COD
+          </p>
+        </div>
+      )}
 
       {/* Filter Tabs & Search */}
       <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-2 md:border-b-0 md:pb-0 dark:border-white/10">
-            {[
-              { id: 'ALL', label: 'Tất cả' },
-              { id: 'PENDING', label: 'Chờ xác nhận' },
-              { id: 'CONFIRMED', label: 'Chờ lấy hàng' },
-              { id: 'SHIPPING', label: 'Đang giao' },
-              { id: 'DELIVERED', label: 'Đã giao' },
-              { id: 'CANCELLED', label: 'Đã hủy' },
-            ].map(function (tab) {
-              const isCurrent = activeTab === tab.id
-              let tabClass =
-                'rounded-2xl px-3.5 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-              if (isCurrent) {
-                tabClass =
-                  'rounded-2xl px-3.5 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
-              }
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={function () {
-                    const nextTab = tab.id as
-                      | 'ALL'
-                      | 'PENDING'
-                      | 'CONFIRMED'
-                      | 'SHIPPING'
-                      | 'DELIVERED'
-                      | 'CANCELLED'
-                    setSearchParams(function (prev) {
-                      const next = new URLSearchParams(prev)
-                      if (nextTab === 'ALL') {
-                        next.delete('status')
-                      } else {
-                        next.set('status', nextTab)
-                      }
-                      return next
-                    })
-                  }}
-                  className={tabClass}
-                >
-                  {tab.label}
-                </button>
-              )
-            })}
-          </div>
+        {!isSingleOrderDetail && (
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-2 md:border-b-0 md:pb-0 dark:border-white/10">
+              {[
+                { id: 'ALL', label: 'Tất cả' },
+                { id: 'PENDING', label: 'Chờ xác nhận' },
+                { id: 'CONFIRMED', label: 'Chờ lấy hàng' },
+                { id: 'SHIPPING', label: 'Đang giao' },
+                { id: 'DELIVERED', label: 'Đã giao' },
+                { id: 'CANCELLED', label: 'Đã hủy' },
+              ].map(function (tab) {
+                const isCurrent = activeTab === tab.id
+                let tabClass =
+                  'rounded-2xl px-3.5 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                if (isCurrent) {
+                  tabClass =
+                    'rounded-2xl px-3.5 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+                }
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={function () {
+                      const nextTab = tab.id as
+                        | 'ALL'
+                        | 'PENDING'
+                        | 'CONFIRMED'
+                        | 'SHIPPING'
+                        | 'DELIVERED'
+                        | 'CANCELLED'
+                      setSearchParams(function (prev) {
+                        const next = new URLSearchParams(prev)
+                        if (nextTab === 'ALL') {
+                          next.delete('status')
+                        } else {
+                          next.set('status', nextTab)
+                        }
+                        return next
+                      })
+                    }}
+                    className={tabClass}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
 
-          <div className="relative w-full md:w-72">
-            <MagnifyingGlass
-              size={16}
-              weight="bold"
-              className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400"
-            />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={function (e) {
-                setSearchTerm(e.target.value)
-              }}
-              placeholder="Mã đơn hàng, tên khách, SĐT..."
-              className="w-full rounded-full border border-zinc-300 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
-            />
+            <div className="relative w-full md:w-72">
+              <MagnifyingGlass
+                size={16}
+                weight="bold"
+                className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400"
+              />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={function (e) {
+                  setSearchTerm(e.target.value)
+                }}
+                placeholder="Mã đơn hàng, tên khách, SĐT..."
+                className="w-full rounded-full border border-zinc-300 bg-zinc-50 py-2 pr-4 pl-9 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Danh sách thẻ đơn hàng */}
         <div className="mt-5 space-y-4">
@@ -349,9 +408,25 @@ export default function SellerOrdersTab({ shopId }: Props) {
             )
           })}
 
-          {filteredOrders.length === 0 && (
+          {filteredOrders.length === 0 && !isSingleOrderDetail && (
             <div className="py-12 text-center text-zinc-400">
               <p className="text-sm">Không có đơn hàng nào trong mục này.</p>
+            </div>
+          )}
+
+          {filteredOrders.length === 0 && isSingleOrderDetail && (
+            <div className="py-12 text-center text-zinc-400">
+              <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                Không tìm thấy thông tin đơn hàng này trong gian hàng.
+              </p>
+              <button
+                type="button"
+                onClick={handleBackToAllOrders}
+                className="btn-primary mt-4 inline-flex items-center gap-2 rounded-2xl px-5 py-2 text-xs font-bold"
+              >
+                <ArrowLeft size={14} weight="bold" />
+                <span>Quay lại danh sách đơn hàng</span>
+              </button>
             </div>
           )}
         </div>

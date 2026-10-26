@@ -252,7 +252,7 @@ export function SellerLayout({
               )}
 
               {/* Notification Bell */}
-              <NotificationBell />
+              <NotificationBell categories={['SELLING']} />
 
               {/* Theme Toggle — component dùng chung với Header storefront */}
               <ThemeToggle className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10" />

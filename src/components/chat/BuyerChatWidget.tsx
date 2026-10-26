@@ -324,6 +324,16 @@ function BuyerChatWidgetBody() {
   const [open, setOpen] = useState(false)
   const [selectedConvId, setSelectedConvId] = useState('')
 
+  useEffect(() => {
+    function handleOpenChat() {
+      setOpen(true)
+    }
+    window.addEventListener('fashionstore:open-chat', handleOpenChat)
+    return () => {
+      window.removeEventListener('fashionstore:open-chat', handleOpenChat)
+    }
+  }, [])
+
   const productId = isProductPath(location.pathname)
   const productQuery = useDetail1(productId, {
     query: { enabled: productId !== '' },
