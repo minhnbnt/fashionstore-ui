@@ -10,7 +10,14 @@ import {
   useShip,
 } from '@generated/endpoints/seller-orders/seller-orders'
 import { getInventoryQueryKey } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
-import { ArrowLeft, CheckCircle, MagnifyingGlass, MapPin, Phone, Truck } from '@phosphor-icons/react'
+import {
+  ArrowLeft,
+  CheckCircle,
+  MagnifyingGlass,
+  MapPin,
+  Phone,
+  Truck,
+} from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
@@ -182,7 +189,9 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 <ArrowLeft size={16} weight="bold" />
                 <span>Tất cả đơn hàng</span>
               </button>
-              <h2 className="text-xl font-black text-zinc-900 dark:text-white">Chi tiết đơn hàng</h2>
+              <h2 className="text-xl font-black text-zinc-900 dark:text-white">
+                Chi tiết đơn hàng
+              </h2>
             </div>
             <p className="mt-1 text-xs text-zinc-500">
               Đang xem chi tiết đơn hàng được chọn từ thông báo. Không hiển thị các đơn hàng khác.

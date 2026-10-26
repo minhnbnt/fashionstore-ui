@@ -265,7 +265,7 @@ export default function NotificationBell(props: NotificationBellProps) {
                     <span className="flex items-center gap-1.5">
                       <span>{TAB_LABELS[cat]}</span>
                       {catCount > 0 && (
-                        <span className="inline-flex items-center justify-center rounded-full bg-indigo-100 px-1.5 py-0.2 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                        <span className="py-0.2 inline-flex items-center justify-center rounded-full bg-indigo-100 px-1.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                           {catBadgeText}
                         </span>
                       )}
