@@ -4,8 +4,8 @@ import { useListProvinces, useListWards } from '@generated/endpoints/locations/l
 import { CaretDown, Check, MagnifyingGlass, X } from '@phosphor-icons/react'
 
 import { takeData } from '@/lib/apiAdapters'
+import { parseAddressForSelector } from '@/lib/addressParser'
 import { removeVietnameseAccents } from '@/lib/bankSearch'
-import { splitFullAddress } from '@/lib/format'
 
 import type { ProvinceResponse } from '@generated/model/provinceResponse'
 import type { WardResponse } from '@generated/model/wardResponse'
@@ -40,7 +40,7 @@ export default function LocationAddressSelector({
   idPrefix = 'loc',
   error,
 }: LocationAddressSelectorProps) {
-  const parsed = splitFullAddress(value)
+  const parsed = parseAddressForSelector(value)
 
   const [province, setProvince] = useState(parsed.province)
   const [provinceSearch, setProvinceSearch] = useState(parsed.province)
@@ -54,16 +54,7 @@ export default function LocationAddressSelector({
 
   const [detail, setDetail] = useState(parsed.detail)
   const [prevPropValue, setPrevPropValue] = useState(value)
-
-  if (value !== prevPropValue) {
-    setPrevPropValue(value)
-    const next = splitFullAddress(value)
-    setProvince(next.province)
-    setProvinceSearch(next.province)
-    setWard(next.ward)
-    setWardSearch(next.ward)
-    setDetail(next.detail)
-  }
+  const [lastEmittedValue, setLastEmittedValue] = useState<string | null>(null)
 
   // Queries
   const provincesQuery = useListProvinces()
@@ -73,6 +64,21 @@ export default function LocationAddressSelector({
       provinces = takeData(provincesQuery.data)
     } catch {
       provinces = []
+    }
+  }
+
+  if (value !== prevPropValue) {
+    setPrevPropValue(value)
+    // Nếu value chính là giá trị mà component này vừa emit ra,
+    // local state của component đã có đầy đủ và chính xác nhất -> không ghi đè lại
+    if (value !== lastEmittedValue) {
+      const knownProvinces = provinces.map((p) => p.name ?? '')
+      const next = parseAddressForSelector(value, knownProvinces)
+      setProvince(next.province)
+      setProvinceSearch(next.province)
+      setWard(next.ward)
+      setWardSearch(next.ward)
+      setDetail(next.detail)
     }
   }
 
@@ -114,7 +120,9 @@ export default function LocationAddressSelector({
 
   function emitChange(newDetail: string, newWard: string, newProvince: string) {
     const parts = [newDetail.trim(), newWard.trim(), newProvince.trim()].filter(Boolean)
-    onChange(parts.join(', '))
+    const full = parts.join(', ')
+    setLastEmittedValue(full)
+    onChange(full)
   }
 
   function handleSelectProvince(p: ProvinceResponse) {
