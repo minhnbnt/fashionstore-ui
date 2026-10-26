@@ -41,21 +41,6 @@ interface Props {
   onSuccess: () => void
 }
 
-const VIETNAM_BANKS = [
-  'Vietcombank (VCB)',
-  'MBBank (Quân Đội)',
-  'Techcombank (TCB)',
-  'ACB (Á Châu)',
-  'VPBank (Việt Nam Thịnh Vượng)',
-  'TPBank (Tiên Phong)',
-  'BIDV (Đầu tư và Phát triển VN)',
-  'Agribank (Nông nghiệp & PTNT)',
-  'Sacombank (Sài Gòn Thương Tín)',
-  'OCB (Phương Đông)',
-  'VIB (Quốc Tế)',
-  'HDBank (Phát triển TP.HCM)',
-]
-
 // Recipe input theo form chuẩn (account/AddressFormModal.tsx + docs/design-system.md):
 // pill bo tròn, nền trắng trong mờ, focus xanh dương; dark dùng nền trắng mờ trên panel navy.
 const INPUT_BASE =
@@ -1095,7 +1080,10 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
             {/* Tên chủ tài khoản: Tự động điền từ Napas 24/7 */}
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                <label
+                  htmlFor="input-bank-holder"
+                  className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
+                >
                   Tên chủ tài khoản ngân hàng <span className="text-red-500">*</span>
                 </label>
                 {isNapasVerified && (

@@ -53,16 +53,17 @@ export default function LocationAddressSelector({
   const wardContainerRef = useRef<HTMLDivElement>(null)
 
   const [detail, setDetail] = useState(parsed.detail)
+  const [prevPropValue, setPrevPropValue] = useState(value)
 
-  // Sync state if external value changes significantly
-  useEffect(() => {
+  if (value !== prevPropValue) {
+    setPrevPropValue(value)
     const next = splitFullAddress(value)
     setProvince(next.province)
     setProvinceSearch(next.province)
     setWard(next.ward)
     setWardSearch(next.ward)
     setDetail(next.detail)
-  }, [value])
+  }
 
   // Queries
   const provincesQuery = useListProvinces()

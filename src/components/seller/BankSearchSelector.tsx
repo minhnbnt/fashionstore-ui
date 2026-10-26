@@ -35,12 +35,18 @@ export default function BankSearchSelector({
   const containerRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  const selectedBank = banks.find((b) => b.bin === selectedBankBin)
+  function handleToggleOpen() {
+    if (disabled) return
+    const nextState = !isOpen
+    if (nextState) {
+      setSearch('')
+    }
+    setIsOpen(nextState)
+  }
 
   // Focus search input when opened
   useEffect(() => {
     if (isOpen) {
-      setSearch('')
       window.setTimeout(() => {
         searchInputRef.current?.focus()
       }, 50)
@@ -63,6 +69,7 @@ export default function BankSearchSelector({
   }, [isOpen])
 
   const filteredBanks = filterBanks(banks, search)
+  const selectedBank = banks.find((b) => b.bin === selectedBankBin)
 
   return (
     <div ref={containerRef} className="relative">
@@ -78,7 +85,7 @@ export default function BankSearchSelector({
         id={`${idPrefix}-select-trigger`}
         type="button"
         disabled={disabled}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggleOpen}
         className="mt-1 flex w-full items-center justify-between rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs font-medium text-zinc-900 outline-none transition hover:border-blue-500 focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
       >
         <div className="flex min-w-0 items-center gap-2.5">
