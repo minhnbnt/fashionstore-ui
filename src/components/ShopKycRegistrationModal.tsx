@@ -140,7 +140,6 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
   const [selectedBankBin, setSelectedBankBin] = useState('970436')
   const [bankAccount, setBankAccount] = useState('')
   const [bankHolder, setBankHolder] = useState('')
-  const [bankHolderTouched, setBankHolderTouched] = useState(false)
   const [bankLookupLoading, setBankLookupLoading] = useState(false)
   const [bankLookupError, setBankLookupError] = useState<string | null>(null)
   const [isNapasVerified, setIsNapasVerified] = useState(false)
@@ -266,16 +265,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
   }
 
   function handleLegalNameChange(val: string) {
-    const uppercaseVal = val.toUpperCase()
-    setLegalName(uppercaseVal)
-    if (!bankHolderTouched) {
-      setBankHolder(uppercaseVal)
-    }
-  }
-
-  function handleBankHolderChange(val: string) {
-    setBankHolderTouched(true)
-    setBankHolder(val.toUpperCase())
+    setLegalName(val.toUpperCase())
   }
 
   const isBankHolderMatch =
@@ -369,8 +359,10 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
       setErrorMessage('Vui lòng nhập số tài khoản ngân hàng nhận tiền doanh thu.')
       return false
     }
-    if (bankHolder.trim() === '') {
-      setErrorMessage('Vui lòng nhập tên chủ tài khoản ngân hàng.')
+    if (bankHolder.trim() === '' || !isNapasVerified) {
+      setErrorMessage(
+        'Vui lòng hoàn tất tra cứu tài khoản Napas 24/7 để xác thực tên chủ tài khoản ngân hàng.',
+      )
       return false
     }
     if (!isBankHolderMatch) {
@@ -392,9 +384,6 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
     }
     if (currentStep === 2) {
       if (validateStep2()) {
-        if (!bankHolderTouched || bankHolder.trim() === '') {
-          setBankHolder(legalName.trim())
-        }
         setCurrentStep(3)
       }
       return
@@ -1030,6 +1019,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
               onSelectBank={(bank) => {
                 setSelectedBankBin(bank.bin ?? '')
                 setBankName(bank.shortName ?? bank.name ?? '')
+                setBankHolder('')
                 setIsNapasVerified(false)
                 setBankLookupError(null)
               }}
@@ -1047,12 +1037,14 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     onChange={(e) => {
                       const val = e.target.value.replace(/[^0-9a-zA-Z]/g, '')
                       setBankAccount(val)
+                      setBankHolder('')
                       setIsNapasVerified(false)
                       setBankLookupError(null)
                     }}
                     onBlur={() => {
-                      if (bankAccount.length >= 6 && !isNapasVerified) {
-                        void handleLookupAccount()
+                      const cleanAcc = bankAccount.trim()
+                      if (cleanAcc.length >= 6 && selectedBankBin && !bankLookupLoading) {
+                        void handleLookupAccount(selectedBankBin, cleanAcc)
                       }
                     }}
                     placeholder="VD: 0011001234567 (STK chính chủ)"
@@ -1096,13 +1088,10 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
               <input
                 id="input-bank-holder"
                 type="text"
-                readOnly={isNapasVerified}
+                readOnly
                 value={bankHolder}
-                onChange={(e) => handleBankHolderChange(e.target.value)}
                 placeholder="Tự động điền sau khi tra cứu Napas"
-                className={`${INPUT_BASE} font-bold tracking-wider uppercase ${
-                  isNapasVerified ? 'bg-zinc-100 dark:bg-white/5 cursor-not-allowed' : ''
-                }`}
+                className={`${INPUT_BASE} font-bold tracking-wider uppercase bg-zinc-100 dark:bg-white/5 cursor-not-allowed`}
               />
 
               {/* Real-time Match Validation Alert */}
