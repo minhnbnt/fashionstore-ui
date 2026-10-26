@@ -70,6 +70,79 @@ describe('NotificationBell', () => {
     expect(html).not.toContain('Bán hàng')
   })
 
+  it('rendersUnreadBadgeOnTabsWhenCountsGreaterThanZero', () => {
+    vi.mocked(useGetUnreadNotificationCount).mockReturnValue({
+      data: { status: 200, data: { unread: 5, byCategory: { ORDER: 2, ACTIVITY: 3 } } },
+    } as unknown as ReturnType<typeof useGetUnreadNotificationCount>)
+
+    vi.mocked(useListNotifications).mockReturnValue({
+      data: { status: 200, data: { items: [], total: 0 } },
+    } as unknown as ReturnType<typeof useListNotifications>)
+
+    const html = renderToString(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(NotificationBell, {
+          categories: ['ORDER', 'ACTIVITY'],
+          defaultOpen: true,
+        }),
+      ),
+    )
+
+    expect(html).toContain('Đơn hàng')
+    expect(html).toContain('Hoạt động')
+    expect(html).toContain('>2</span>')
+    expect(html).toContain('>3</span>')
+  })
+
+  it('hidesUnreadBadgeOnTabsWhenCountIsZero', () => {
+    vi.mocked(useGetUnreadNotificationCount).mockReturnValue({
+      data: { status: 200, data: { unread: 1, byCategory: { ORDER: 0, ACTIVITY: 1 } } },
+    } as unknown as ReturnType<typeof useGetUnreadNotificationCount>)
+
+    vi.mocked(useListNotifications).mockReturnValue({
+      data: { status: 200, data: { items: [], total: 0 } },
+    } as unknown as ReturnType<typeof useListNotifications>)
+
+    const html = renderToString(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(NotificationBell, {
+          categories: ['ORDER', 'ACTIVITY'],
+          defaultOpen: true,
+        }),
+      ),
+    )
+
+    expect(html).toContain('>1</span>')
+    expect(html).not.toContain('>0</span>')
+  })
+
+  it('rendersCapAt99PlusOnTabs', () => {
+    vi.mocked(useGetUnreadNotificationCount).mockReturnValue({
+      data: { status: 200, data: { unread: 120, byCategory: { ORDER: 120 } } },
+    } as unknown as ReturnType<typeof useGetUnreadNotificationCount>)
+
+    vi.mocked(useListNotifications).mockReturnValue({
+      data: { status: 200, data: { items: [], total: 0 } },
+    } as unknown as ReturnType<typeof useListNotifications>)
+
+    const html = renderToString(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(NotificationBell, {
+          categories: ['ORDER', 'ACTIVITY'],
+          defaultOpen: true,
+        }),
+      ),
+    )
+
+    expect(html).toContain('>99+</span>')
+  })
+
   it('singleCategoryRendersNoTabs', () => {
     const item: NotificationResponse = {
       id: 'notif-1',

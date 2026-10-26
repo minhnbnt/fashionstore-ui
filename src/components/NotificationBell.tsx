@@ -145,10 +145,14 @@ export default function NotificationBell(props: NotificationBellProps) {
   }
 
   let unreadCount = 0
+  let countsByCategory: Record<string, number> = {}
   if (unreadQuery.data !== undefined) {
     const countData = takeData(unreadQuery.data)
     if (countData.unread !== undefined && countData.unread !== null) {
       unreadCount = countData.unread
+    }
+    if (countData.byCategory !== undefined && countData.byCategory !== null) {
+      countsByCategory = countData.byCategory
     }
   }
 
@@ -243,6 +247,14 @@ export default function NotificationBell(props: NotificationBellProps) {
                   tabClass =
                     'border-b-2 border-indigo-600 px-3 py-2 text-xs font-semibold text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
                 }
+                let catCount = 0
+                if (countsByCategory[cat] !== undefined) {
+                  catCount = countsByCategory[cat]
+                }
+                let catBadgeText = String(catCount)
+                if (catCount > 99) {
+                  catBadgeText = '99+'
+                }
                 return (
                   <button
                     key={cat}
@@ -250,7 +262,14 @@ export default function NotificationBell(props: NotificationBellProps) {
                     onClick={() => setActiveTab(cat)}
                     className={tabClass}
                   >
-                    {TAB_LABELS[cat]}
+                    <span className="flex items-center gap-1.5">
+                      <span>{TAB_LABELS[cat]}</span>
+                      {catCount > 0 && (
+                        <span className="inline-flex items-center justify-center rounded-full bg-indigo-100 px-1.5 py-0.2 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                          {catBadgeText}
+                        </span>
+                      )}
+                    </span>
                   </button>
                 )
               })}
