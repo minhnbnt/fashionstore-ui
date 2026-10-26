@@ -184,7 +184,6 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
       if (data.accountName) {
         setBankHolder(data.accountName)
         setIsNapasVerified(true)
-        setBankHolderTouched(true)
       }
     } catch (err: unknown) {
       setIsNapasVerified(false)
