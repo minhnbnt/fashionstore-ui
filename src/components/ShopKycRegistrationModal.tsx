@@ -1057,7 +1057,10 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     className="absolute top-1.5 right-1.5 flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
                   >
                     {bankLookupLoading && <ArrowClockwise size={13} className="animate-spin" />}
-                    <span>{bankLookupLoading ? 'Đang tra...' : 'Tra cứu Napas'}</span>
+                    <span>
+                      {bankLookupLoading && 'Đang tra...'}
+                      {!bankLookupLoading && 'Tra cứu Napas'}
+                    </span>
                   </button>
                 </div>
               </label>

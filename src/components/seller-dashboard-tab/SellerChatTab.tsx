@@ -219,7 +219,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
       </div>
 
       {/* Cửa sổ Chat 2 cột */}
-      <div className="grid h-[calc(100vh-210px)] min-h-[520px] max-h-[750px] grid-cols-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/80 shadow-sm md:grid-cols-3 dark:border-white/10 dark:bg-[#11182a]">
+      <div className="grid h-[calc(100vh-210px)] max-h-[750px] min-h-[520px] grid-cols-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/80 shadow-sm md:grid-cols-3 dark:border-white/10 dark:bg-[#11182a]">
         {/* Cột trái: Danh sách hội thoại */}
         <div className="flex h-full min-h-0 flex-col border-r border-zinc-100 md:col-span-1 dark:border-white/10">
           <div className="shrink-0 border-b border-zinc-100 p-3.5 dark:border-white/10">
@@ -241,7 +241,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 divide-y divide-zinc-100 overflow-y-auto dark:divide-white/10">
+          <div className="min-h-0 flex-1 divide-y divide-zinc-100 overflow-y-auto dark:divide-white/10">
             {filteredConversations.map(function (conv) {
               const isCurrent = conv.id === activeConvId
               return (
@@ -307,7 +307,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
               {/* Vùng tin nhắn dạng bong bóng */}
               <div
                 ref={messagesContainerRef}
-                className="flex-1 min-h-0 space-y-3 overflow-y-auto p-4"
+                className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4"
               >
                 {messages.map(function (msg) {
                   const isMe = msg.senderType === 'SELLER'

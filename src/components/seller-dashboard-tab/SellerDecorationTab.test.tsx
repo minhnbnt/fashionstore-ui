@@ -74,5 +74,12 @@ describe('SellerDecorationTab', () => {
     // Hiển thị các khối module mở rộng
     expect(html).toContain('Slider Chào Hè')
     expect(html).toContain('Hàng Mới Về')
+
+    // Kiểm tra tính năng kéo thả (Drag and Drop)
+    expect(html).toContain('draggable="true"')
+    expect(html).toContain('Kéo thả để sắp xếp vị trí')
+
+    // Bỏ module voucher
+    expect(html).not.toContain('VOUCHER_CAROUSEL')
   })
 })
