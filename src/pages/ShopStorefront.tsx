@@ -23,6 +23,8 @@ export default function ShopStorefront() {
 
   const [activeTab, setActiveTab] = useState<StorefrontTab>('HOME')
   const [isFollowing, setIsFollowing] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(undefined)
 
   const shopQuery = useBySlug(safeSlug, {
     query: {
@@ -69,8 +71,17 @@ export default function ShopStorefront() {
   }
 
   const handleOpenChat = () => {
-    // Scroll or trigger chat
     window.alert('Tính năng nhắn tin trực tiếp với shop đang được kết nối với tổng đài CSKH!')
+  }
+
+  const handleSearch = (keyword: string) => {
+    setSearchQuery(keyword)
+    setActiveTab('PRODUCTS')
+  }
+
+  const handleSelectCategory = (categoryId: string | undefined) => {
+    setSelectedCategoryId(categoryId)
+    setActiveTab('PRODUCTS')
   }
 
   if (shopQuery.isPending) {
@@ -120,13 +131,30 @@ export default function ShopStorefront() {
         isFollowing={isFollowing}
         onToggleFollow={handleToggleFollow}
         onOpenChat={handleOpenChat}
+        searchQuery={searchQuery}
+        onSearch={handleSearch}
       />
 
       {/* Tab 1: Home (Decoration Layout) */}
-      {activeTab === 'HOME' && <ShopDecorationRenderer blocks={blocks} />}
+      {activeTab === 'HOME' && (
+        <ShopDecorationRenderer
+          blocks={blocks}
+          shopId={shopId}
+          onSelectCategory={handleSelectCategory}
+          onViewAllProducts={() => setActiveTab('PRODUCTS')}
+        />
+      )}
 
       {/* Tab 2: All Products */}
-      {activeTab === 'PRODUCTS' && <ShopProductsTab shopId={shopId} />}
+      {activeTab === 'PRODUCTS' && (
+        <ShopProductsTab
+          shopId={shopId}
+          searchQuery={searchQuery}
+          onClearSearch={() => setSearchQuery('')}
+          selectedCategoryId={selectedCategoryId}
+          onSelectCategory={handleSelectCategory}
+        />
+      )}
 
       {/* Tab 3: About & Return Policy */}
       {activeTab === 'ABOUT' && <ShopAboutTab shop={shop} />}
