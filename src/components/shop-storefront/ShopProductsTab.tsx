@@ -106,11 +106,16 @@ export default function ShopProductsTab({
     categories = takeData(categoriesQuery.data)
   }
 
+  let queryText: string | undefined
+  if (searchQuery !== '') {
+    queryText = searchQuery
+  }
+
   // Products query
   const productsQuery = useGetShopProducts(
     shopId,
     {
-      q: searchQuery !== '' ? searchQuery : undefined,
+      q: queryText,
       categoryId: selectedCategoryId,
       sort,
       page,
