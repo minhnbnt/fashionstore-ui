@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import {
   ChatCircleDots,
@@ -16,6 +16,8 @@ import {
 import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
+
+export type StorefrontTab = 'HOME' | 'PRODUCTS' | 'ABOUT'
 
 function getTabButtonClass(currentTab: StorefrontTab, targetTab: StorefrontTab): string {
   if (currentTab === targetTab) {
@@ -45,21 +47,22 @@ export default function ShopStorefrontHeader({
   searchQuery,
   onSearch,
 }: ShopStorefrontHeaderProps) {
-  const [searchInput, setSearchInput] = useState(searchQuery ?? '')
-
-  useEffect(() => {
-    setSearchInput(searchQuery ?? '')
-  }, [searchQuery])
+  const [localSearch, setLocalSearch] = useState<string | null>(null)
+  let searchInput = searchQuery ?? ''
+  if (localSearch !== null) {
+    searchInput = localSearch
+  }
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (onSearch) {
       onSearch(searchInput.trim())
     }
+    setLocalSearch(null)
   }
 
   const handleClearSearch = () => {
-    setSearchInput('')
+    setLocalSearch(null)
     if (onSearch) {
       onSearch('')
     }
@@ -234,21 +237,15 @@ export default function ShopStorefrontHeader({
           </div>
 
           {/* Internal Shop Search Bar */}
-          <form
-            onSubmit={handleSearchSubmit}
-            className="relative mb-2 flex items-center sm:mb-0"
-          >
+          <form onSubmit={handleSearchSubmit} className="relative mb-2 flex items-center sm:mb-0">
             <input
               type="text"
               placeholder="Tìm trong Shop này..."
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={(e) => setLocalSearch(e.target.value)}
               className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-1.5 pr-8 pl-9 text-xs transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none sm:w-60 dark:border-white/10 dark:bg-white/5 dark:focus:bg-[#11182a]"
             />
-            <MagnifyingGlass
-              size={15}
-              className="absolute left-3 text-zinc-400"
-            />
+            <MagnifyingGlass size={15} className="absolute left-3 text-zinc-400" />
             {searchInput !== '' && (
               <button
                 type="button"

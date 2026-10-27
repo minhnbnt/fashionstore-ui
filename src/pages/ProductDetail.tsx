@@ -6,12 +6,12 @@ import { useDetail1 } from '@generated/endpoints/products/products'
 import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
 
+import PdpShopCard from '../components/pdp/PdpShopCard'
 import ProductGallery from '../components/pdp/ProductGallery'
 import ProductInfo from '../components/pdp/ProductInfo'
 import ProductTabs from '../components/pdp/ProductTabs'
 import RelatedProducts from '../components/pdp/RelatedProducts'
 import ReportProductButton from '../components/pdp/ReportProductButton'
-import PdpShopCard from '../components/pdp/PdpShopCard'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 

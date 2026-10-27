@@ -2,6 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 
 import {
+  useGetShopCategories,
+  useGetShopProducts,
+} from '@generated/endpoints/shops-catalog/shops-catalog'
+import {
   Funnel,
   Package,
   MagnifyingGlass,
@@ -11,10 +15,6 @@ import {
   Sparkle,
 } from '@phosphor-icons/react'
 
-import {
-  useGetShopCategories,
-  useGetShopProducts,
-} from '@generated/endpoints/shops-catalog/shops-catalog'
 import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
@@ -38,19 +38,15 @@ function getProductDisplayInfo(p: ProductResponse) {
   let imageSrc = PLACEHOLDER_IMAGE
   if (p.images !== undefined && p.images.length > 0) {
     const firstImg = p.images[0]
-    if (firstImg?.url !== undefined && firstImg.url !== '') {
-      imageSrc = firstImg.url
-    } else if (firstImg?.imageKey !== undefined && firstImg.imageKey !== '') {
-      imageSrc = imageUrl(firstImg.imageKey)
+    if (firstImg?.s3Key !== undefined && firstImg.s3Key !== '') {
+      imageSrc = imageUrl(firstImg.s3Key)
     }
   }
 
   let minPrice = 0
   let comparePrice: number | null = null
   if (p.variants !== undefined && p.variants.length > 0) {
-    const prices = p.variants
-      .map((v) => v.price ?? 0)
-      .filter((pr) => pr > 0)
+    const prices = p.variants.map((v) => v.price ?? 0).filter((pr) => pr > 0)
     if (prices.length > 0) {
       minPrice = Math.min(...prices)
     }
@@ -156,8 +152,8 @@ export default function ShopProductsTab({
           <div className="flex items-center gap-2">
             <MagnifyingGlass size={16} className="text-indigo-600 dark:text-indigo-400" />
             <span>
-              Kết quả tìm kiếm cho: <strong>&ldquo;{searchQuery}&rdquo;</strong> (
-              {totalItems} sản phẩm)
+              Kết quả tìm kiếm cho: <strong>&ldquo;{searchQuery}&rdquo;</strong> ({totalItems} sản
+              phẩm)
             </span>
           </div>
           {onClearSearch && (

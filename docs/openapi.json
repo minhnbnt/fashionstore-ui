@@ -3889,6 +3889,103 @@
             "bearerAuth": []
           }
         ]
+      },
+      "get": {
+        "tags": ["shops-catalog"],
+        "summary": "Danh sách sản phẩm của shop",
+        "description": "Chỉ trả về sản phẩm ACTIVE của shop APPROVED. Hỗ trợ tìm kiếm từ khóa trong shop, lọc bộ sưu tập nổi bật và danh mục.",
+        "operationId": "getShopProducts",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id shop"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Từ khóa tìm kiếm trong shop"
+          },
+          {
+            "name": "collection",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ShopProductCollectionType"
+            },
+            "description": "Loại bộ sưu tập nổi bật"
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id danh mục cần lọc"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Kiểu sắp xếp: NEWEST, BEST_SELLER, PRICE_ASC, PRICE_DESC"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Số trang, đếm từ 0"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 12
+            },
+            "description": "Số lượng sản phẩm mỗi trang"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Một trang sản phẩm của shop kèm tổng số kết quả",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseProductResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop không tồn tại hoặc chưa được duyệt",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/shops/{shopId}/products/{id}/images": {
@@ -20044,6 +20141,51 @@
           }
         }
       }
+    },
+    "/api/shops/{shopId}/categories": {
+      "get": {
+        "tags": ["shops-catalog"],
+        "summary": "Danh mục sản phẩm của shop",
+        "description": "Lấy danh sách các danh mục mà shop thực tế đang có sản phẩm kinh doanh ACTIVE.",
+        "operationId": "getShopCategories",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Id shop"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách danh mục kèm số lượng sản phẩm",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopCategorySummaryResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Shop không tồn tại hoặc chưa được duyệt",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -25704,6 +25846,63 @@
             "example": true
           }
         }
+      },
+      "ShopProductCollectionType": {
+        "type": "string",
+        "enum": ["NEW_ARRIVALS", "BEST_SELLER", "SALE_OFF"],
+        "description": "Loại bộ sưu tập nổi bật của shop"
+      },
+      "ShopCategorySummaryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id danh mục"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tên danh mục"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Slug danh mục"
+          },
+          "productCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Số lượng sản phẩm của shop trong danh mục"
+          }
+        },
+        "required": ["id", "name", "slug", "productCount"]
+      },
+      "PageResponseProductResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductResponse"
+            },
+            "description": "Phần tử của trang hiện tại"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng số phần tử khớp bộ lọc"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Trang hiện tại, đếm từ 0"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Số phần tử mỗi trang"
+          }
+        },
+        "required": ["items", "total", "page", "size"]
       }
     },
     "securitySchemes": {

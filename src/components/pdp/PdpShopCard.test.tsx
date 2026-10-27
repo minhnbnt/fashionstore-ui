@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { PdpShopCard } from './PdpShopCard'
 
 vi.mock('@generated/endpoints/shops/shops', () => ({
-  useBySlug: vi.fn((slug: string) => ({
+  useBySlug: vi.fn((_slug: string) => ({
     data: {
       status: 200,
       data: {

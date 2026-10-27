@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
 import {
+  useGetShopCategories,
+  useGetShopProducts,
+} from '@generated/endpoints/shops-catalog/shops-catalog'
+import {
   CaretLeft,
   CaretRight,
   Lightning,
@@ -10,10 +14,6 @@ import {
   ArrowRight,
 } from '@phosphor-icons/react'
 
-import {
-  useGetShopCategories,
-  useGetShopProducts,
-} from '@generated/endpoints/shops-catalog/shops-catalog'
 import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
@@ -37,19 +37,15 @@ function getProductDisplayInfo(p: ProductResponse) {
   let imageSrc = PLACEHOLDER_IMAGE
   if (p.images !== undefined && p.images.length > 0) {
     const firstImg = p.images[0]
-    if (firstImg?.url !== undefined && firstImg.url !== '') {
-      imageSrc = firstImg.url
-    } else if (firstImg?.imageKey !== undefined && firstImg.imageKey !== '') {
-      imageSrc = imageUrl(firstImg.imageKey)
+    if (firstImg?.s3Key !== undefined && firstImg.s3Key !== '') {
+      imageSrc = imageUrl(firstImg.s3Key)
     }
   }
 
   let minPrice = 0
   let comparePrice: number | null = null
   if (p.variants !== undefined && p.variants.length > 0) {
-    const prices = p.variants
-      .map((v) => v.price ?? 0)
-      .filter((pr) => pr > 0)
+    const prices = p.variants.map((v) => v.price ?? 0).filter((pr) => pr > 0)
     if (prices.length > 0) {
       minPrice = Math.min(...prices)
     }
@@ -213,11 +209,15 @@ function ProductCollectionBlock({
   }
 
   const limit = block.itemLimit ?? 8
+  let collectionType: 'NEW_ARRIVALS' | 'BEST_SELLER' | 'SALE_OFF' = 'NEW_ARRIVALS'
+  if (block.collectionType === 'BEST_SELLER' || block.collectionType === 'SALE_OFF') {
+    collectionType = block.collectionType
+  }
 
   const productsQuery = useGetShopProducts(
     shopId,
     {
-      collection: block.collectionType ?? 'NEW_ARRIVALS',
+      collection: collectionType,
       limit,
     },
     {
@@ -362,12 +362,8 @@ function CategoryGridBlock({
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
               <SquaresFour size={24} />
             </div>
-            <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-              {c.name}
-            </span>
-            <span className="text-[10px] text-zinc-400">
-              {c.productCount} sản phẩm
-            </span>
+            <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{c.name}</span>
+            <span className="text-[10px] text-zinc-400">{c.productCount} sản phẩm</span>
           </button>
         ))}
       </div>

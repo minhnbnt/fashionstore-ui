@@ -1,4 +1,6 @@
 import { Link } from 'react-router'
+
+import { useBySlug } from '@generated/endpoints/shops/shops'
 import {
   Storefront,
   Star,
@@ -8,7 +10,6 @@ import {
   ArrowRight,
 } from '@phosphor-icons/react'
 
-import { useBySlug } from '@generated/endpoints/shops/shops'
 import UserAvatar from '@/components/UserAvatar'
 import { takeData } from '@/lib/apiAdapters'
 
@@ -81,11 +82,9 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
             className="group relative flex-shrink-0"
             title={`Xem gian hàng ${shopName}`}
           >
-            <UserAvatar
-              name={shopName}
-              size={56}
-              className="ring-2 ring-indigo-100 transition-transform group-hover:scale-105 dark:ring-white/10"
-            />
+            <div className="rounded-full ring-2 ring-indigo-100 transition-transform group-hover:scale-105 dark:ring-white/10">
+              <UserAvatar name={shopName} size={56} />
+            </div>
             {isTrusted && (
               <span
                 className="absolute -right-1 -bottom-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm"

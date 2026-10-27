@@ -399,78 +399,78 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                     </div>
                   </div>
 
-                {can('DECORATION_WRITE') && (
-                  <div className="flex items-center gap-1">
-                    {/* Config Button for Slider / Collection */}
-                    {(block.type === 'BANNER_SLIDER' ||
-                      block.type === 'BANNER' ||
-                      block.type === 'PRODUCT_COLLECTION' ||
-                      block.type === 'COLLECTION') && (
+                  {can('DECORATION_WRITE') && (
+                    <div className="flex items-center gap-1">
+                      {/* Config Button for Slider / Collection */}
+                      {(block.type === 'BANNER_SLIDER' ||
+                        block.type === 'BANNER' ||
+                        block.type === 'PRODUCT_COLLECTION' ||
+                        block.type === 'COLLECTION') && (
+                        <button
+                          type="button"
+                          title="Cấu hình chi tiết module"
+                          onClick={() => {
+                            setEditingBlock(block)
+                            if (block.type === 'BANNER_SLIDER' || block.type === 'BANNER') {
+                              setIsSliderModalOpen(true)
+                            } else {
+                              setIsCollectionModalOpen(true)
+                            }
+                          }}
+                          className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
+                        >
+                          <Gear size={15} />
+                        </button>
+                      )}
+
+                      {/* Reorder Buttons */}
                       <button
                         type="button"
-                        title="Cấu hình chi tiết module"
-                        onClick={() => {
-                          setEditingBlock(block)
-                          if (block.type === 'BANNER_SLIDER' || block.type === 'BANNER') {
-                            setIsSliderModalOpen(true)
-                          } else {
-                            setIsCollectionModalOpen(true)
-                          }
-                        }}
+                        title="Di chuyển lên"
+                        onClick={() => handleMoveUp(idx)}
+                        disabled={idx === 0}
+                        className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
+                      >
+                        <ArrowUp size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        title="Di chuyển xuống"
+                        onClick={() => handleMoveDown(idx)}
+                        disabled={idx === blocks.length - 1}
+                        className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
+                      >
+                        <ArrowDown size={14} />
+                      </button>
+
+                      {/* Toggle Visibility */}
+                      <button
+                        type="button"
+                        title="Ẩn/Hiện module"
+                        onClick={() => handleToggle(block.id)}
                         className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
                       >
-                        <Gear size={15} />
+                        {block.enabled && <Eye size={15} className="text-emerald-600" />}
+                        {!block.enabled && (
+                          <EyeSlash size={15} className="text-zinc-400 dark:text-zinc-500" />
+                        )}
                       </button>
-                    )}
 
-                    {/* Reorder Buttons */}
-                    <button
-                      type="button"
-                      title="Di chuyển lên"
-                      onClick={() => handleMoveUp(idx)}
-                      disabled={idx === 0}
-                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
-                    >
-                      <ArrowUp size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      title="Di chuyển xuống"
-                      onClick={() => handleMoveDown(idx)}
-                      disabled={idx === blocks.length - 1}
-                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
-                    >
-                      <ArrowDown size={14} />
-                    </button>
-
-                    {/* Toggle Visibility */}
-                    <button
-                      type="button"
-                      title="Ẩn/Hiện module"
-                      onClick={() => handleToggle(block.id)}
-                      className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
-                    >
-                      {block.enabled && <Eye size={15} className="text-emerald-600" />}
-                      {!block.enabled && (
-                        <EyeSlash size={15} className="text-zinc-400 dark:text-zinc-500" />
-                      )}
-                    </button>
-
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      title="Xóa module"
-                      onClick={() => handleDelete(block.id)}
-                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-white/10"
-                    >
-                      <Trash size={14} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                      {/* Delete */}
+                      <button
+                        type="button"
+                        title="Xóa module"
+                        onClick={() => handleDelete(block.id)}
+                        className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-white/10"
+                      >
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
 
           <div className="rounded border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800">
             💡 <strong>Mẹo gian hàng chuyên nghiệp:</strong> Đặt <em>Banner Slider</em> ở vị trí đầu
