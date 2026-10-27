@@ -5,6 +5,7 @@ import { useListCategories } from '@generated/endpoints/categories/categories'
 import {
   Heart,
   MagnifyingGlass,
+  Receipt,
   ShieldCheck,
   ShoppingBag,
   SignOut,
@@ -202,6 +203,17 @@ export default function Header() {
                   >
                     <UserCircle size={16} />
                     {dashboardLabel}
+                  </Link>
+
+                  <Link
+                    to="/account/orders"
+                    onClick={function () {
+                      setDropdownOpen(false)
+                    }}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-indigo-50 dark:text-zinc-200 dark:hover:bg-white/10"
+                  >
+                    <Receipt size={16} />
+                    Đơn hàng của tôi
                   </Link>
 
                   {role !== 'customer' && (

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
+import { useMine2 } from '@generated/endpoints/orders/orders'
 import { getMineQueryKey, useMine, useResubmitShop } from '@generated/endpoints/shops/shops'
 import { useMe } from '@generated/endpoints/users/users'
 import {
@@ -69,6 +70,12 @@ export default function Account() {
   let profile: UserResponse | undefined
   if (profileQuery.data !== undefined) {
     profile = takeData(profileQuery.data)
+  }
+
+  const ordersQuery = useMine2()
+  let orderCount = 0
+  if (ordersQuery.isSuccess) {
+    orderCount = takeData(ordersQuery.data).length
   }
 
   useEffect(() => {
@@ -202,7 +209,7 @@ export default function Account() {
           <div className="mt-5 space-y-3 text-sm">
             <div className="flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3 dark:bg-white/10">
               <span className="font-medium">Đơn hàng đã mua</span>
-              <span className="text-xs text-zinc-400 dark:text-zinc-500">0 đơn</span>
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">{orderCount} đơn</span>
             </div>
             <div className="flex items-center justify-between rounded-2xl bg-white/70 px-4 py-3 dark:bg-white/10">
               <span className="font-medium">Mã ưu đãi nét</span>
