@@ -119,10 +119,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
   }
 
   const ordersQuery = useList5(queryParams, { query: { enabled: shopId !== '' } })
-  const returnsQuery = useList4(
-    { shopId },
-    { query: { enabled: shopId !== '' && (activeTab === 'RETURNS' || activeTab === 'ALL') } },
-  )
+  const returnsQuery = useList4({ shopId }, { query: { enabled: shopId !== '' } })
 
   const confirmMutation = useConfirm({
     mutation: {
@@ -303,19 +300,45 @@ export default function SellerOrdersTab({ shopId }: Props) {
     })
   }
 
+  const allCount = orders.length
   const pendingOrders = orders.filter(function (o) {
     return o.status === 'PENDING'
   })
+  const confirmedCount = orders.filter(function (o) {
+    return o.status === 'CONFIRMED'
+  }).length
+  const shippingCount = orders.filter(function (o) {
+    return o.status === 'SHIPPING'
+  }).length
+  const deliveredCount = orders.filter(function (o) {
+    return o.status === 'DELIVERED'
+  }).length
+  const cancelledCount = orders.filter(function (o) {
+    return o.status === 'CANCELLED'
+  }).length
+  const returnsCount = returns.length
 
-  const tabs: { id: TabKey; label: string; count?: number }[] = [
-    { id: 'ALL', label: 'Tất cả' },
+  const tabs: { id: TabKey; label: string; count: number }[] = [
+    { id: 'ALL', label: 'Tất cả', count: allCount },
     { id: 'PENDING', label: 'Chờ xác nhận', count: pendingOrders.length },
-    { id: 'CONFIRMED', label: 'Đang chuẩn bị' },
-    { id: 'SHIPPING', label: 'Đã giao cho ĐVVC' },
-    { id: 'DELIVERED', label: 'Hoàn thành' },
-    { id: 'CANCELLED', label: 'Đã hủy' },
-    { id: 'RETURNS', label: 'Đổi trả', count: returns.length },
+    { id: 'CONFIRMED', label: 'Đang chuẩn bị', count: confirmedCount },
+    { id: 'SHIPPING', label: 'Đã giao cho ĐVVC', count: shippingCount },
+    { id: 'DELIVERED', label: 'Hoàn thành', count: deliveredCount },
+    { id: 'CANCELLED', label: 'Đã hủy', count: cancelledCount },
+    { id: 'RETURNS', label: 'Đổi trả', count: returnsCount },
   ]
+
+  let currentTabLabel = 'Tất cả'
+  for (const t of tabs) {
+    if (t.id === activeTab) {
+      currentTabLabel = t.label
+    }
+  }
+
+  let selectAllBtnText = 'Chọn tất cả (' + pendingOrders.length + ')'
+  if (selectedOrderIds.length === pendingOrders.length && pendingOrders.length > 0) {
+    selectAllBtnText = 'Bỏ chọn tất cả'
+  }
 
   return (
     <div className="space-y-6">
@@ -370,9 +393,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 }}
                 className="rounded-2xl border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
               >
-                {selectedOrderIds.length === pendingOrders.length && pendingOrders.length > 0
-                  ? 'Bỏ chọn tất cả'
-                  : 'Chọn tất cả (' + pendingOrders.length + ')'}
+                {selectAllBtnText}
               </button>
             </div>
           )}
@@ -387,11 +408,22 @@ export default function SellerOrdersTab({ shopId }: Props) {
               {tabs.map(function (tab) {
                 const isCurrent = activeTab === tab.id
                 let tabClass =
-                  'flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                  'flex items-center gap-2 rounded-2xl px-3.5 py-2 text-xs font-bold transition text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/5'
                 if (isCurrent) {
                   tabClass =
-                    'flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+                    'flex items-center gap-2 rounded-2xl px-3.5 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
                 }
+
+                let countBadgeClass =
+                  'rounded-full px-2 py-0.5 text-[10px] font-bold bg-zinc-100 text-zinc-500 dark:bg-white/10 dark:text-zinc-400'
+                if (isCurrent) {
+                  countBadgeClass =
+                    'rounded-full px-2 py-0.5 text-[10px] font-black bg-white/25 text-white'
+                } else if (tab.count > 0) {
+                  countBadgeClass =
+                    'rounded-full px-2 py-0.5 text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300'
+                }
+
                 return (
                   <button
                     key={tab.id}
@@ -411,17 +443,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                     className={tabClass}
                   >
                     <span>{tab.label}</span>
-                    {tab.count !== undefined && tab.count > 0 && (
-                      <span
-                        className={
-                          isCurrent
-                            ? 'py-0.2 rounded-full bg-white/20 px-1.5 text-[10px]'
-                            : 'py-0.2 rounded-full bg-indigo-100 px-1.5 text-[10px] text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
-                        }
-                      >
-                        {tab.count}
-                      </span>
-                    )}
+                    <span className={countBadgeClass}>{tab.count}</span>
                   </button>
                 )
               })}
@@ -515,6 +537,19 @@ export default function SellerOrdersTab({ shopId }: Props) {
         {/* Danh sách thẻ đơn hàng thông thường */}
         {activeTab !== 'RETURNS' && (
           <div className="mt-5 space-y-4">
+            {!isSingleOrderDetail && (
+              <div className="flex items-center justify-between text-xs text-zinc-500">
+                <span>
+                  Đang hiển thị{' '}
+                  <strong className="text-zinc-900 dark:text-white">{filteredOrders.length}</strong>{' '}
+                  đơn hàng trong mục{' '}
+                  <strong className="text-indigo-600 dark:text-indigo-400">
+                    {currentTabLabel}
+                  </strong>
+                  {searchTerm.trim() !== '' && ' (khớp với từ khóa tìm kiếm)'}
+                </span>
+              </div>
+            )}
             {filteredOrders.map(function (order) {
               const isPending = order.status === 'PENDING'
               const isSelected = selectedOrderIds.includes(order.id)
