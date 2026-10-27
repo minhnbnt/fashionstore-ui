@@ -211,11 +211,15 @@ export default function SellerOrdersTab({ shopId }: Props) {
 
   function handleConfirmCancel() {
     if (cancelTargetId !== null) {
+      let trimmedNote: string | undefined = undefined
+      if (cancelNote.trim() !== '') {
+        trimmedNote = cancelNote.trim()
+      }
       cancelMutation.mutate({
         id: cancelTargetId,
         data: {
           reason: cancelReason,
-          note: cancelNote.trim() !== '' ? cancelNote.trim() : undefined,
+          note: trimmedNote,
         },
       })
       setCancelTargetId(null)
@@ -535,6 +539,18 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 checkboxTitle = 'Đơn hàng đã quá hạn 24h (tự hủy)'
               }
 
+              let slaBadgeClass =
+                'flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400'
+              if (sla.isWarning) {
+                slaBadgeClass =
+                  'flex items-center gap-1 rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400'
+              }
+
+              let paymentMethodLabel = 'Tổng thanh toán: '
+              if (order.paymentMethod === 'COD' || order.paymentMethod === undefined) {
+                paymentMethodLabel = 'Tổng thu COD: '
+              }
+
               return (
                 <div key={order.id} className={cardBorderClass}>
                   {/* Header đơn */}
@@ -570,13 +586,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
 
                       {/* SLA Countdown Badge cho PENDING */}
                       {isPending && (
-                        <div
-                          className={
-                            sla.isWarning
-                              ? 'flex items-center gap-1 rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400'
-                              : 'flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400'
-                          }
-                        >
+                        <div className={slaBadgeClass}>
                           <Clock size={12} weight="bold" />
                           <span>{sla.text}</span>
                         </div>
@@ -659,11 +669,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
 
                     <div className="flex flex-col items-end gap-2.5">
                       <div className="text-right">
-                        <span className="text-xs text-zinc-500">
-                          {order.paymentMethod === 'COD' || order.paymentMethod === undefined
-                            ? 'Tổng thu COD: '
-                            : 'Tổng thanh toán: '}
-                        </span>
+                        <span className="text-xs text-zinc-500">{paymentMethodLabel}</span>
                         <span className="text-base font-black text-indigo-600 dark:text-indigo-400">
                           {formatVnd(order.totalAmount)}
                         </span>
@@ -788,9 +794,9 @@ export default function SellerOrdersTab({ shopId }: Props) {
               >
                 <CheckCircle size={15} weight="bold" />
                 <span>
-                  {bulkConfirmMutation.isPending
-                    ? 'Đang xử lý...'
-                    : 'Xác nhận tất cả (' + selectedOrderIds.length + ')'}
+                  {bulkConfirmMutation.isPending && 'Đang xử lý...'}
+                  {!bulkConfirmMutation.isPending &&
+                    'Xác nhận tất cả (' + selectedOrderIds.length + ')'}
                 </span>
               </button>
             </div>
@@ -900,10 +906,12 @@ export default function SellerOrdersTab({ shopId }: Props) {
               <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 dark:border-white/10 dark:bg-white/5">
                 <p className="font-bold text-zinc-700 dark:text-zinc-300">Phương thức thanh toán</p>
                 <p className="mt-1 font-semibold text-zinc-900 dark:text-white">
-                  {selectedOrderForDetail.paymentMethod === 'COD' ||
-                  selectedOrderForDetail.paymentMethod === undefined
-                    ? 'Thanh toán khi nhận hàng (COD)'
-                    : selectedOrderForDetail.paymentMethod}
+                  {(selectedOrderForDetail.paymentMethod === 'COD' ||
+                    selectedOrderForDetail.paymentMethod === undefined) &&
+                    'Thanh toán khi nhận hàng (COD)'}
+                  {selectedOrderForDetail.paymentMethod !== 'COD' &&
+                    selectedOrderForDetail.paymentMethod !== undefined &&
+                    selectedOrderForDetail.paymentMethod}
                 </p>
                 <p className="mt-0.5 text-[11px] text-zinc-500">
                   Tổng thu: {formatVnd(selectedOrderForDetail.totalAmount)}
