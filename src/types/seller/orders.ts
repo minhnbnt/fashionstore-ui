@@ -24,6 +24,7 @@ export interface OrderItem {
   confirmedAt?: string
   cancelledAt?: string
   createdAt: string
+  rawCreatedAt: string
 }
 
 export interface ReturnItem {

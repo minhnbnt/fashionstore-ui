@@ -212,6 +212,7 @@ export function orderItem(order: OrderResponse): OrderItem {
     confirmedAt,
     cancelledAt,
     createdAt: formatDateTime(order.createdAt),
+    rawCreatedAt: safeText(order.createdAt),
   }
 }
 
