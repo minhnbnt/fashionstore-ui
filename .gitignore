@@ -28,3 +28,6 @@ generated
 *.njsproj
 *.sln
 *.sw?
+
+# Worktrees
+.worktrees/
