@@ -4,6 +4,8 @@ export interface OrderItem {
   buyerName: string
   buyerPhone: string
   shippingAddress: string
+  paymentMethod?: string
+  note?: string
   items: {
     productId: string
     productName: string
@@ -11,10 +13,16 @@ export interface OrderItem {
     color: string
     quantity: number
     price: number
+    sku?: string
+    lineTotal?: number
   }[]
   totalAmount: number
   status: 'PENDING' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED'
   cancelReason?: string
+  cancelNote?: string
+  cancelledBy?: string
+  confirmedAt?: string
+  cancelledAt?: string
   createdAt: string
 }
 
