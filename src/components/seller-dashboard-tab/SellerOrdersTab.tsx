@@ -523,6 +523,18 @@ export default function SellerOrdersTab({ shopId }: Props) {
                   'rounded-2xl border-2 border-indigo-600 bg-indigo-50/20 p-4 transition dark:border-indigo-400 dark:bg-indigo-950/20'
               }
 
+              let confirmButtonClass =
+                'btn-primary flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold shadow-sm'
+              if (sla.isExpired) {
+                confirmButtonClass =
+                  'flex items-center gap-1.5 rounded-xl bg-zinc-200 px-3.5 py-1.5 text-xs font-bold text-zinc-400 cursor-not-allowed dark:bg-white/10 dark:text-zinc-500'
+              }
+
+              let checkboxTitle: string | undefined = undefined
+              if (sla.isExpired) {
+                checkboxTitle = 'Đơn hàng đã quá hạn 24h (tự hủy)'
+              }
+
               return (
                 <div key={order.id} className={cardBorderClass}>
                   {/* Header đơn */}
@@ -533,10 +545,14 @@ export default function SellerOrdersTab({ shopId }: Props) {
                           type="checkbox"
                           id={'checkbox-order-' + order.id}
                           checked={isSelected}
+                          disabled={sla.isExpired}
+                          title={checkboxTitle}
                           onChange={function () {
-                            handleToggleSelect(order.id)
+                            if (!sla.isExpired) {
+                              handleToggleSelect(order.id)
+                            }
                           }}
-                          className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                          className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-40"
                         />
                       )}
 
@@ -668,11 +684,16 @@ export default function SellerOrdersTab({ shopId }: Props) {
                         {order.status === 'PENDING' && can('ORDER_PROCESS') && (
                           <button
                             type="button"
+                            disabled={sla.isExpired}
                             onClick={function () {
+                              if (sla.isExpired) {
+                                showToast('Đơn hàng đã quá hạn 24h và đã bị hệ thống tự hủy!')
+                                return
+                              }
                               handleConfirmOrder(order.id)
                               showToast('Đã xác nhận đơn hàng thành công!')
                             }}
-                            className="btn-primary flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold shadow-sm"
+                            className={confirmButtonClass}
                           >
                             <CheckCircle size={14} weight="bold" />
                             Xác nhận đơn
