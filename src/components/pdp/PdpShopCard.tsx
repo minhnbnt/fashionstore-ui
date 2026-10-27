@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 
 import { useBySlug } from '@generated/endpoints/shops/shops'
 import {
@@ -11,6 +11,7 @@ import {
 } from '@phosphor-icons/react'
 
 import UserAvatar from '@/components/UserAvatar'
+import { useSessionQuery } from '@/hooks/useSession'
 import { takeData } from '@/lib/apiAdapters'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
@@ -20,6 +21,10 @@ export interface PdpShopCardProps {
 }
 
 export function PdpShopCard({ shopId }: PdpShopCardProps) {
+  const sessionQuery = useSessionQuery()
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const shopQuery = useBySlug(shopId, {
     query: {
       enabled: shopId !== '',
@@ -67,6 +72,20 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
   }
   if (sellerType === 'BRAND') {
     sellerTypeBadge = 'Thương hiệu'
+  }
+
+  const handleOpenChat = () => {
+    const session = sessionQuery.data
+    if (session === null || session === undefined) {
+      void navigate('/login', { state: { from: location.pathname } })
+      return
+    }
+    if (!shopId) return
+    window.dispatchEvent(
+      new CustomEvent('fashionstore:open-chat', {
+        detail: { shopId, shopName: shop?.name },
+      }),
+    )
   }
 
   return (
@@ -140,6 +159,7 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
 
           <button
             type="button"
+            onClick={handleOpenChat}
             className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-2 text-xs font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
           >
             <ChatCircleDots size={16} />

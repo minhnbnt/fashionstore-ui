@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 
 import { useGetPublishedLayout } from '@generated/endpoints/shops-decoration/shops-decoration'
 import { useBySlug, useFollow, useUnfollow } from '@generated/endpoints/shops/shops'
@@ -11,6 +11,7 @@ import ShopProductsTab from '@/components/shop-storefront/ShopProductsTab'
 import ShopStorefrontHeader, {
   type StorefrontTab,
 } from '@/components/shop-storefront/ShopStorefrontHeader'
+import { useSessionQuery } from '@/hooks/useSession'
 import { takeData } from '@/lib/apiAdapters'
 import { decorationBlocks } from '@/lib/sellerAdapters'
 
@@ -20,6 +21,10 @@ import type { ShopResponse } from '@generated/model/shopResponse'
 export default function ShopStorefront() {
   const { slug } = useParams<{ slug: string }>()
   const safeSlug = slug ?? ''
+
+  const sessionQuery = useSessionQuery()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const [activeTab, setActiveTab] = useState<StorefrontTab>('HOME')
   const [isFollowing, setIsFollowing] = useState(false)
@@ -71,7 +76,17 @@ export default function ShopStorefront() {
   }
 
   const handleOpenChat = () => {
-    window.alert('Tính năng nhắn tin trực tiếp với shop đang được kết nối với tổng đài CSKH!')
+    const session = sessionQuery.data
+    if (session === null || session === undefined) {
+      void navigate('/login', { state: { from: location.pathname } })
+      return
+    }
+    if (!shopId) return
+    window.dispatchEvent(
+      new CustomEvent('fashionstore:open-chat', {
+        detail: { shopId, shopName: shop?.name },
+      }),
+    )
   }
 
   const handleSearch = (keyword: string) => {
