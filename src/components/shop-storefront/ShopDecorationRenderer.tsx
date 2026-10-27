@@ -353,7 +353,7 @@ function CategoryGridBlock({
             key={c.id}
             type="button"
             onClick={() => {
-              if (onSelectCategory) {
+              if (onSelectCategory && c.id) {
                 onSelectCategory(c.id)
               }
             }}
