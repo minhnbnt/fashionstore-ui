@@ -17,7 +17,7 @@ import {
   WarningCircle,
 } from '@phosphor-icons/react'
 
-import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { PLACEHOLDER_IMAGE, apiErrorText, takeData } from '@/lib/apiAdapters'
 import { uploadImage } from '@/lib/uploadImage'
 
 import LocationAddressSelector from './common/LocationAddressSelector'
@@ -187,15 +187,12 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
       }
     } catch (err: unknown) {
       setIsNapasVerified(false)
-      let msg =
-        'Không tìm thấy tài khoản tại ngân hàng đã chọn. Vui lòng kiểm tra lại số tài khoản.'
-      if (err !== null && typeof err === 'object' && 'message' in err) {
-        const raw = String((err as { message?: string }).message)
-        if (raw) {
-          msg = raw
-        }
-      }
-      setBankLookupError(msg)
+      setBankLookupError(
+        apiErrorText(
+          err,
+          'Không tìm thấy tài khoản tại ngân hàng đã chọn. Vui lòng kiểm tra lại số tài khoản.',
+        ),
+      )
     } finally {
       setBankLookupLoading(false)
     }
@@ -272,6 +269,11 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
     bankHolder.trim() !== '' &&
     legalName.trim() !== '' &&
     normalizeName(bankHolder) === normalizeName(legalName)
+
+  let lookupButtonLabel = 'Tra cứu Napas'
+  if (bankLookupLoading) {
+    lookupButtonLabel = 'Đang tra...'
+  }
 
   function validateStep1(): boolean {
     if (name.trim() === '') {
@@ -463,16 +465,14 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
 
       onSuccess()
     } catch (err: unknown) {
+      const raw = apiErrorText(err, '')
       let msg = 'Đăng ký hồ sơ mở shop không thành công. Vui lòng kiểm tra lại thông tin.'
-      if (err !== null && typeof err === 'object' && 'message' in err) {
-        const raw = String((err as { message?: string }).message)
-        if (raw.includes('409') || raw.includes('Conflict') || raw.includes('taken')) {
-          msg = 'Định danh shop (slug) này đã có người đăng ký. Vui lòng chọn slug khác.'
-        }
-        if (raw.includes('trùng khớp') || raw.includes('CCCD')) {
-          msg =
-            'Tên chủ tài khoản ngân hàng phải trùng khớp 100% với Họ và tên trên Căn cước công dân.'
-        }
+      if (raw.includes('409') || raw.includes('Conflict') || raw.includes('taken')) {
+        msg = 'Định danh shop (slug) này đã có người đăng ký. Vui lòng chọn slug khác.'
+      }
+      if (raw.includes('trùng khớp') || raw.includes('CCCD')) {
+        msg =
+          'Tên chủ tài khoản ngân hàng phải trùng khớp 100% với Họ và tên trên Căn cước công dân.'
       }
       setErrorMessage(msg)
     }
@@ -1057,7 +1057,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     className="absolute top-1.5 right-1.5 flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
                   >
                     {bankLookupLoading && <ArrowClockwise size={13} className="animate-spin" />}
-                    <span>{bankLookupLoading ? 'Đang tra...' : 'Tra cứu Napas'}</span>
+                    <span>{lookupButtonLabel}</span>
                   </button>
                 </div>
               </label>

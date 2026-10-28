@@ -157,6 +157,16 @@ export default function LocationAddressSelector({
   const wQuery = removeVietnameseAccents(wardSearch.trim())
   const filteredWards = wards.filter((w) => removeVietnameseAccents(w.name ?? '').includes(wQuery))
 
+  let wardPlaceholder = 'Chọn hoặc gõ tìm Phường/Xã...'
+  if (provinceCode === '') {
+    wardPlaceholder = 'Vui lòng chọn Tỉnh/TP trước'
+  }
+
+  let wardInputClass = SEARCH_INPUT_CLASS
+  if (provinceCode === '') {
+    wardInputClass = `${SEARCH_INPUT_CLASS} cursor-not-allowed opacity-60`
+  }
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -257,14 +267,8 @@ export default function LocationAddressSelector({
                   setWardDropdownOpen(true)
                 }
               }}
-              placeholder={
-                provinceCode === ''
-                  ? 'Vui lòng chọn Tỉnh/TP trước'
-                  : 'Chọn hoặc gõ tìm Phường/Xã...'
-              }
-              className={`${SEARCH_INPUT_CLASS} ${
-                provinceCode === '' ? 'cursor-not-allowed opacity-60' : ''
-              }`}
+              placeholder={wardPlaceholder}
+              className={wardInputClass}
             />
             <MagnifyingGlass
               size={15}
