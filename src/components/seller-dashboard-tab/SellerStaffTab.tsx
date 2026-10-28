@@ -40,7 +40,8 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
-import { takeData } from '@/lib/apiAdapters'
+import { apiErrorText, takeData } from '@/lib/apiAdapters'
+import { ApiError } from '@/lib/apiFetch'
 import { formatDateTime } from '@/lib/format'
 import { auditItem, memberItem, roleItem } from '@/lib/sellerAdapters'
 import { formatTargetType, getAuditActionBadgeMeta, permissionLabel } from '@/lib/sellerPermissions'
@@ -175,8 +176,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         setSelectedPermissions([])
       },
       onError: function (err: unknown) {
-        const errObj = err as { detail?: string }
-        setRoleError(errObj.detail ?? 'Có lỗi xảy ra khi tạo vai trò.')
+        setRoleError(apiErrorText(err, 'Có lỗi xảy ra khi tạo vai trò.'))
       },
     },
   })
@@ -199,8 +199,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         setSelectedPermissions([])
       },
       onError: function (err: unknown) {
-        const errObj = err as { detail?: string }
-        setRoleError(errObj.detail ?? 'Có lỗi xảy ra khi sửa vai trò.')
+        setRoleError(apiErrorText(err, 'Có lỗi xảy ra khi sửa vai trò.'))
       },
     },
   })
@@ -220,8 +219,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         setNotification('Đã xóa vai trò thành công!')
       },
       onError: function (err: unknown) {
-        const errObj = err as { detail?: string }
-        setNotification(errObj.detail ?? 'Không thể xóa vai trò này.')
+        setNotification(apiErrorText(err, 'Không thể xóa vai trò này.'))
       },
     },
   })
@@ -244,16 +242,17 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         setIsInviteModalOpen(false)
       },
       onError: function (err: unknown) {
-        const errObj = err as { status?: number; detail?: string }
+        let status = 0
+        if (err instanceof ApiError) {
+          status = err.status
+        }
         let msg = 'Có lỗi xảy ra khi gửi lời mời.'
-        if (errObj.status === 404) {
+        if (status === 404) {
           msg = 'Email chưa đăng ký tài khoản trên hệ thống.'
-        }
-        if (errObj.status === 409) {
+        } else if (status === 409) {
           msg = 'Tài khoản này đã là thành viên hoặc đang có lời mời chờ.'
-        }
-        if (errObj.detail) {
-          msg = errObj.detail
+        } else {
+          msg = apiErrorText(err, msg)
         }
         setInviteError(msg)
       },
@@ -274,8 +273,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         setNotification('Đã thu hồi lời mời thành công!')
       },
       onError: function (err: unknown) {
-        const errObj = err as { detail?: string }
-        setNotification(errObj.detail ?? 'Không thể thu hồi lời mời.')
+        setNotification(apiErrorText(err, 'Không thể thu hồi lời mời.'))
       },
     },
   })
@@ -294,8 +292,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         setNotification('Đã cập nhật trạng thái nhân viên thành công!')
       },
       onError: function (err: unknown) {
-        const errObj = err as { detail?: string }
-        setNotification(errObj.detail ?? 'Không thể đổi trạng thái nhân viên.')
+        setNotification(apiErrorText(err, 'Không thể đổi trạng thái nhân viên.'))
       },
     },
   })
@@ -315,8 +312,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         setNotification('Đã đổi vai trò nhân viên thành công!')
       },
       onError: function (err: unknown) {
-        const errObj = err as { detail?: string }
-        setNotification(errObj.detail ?? 'Không thể đổi vai trò.')
+        setNotification(apiErrorText(err, 'Không thể đổi vai trò.'))
       },
     },
   })

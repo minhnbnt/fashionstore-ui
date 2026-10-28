@@ -170,3 +170,11 @@ export function hookErrorMessage(endpoint: string, error: unknown): string {
   }
   return apiErrorMessage(endpoint, 0)
 }
+
+/** Message lỗi thân thiện từ BE (apiFetch đã map detail/message vào ApiError.message), lỗi lạ thì fallback */
+export function apiErrorText(err: unknown, fallback: string): string {
+  if (err instanceof ApiError && err.message.trim() !== '') {
+    return err.message
+  }
+  return fallback
+}
