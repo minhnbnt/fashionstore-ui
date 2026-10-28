@@ -136,6 +136,13 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     404: 'Đơn hàng không tồn tại.',
     409: 'Đơn đã bàn giao vận chuyển, đã giao hoặc đã hủy. Tải lại danh sách để xem trạng thái mới.',
   },
+  orderDetail: {
+    404: 'Đơn hàng không tồn tại hoặc không phải của bạn.',
+  },
+  orderCancel: {
+    404: 'Đơn hàng không tồn tại hoặc không phải của bạn.',
+    409: 'Đơn đã được shop xác nhận nên không hủy được nữa. Tải lại để xem trạng thái mới.',
+  },
   adminHolidays: {
     400: 'Năm không hợp lệ.',
     403: 'Bạn không có quyền quản lý lịch nghỉ lễ.',
@@ -169,4 +176,12 @@ export function hookErrorMessage(endpoint: string, error: unknown): string {
     return apiErrorMessage(endpoint, error.status)
   }
   return apiErrorMessage(endpoint, 0)
+}
+
+/** Message lỗi thân thiện từ BE (apiFetch đã map detail/message vào ApiError.message), lỗi lạ thì fallback */
+export function apiErrorText(err: unknown, fallback: string): string {
+  if (err instanceof ApiError && err.message.trim() !== '') {
+    return err.message
+  }
+  return fallback
 }
