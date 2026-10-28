@@ -26,13 +26,14 @@ import {
   SquaresFour,
   VideoCamera,
   Gear,
-  Ticket,
+  DotsSixVertical,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
 import { takeData, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
+import { reorderBlocks } from '@/lib/decoration'
 import { decorationBlocks, decorationDraftJson } from '@/lib/sellerAdapters'
 import { useSellerPermissions } from '@/lib/sellerPermissions'
 
@@ -118,27 +119,46 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
   }
 
   const handleMoveUp = (index: number) => {
-    if (index === 0) return
-    const updated = [...blocks]
-    const temp = updated[index - 1]
-    const current = updated[index]
-    if (temp && current) {
-      updated[index - 1] = current
-      updated[index] = temp
-      setDraftBlocks(updated)
-    }
+    setDraftBlocks(reorderBlocks(blocks, index, index - 1))
   }
 
   const handleMoveDown = (index: number) => {
-    if (index === blocks.length - 1) return
-    const updated = [...blocks]
-    const temp = updated[index + 1]
-    const current = updated[index]
-    if (temp && current) {
-      updated[index + 1] = current
-      updated[index] = temp
-      setDraftBlocks(updated)
+    setDraftBlocks(reorderBlocks(blocks, index, index + 1))
+  }
+
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+    setDraggedIdx(index)
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragOverIdx !== index) {
+      setDragOverIdx(index)
     }
+  }
+
+  const handleDragLeave = () => {
+    setDragOverIdx(null)
+  }
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault()
+    const sourceIndex = draggedIdx
+    setDraggedIdx(null)
+    setDragOverIdx(null)
+    if (sourceIndex === null) return
+    setDraftBlocks(reorderBlocks(blocks, sourceIndex, targetIndex))
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null)
+    setDragOverIdx(null)
   }
 
   const handleDelete = (id: string) => {
@@ -296,115 +316,140 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
           </div>
 
           <div className="space-y-2">
-            {blocks.map((block, idx) => (
-              <div
-                key={block.id}
-                className="flex items-center justify-between rounded-lg border bg-zinc-50 p-3 transition-all hover:border-indigo-300 hover:bg-white dark:border-white/10 dark:bg-white/5"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-400 dark:bg-white/10 dark:text-zinc-500">
-                    {idx + 1}
-                  </span>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      {(block.type === 'BANNER_SLIDER' || block.type === 'BANNER') && (
-                        <ImageIcon size={14} className="text-blue-500" />
-                      )}
-                      {block.type === 'FLASH_SALE' && (
-                        <Lightning size={14} className="text-amber-500" />
-                      )}
-                      {(block.type === 'PRODUCT_COLLECTION' || block.type === 'COLLECTION') && (
-                        <SquaresFour size={14} className="text-emerald-500" />
-                      )}
-                      {block.type === 'CATEGORY_GRID' && (
-                        <SquaresFour size={14} className="text-sky-500" />
-                      )}
-                      {block.type === 'VOUCHER_CAROUSEL' && (
-                        <Ticket size={14} className="text-rose-500" />
-                      )}
-                      {block.type === 'VIDEO' && (
-                        <VideoCamera size={14} className="text-indigo-500" />
-                      )}
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-100">
-                        {block.title}
+            {blocks.map((block, idx) => {
+              const isDragging = draggedIdx === idx
+              const isDragOver = dragOverIdx === idx
+              let blockClass =
+                'flex items-center justify-between rounded-lg border bg-zinc-50 p-3 transition-all hover:border-indigo-300 hover:bg-white dark:border-white/10 dark:bg-white/5'
+              if (isDragging) {
+                blockClass += ' opacity-50 ring-2 ring-indigo-400'
+              }
+              if (isDragOver) {
+                blockClass +=
+                  ' border-t-2 border-t-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20'
+              }
+
+              return (
+                <div
+                  key={block.id}
+                  draggable={can('DECORATION_WRITE')}
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  className={blockClass}
+                >
+                  <div className="flex items-center gap-3">
+                    {can('DECORATION_WRITE') && (
+                      <span
+                        className="cursor-grab text-zinc-400 hover:text-zinc-600 active:cursor-grabbing dark:text-zinc-500"
+                        title="Kéo thả để sắp xếp vị trí"
+                      >
+                        <DotsSixVertical size={16} />
+                      </span>
+                    )}
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-400 dark:bg-white/10 dark:text-zinc-500">
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        {(block.type === 'BANNER_SLIDER' || block.type === 'BANNER') && (
+                          <ImageIcon size={14} className="text-blue-500" />
+                        )}
+                        {block.type === 'FLASH_SALE' && (
+                          <Lightning size={14} className="text-amber-500" />
+                        )}
+                        {(block.type === 'PRODUCT_COLLECTION' || block.type === 'COLLECTION') && (
+                          <SquaresFour size={14} className="text-emerald-500" />
+                        )}
+                        {block.type === 'CATEGORY_GRID' && (
+                          <SquaresFour size={14} className="text-sky-500" />
+                        )}
+                        {block.type === 'VIDEO' && (
+                          <VideoCamera size={14} className="text-indigo-500" />
+                        )}
+                        <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-100">
+                          {block.title}
+                        </span>
+                      </div>
+                      <span className="font-mono text-[10px] tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
+                        {block.type}
                       </span>
                     </div>
-                    <span className="font-mono text-[10px] tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
-                      {block.type}
-                    </span>
                   </div>
-                </div>
 
-                {can('DECORATION_WRITE') && (
-                  <div className="flex items-center gap-1">
-                    {/* Config Button for Slider / Collection */}
-                    {(block.type === 'BANNER_SLIDER' ||
-                      block.type === 'BANNER' ||
-                      block.type === 'PRODUCT_COLLECTION' ||
-                      block.type === 'COLLECTION') && (
+                  {can('DECORATION_WRITE') && (
+                    <div className="flex items-center gap-1">
+                      {/* Config Button for Slider / Collection */}
+                      {(block.type === 'BANNER_SLIDER' ||
+                        block.type === 'BANNER' ||
+                        block.type === 'PRODUCT_COLLECTION' ||
+                        block.type === 'COLLECTION') && (
+                        <button
+                          type="button"
+                          title="Cấu hình chi tiết module"
+                          onClick={() => {
+                            setEditingBlock(block)
+                            if (block.type === 'BANNER_SLIDER' || block.type === 'BANNER') {
+                              setIsSliderModalOpen(true)
+                            } else {
+                              setIsCollectionModalOpen(true)
+                            }
+                          }}
+                          className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
+                        >
+                          <Gear size={15} />
+                        </button>
+                      )}
+
+                      {/* Reorder Buttons */}
                       <button
                         type="button"
-                        title="Cấu hình chi tiết module"
-                        onClick={() => {
-                          setEditingBlock(block)
-                          if (block.type === 'BANNER_SLIDER' || block.type === 'BANNER') {
-                            setIsSliderModalOpen(true)
-                          } else {
-                            setIsCollectionModalOpen(true)
-                          }
-                        }}
+                        title="Di chuyển lên"
+                        onClick={() => handleMoveUp(idx)}
+                        disabled={idx === 0}
+                        className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
+                      >
+                        <ArrowUp size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        title="Di chuyển xuống"
+                        onClick={() => handleMoveDown(idx)}
+                        disabled={idx === blocks.length - 1}
+                        className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
+                      >
+                        <ArrowDown size={14} />
+                      </button>
+
+                      {/* Toggle Visibility */}
+                      <button
+                        type="button"
+                        title="Ẩn/Hiện module"
+                        onClick={() => handleToggle(block.id)}
                         className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
                       >
-                        <Gear size={15} />
+                        {block.enabled && <Eye size={15} className="text-emerald-600" />}
+                        {!block.enabled && (
+                          <EyeSlash size={15} className="text-zinc-400 dark:text-zinc-500" />
+                        )}
                       </button>
-                    )}
 
-                    {/* Reorder Buttons */}
-                    <button
-                      type="button"
-                      title="Di chuyển lên"
-                      onClick={() => handleMoveUp(idx)}
-                      disabled={idx === 0}
-                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
-                    >
-                      <ArrowUp size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      title="Di chuyển xuống"
-                      onClick={() => handleMoveDown(idx)}
-                      disabled={idx === blocks.length - 1}
-                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
-                    >
-                      <ArrowDown size={14} />
-                    </button>
-
-                    {/* Toggle Visibility */}
-                    <button
-                      type="button"
-                      title="Ẩn/Hiện module"
-                      onClick={() => handleToggle(block.id)}
-                      className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
-                    >
-                      {block.enabled && <Eye size={15} className="text-emerald-600" />}
-                      {!block.enabled && (
-                        <EyeSlash size={15} className="text-zinc-400 dark:text-zinc-500" />
-                      )}
-                    </button>
-
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      title="Xóa module"
-                      onClick={() => handleDelete(block.id)}
-                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-white/10"
-                    >
-                      <Trash size={14} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+                      {/* Delete */}
+                      <button
+                        type="button"
+                        title="Xóa module"
+                        onClick={() => handleDelete(block.id)}
+                        className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-white/10"
+                      >
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           <div className="rounded border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800">
@@ -710,7 +755,6 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   Bộ sưu tập nổi bật (New / Best Seller / Sale Off)
                 </option>
                 <option value="CATEGORY_GRID">Danh mục nổi bật của gian hàng</option>
-                <option value="VOUCHER_CAROUSEL">Băng chuyền Voucher giảm giá</option>
                 <option value="BANNER">Banner đơn tĩnh</option>
                 <option value="FLASH_SALE">Đồng hồ Flash Sale & Sản phẩm hot</option>
                 <option value="COLLECTION">Danh mục sản phẩm cơ bản</option>

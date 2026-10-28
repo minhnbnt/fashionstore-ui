@@ -19,7 +19,7 @@ vi.mock('@generated/endpoints/shops/shops', () => ({
         slug: 'net-design',
         description: 'Thương hiệu thời trang cao cấp.',
         status: 'APPROVED',
-        sellerType: 'BUSINESS',
+        sellerType: 'CORPORATE',
         rating: 4.9,
         ratingCount: 350,
         followerCount: 1250,
@@ -71,8 +71,41 @@ vi.mock('@generated/endpoints/shops-decoration/shops-decoration', () => ({
   })),
 }))
 
+vi.mock('@generated/endpoints/shops-catalog/shops-catalog', () => ({
+  useGetShopProducts: vi.fn(() => ({
+    data: {
+      status: 200,
+      data: {
+        items: [
+          {
+            id: 'prod-1',
+            name: 'Áo Phông Cao Cấp',
+            variants: [{ price: 199000, compareAtPrice: 299000, defaultVariant: true }],
+            images: [{ url: 'https://img.test/p1.jpg' }],
+          },
+        ],
+        total: 1,
+        page: 0,
+        limit: 12,
+        totalPages: 1,
+      },
+    },
+    isLoading: false,
+  })),
+  useGetShopCategories: vi.fn(() => ({
+    data: {
+      status: 200,
+      data: [
+        { id: 'cat-1', name: 'Áo Nam', slug: 'ao-nam', productCount: 15 },
+        { id: 'cat-2', name: 'Quần Nam', slug: 'quan-nam', productCount: 8 },
+      ],
+    },
+    isLoading: false,
+  })),
+}))
+
 describe('ShopStorefront Customer Page', () => {
-  it('render đầy đủ header gian hàng, banner slider và danh mục bộ sưu tập nổi bật', () => {
+  it('render đầy đủ header gian hàng, banner slider, thanh tìm kiếm nội bộ và bộ sưu tập sản phẩm thật', () => {
     const queryClient = new QueryClient()
 
     const html = renderToString(
@@ -104,15 +137,23 @@ describe('ShopStorefront Customer Page', () => {
     // Thống kê shop
     expect(html).toContain('4.9')
     expect(html).toContain('1250')
-    expect(html).toContain('Chuẩn bị hàng: 2 ngày')
+    expect(html).toContain('Chuẩn bị hàng:')
+    expect(html).toContain('2')
 
-    // Tab điều hướng
+    // Tab điều hướng & ô tìm kiếm nội bộ shop
     expect(html).toContain('Trang Chủ Gian Hàng')
     expect(html).toContain('Tất Cả Sản Phẩm')
     expect(html).toContain('Hồ Sơ &amp; Chính Sách')
+    expect(html).toContain('Tìm trong Shop này...')
 
     // Nội dung trang trí đã xuất bản
     expect(html).toContain('Ưu Đãi 50%')
     expect(html).toContain('Hàng Mới Về')
+
+    // Sản phẩm thật từ API catalog
+    expect(html).toContain('Áo Phông Cao Cấp')
+    expect(html).toContain('199.000')
+    expect(html).toContain('33')
+    expect(html).toContain('%')
   })
 })

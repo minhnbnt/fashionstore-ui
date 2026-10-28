@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
 import {
@@ -18,7 +18,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import UserAvatar from '@/components/UserAvatar'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
 import { useSessionQuery } from '@/hooks/useSession'
-import { takeData } from '@/lib/apiAdapters'
+import { apiErrorText, takeData } from '@/lib/apiAdapters'
 import { getRoleFromSession } from '@/lib/auth'
 import { formatDateTime } from '@/lib/format'
 
@@ -212,11 +212,19 @@ function BuyerChatThread({ conversation, onBack }: ThreadProps) {
   )
 }
 
+export interface OpenChatEventDetail {
+  shopId?: string
+  shopName?: string
+  conversationId?: string
+}
+
 interface ListProps {
   conversations: ChatConversationResponse[]
   shopIdFromProduct: string
   shopNameFromProduct: string
   onSelect: (conversationId: string) => void
+  onStartForShop: (shopId: string) => void
+  isStarting: boolean
 }
 
 function BuyerChatList({
@@ -224,23 +232,11 @@ function BuyerChatList({
   shopIdFromProduct,
   shopNameFromProduct,
   onSelect,
+  onStartForShop,
+  isStarting,
 }: ListProps) {
-  const queryClient = useQueryClient()
-
   const existingForShop = conversations.find(function (c) {
     return shopIdFromProduct !== '' && c.shopId === shopIdFromProduct
-  })
-
-  const startMutation = useStartConversation({
-    mutation: {
-      onSuccess: function (data) {
-        const conversation = takeData(data)
-        if (conversation.id !== undefined) {
-          onSelect(conversation.id)
-        }
-        void queryClient.invalidateQueries({ queryKey: getMyConversationsQueryKey() })
-      },
-    },
   })
 
   function handleChatWithShop() {
@@ -249,7 +245,7 @@ function BuyerChatList({
       return
     }
     if (shopIdFromProduct !== '') {
-      startMutation.mutate({ data: { shopId: shopIdFromProduct } })
+      onStartForShop(shopIdFromProduct)
     }
   }
 
@@ -264,7 +260,7 @@ function BuyerChatList({
         <button
           type="button"
           onClick={handleChatWithShop}
-          disabled={startMutation.isPending}
+          disabled={isStarting}
           className="btn-primary m-3 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold disabled:opacity-60"
         >
           <ChatCircleDots size={16} weight="bold" />
@@ -323,16 +319,7 @@ function BuyerChatWidgetBody() {
 
   const [open, setOpen] = useState(false)
   const [selectedConvId, setSelectedConvId] = useState('')
-
-  useEffect(() => {
-    function handleOpenChat() {
-      setOpen(true)
-    }
-    window.addEventListener('fashionstore:open-chat', handleOpenChat)
-    return () => {
-      window.removeEventListener('fashionstore:open-chat', handleOpenChat)
-    }
-  }, [])
+  const [startError, setStartError] = useState('')
 
   const productId = isProductPath(location.pathname)
   const productQuery = useDetail1(productId, {
@@ -355,10 +342,75 @@ function BuyerChatWidgetBody() {
     },
   })
 
-  const conversations: ChatConversationResponse[] = []
-  if (conversationsQuery.data !== undefined) {
-    conversations.push(...takeData(conversationsQuery.data))
-  }
+  const startMutation = useStartConversation({
+    mutation: {
+      onMutate: function () {
+        setStartError('')
+      },
+      onSuccess: function (data) {
+        const conversation = takeData(data)
+        if (conversation.id !== undefined) {
+          setSelectedConvId(conversation.id)
+          markReadMutation.mutate({ id: conversation.id })
+        }
+        void queryClient.invalidateQueries({ queryKey: getMyConversationsQueryKey() })
+      },
+      onError: function (error) {
+        setStartError(apiErrorText(error, 'Không bắt đầu được hội thoại. Vui lòng thử lại.'))
+      },
+    },
+  })
+
+  const conversations: ChatConversationResponse[] = useMemo(
+    function () {
+      if (conversationsQuery.data !== undefined) {
+        return takeData(conversationsQuery.data)
+      }
+      return []
+    },
+    [conversationsQuery.data],
+  )
+
+  useEffect(() => {
+    function handleOpenChat(e: Event) {
+      setOpen(true)
+      if (!(e instanceof CustomEvent)) {
+        return
+      }
+      const detail = e.detail as OpenChatEventDetail | undefined
+      if (detail === undefined || detail === null) {
+        return
+      }
+
+      const targetConvId = detail.conversationId
+      if (targetConvId !== undefined && targetConvId !== '') {
+        setSelectedConvId(targetConvId)
+        markReadMutation.mutate({ id: targetConvId })
+        return
+      }
+
+      const targetShopId = detail.shopId
+      if (targetShopId !== undefined && targetShopId !== '') {
+        if (startMutation.isPending) {
+          return
+        }
+        const existing = conversations.find(function (c) {
+          return c.shopId === targetShopId
+        })
+        if (existing !== undefined && existing.id !== undefined) {
+          setSelectedConvId(existing.id)
+          markReadMutation.mutate({ id: existing.id })
+          return
+        }
+
+        startMutation.mutate({ data: { shopId: targetShopId } })
+      }
+    }
+    window.addEventListener('fashionstore:open-chat', handleOpenChat)
+    return () => {
+      window.removeEventListener('fashionstore:open-chat', handleOpenChat)
+    }
+  }, [conversations, markReadMutation, startMutation])
 
   let product: ProductResponse | null = null
   if (productQuery.data !== undefined) {
@@ -430,12 +482,21 @@ function BuyerChatWidgetBody() {
               }}
             />
           )}
+          {!showThread && startError !== '' && (
+            <p className="px-4 pb-2 text-xs font-semibold text-red-600 dark:text-red-400">
+              {startError}
+            </p>
+          )}
           {!showThread && (
             <BuyerChatList
               conversations={conversations}
               shopIdFromProduct={shopIdFromProduct}
               shopNameFromProduct={shopNameFromProduct}
               onSelect={handleSelect}
+              onStartForShop={function (targetShopId) {
+                startMutation.mutate({ data: { shopId: targetShopId } })
+              }}
+              isStarting={startMutation.isPending}
             />
           )}
         </ChatPanel>
@@ -456,7 +517,8 @@ export default function BuyerChatWidget() {
   if (getRoleFromSession(session) === 'admin') {
     return null
   }
-  if (location.pathname.startsWith('/shop') || location.pathname.startsWith('/admin')) {
+  const isSellerDashboard = location.pathname === '/shop' || location.pathname.startsWith('/shop/')
+  if (isSellerDashboard || location.pathname.startsWith('/admin')) {
     return null
   }
 

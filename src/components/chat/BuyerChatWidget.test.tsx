@@ -26,8 +26,9 @@ vi.mock('@/hooks/useSession', () => ({
   }),
 }))
 
-vi.mock('@/hooks/useWebSocket', () => ({
-  useWebSocket: vi.fn(),
+vi.mock('@/hooks/useChatRealtime', () => ({
+  useChatMessagesRealtime: vi.fn(),
+  useConversationListRealtime: vi.fn(),
 }))
 
 vi.mock('@generated/endpoints/products/products', () => ({
@@ -117,5 +118,33 @@ describe('BuyerChatWidget', () => {
     )
 
     expect(html).toContain('>99+</span>')
+  })
+
+  it('render nút mở khung chat khi buyer đã đăng nhập', () => {
+    vi.mocked(useMyConversations).mockReturnValue({
+      data: {
+        status: 200,
+        data: [
+          {
+            id: 'conv-1',
+            shopId: 'shop-uuid-1',
+            shopName: 'nét Boutique',
+            lastMessageText: 'Chào bạn!',
+            lastMessageAt: '2026-10-27T10:00:00Z',
+            unreadCount: 0,
+          },
+        ],
+      },
+    } as unknown as ReturnType<typeof useMyConversations>)
+
+    const html = renderToString(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ['/shops/net-boutique'] },
+        createElement(BuyerChatWidget, null),
+      ),
+    )
+
+    expect(html).toContain('Mở khung chat')
   })
 })

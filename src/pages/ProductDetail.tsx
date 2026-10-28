@@ -6,6 +6,7 @@ import { useDetail1 } from '@generated/endpoints/products/products'
 import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
 
+import PdpShopCard from '../components/pdp/PdpShopCard'
 import ProductGallery from '../components/pdp/ProductGallery'
 import ProductInfo from '../components/pdp/ProductInfo'
 import ProductTabs from '../components/pdp/ProductTabs'
@@ -105,6 +106,9 @@ export default function ProductDetail() {
         <ProductGallery images={product.images ?? []} name={product.name ?? ''} />
         <ProductInfo product={product} />
       </div>
+      {product.shopId !== undefined && product.shopId !== null && product.shopId !== '' && (
+        <PdpShopCard shopId={product.shopId} />
+      )}
       <div className="mt-4 flex justify-end">
         <ReportProductButton productId={productId} />
       </div>

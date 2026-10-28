@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import {
   ChatCircleDots,
   Heart,
@@ -7,6 +9,8 @@ import {
   Storefront,
   Clock,
   Package,
+  MagnifyingGlass,
+  X,
 } from '@phosphor-icons/react'
 
 import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
@@ -15,6 +19,13 @@ import type { ShopResponse } from '@generated/model/shopResponse'
 
 export type StorefrontTab = 'HOME' | 'PRODUCTS' | 'ABOUT'
 
+function getTabButtonClass(currentTab: StorefrontTab, targetTab: StorefrontTab): string {
+  if (currentTab === targetTab) {
+    return 'flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition-all border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+  }
+  return 'flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition-all border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+}
+
 interface ShopStorefrontHeaderProps {
   shop: ShopResponse
   activeTab: StorefrontTab
@@ -22,6 +33,8 @@ interface ShopStorefrontHeaderProps {
   isFollowing?: boolean
   onToggleFollow?: () => void
   onOpenChat?: () => void
+  searchQuery?: string
+  onSearch?: (keyword: string) => void
 }
 
 export default function ShopStorefrontHeader({
@@ -31,7 +44,29 @@ export default function ShopStorefrontHeader({
   isFollowing = false,
   onToggleFollow,
   onOpenChat,
+  searchQuery,
+  onSearch,
 }: ShopStorefrontHeaderProps) {
+  const [localSearch, setLocalSearch] = useState<string | null>(null)
+  let searchInput = searchQuery ?? ''
+  if (localSearch !== null) {
+    searchInput = localSearch
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (onSearch) {
+      onSearch(searchInput.trim())
+    }
+    setLocalSearch(null)
+  }
+
+  const handleClearSearch = () => {
+    setLocalSearch(null)
+    if (onSearch) {
+      onSearch('')
+    }
+  }
   let logoSrc = PLACEHOLDER_IMAGE
   if (shop.logoKey !== null && shop.logoKey !== undefined && shop.logoKey !== '') {
     logoSrc = imageUrl(shop.logoKey)
@@ -46,7 +81,8 @@ export default function ShopStorefrontHeader({
   if (shop.rating !== null && shop.rating !== undefined) {
     ratingDisplay = shop.rating.toFixed(1)
   }
-  const isMall = shop.sellerType === 'BUSINESS'
+  // BE chỉ gửi INDIVIDUAL/CORPORATE (CHECK constraint V8__seller_center.sql)
+  const isMall = shop.sellerType === 'CORPORATE'
 
   function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
     e.currentTarget.onerror = null
@@ -170,52 +206,59 @@ export default function ShopStorefrontHeader({
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="mt-6 flex border-b border-zinc-200/80 dark:border-white/10">
-          <button
-            type="button"
-            onClick={() => onTabChange('HOME')}
-            className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition-all ${
-              activeTab === 'HOME' &&
-              'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-            } ${
-              activeTab !== 'HOME' &&
-              'border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-            }`}
-          >
-            <Storefront size={18} />
-            Trang Chủ Gian Hàng
-          </button>
+        {/* Tab Navigation & Internal Search */}
+        <div className="mt-6 flex flex-col gap-3 border-b border-zinc-200/80 pb-2 sm:flex-row sm:items-center sm:justify-between sm:pb-0 dark:border-white/10">
+          <div className="flex overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => onTabChange('HOME')}
+              className={getTabButtonClass(activeTab, 'HOME')}
+            >
+              <Storefront size={18} />
+              Trang Chủ Gian Hàng
+            </button>
 
-          <button
-            type="button"
-            onClick={() => onTabChange('PRODUCTS')}
-            className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition-all ${
-              activeTab === 'PRODUCTS' &&
-              'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-            } ${
-              activeTab !== 'PRODUCTS' &&
-              'border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-            }`}
-          >
-            <Package size={18} />
-            Tất Cả Sản Phẩm
-          </button>
+            <button
+              type="button"
+              onClick={() => onTabChange('PRODUCTS')}
+              className={getTabButtonClass(activeTab, 'PRODUCTS')}
+            >
+              <Package size={18} />
+              Tất Cả Sản Phẩm
+            </button>
 
-          <button
-            type="button"
-            onClick={() => onTabChange('ABOUT')}
-            className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition-all ${
-              activeTab === 'ABOUT' &&
-              'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-            } ${
-              activeTab !== 'ABOUT' &&
-              'border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-            }`}
-          >
-            <ShieldCheck size={18} />
-            Hồ Sơ & Chính Sách
-          </button>
+            <button
+              type="button"
+              onClick={() => onTabChange('ABOUT')}
+              className={getTabButtonClass(activeTab, 'ABOUT')}
+            >
+              <ShieldCheck size={18} />
+              Hồ Sơ & Chính Sách
+            </button>
+          </div>
+
+          {/* Internal Shop Search Bar */}
+          <form onSubmit={handleSearchSubmit} className="relative mb-2 flex items-center sm:mb-0">
+            <input
+              type="text"
+              placeholder="Tìm trong Shop này..."
+              aria-label="Tìm trong Shop"
+              value={searchInput}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-1.5 pr-8 pl-9 text-xs transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none sm:w-60 dark:border-white/10 dark:bg-white/5 dark:focus:bg-[#11182a]"
+            />
+            <MagnifyingGlass size={15} className="absolute left-3 text-zinc-400" />
+            {searchInput !== '' && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                aria-label="Xóa từ khóa tìm kiếm"
+                className="absolute right-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </form>
         </div>
       </div>
     </div>
