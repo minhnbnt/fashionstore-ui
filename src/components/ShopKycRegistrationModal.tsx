@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { useListBanks, useLookupAccount } from '@generated/endpoints/banks/banks'
 import { useRegister } from '@generated/endpoints/shops/shops'
 import { useUpsert } from '@generated/endpoints/users/users'
 import {
+  ArrowClockwise,
   ArrowLeft,
   ArrowRight,
   Bank,
@@ -15,11 +17,14 @@ import {
   WarningCircle,
 } from '@phosphor-icons/react'
 
-import { PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
+import { PLACEHOLDER_IMAGE, apiErrorText, takeData } from '@/lib/apiAdapters'
 import { uploadImage } from '@/lib/uploadImage'
 
+import LocationAddressSelector from './common/LocationAddressSelector'
 import Modal from './Modal'
+import BankSearchSelector from './seller/BankSearchSelector'
 
+import type { BankResponse } from '@/types/bank'
 import type { Step } from '@/types/seller'
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
@@ -35,21 +40,6 @@ interface Props {
   onClose: () => void
   onSuccess: () => void
 }
-
-const VIETNAM_BANKS = [
-  'Vietcombank (VCB)',
-  'MBBank (Quân Đội)',
-  'Techcombank (TCB)',
-  'ACB (Á Châu)',
-  'VPBank (Việt Nam Thịnh Vượng)',
-  'TPBank (Tiên Phong)',
-  'BIDV (Đầu tư và Phát triển VN)',
-  'Agribank (Nông nghiệp & PTNT)',
-  'Sacombank (Sài Gòn Thương Tín)',
-  'OCB (Phương Đông)',
-  'VIB (Quốc Tế)',
-  'HDBank (Phát triển TP.HCM)',
-]
 
 // Recipe input theo form chuẩn (account/AddressFormModal.tsx + docs/design-system.md):
 // pill bo tròn, nền trắng trong mờ, focus xanh dương; dark dùng nền trắng mờ trên panel navy.
@@ -145,11 +135,14 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
   const [businessCertPreview, setBusinessCertPreview] = useState<string | null>(null)
   const [businessCertUploading, setBusinessCertUploading] = useState(false)
 
-  // Step 3: Bank Account for Settlement (Tên chủ TK cho phép người dùng tự điền)
-  const [bankName, setBankName] = useState(VIETNAM_BANKS[0] ?? 'Vietcombank (VCB)')
+  // Step 3: Bank Account for Settlement (Tự động tra cứu Napas 24/7)
+  const [bankName, setBankName] = useState('Vietcombank')
+  const [selectedBankBin, setSelectedBankBin] = useState('970436')
   const [bankAccount, setBankAccount] = useState('')
   const [bankHolder, setBankHolder] = useState('')
-  const [bankHolderTouched, setBankHolderTouched] = useState(false)
+  const [bankLookupLoading, setBankLookupLoading] = useState(false)
+  const [bankLookupError, setBankLookupError] = useState<string | null>(null)
+  const [isNapasVerified, setIsNapasVerified] = useState(false)
 
   // Step 4: Pledges
   const [pledgeGenuine, setPledgeGenuine] = useState(false)
@@ -160,6 +153,50 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
 
   const upsertUser = useUpsert()
   const registerShop = useRegister()
+  const banksQuery = useListBanks()
+  const lookupAccountMutation = useLookupAccount()
+
+  let banksList: BankResponse[] = []
+  if (banksQuery.data !== undefined) {
+    try {
+      banksList = takeData(banksQuery.data)
+    } catch {
+      banksList = []
+    }
+  }
+
+  async function handleLookupAccount(binToUse?: string, accToUse?: string) {
+    const bin = binToUse ?? selectedBankBin
+    const acc = (accToUse ?? bankAccount).trim()
+    if (bin === '' || acc.length < 6) {
+      return
+    }
+    setBankLookupLoading(true)
+    setBankLookupError(null)
+    try {
+      const res = await lookupAccountMutation.mutateAsync({
+        data: {
+          bin,
+          accountNumber: acc,
+        },
+      })
+      const data = takeData(res)
+      if (data.accountName) {
+        setBankHolder(data.accountName)
+        setIsNapasVerified(true)
+      }
+    } catch (err: unknown) {
+      setIsNapasVerified(false)
+      setBankLookupError(
+        apiErrorText(
+          err,
+          'Không tìm thấy tài khoản tại ngân hàng đã chọn. Vui lòng kiểm tra lại số tài khoản.',
+        ),
+      )
+    } finally {
+      setBankLookupLoading(false)
+    }
+  }
 
   if (isOpen === false) {
     return null
@@ -225,22 +262,18 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
   }
 
   function handleLegalNameChange(val: string) {
-    const uppercaseVal = val.toUpperCase()
-    setLegalName(uppercaseVal)
-    if (!bankHolderTouched) {
-      setBankHolder(uppercaseVal)
-    }
-  }
-
-  function handleBankHolderChange(val: string) {
-    setBankHolderTouched(true)
-    setBankHolder(val.toUpperCase())
+    setLegalName(val.toUpperCase())
   }
 
   const isBankHolderMatch =
     bankHolder.trim() !== '' &&
     legalName.trim() !== '' &&
     normalizeName(bankHolder) === normalizeName(legalName)
+
+  let lookupButtonLabel = 'Tra cứu Napas'
+  if (bankLookupLoading) {
+    lookupButtonLabel = 'Đang tra...'
+  }
 
   function validateStep1(): boolean {
     if (name.trim() === '') {
@@ -328,8 +361,10 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
       setErrorMessage('Vui lòng nhập số tài khoản ngân hàng nhận tiền doanh thu.')
       return false
     }
-    if (bankHolder.trim() === '') {
-      setErrorMessage('Vui lòng nhập tên chủ tài khoản ngân hàng.')
+    if (bankHolder.trim() === '' || !isNapasVerified) {
+      setErrorMessage(
+        'Vui lòng hoàn tất tra cứu tài khoản Napas 24/7 để xác thực tên chủ tài khoản ngân hàng.',
+      )
       return false
     }
     if (!isBankHolderMatch) {
@@ -351,9 +386,6 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
     }
     if (currentStep === 2) {
       if (validateStep2()) {
-        if (!bankHolderTouched || bankHolder.trim() === '') {
-          setBankHolder(legalName.trim())
-        }
         setCurrentStep(3)
       }
       return
@@ -433,16 +465,14 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
 
       onSuccess()
     } catch (err: unknown) {
+      const raw = apiErrorText(err, '')
       let msg = 'Đăng ký hồ sơ mở shop không thành công. Vui lòng kiểm tra lại thông tin.'
-      if (err !== null && typeof err === 'object' && 'message' in err) {
-        const raw = String((err as { message?: string }).message)
-        if (raw.includes('409') || raw.includes('Conflict') || raw.includes('taken')) {
-          msg = 'Định danh shop (slug) này đã có người đăng ký. Vui lòng chọn slug khác.'
-        }
-        if (raw.includes('trùng khớp') || raw.includes('CCCD')) {
-          msg =
-            'Tên chủ tài khoản ngân hàng phải trùng khớp 100% với Họ và tên trên Căn cước công dân.'
-        }
+      if (raw.includes('409') || raw.includes('Conflict') || raw.includes('taken')) {
+        msg = 'Định danh shop (slug) này đã có người đăng ký. Vui lòng chọn slug khác.'
+      }
+      if (raw.includes('trùng khớp') || raw.includes('CCCD')) {
+        msg =
+          'Tên chủ tài khoản ngân hàng phải trùng khớp 100% với Họ và tên trên Căn cước công dân.'
       }
       setErrorMessage(msg)
     }
@@ -537,33 +567,27 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                  Số điện thoại liên hệ kho <span className="text-red-500">*</span>
-                  <input
-                    id="input-shop-phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="VD: 0912345678"
-                    className={`${INPUT_BASE} font-medium`}
-                  />
-                </label>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                  Địa chỉ kho lấy hàng <span className="text-red-500">*</span>
-                  <input
-                    id="input-shop-address"
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="VD: 123 Phố Huế, Phường Hàng Bài, Hà Nội"
-                    className={`${INPUT_BASE} font-medium`}
-                  />
-                </label>
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                Số điện thoại liên hệ kho <span className="text-red-500">*</span>
+                <input
+                  id="input-shop-phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="VD: 0912345678"
+                  className={`${INPUT_BASE} font-medium`}
+                />
+              </label>
+            </div>
+
+            <div>
+              <LocationAddressSelector
+                value={address}
+                onChange={setAddress}
+                required
+                idPrefix="input-shop"
+              />
             </div>
 
             <div>
@@ -988,51 +1012,85 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                Ngân hàng thụ hưởng <span className="text-red-500">*</span>
-                <select
-                  id="select-bank-name"
-                  value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                  className={`${INPUT_BASE} font-medium`}
-                >
-                  {VIETNAM_BANKS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+            {/* Bank Selector with Search (50+ banks) */}
+            <BankSearchSelector
+              banks={banksList}
+              selectedBankBin={selectedBankBin}
+              onSelectBank={(bank) => {
+                setSelectedBankBin(bank.bin ?? '')
+                setBankName(bank.shortName ?? bank.name ?? '')
+                setBankHolder('')
+                setIsNapasVerified(false)
+                setBankLookupError(null)
+              }}
+              idPrefix="step3-bank"
+            />
 
             <div>
               <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
                 Số tài khoản ngân hàng <span className="text-red-500">*</span>
-                <input
-                  id="input-bank-account"
-                  type="text"
-                  value={bankAccount}
-                  onChange={(e) => setBankAccount(e.target.value.replace(/\s/g, ''))}
-                  placeholder="VD: 1903829102838 (STK chính chủ)"
-                  className={`${INPUT_BASE} font-mono font-bold`}
-                />
+                <div className="relative mt-1">
+                  <input
+                    id="input-bank-account"
+                    type="text"
+                    value={bankAccount}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9a-zA-Z]/g, '')
+                      setBankAccount(val)
+                      setBankHolder('')
+                      setIsNapasVerified(false)
+                      setBankLookupError(null)
+                    }}
+                    onBlur={() => {
+                      const cleanAcc = bankAccount.trim()
+                      if (cleanAcc.length >= 6 && selectedBankBin && !bankLookupLoading) {
+                        void handleLookupAccount(selectedBankBin, cleanAcc)
+                      }
+                    }}
+                    placeholder="VD: 0011001234567 (STK chính chủ)"
+                    className={`${INPUT_BASE} pr-28 font-mono font-bold`}
+                  />
+                  <button
+                    type="button"
+                    disabled={bankLookupLoading || bankAccount.length < 6}
+                    onClick={() => void handleLookupAccount()}
+                    className="absolute top-1.5 right-1.5 flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {bankLookupLoading && <ArrowClockwise size={13} className="animate-spin" />}
+                    <span>{lookupButtonLabel}</span>
+                  </button>
+                </div>
               </label>
+
+              {bankLookupError && (
+                <p className="mt-1.5 text-xs font-medium text-red-500">⚠️ {bankLookupError}</p>
+              )}
             </div>
 
-            {/* Tên chủ tài khoản: CHO PHÉP TỰ ĐIỀN */}
+            {/* Tên chủ tài khoản: Tự động điền từ Napas 24/7 */}
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                Tên chủ tài khoản ngân hàng <span className="text-red-500">*</span>
-                <input
-                  id="input-bank-holder"
-                  type="text"
-                  value={bankHolder}
-                  onChange={(e) => handleBankHolderChange(e.target.value)}
-                  placeholder="VD: NGUYEN VAN A"
-                  className={`${INPUT_BASE} font-bold tracking-wider uppercase`}
-                />
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="input-bank-holder"
+                  className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
+                >
+                  Tên chủ tài khoản ngân hàng <span className="text-red-500">*</span>
+                </label>
+                {isNapasVerified && (
+                  <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                    <CheckCircle size={12} weight="fill" />
+                    Đã xác thực Napas 24/7
+                  </span>
+                )}
+              </div>
+              <input
+                id="input-bank-holder"
+                type="text"
+                readOnly
+                value={bankHolder}
+                placeholder="Tự động điền sau khi tra cứu Napas"
+                className={`${INPUT_BASE} cursor-not-allowed bg-zinc-100 font-bold tracking-wider uppercase dark:bg-white/5`}
+              />
 
               {/* Real-time Match Validation Alert */}
               {bankHolder.trim() !== '' && isBankHolderMatch && (
