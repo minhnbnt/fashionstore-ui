@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import { getFirstAllowedTab, sellerTabParam } from '@/lib/sellerNavigation'
 import { canSeeTab } from '@/lib/sellerPermissions'

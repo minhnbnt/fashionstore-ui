@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes, useSearchParams } from 'react-router'
 // @vitest-environment happy-dom
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import Cart from './Cart'
 

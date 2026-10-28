@@ -3,7 +3,7 @@ import { renderToString } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import ShopDecorationRenderer from './ShopDecorationRenderer'
 

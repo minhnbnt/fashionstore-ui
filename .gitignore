@@ -31,3 +31,5 @@ generated
 
 # Worktrees
 .worktrees/
+.vitest/
+.vite-hooks/_/
