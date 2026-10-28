@@ -272,7 +272,9 @@ export default function MyShopsTab({ onOpenRegisterModal }: MyShopsTabProps) {
                         type="button"
                         disabled={resubmitMutation.isPending}
                         onClick={function () {
-                          resubmitMutation.mutate({ id: shop.shopId })
+                          if (shop.shopId !== undefined) {
+                            resubmitMutation.mutate({ id: shop.shopId })
+                          }
                         }}
                         className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
                       >

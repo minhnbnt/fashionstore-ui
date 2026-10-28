@@ -34,7 +34,7 @@ export default function NotificationBell() {
   const { data: session } = useSessionQuery()
   const isLoggedIn = session !== null && session !== undefined
 
-  const unreadQuery = useGetUnreadNotificationCount({
+  const unreadQuery = useGetUnreadNotificationCount(undefined, {
     query: {
       refetchInterval: 30000,
       enabled: isLoggedIn,
@@ -124,7 +124,7 @@ export default function NotificationBell() {
   }
 
   function handleMarkAllRead() {
-    markAllMutation.mutate()
+    markAllMutation.mutate({})
   }
 
   return (
