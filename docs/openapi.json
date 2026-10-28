@@ -187,7 +187,9 @@
   "paths": {
     "/api/users/me/addresses/{id}": {
       "put": {
-        "tags": ["Addresses"],
+        "tags": [
+          "Addresses"
+        ],
         "summary": "Sua dia chi",
         "description": "Gửi đủ các field, thay thế toàn bộ địa chỉ. Giữ default như cũ trừ khi defaultAddress = true.",
         "operationId": "update",
@@ -297,7 +299,9 @@
         ]
       },
       "delete": {
-        "tags": ["Addresses"],
+        "tags": [
+          "Addresses"
+        ],
         "summary": "Xoa dia chi",
         "description": "Xoa dung default ma con dia chi khac thi dia chi lau doi nhat len thay. Xoa cai cuoi cung thi danh sach rong.",
         "operationId": "delete",
@@ -377,7 +381,9 @@
     },
     "/api/users/me/addresses/{id}/default": {
       "put": {
-        "tags": ["Addresses"],
+        "tags": [
+          "Addresses"
+        ],
         "summary": "Doi default",
         "description": "Dat dia chi nay lam default, default cu tu nha.",
         "operationId": "changeDefault",
@@ -474,7 +480,9 @@
     },
     "/api/shops/{shopId}/products/{id}": {
       "get": {
-        "tags": ["Shop - Products"],
+        "tags": [
+          "Shop - Products"
+        ],
         "summary": "Chi tiết product cho seller",
         "description": "Lấy chi tiết product thuộc shop để edit hoặc xem.",
         "operationId": "getDetail",
@@ -584,7 +592,9 @@
         ]
       },
       "put": {
-        "tags": ["Shop - Products"],
+        "tags": [
+          "Shop - Products"
+        ],
         "summary": "Sửa product",
         "description": "Id product phải thuộc đúng shop trên path, không là 404. Field null = giữ nguyên.",
         "operationId": "update_1",
@@ -709,7 +719,9 @@
         ]
       },
       "delete": {
-        "tags": ["Shop - Products"],
+        "tags": [
+          "Shop - Products"
+        ],
         "summary": "Xóa mềm sản phẩm",
         "description": "Chuyển trạng thái sang DELETED. Không thể xóa nếu có đơn đang xử lý.",
         "operationId": "deleteProduct",
@@ -799,7 +811,9 @@
     },
     "/api/shops/{id}": {
       "put": {
-        "tags": ["Shops"],
+        "tags": [
+          "Shops"
+        ],
         "summary": "Sửa thông tin cơ bản shop",
         "description": "OWNER/STAFF của shop. Field null = giữ nguyên.",
         "operationId": "update_2",
@@ -911,7 +925,9 @@
     },
     "/api/seller/shops/{shopId}/roles/{roleId}": {
       "put": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Cập nhật vai trò tùy chỉnh",
         "description": "Chỉnh sửa tên và quyền của vai trò tùy chỉnh. Không thể sửa vai trò hệ thống.",
         "operationId": "updateRole",
@@ -1041,7 +1057,9 @@
         ]
       },
       "delete": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Xóa vai trò tùy chỉnh",
         "description": "Xóa một vai trò tùy chỉnh. Không thể xóa vai trò hệ thống.",
         "operationId": "deleteRole",
@@ -1131,7 +1149,9 @@
     },
     "/api/seller/shops/{shopId}/decoration/draft": {
       "put": {
-        "tags": ["Seller - Decoration"],
+        "tags": [
+          "Seller - Decoration"
+        ],
         "summary": "Lưu nháp bố cục trang trí",
         "description": "Lưu lại bản nháp các block (Banner, Sản phẩm nổi bật, Bộ sưu tập, Đếm ngược Flash Sale, Video) để xem trước.",
         "operationId": "saveDraft",
@@ -1241,7 +1261,9 @@
         ]
       },
       "delete": {
-        "tags": ["Seller - Decoration"],
+        "tags": [
+          "Seller - Decoration"
+        ],
         "summary": "Hủy bỏ bản nháp",
         "description": "Hủy các thay đổi trong bản nháp chưa xuất bản.",
         "operationId": "discardDraft",
@@ -1338,7 +1360,9 @@
     },
     "/api/products/{productId}/reviews": {
       "get": {
-        "tags": ["Reviews"],
+        "tags": [
+          "Reviews"
+        ],
         "summary": "Liet ke danh gia",
         "description": "Public, moi nhat truoc.",
         "operationId": "list",
@@ -1429,7 +1453,9 @@
         }
       },
       "put": {
-        "tags": ["Reviews"],
+        "tags": [
+          "Reviews"
+        ],
         "summary": "Sua danh gia cua minh",
         "operationId": "update_3",
         "parameters": [
@@ -1533,7 +1559,9 @@
         ]
       },
       "post": {
-        "tags": ["Reviews"],
+        "tags": [
+          "Reviews"
+        ],
         "summary": "Viet danh gia",
         "description": "Chi buyer da nhan hang (don DELIVERED + da xac nhan) moi viet duoc, moi product 1 bai.",
         "operationId": "create",
@@ -1648,7 +1676,9 @@
         ]
       },
       "delete": {
-        "tags": ["Reviews"],
+        "tags": [
+          "Reviews"
+        ],
         "summary": "Xoa danh gia cua minh",
         "operationId": "delete_1",
         "parameters": [
@@ -1727,7 +1757,9 @@
     },
     "/api/cart/items/{variantId}": {
       "put": {
-        "tags": ["Cart"],
+        "tags": [
+          "Cart"
+        ],
         "summary": "Doi so luong",
         "description": "Muon xoa han thi dung DELETE.",
         "operationId": "updateQuantity",
@@ -1837,7 +1869,9 @@
         ]
       },
       "delete": {
-        "tags": ["Cart"],
+        "tags": [
+          "Cart"
+        ],
         "summary": "Xoa item khoi gio",
         "operationId": "removeItem",
         "parameters": [
@@ -1933,7 +1967,9 @@
     },
     "/api/admin/settings": {
       "get": {
-        "tags": ["Admin - Settings"],
+        "tags": [
+          "Admin - Settings"
+        ],
         "summary": "Xem cấu hình chung",
         "description": "Toàn bộ cấu hình chung hiện hành: thông tin sàn, vận chuyển, giữ đơn, tự hoàn tất, giới hạn COD.",
         "operationId": "getSystemSettings",
@@ -2016,7 +2052,9 @@
         ]
       },
       "put": {
-        "tags": ["Admin - Settings"],
+        "tags": [
+          "Admin - Settings"
+        ],
         "summary": "Cập nhật cấu hình chung",
         "description": "Cập nhật một phần: field bỏ trống giữ nguyên. Chỉ key đổi giá trị mới được ghi lịch sử. codMaxTotal = 0 nghĩa là không giới hạn, ngược lại phải không nhỏ hơn codMinTotal.",
         "operationId": "updateSystemSettings",
@@ -2116,7 +2154,9 @@
     },
     "/api/admin/popups/{id}": {
       "put": {
-        "tags": ["Admin - Popups"],
+        "tags": [
+          "Admin - Popups"
+        ],
         "summary": "Sửa popup",
         "description": "Thay toàn bộ nội dung, lịch chạy, bật/tắt.",
         "operationId": "updatePopup",
@@ -2231,7 +2271,9 @@
         ]
       },
       "delete": {
-        "tags": ["Admin - Popups"],
+        "tags": [
+          "Admin - Popups"
+        ],
         "summary": "Xóa popup",
         "description": "Xóa hẳn. Muốn tạm ẩn thì tắt active.",
         "operationId": "deletePopup",
@@ -2311,7 +2353,9 @@
     },
     "/api/admin/pages/{id}": {
       "get": {
-        "tags": ["Admin - Pages"],
+        "tags": [
+          "Admin - Pages"
+        ],
         "summary": "Chi tiết trang tĩnh",
         "description": "Kèm nội dung Markdown, kể cả nháp.",
         "operationId": "getAdminPage",
@@ -2411,7 +2455,9 @@
         ]
       },
       "put": {
-        "tags": ["Admin - Pages"],
+        "tags": [
+          "Admin - Pages"
+        ],
         "summary": "Sửa trang tĩnh",
         "description": "Sửa trang đã xuất bản thì public thấy ngay. Đổi slug làm link cũ hết hiệu lực.",
         "operationId": "updatePage",
@@ -2531,7 +2577,9 @@
         ]
       },
       "delete": {
-        "tags": ["Admin - Pages"],
+        "tags": [
+          "Admin - Pages"
+        ],
         "summary": "Xóa trang tĩnh",
         "description": "Chỉ xóa được trang nháp.",
         "operationId": "deletePage",
@@ -2611,7 +2659,9 @@
     },
     "/api/admin/holidays/{day}": {
       "put": {
-        "tags": ["Admin - Holidays"],
+        "tags": [
+          "Admin - Holidays"
+        ],
         "summary": "Thêm/sửa ngày lễ",
         "description": "Ghi tay, nguồn MANUAL: đồng bộ Calendarific không bao giờ ghi đè. Ngày đã bỏ được bật lại.",
         "operationId": "saveHoliday",
@@ -2722,7 +2772,9 @@
         ]
       },
       "delete": {
-        "tags": ["Admin - Holidays"],
+        "tags": [
+          "Admin - Holidays"
+        ],
         "summary": "Bỏ ngày lễ",
         "description": "Không xóa hẳn: đánh dấu đã bỏ (nguồn MANUAL) để lần đồng bộ sau không thêm lại. Ngày đó tính là ngày làm việc trong SLA.",
         "operationId": "disableHoliday",
@@ -2825,7 +2877,9 @@
     },
     "/api/admin/faqs/{id}": {
       "put": {
-        "tags": ["Admin - FAQ"],
+        "tags": [
+          "Admin - FAQ"
+        ],
         "summary": "Sửa câu hỏi",
         "description": "Thay toàn bộ nhóm, câu hỏi, câu trả lời, thứ tự, hiển thị.",
         "operationId": "updateFaq",
@@ -2940,7 +2994,9 @@
         ]
       },
       "delete": {
-        "tags": ["Admin - FAQ"],
+        "tags": [
+          "Admin - FAQ"
+        ],
         "summary": "Xóa câu hỏi",
         "description": "Xóa hẳn. Muốn tạm ẩn thì bỏ published.",
         "operationId": "deleteFaq",
@@ -3020,7 +3076,9 @@
     },
     "/api/admin/banners/{id}": {
       "put": {
-        "tags": ["Admin - Banners"],
+        "tags": [
+          "Admin - Banners"
+        ],
         "summary": "Sửa banner",
         "description": "Thay toàn bộ nội dung, lịch chạy, bật/tắt.",
         "operationId": "updateBanner",
@@ -3135,7 +3193,9 @@
         ]
       },
       "delete": {
-        "tags": ["Admin - Banners"],
+        "tags": [
+          "Admin - Banners"
+        ],
         "summary": "Xóa banner",
         "description": "Xóa hẳn. Muốn tạm ẩn thì tắt active.",
         "operationId": "deleteBanner",
@@ -3215,7 +3275,9 @@
     },
     "/api/wishlist/items": {
       "post": {
-        "tags": ["Wishlist"],
+        "tags": [
+          "Wishlist"
+        ],
         "summary": "Luu/bo luu",
         "description": "Chua luu thi luu, da luu thi bo. Mon an/khong ban duoc thi 404.",
         "operationId": "toggle",
@@ -3310,7 +3372,9 @@
     },
     "/api/users": {
       "post": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Tạo hoặc cập nhật profile",
         "description": "id lấy từ JWT sub, không tin id client gửi. Gọi 1 lần sau login, lần sau là update.",
         "operationId": "upsert",
@@ -3405,7 +3469,9 @@
     },
     "/api/users/me/addresses": {
       "get": {
-        "tags": ["Addresses"],
+        "tags": [
+          "Addresses"
+        ],
         "summary": "Liet ke dia chi",
         "description": "Dia chi xep theo thu tu tao, lau doi nhat truoc.",
         "operationId": "list_1",
@@ -3489,7 +3555,9 @@
         ]
       },
       "post": {
-        "tags": ["Addresses"],
+        "tags": [
+          "Addresses"
+        ],
         "summary": "Them dia chi",
         "description": "Toi da 10 dia chi. Dia chi dau tien tu thanh default.",
         "operationId": "add",
@@ -3584,7 +3652,9 @@
     },
     "/api/uploads/presign": {
       "post": {
-        "tags": ["Uploads"],
+        "tags": [
+          "Uploads"
+        ],
         "summary": "Xin URL upload",
         "description": "Nhận image/* hoặc video/*. Frontend PUT file lên url, rồi lấy key gắn vào product.",
         "operationId": "presign",
@@ -3679,7 +3749,9 @@
     },
     "/api/shops": {
       "post": {
-        "tags": ["Shops"],
+        "tags": [
+          "Shops"
+        ],
         "summary": "Đăng ký shop mới",
         "description": "Shop tạo ở trạng thái PENDING, admin duyệt mới bán được.",
         "operationId": "register",
@@ -3779,7 +3851,9 @@
     },
     "/api/shops/{shopId}/products": {
       "get": {
-        "tags": ["Shops - Catalog"],
+        "tags": [
+          "Shops - Catalog"
+        ],
         "summary": "Danh sách sản phẩm của shop",
         "description": "Chỉ trả về sản phẩm ACTIVE của shop APPROVED.\nHỗ trợ tìm kiếm từ khóa trong shop, lọc bộ sưu tập nổi bật và danh mục.\n",
         "operationId": "getShopProducts",
@@ -3812,7 +3886,11 @@
             "schema": {
               "type": "string",
               "description": "Loại bộ sưu tập nổi bật của shop",
-              "enum": ["NEW_ARRIVALS", "BEST_SELLER", "SALE_OFF"]
+              "enum": [
+                "NEW_ARRIVALS",
+                "BEST_SELLER",
+                "SALE_OFF"
+              ]
             }
           },
           {
@@ -3833,7 +3911,12 @@
             "schema": {
               "type": "string",
               "description": "Kiểu sắp xếp sản phẩm trong trang shop",
-              "enum": ["NEWEST", "BEST_SELLER", "PRICE_ASC", "PRICE_DESC"]
+              "enum": [
+                "NEWEST",
+                "BEST_SELLER",
+                "PRICE_ASC",
+                "PRICE_DESC"
+              ]
             }
           },
           {
@@ -3935,7 +4018,9 @@
         }
       },
       "post": {
-        "tags": ["Shop - Products"],
+        "tags": [
+          "Shop - Products"
+        ],
         "summary": "Tạo product kèm variants",
         "description": "OWNER/STAFF, shop phải APPROVED. Product tạo phát ACTIVE luôn, đúng 1 variant default.",
         "operationId": "create_1",
@@ -4057,7 +4142,9 @@
     },
     "/api/shops/{shopId}/products/{id}/images": {
       "post": {
-        "tags": ["Shop - Products"],
+        "tags": [
+          "Shop - Products"
+        ],
         "summary": "Gắn ảnh vào product",
         "description": "Body là list S3 key đã upload qua presign. DB chỉ lưu key.",
         "operationId": "attachImages",
@@ -4199,7 +4286,9 @@
     },
     "/api/shops/{id}/resubmit": {
       "post": {
-        "tags": ["Shops"],
+        "tags": [
+          "Shops"
+        ],
         "summary": "Gửi duyệt lại shop bị từ chối",
         "description": "Chỉ OWNER. REJECTED → PENDING, xóa lý do cũ, xếp cuối hàng đợi duyệt. Sửa hồ sơ bằng PUT /api/shops/{id} trước khi gửi lại.",
         "operationId": "resubmitShop",
@@ -4306,7 +4395,9 @@
     },
     "/api/shops/{id}/follow": {
       "post": {
-        "tags": ["Shops"],
+        "tags": [
+          "Shops"
+        ],
         "summary": "Theo dõi shop",
         "description": "Người dùng nhấn theo dõi shop.",
         "operationId": "follow",
@@ -4384,7 +4475,9 @@
         ]
       },
       "delete": {
-        "tags": ["Shops"],
+        "tags": [
+          "Shops"
+        ],
         "summary": "Hủy theo dõi shop",
         "description": "Người dùng bỏ theo dõi shop.",
         "operationId": "unfollow",
@@ -4464,7 +4557,9 @@
     },
     "/api/seller/withdrawals": {
       "get": {
-        "tags": ["Seller - Revenue & Finance"],
+        "tags": [
+          "Seller - Revenue & Finance"
+        ],
         "summary": "Lịch sử rút tiền",
         "description": "Danh sách các yêu cầu rút tiền của shop.",
         "operationId": "listWithdrawals",
@@ -4568,7 +4663,9 @@
         ]
       },
       "post": {
-        "tags": ["Seller - Revenue & Finance"],
+        "tags": [
+          "Seller - Revenue & Finance"
+        ],
         "summary": "Yêu cầu rút tiền về ngân hàng",
         "description": "Cần quyền REVENUE_WITHDRAW.",
         "operationId": "requestWithdrawal",
@@ -4668,7 +4765,9 @@
     },
     "/api/seller/shops/{shopId}/roles": {
       "get": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Danh sách vai trò của shop",
         "description": "Lấy danh sách các vai trò mặc định (Quản lý, CSKH, Kho vận, Marketing) và các vai trò tùy chỉnh.",
         "operationId": "listRoles",
@@ -4772,7 +4871,9 @@
         ]
       },
       "post": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Tạo vai trò tùy chỉnh",
         "description": "Chủ shop tạo nhóm quyền mới cho nhân viên.",
         "operationId": "createRole",
@@ -4889,7 +4990,9 @@
     },
     "/api/seller/shops/{shopId}/products/bulk-import": {
       "post": {
-        "tags": ["Seller - Products & Inventory"],
+        "tags": [
+          "Seller - Products & Inventory"
+        ],
         "summary": "Nhập sản phẩm hàng loạt bằng file CSV",
         "description": "File CSV định dạng: name,slug,description,sku,size,color,price,stockQuantity",
         "operationId": "bulkImport",
@@ -4916,7 +5019,9 @@
                     "format": "binary"
                   }
                 },
-                "required": ["file"]
+                "required": [
+                  "file"
+                ]
               }
             }
           }
@@ -5007,7 +5112,9 @@
     },
     "/api/seller/shops/{shopId}/products/bulk-delete": {
       "post": {
-        "tags": ["Seller - Products & Inventory"],
+        "tags": [
+          "Seller - Products & Inventory"
+        ],
         "summary": "Thao tác hàng loạt: Xóa mềm sản phẩm",
         "description": "Xóa mềm danh sách sản phẩm (bảo vệ các sản phẩm đang có đơn hàng xử lý).",
         "operationId": "bulkDeleteProducts",
@@ -5119,7 +5226,9 @@
     },
     "/api/seller/shops/{shopId}/invitations": {
       "get": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Danh sách lời mời đang chờ",
         "description": "Chủ shop xem các lời mời chưa chấp nhận và chưa hết hạn của shop.",
         "operationId": "listInvitations",
@@ -5223,7 +5332,9 @@
         ]
       },
       "post": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Mời nhân viên vào shop",
         "description": "Gửi lời mời tham gia shop cho tài khoản đã đăng ký theo email kèm theo vai trò. Lời mời được giao qua thông báo trong website, không gửi email.",
         "operationId": "inviteStaff",
@@ -5345,7 +5456,9 @@
     },
     "/api/seller/shops/{shopId}/decoration/publish": {
       "post": {
-        "tags": ["Seller - Decoration"],
+        "tags": [
+          "Seller - Decoration"
+        ],
         "summary": "Xuất bản bản nháp lên trang chủ shop",
         "description": "Chuyển draft thành layout chính thức hiển thị cho khách hàng.",
         "operationId": "publish",
@@ -5442,7 +5555,9 @@
     },
     "/api/seller/reviews/{id}/report": {
       "post": {
-        "tags": ["Seller - Reviews"],
+        "tags": [
+          "Seller - Reviews"
+        ],
         "summary": "Báo cáo đánh giá vi phạm",
         "description": "Báo cáo nội dung vi phạm tiêu chuẩn cộng đồng để ban quản trị xử lý.",
         "operationId": "report",
@@ -5559,7 +5674,9 @@
     },
     "/api/seller/orders/bulk-confirm": {
       "post": {
-        "tags": ["Seller Orders"],
+        "tags": [
+          "Seller Orders"
+        ],
         "summary": "Xác nhận hàng loạt",
         "description": "Chấp nhận danh sách id đơn hàng ở trạng thái PENDING -> CONFIRMED. Báo cáo kết quả chi tiết từng đơn (partial success).",
         "operationId": "bulkConfirm",
@@ -5654,7 +5771,9 @@
     },
     "/api/public/banks/lookup-account": {
       "post": {
-        "tags": ["Banks"],
+        "tags": [
+          "Banks"
+        ],
         "summary": "Tra cứu tên chủ tài khoản Napas 24/7",
         "description": "Tra cứu tên chủ tài khoản thật qua mã BIN ngân hàng và số tài khoản.",
         "operationId": "lookupAccount",
@@ -5739,7 +5858,9 @@
     },
     "/api/products/{id}/reports": {
       "post": {
-        "tags": ["Product Reports"],
+        "tags": [
+          "Product Reports"
+        ],
         "summary": "Báo cáo sản phẩm",
         "description": "Đưa sản phẩm vào hàng đợi kiểm duyệt của admin. Mỗi người 1 báo cáo đang mở cho mỗi sản phẩm; thành viên shop không tự báo cáo hàng của shop mình.",
         "operationId": "reportProduct",
@@ -5856,7 +5977,9 @@
     },
     "/api/orders": {
       "post": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Checkout COD",
         "description": "1 don dung 1 shop, tao don PENDING, chua tru kho.",
         "operationId": "checkout",
@@ -5961,7 +6084,9 @@
     },
     "/api/orders/{id}/returns": {
       "post": {
-        "tags": ["Buyer - Returns"],
+        "tags": [
+          "Buyer - Returns"
+        ],
         "summary": "Tạo yêu cầu đổi/trả hàng",
         "description": "Chỉ áp dụng cho đơn DELIVERED.",
         "operationId": "create_2",
@@ -6078,7 +6203,9 @@
     },
     "/api/invitations/{token}/accept": {
       "post": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Chấp nhận lời mời tham gia shop",
         "description": "Người dùng đã đăng nhập chấp nhận liên kết vào shop theo token lời mời. Tài khoản phải đúng người được mời; nhân viên đang bị vô hiệu hóa sẽ được kích hoạt lại.",
         "operationId": "acceptInvitation",
@@ -6160,7 +6287,9 @@
     },
     "/api/conversations": {
       "post": {
-        "tags": ["Chat"],
+        "tags": [
+          "Chat"
+        ],
         "summary": "Bắt đầu hội thoại với shop",
         "description": "Buyer tạo hoặc lấy hội thoại hiện có với shop.",
         "operationId": "startConversation",
@@ -6255,7 +6384,9 @@
     },
     "/api/conversations/{id}/messages": {
       "get": {
-        "tags": ["Chat"],
+        "tags": [
+          "Chat"
+        ],
         "summary": "Xem tin nhắn trong hội thoại",
         "description": "Người tham gia hội thoại (Buyer hoặc nhân viên shop) xem lịch sử chat.",
         "operationId": "messages",
@@ -6367,7 +6498,9 @@
         ]
       },
       "post": {
-        "tags": ["Chat"],
+        "tags": [
+          "Chat"
+        ],
         "summary": "Gửi tin nhắn",
         "description": "Gửi tin nhắn văn bản kèm ảnh tùy chọn. Tự động kích hoạt phản hồi tự động nếu shop cài đặt.",
         "operationId": "sendMessage",
@@ -6484,7 +6617,9 @@
     },
     "/api/cart/items": {
       "post": {
-        "tags": ["Cart"],
+        "tags": [
+          "Cart"
+        ],
         "summary": "Them vao gio",
         "description": "Variant da co thi cong don so luong.",
         "operationId": "addItem",
@@ -6584,7 +6719,9 @@
     },
     "/api/cart/checkout": {
       "post": {
-        "tags": ["Cart"],
+        "tags": [
+          "Cart"
+        ],
         "summary": "Checkout ca gio",
         "description": "Kiem tra het truoc khi dat: hong cho nao thi khong dat don nao va tra ve tung item loi. Dat thi tach 1 don 1 shop, dia chi giao hang chup lai vao tung don.",
         "operationId": "checkout_1",
@@ -6688,7 +6825,9 @@
     },
     "/api/admin/popups": {
       "get": {
-        "tags": ["Admin - Popups"],
+        "tags": [
+          "Admin - Popups"
+        ],
         "summary": "Danh sách popup",
         "description": "Mọi popup theo ưu tiên giảm dần, kèm trạng thái lịch chạy.",
         "operationId": "listAdminPopups",
@@ -6780,7 +6919,9 @@
         ]
       },
       "post": {
-        "tags": ["Admin - Popups"],
+        "tags": [
+          "Admin - Popups"
+        ],
         "summary": "Tạo popup",
         "description": "Cần ảnh hoặc tiêu đề. Nhiều popup cùng chạy thì trình duyệt hiện popup ưu tiên cao nhất còn hợp lệ.",
         "operationId": "createPopup",
@@ -6880,7 +7021,9 @@
     },
     "/api/admin/pages": {
       "get": {
-        "tags": ["Admin - Pages"],
+        "tags": [
+          "Admin - Pages"
+        ],
         "summary": "Danh sách trang tĩnh",
         "description": "Mọi trang kể cả nháp, mới sửa lên đầu, không kèm nội dung.",
         "operationId": "listAdminPages",
@@ -6972,7 +7115,9 @@
         ]
       },
       "post": {
-        "tags": ["Admin - Pages"],
+        "tags": [
+          "Admin - Pages"
+        ],
         "summary": "Tạo trang tĩnh",
         "description": "Trang mới ở trạng thái nháp.",
         "operationId": "createPage",
@@ -7077,7 +7222,9 @@
     },
     "/api/admin/holidays/sync": {
       "post": {
-        "tags": ["Admin - Holidays"],
+        "tags": [
+          "Admin - Holidays"
+        ],
         "summary": "Đồng bộ Calendarific ngay",
         "description": "Lấy ngày nghỉ quốc gia + ngày đi làm bù của Việt Nam trong năm. Ngày admin sửa tay giữ nguyên, ngày đồng bộ trước mà Calendarific rút lại thì xóa. Tốn 1 lượt gọi (gói free 500 lượt/tháng).",
         "operationId": "syncHolidays",
@@ -7202,7 +7349,9 @@
     },
     "/api/admin/faqs": {
       "get": {
-        "tags": ["Admin - FAQ"],
+        "tags": [
+          "Admin - FAQ"
+        ],
         "summary": "Danh sách FAQ",
         "description": "Mọi câu hỏi kể cả đang ẩn, theo nhóm rồi thứ tự.",
         "operationId": "listAdminFaqs",
@@ -7294,7 +7443,9 @@
         ]
       },
       "post": {
-        "tags": ["Admin - FAQ"],
+        "tags": [
+          "Admin - FAQ"
+        ],
         "summary": "Thêm câu hỏi",
         "description": "Câu trả lời viết Markdown.",
         "operationId": "createFaq",
@@ -7394,7 +7545,9 @@
     },
     "/api/admin/banners": {
       "get": {
-        "tags": ["Admin - Banners"],
+        "tags": [
+          "Admin - Banners"
+        ],
         "summary": "Danh sách banner",
         "description": "Mọi banner kể cả đã tắt/hết hạn, theo vị trí rồi thứ tự, kèm trạng thái lịch chạy.",
         "operationId": "listAdminBanners",
@@ -7406,7 +7559,10 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["HOME_CAROUSEL", "HOME_STRIP"]
+              "enum": [
+                "HOME_CAROUSEL",
+                "HOME_STRIP"
+              ]
             },
             "example": "HOME_CAROUSEL"
           }
@@ -7499,7 +7655,9 @@
         ]
       },
       "post": {
-        "tags": ["Admin - Banners"],
+        "tags": [
+          "Admin - Banners"
+        ],
         "summary": "Tạo banner",
         "description": "Ảnh upload trước qua /api/uploads/presign rồi gửi S3 key. Link chỉ nhận đường dẫn nội bộ hoặc http(s).",
         "operationId": "createBanner",
@@ -7599,7 +7757,9 @@
     },
     "/api/admin/banned-keywords": {
       "get": {
-        "tags": ["Admin - Banned Keywords"],
+        "tags": [
+          "Admin - Banned Keywords"
+        ],
         "summary": "Danh sách từ khóa cấm",
         "description": "Mới thêm lên đầu.",
         "operationId": "listBannedKeywords",
@@ -7691,7 +7851,9 @@
         ]
       },
       "post": {
-        "tags": ["Admin - Banned Keywords"],
+        "tags": [
+          "Admin - Banned Keywords"
+        ],
         "summary": "Thêm từ khóa cấm",
         "description": "Lưu dạng chữ thường. Quét ngay sản phẩm đang bán/đang ẩn chứa từ khóa (khớp nguyên từ) và gắn cờ hệ thống vào hàng đợi báo cáo; trả số sản phẩm vừa bị gắn cờ. Không tự gỡ sản phẩm.",
         "operationId": "createBannedKeyword",
@@ -7796,7 +7958,9 @@
     },
     "/api/shops/{shopId}/products/{id}/status": {
       "patch": {
-        "tags": ["Shop - Products"],
+        "tags": [
+          "Shop - Products"
+        ],
         "summary": "Ẩn/hiện sản phẩm (toggle status)",
         "description": "Chuyển trạng thái giữa ACTIVE và HIDDEN.",
         "operationId": "toggleStatus",
@@ -7913,7 +8077,9 @@
     },
     "/api/shops/{id}/profile": {
       "patch": {
-        "tags": ["Shops"],
+        "tags": [
+          "Shops"
+        ],
         "summary": "Cập nhật hồ sơ mở rộng của shop",
         "description": "Cập nhật thông tin kho, SLA, tài khoản ngân hàng, giờ làm việc (OWNER/STAFF).",
         "operationId": "updateProfile",
@@ -8025,7 +8191,9 @@
     },
     "/api/seller/shops/{shopId}/variants/{variantId}/stock": {
       "patch": {
-        "tags": ["Seller - Products & Inventory"],
+        "tags": [
+          "Seller - Products & Inventory"
+        ],
         "summary": "Điều chỉnh tồn kho biến thể",
         "description": "Cập nhật số lượng tồn kho và ghi nhật ký biến động (stock movement).",
         "operationId": "adjustStock",
@@ -8152,7 +8320,9 @@
     },
     "/api/seller/shops/{shopId}/products/bulk-stock": {
       "patch": {
-        "tags": ["Seller - Products & Inventory"],
+        "tags": [
+          "Seller - Products & Inventory"
+        ],
         "summary": "Thao tác hàng loạt: Cập nhật tồn kho",
         "description": "Gán tồn kho cố định hoặc cộng/trừ số lượng tồn cho tất cả biến thể của danh sách sản phẩm.",
         "operationId": "bulkUpdateStock",
@@ -8264,7 +8434,9 @@
     },
     "/api/seller/shops/{shopId}/products/bulk-status": {
       "patch": {
-        "tags": ["Seller - Products & Inventory"],
+        "tags": [
+          "Seller - Products & Inventory"
+        ],
         "summary": "Thao tác hàng loạt: Ẩn / Hiện sản phẩm",
         "description": "Cập nhật trạng thái ACTIVE hoặc HIDDEN cho danh sách sản phẩm.",
         "operationId": "bulkUpdateStatus",
@@ -8376,7 +8548,9 @@
     },
     "/api/seller/shops/{shopId}/products/bulk-price": {
       "patch": {
-        "tags": ["Seller - Products & Inventory"],
+        "tags": [
+          "Seller - Products & Inventory"
+        ],
         "summary": "Thao tác hàng loạt: Thay đổi giá sản phẩm",
         "description": "Cập nhật giá cố định hoặc điều chỉnh theo phần trăm cho tất cả biến thể của danh sách sản phẩm.",
         "operationId": "bulkUpdatePrice",
@@ -8488,7 +8662,9 @@
     },
     "/api/seller/shops/{shopId}/members/{memberId}/status": {
       "patch": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Kích hoạt hoặc vô hiệu hóa nhân viên",
         "description": "Chủ shop đổi trạng thái hoạt động của nhân viên. Nhân viên bị vô hiệu hóa mất quyền truy cập shop ngay ở request kế tiếp, không cần đăng xuất.",
         "operationId": "updateMemberStatus",
@@ -8588,7 +8764,9 @@
     },
     "/api/seller/shops/{shopId}/members/{memberId}/role": {
       "patch": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Thay đổi vai trò của nhân viên",
         "description": "Chủ shop cập nhật vai trò/quyền hạn mới cho một nhân viên.",
         "operationId": "changeMemberRole",
@@ -8688,7 +8866,9 @@
     },
     "/api/seller/reviews/{id}/reply": {
       "patch": {
-        "tags": ["Seller - Reviews"],
+        "tags": [
+          "Seller - Reviews"
+        ],
         "summary": "Phản hồi đánh giá",
         "description": "Seller chỉ được phản hồi một lần duy nhất cho mỗi đánh giá.",
         "operationId": "reply",
@@ -8810,7 +8990,9 @@
     },
     "/api/seller/returns/{id}/reject": {
       "patch": {
-        "tags": ["Seller - Returns"],
+        "tags": [
+          "Seller - Returns"
+        ],
         "summary": "Từ chối yêu cầu đổi/trả",
         "description": "Seller từ chối kèm lý do.",
         "operationId": "reject",
@@ -8932,7 +9114,9 @@
     },
     "/api/seller/returns/{id}/complete": {
       "patch": {
-        "tags": ["Seller - Returns"],
+        "tags": [
+          "Seller - Returns"
+        ],
         "summary": "Xác nhận hoàn tất đổi/trả",
         "description": "APPROVED -> COMPLETED.",
         "operationId": "complete",
@@ -9047,7 +9231,9 @@
     },
     "/api/seller/returns/{id}/approve": {
       "patch": {
-        "tags": ["Seller - Returns"],
+        "tags": [
+          "Seller - Returns"
+        ],
         "summary": "Chấp thuận yêu cầu đổi/trả",
         "description": "Seller đồng ý và chọn phương án hoàn tiền/đổi hàng.",
         "operationId": "approve",
@@ -9169,7 +9355,9 @@
     },
     "/api/seller/orders/{id}/ship": {
       "patch": {
-        "tags": ["Seller Orders"],
+        "tags": [
+          "Seller Orders"
+        ],
         "summary": "Giao cho vận chuyển",
         "description": "CONFIRMED -> SHIPPING.",
         "operationId": "ship",
@@ -9276,7 +9464,9 @@
     },
     "/api/seller/orders/{id}/deliver": {
       "patch": {
-        "tags": ["Seller Orders"],
+        "tags": [
+          "Seller Orders"
+        ],
         "summary": "Hoàn tất đơn COD",
         "description": "SHIPPING -> DELIVERED, thu tiền COD.",
         "operationId": "deliver",
@@ -9383,7 +9573,9 @@
     },
     "/api/seller/orders/{id}/confirm": {
       "patch": {
-        "tags": ["Seller Orders"],
+        "tags": [
+          "Seller Orders"
+        ],
         "summary": "Xác nhận đơn",
         "description": "PENDING -> CONFIRMED, trừ kho nguyên tử.",
         "operationId": "confirm",
@@ -9490,7 +9682,9 @@
     },
     "/api/seller/orders/{id}/cancel": {
       "patch": {
-        "tags": ["Seller Orders"],
+        "tags": [
+          "Seller Orders"
+        ],
         "summary": "Seller hủy đơn",
         "description": "PENDING hoặc CONFIRMED -> CANCELLED. Nếu đã CONFIRMED, tự động hoàn kho nguyên tử và ghi nhật ký tồn kho.",
         "operationId": "cancel",
@@ -9612,7 +9806,9 @@
     },
     "/api/orders/{id}/received": {
       "patch": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Xac nhan da nhan hang",
         "description": "Chi xac nhan duoc don DELIVERED. Mo khoa viet danh gia.",
         "operationId": "confirmReceipt",
@@ -9714,7 +9910,9 @@
     },
     "/api/orders/{id}/cancel": {
       "patch": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Huy don",
         "description": "Chi huy duoc khi PENDING.",
         "operationId": "cancel_1",
@@ -9816,7 +10014,9 @@
     },
     "/api/notifications/{id}/read": {
       "patch": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "Đánh dấu thông báo đã đọc",
         "description": "Đánh dấu một thông báo cụ thể của người dùng là đã đọc.",
         "operationId": "markNotificationRead",
@@ -9896,7 +10096,9 @@
     },
     "/api/notifications/read-all": {
       "patch": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "Đánh dấu tất cả thông báo đã đọc",
         "description": "Đánh dấu toàn bộ thông báo của người dùng là đã đọc.",
         "operationId": "markAllNotificationsRead",
@@ -9975,7 +10177,9 @@
     },
     "/api/conversations/{id}/read": {
       "patch": {
-        "tags": ["Chat"],
+        "tags": [
+          "Chat"
+        ],
         "summary": "Đánh dấu đã đọc hội thoại",
         "operationId": "markRead",
         "parameters": [
@@ -10054,7 +10258,9 @@
     },
     "/api/admin/users/{id}/unlock": {
       "patch": {
-        "tags": ["Admin - Users"],
+        "tags": [
+          "Admin - Users"
+        ],
         "summary": "Mở khóa tài khoản",
         "description": "LOCKED → ACTIVE, gỡ ban GoTrue. Shop bị tạm khóa kèm theo không tự mở, admin mở riêng.",
         "operationId": "unlockUser",
@@ -10171,7 +10377,9 @@
     },
     "/api/admin/users/{id}/lock": {
       "patch": {
-        "tags": ["Admin - Users"],
+        "tags": [
+          "Admin - Users"
+        ],
         "summary": "Khóa tài khoản",
         "description": "ACTIVE → LOCKED. Chặn mọi API ngay lập tức, ban ở GoTrue, tạm khóa shop mà user làm OWNER. Không khóa được admin hoặc chính mình.",
         "operationId": "lockUser",
@@ -10303,7 +10511,9 @@
     },
     "/api/admin/shops/{id}/trust": {
       "patch": {
-        "tags": ["Admin - Shops"],
+        "tags": [
+          "Admin - Shops"
+        ],
         "summary": "Bật/tắt cờ Shop uy tín",
         "description": "Shop uy tín được tự động duyệt sản phẩm ngay khi đăng bán.",
         "operationId": "toggleShopTrust",
@@ -10413,7 +10623,9 @@
     },
     "/api/admin/shops/{id}/suspend": {
       "patch": {
-        "tags": ["Admin - Shops"],
+        "tags": [
+          "Admin - Shops"
+        ],
         "summary": "Tạm khóa shop",
         "description": "APPROVED → SUSPENDED. Shop ẩn khỏi sàn, không nhận đơn mới; đơn đang có vẫn xử lý được.",
         "operationId": "suspendShop",
@@ -10535,7 +10747,9 @@
     },
     "/api/admin/shops/{id}/reject": {
       "patch": {
-        "tags": ["Admin - Shops"],
+        "tags": [
+          "Admin - Shops"
+        ],
         "summary": "Từ chối shop",
         "description": "PENDING → REJECTED. Owner thấy lý do và có thể gửi duyệt lại.",
         "operationId": "rejectShop",
@@ -10657,7 +10871,9 @@
     },
     "/api/admin/shops/{id}/reinstate": {
       "patch": {
-        "tags": ["Admin - Shops"],
+        "tags": [
+          "Admin - Shops"
+        ],
         "summary": "Mở lại shop",
         "description": "SUSPENDED → APPROVED, xóa lý do tạm khóa.",
         "operationId": "reinstateShop",
@@ -10764,7 +10980,9 @@
     },
     "/api/admin/shops/{id}/approve": {
       "patch": {
-        "tags": ["Admin - Shops"],
+        "tags": [
+          "Admin - Shops"
+        ],
         "summary": "Duyệt shop",
         "description": "PENDING → APPROVED. Owner được nâng role SHOP (DB + GoTrue app_metadata).",
         "operationId": "approveShop",
@@ -10881,7 +11099,9 @@
     },
     "/api/admin/products/{id}/restore": {
       "patch": {
-        "tags": ["Admin - Products"],
+        "tags": [
+          "Admin - Products"
+        ],
         "summary": "Khôi phục sản phẩm bị gỡ",
         "description": "BANNED → HIDDEN, xóa loại vi phạm + lý do. Shop kiểm tra lại rồi tự đăng bán.",
         "operationId": "restoreProduct",
@@ -10988,7 +11208,9 @@
     },
     "/api/admin/products/{id}/reports/dismiss": {
       "patch": {
-        "tags": ["Admin - Products"],
+        "tags": [
+          "Admin - Products"
+        ],
         "summary": "Bác bỏ báo cáo",
         "description": "Đóng mọi báo cáo đang mở của sản phẩm là DISMISSED (không vi phạm). Sản phẩm giữ nguyên trạng thái.",
         "operationId": "dismissProductReports",
@@ -11109,7 +11331,9 @@
     },
     "/api/admin/products/{id}/reject": {
       "patch": {
-        "tags": ["Admin - Products"],
+        "tags": [
+          "Admin - Products"
+        ],
         "summary": "Từ chối phê duyệt sản phẩm mới",
         "description": "PENDING → BANNED kèm lý do. Sản phẩm bị từ chối duyệt, shop thấy lý do từ chối.",
         "operationId": "rejectProduct",
@@ -11231,7 +11455,9 @@
     },
     "/api/admin/products/{id}/ban": {
       "patch": {
-        "tags": ["Admin - Products"],
+        "tags": [
+          "Admin - Products"
+        ],
         "summary": "Gỡ sản phẩm vi phạm",
         "description": "ACTIVE/HIDDEN → BANNED kèm loại vi phạm + lý do. Sản phẩm biến mất khỏi tìm kiếm, trang chi tiết và checkout ngay; shop thấy lý do và không tự đăng bán lại được. Đơn đang xử lý vẫn tiếp tục.",
         "operationId": "banProduct",
@@ -11353,7 +11579,9 @@
     },
     "/api/admin/products/{id}/approve": {
       "patch": {
-        "tags": ["Admin - Products"],
+        "tags": [
+          "Admin - Products"
+        ],
         "summary": "Phê duyệt sản phẩm mới",
         "description": "PENDING → ACTIVE. Sản phẩm được phê duyệt và bắt đầu hiển thị trên sàn.",
         "operationId": "approveProduct",
@@ -11460,7 +11688,9 @@
     },
     "/api/admin/pages/{id}/unpublish": {
       "patch": {
-        "tags": ["Admin - Pages"],
+        "tags": [
+          "Admin - Pages"
+        ],
         "summary": "Gỡ xuất bản trang",
         "description": "PUBLISHED → DRAFT, public trả 404.",
         "operationId": "unpublishPage",
@@ -11567,7 +11797,9 @@
     },
     "/api/admin/pages/{id}/publish": {
       "patch": {
-        "tags": ["Admin - Pages"],
+        "tags": [
+          "Admin - Pages"
+        ],
         "summary": "Xuất bản trang",
         "description": "DRAFT → PUBLISHED, hiện ở footer + /pages/{slug}.",
         "operationId": "publishPage",
@@ -11674,7 +11906,9 @@
     },
     "/api/admin/orders/{id}/cancel": {
       "patch": {
-        "tags": ["Admin - Orders"],
+        "tags": [
+          "Admin - Orders"
+        ],
         "summary": "Hủy can thiệp đơn",
         "description": "PENDING/CONFIRMED → CANCELLED kèm loại lý do + ghi chú, ghi nhận admin là người hủy. Đơn đã xác nhận được hoàn kho. Đơn đã bàn giao vận chuyển không hủy được.",
         "operationId": "adminCancelOrder",
@@ -11796,7 +12030,9 @@
     },
     "/api/wishlist": {
       "get": {
-        "tags": ["Wishlist"],
+        "tags": [
+          "Wishlist"
+        ],
         "summary": "Liet ke wishlist",
         "description": "Mon tam khong mua duoc van hien, kem co available + ly do, de buyer khoi thac mac.",
         "operationId": "list_2",
@@ -11882,7 +12118,9 @@
     },
     "/api/users/me": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Profile của tôi",
         "operationId": "me",
         "responses": {
@@ -11966,7 +12204,9 @@
     },
     "/api/shops/{slug}": {
       "get": {
-        "tags": ["Shops"],
+        "tags": [
+          "Shops"
+        ],
         "summary": "Xem shop public",
         "description": "Chỉ shop APPROVED mới xem được.",
         "operationId": "bySlug",
@@ -12053,7 +12293,9 @@
     },
     "/api/shops/{shopId}/products/{id}/audit-logs": {
       "get": {
-        "tags": ["Shop - Products"],
+        "tags": [
+          "Shop - Products"
+        ],
         "summary": "Lịch sử chỉnh sửa sản phẩm",
         "description": "Lấy danh sách audit log theo thời gian giảm dần.",
         "operationId": "getAuditLogs",
@@ -12177,7 +12419,9 @@
     },
     "/api/shops/{shopId}/decoration": {
       "get": {
-        "tags": ["Shops - Decoration"],
+        "tags": [
+          "Shops - Decoration"
+        ],
         "summary": "Xem giao diện gian hàng (Public)",
         "description": "Lấy layout các block đã được shop xuất bản để hiển thị ở trang chủ shop.",
         "operationId": "getPublishedLayout",
@@ -12259,7 +12503,9 @@
     },
     "/api/shops/{shopId}/categories": {
       "get": {
-        "tags": ["Shops - Catalog"],
+        "tags": [
+          "Shops - Catalog"
+        ],
         "summary": "Danh mục sản phẩm của shop",
         "description": "Lấy danh sách các danh mục mà shop thực tế đang có sản phẩm kinh doanh ACTIVE.",
         "operationId": "getShopCategories",
@@ -12352,7 +12598,9 @@
     },
     "/api/shops/mine": {
       "get": {
-        "tags": ["Shops"],
+        "tags": [
+          "Shops"
+        ],
         "summary": "Shop của tôi",
         "operationId": "mine",
         "responses": {
@@ -12437,7 +12685,9 @@
     },
     "/api/seller/shops/{shopId}/variants/{variantId}/movements": {
       "get": {
-        "tags": ["Seller - Products & Inventory"],
+        "tags": [
+          "Seller - Products & Inventory"
+        ],
         "summary": "Lịch sử biến động tồn kho",
         "description": "Xem lịch sử thay đổi tồn kho của biến thể.",
         "operationId": "movements",
@@ -12561,7 +12811,9 @@
     },
     "/api/seller/shops/{shopId}/stats/revenue/export": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Xuất file báo cáo doanh thu",
         "description": "Tải về báo cáo doanh thu dưới định dạng Excel (.xlsx) đa sheet hoặc CSV theo khoảng thời gian.",
         "operationId": "exportRevenueReport",
@@ -12704,7 +12956,9 @@
     },
     "/api/seller/shops/{shopId}/stats/revenue/detail": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Biểu đồ doanh thu chi tiết",
         "description": "Doanh thu theo chu kỳ ngày, tuần, tháng hoặc năm trong khoảng thời gian chỉ định.",
         "operationId": "getRevenueDetail",
@@ -12837,7 +13091,9 @@
     },
     "/api/seller/shops/{shopId}/stats/revenue/comparison": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "So sánh hiệu suất doanh thu",
         "description": "So sánh doanh thu và số đơn giữa chu kỳ hiện tại và chu kỳ liền kề trước đó.",
         "operationId": "getPeriodComparison",
@@ -12950,7 +13206,9 @@
     },
     "/api/seller/shops/{shopId}/stats/revenue/by-payment": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Doanh thu theo hình thức thanh toán",
         "description": "Doanh thu và số lượng đơn hàng theo phương thức thanh toán (COD, v.v.).",
         "operationId": "getRevenueByPayment",
@@ -13056,7 +13314,9 @@
     },
     "/api/seller/shops/{shopId}/stats/revenue/by-category": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Doanh thu theo danh mục",
         "description": "Doanh thu và số lượng bán phân bổ theo từng danh mục sản phẩm.",
         "operationId": "getRevenueByCategory",
@@ -13162,7 +13422,9 @@
     },
     "/api/seller/shops/{shopId}/stats/products/top-selling": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Top sản phẩm bán chạy",
         "description": "Danh sách sản phẩm có doanh thu và số lượng bán cao nhất.",
         "operationId": "getTopSellingProducts",
@@ -13289,7 +13551,9 @@
     },
     "/api/seller/shops/{shopId}/stats/products/slow-moving": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Sản phẩm tồn kho lâu ngày",
         "description": "Sản phẩm còn tồn kho nhưng không phát sinh đơn hàng trong hơn 30 ngày.",
         "operationId": "getSlowMovingProducts",
@@ -13416,7 +13680,9 @@
     },
     "/api/seller/shops/{shopId}/stats/products/out-of-stock": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Sản phẩm hết hàng",
         "description": "Danh sách sản phẩm có tồn kho bằng 0 cần nhập thêm hàng.",
         "operationId": "getOutOfStockProducts",
@@ -13522,7 +13788,9 @@
     },
     "/api/seller/shops/{shopId}/stats/products/low-conversion": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Sản phẩm có tỷ lệ chuyển đổi thấp",
         "description": "Sản phẩm có lượt xem cao nhưng lượt mua thấp cần tối ưu nội dung/giá bán.",
         "operationId": "getLowConversionProducts",
@@ -13649,7 +13917,9 @@
     },
     "/api/seller/shops/{shopId}/stats/performance": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Hiệu suất hoạt động của shop",
         "description": "Tỷ lệ phản hồi chat, tỷ lệ hủy đơn, tỷ lệ giao đúng hạn và đánh giá trung bình.",
         "operationId": "getShopPerformance",
@@ -13746,7 +14016,9 @@
     },
     "/api/seller/shops/{shopId}/stats/orders/summary": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Báo cáo tổng kết trạng thái đơn hàng",
         "description": "Số lượng và tổng giá trị của đơn hoàn thành, đơn hủy và đơn đổi trả.",
         "operationId": "getOrderStatusSummary",
@@ -13863,7 +14135,9 @@
     },
     "/api/seller/shops/{shopId}/stats/dashboard": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Dashboard tổng quan shop",
         "description": "Doanh thu, đơn hàng, lượt truy cập hôm nay và so sánh với hôm qua.",
         "operationId": "getShopDashboard",
@@ -13960,7 +14234,9 @@
     },
     "/api/seller/shops/{shopId}/stats/customers/top": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Top khách hàng mua nhiều nhất",
         "description": "Danh sách khách hàng có tổng chi tiêu và số lượng đơn cao nhất.",
         "operationId": "getTopCustomers",
@@ -14087,7 +14363,9 @@
     },
     "/api/seller/shops/{shopId}/stats/customers/overview": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Tổng quan hành vi khách hàng",
         "description": "Tỷ lệ khách mới vs quay lại, tỷ lệ giữ chân (retention) và giá trị đơn trung bình (AOV).",
         "operationId": "getCustomerOverview",
@@ -14184,7 +14462,9 @@
     },
     "/api/seller/shops/{shopId}/stats/customers/followers": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Xu hướng người theo dõi shop",
         "description": "Tổng số người theo dõi và biến động tăng/giảm so với tháng trước.",
         "operationId": "getFollowerTrend",
@@ -14281,7 +14561,9 @@
     },
     "/api/seller/shops/{shopId}/stats/alerts": {
       "get": {
-        "tags": ["Seller - Statistics"],
+        "tags": [
+          "Seller - Statistics"
+        ],
         "summary": "Cảnh báo vận hành",
         "description": "Đơn sắp quá hạn, sản phẩm hết hàng hoặc khiếu nại chưa xử lý.",
         "operationId": "getShopAlerts",
@@ -14387,7 +14669,9 @@
     },
     "/api/seller/shops/{shopId}/products": {
       "get": {
-        "tags": ["Seller - Products & Inventory"],
+        "tags": [
+          "Seller - Products & Inventory"
+        ],
         "summary": "Danh sách sản phẩm của shop (Seller view)",
         "description": "Bao gồm cả hàng ACTIVE, HIDDEN, DELETED, PENDING, BANNED cùng số lượng tồn và khoảng giá.",
         "operationId": "listProducts",
@@ -14597,7 +14881,9 @@
     },
     "/api/seller/shops/{shopId}/products/export": {
       "get": {
-        "tags": ["Seller - Products & Inventory"],
+        "tags": [
+          "Seller - Products & Inventory"
+        ],
         "summary": "Xuất danh sách sản phẩm ra CSV",
         "description": "Tải về file CSV danh sách tất cả sản phẩm và biến thể của shop.",
         "operationId": "exportProducts",
@@ -14697,7 +14983,9 @@
     },
     "/api/seller/shops/{shopId}/my-permissions": {
       "get": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Quyền của tôi trong shop",
         "description": "Trả về cờ chủ shop và danh sách quyền hiện có của người dùng trong shop, dùng để ẩn/hiện menu và nút thao tác trên giao diện người bán.",
         "operationId": "getMyPermissions",
@@ -14794,7 +15082,9 @@
     },
     "/api/seller/shops/{shopId}/members": {
       "get": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Danh sách thành viên shop",
         "description": "Lấy danh sách chủ shop và nhân viên kèm theo vai trò chi tiết.",
         "operationId": "listMembers",
@@ -14900,7 +15190,9 @@
     },
     "/api/seller/shops/{shopId}/inventory": {
       "get": {
-        "tags": ["Seller - Products & Inventory"],
+        "tags": [
+          "Seller - Products & Inventory"
+        ],
         "summary": "Quản lý kho hàng",
         "description": "Liệt kê các biến thể, có thể lọc các biến thể sắp hết hàng (lowStock=true).",
         "operationId": "inventory",
@@ -15016,7 +15308,9 @@
     },
     "/api/seller/shops/{shopId}/decoration": {
       "get": {
-        "tags": ["Seller - Decoration"],
+        "tags": [
+          "Seller - Decoration"
+        ],
         "summary": "Xem giao diện và bản nháp hiện tại",
         "description": "Lấy cả layout đang hiển thị và bản nháp (draft) đang chỉnh sửa.",
         "operationId": "getDecoration",
@@ -15113,7 +15407,9 @@
     },
     "/api/seller/shops/{shopId}/audit": {
       "get": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Nhật ký hoạt động của shop",
         "description": "Chủ shop xem nhật ký mọi thao tác nghiệp vụ và nhân sự trong shop, mới nhất trước. Có thể lọc theo mã hành động.",
         "operationId": "listAuditLogs",
@@ -15241,7 +15537,9 @@
     },
     "/api/seller/settlements": {
       "get": {
-        "tags": ["Seller - Revenue & Finance"],
+        "tags": [
+          "Seller - Revenue & Finance"
+        ],
         "summary": "Danh sách giải ngân (Settlements)",
         "description": "Lọc các khoản tiền đang giữ (HOLDING) hoặc đã vào ví (RELEASED).",
         "operationId": "settlements",
@@ -15356,7 +15654,9 @@
     },
     "/api/seller/reviews": {
       "get": {
-        "tags": ["Seller - Reviews"],
+        "tags": [
+          "Seller - Reviews"
+        ],
         "summary": "Xem đánh giá của shop",
         "description": "Có thể lọc các đánh giá chưa phản hồi (unreplied=true).",
         "operationId": "list_3",
@@ -15472,7 +15772,9 @@
     },
     "/api/seller/revenue/top-products": {
       "get": {
-        "tags": ["Seller - Revenue & Finance"],
+        "tags": [
+          "Seller - Revenue & Finance"
+        ],
         "summary": "Top sản phẩm bán chạy",
         "description": "Danh sách sản phẩm có doanh thu và số lượng bán cao nhất.",
         "operationId": "topProducts",
@@ -15589,7 +15891,9 @@
     },
     "/api/seller/revenue/summary": {
       "get": {
-        "tags": ["Seller - Revenue & Finance"],
+        "tags": [
+          "Seller - Revenue & Finance"
+        ],
         "summary": "Tổng quan doanh thu",
         "description": "Tổng doanh thu đơn đã giao, số lượng đơn, giá trị trung bình đơn, số dư ví khả dụng và đang giữ.",
         "operationId": "summary",
@@ -15686,7 +15990,9 @@
     },
     "/api/seller/revenue/by-day": {
       "get": {
-        "tags": ["Seller - Revenue & Finance"],
+        "tags": [
+          "Seller - Revenue & Finance"
+        ],
         "summary": "Biểu đồ doanh thu theo ngày",
         "description": "Doanh thu từng ngày của shop để vẽ biểu đồ.",
         "operationId": "byDay",
@@ -15792,7 +16098,9 @@
     },
     "/api/seller/returns": {
       "get": {
-        "tags": ["Seller - Returns"],
+        "tags": [
+          "Seller - Returns"
+        ],
         "summary": "Danh sách yêu cầu đổi/trả",
         "description": "Cần quyền RETURN_PROCESS. Lọc theo shop hoặc trạng thái (REQUESTED, APPROVED, REJECTED, COMPLETED).",
         "operationId": "list_4",
@@ -15899,7 +16207,9 @@
     },
     "/api/seller/returns/{id}": {
       "get": {
-        "tags": ["Seller - Returns"],
+        "tags": [
+          "Seller - Returns"
+        ],
         "summary": "Chi tiết yêu cầu đổi/trả",
         "operationId": "detail",
         "parameters": [
@@ -16000,7 +16310,9 @@
     },
     "/api/seller/orders": {
       "get": {
-        "tags": ["Seller Orders"],
+        "tags": [
+          "Seller Orders"
+        ],
         "summary": "Đơn của shop",
         "description": "Cần quyền ORDER_READ ở shop tương ứng, gom mọi shop mình tham gia. Hỗ trợ lọc theo shop, status, từ khóa.",
         "operationId": "list_5",
@@ -16138,7 +16450,9 @@
     },
     "/api/seller/orders/{id}/timeline": {
       "get": {
-        "tags": ["Seller Orders"],
+        "tags": [
+          "Seller Orders"
+        ],
         "summary": "Lịch sử trạng thái đơn hàng",
         "description": "Lấy dòng thời gian chuyển trạng thái (timeline) của đơn hàng.",
         "operationId": "timeline",
@@ -16252,7 +16566,9 @@
     },
     "/api/seller/my-shops": {
       "get": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Danh sách gian hàng của tôi",
         "description": "Trả về danh sách tất cả các gian hàng mà người dùng hiện tại tham gia làm chủ gian hàng hoặc nhân viên (bao gồm thông tin vai trò, trạng thái thành viên và quyền hạn).",
         "operationId": "getMyShops",
@@ -16338,7 +16654,9 @@
     },
     "/api/seller/conversations": {
       "get": {
-        "tags": ["Chat"],
+        "tags": [
+          "Chat"
+        ],
         "summary": "Danh sách hội thoại của shop (Seller)",
         "description": "Lọc các hội thoại có tin nhắn chưa đọc (unread=true).",
         "operationId": "sellerConversations",
@@ -16454,7 +16772,9 @@
     },
     "/api/search/products": {
       "get": {
-        "tags": ["Search"],
+        "tags": [
+          "Search"
+        ],
         "summary": "Tìm và lọc sản phẩm",
         "description": "Chỉ hàng ACTIVE của shop APPROVED. Có từ khóa thì chỉ trả hàng khớp, xếp BM25; không có từ khóa thì duyệt theo bộ lọc. Size, màu, khoảng giá phải khớp trên cùng một variant.",
         "operationId": "search",
@@ -16531,7 +16851,12 @@
             "schema": {
               "type": "string",
               "description": "Cách sắp xếp kết quả. RELEVANCE chỉ có nghĩa khi có từ khóa, thiếu từ khóa thì về NEWEST.",
-              "enum": ["RELEVANCE", "NEWEST", "PRICE_ASC", "PRICE_DESC"]
+              "enum": [
+                "RELEVANCE",
+                "NEWEST",
+                "PRICE_ASC",
+                "PRICE_DESC"
+              ]
             }
           },
           {
@@ -16634,7 +16959,9 @@
     },
     "/api/search/facets": {
       "get": {
-        "tags": ["Search"],
+        "tags": [
+          "Search"
+        ],
         "summary": "Lựa chọn cho bộ lọc",
         "description": "Size, màu và khoảng giá có trong tập khớp từ khóa + danh mục, để dựng bộ lọc.",
         "operationId": "facets",
@@ -16726,7 +17053,9 @@
     },
     "/api/public/settings": {
       "get": {
-        "tags": ["Public - Settings"],
+        "tags": [
+          "Public - Settings"
+        ],
         "summary": "Cấu hình chung công khai",
         "description": "Tên sàn, hotline, email hỗ trợ, ngưỡng miễn phí vận chuyển và số sản phẩm tính phí cơ bản.",
         "operationId": "getPublicSettings",
@@ -16796,7 +17125,9 @@
     },
     "/api/public/popups": {
       "get": {
-        "tags": ["Site content"],
+        "tags": [
+          "Site content"
+        ],
         "summary": "Popup đang chạy",
         "description": "Theo ưu tiên giảm dần. Trình duyệt lọc theo đối tượng + tần suất rồi hiện tối đa 1 popup.",
         "operationId": "listPopups",
@@ -16869,7 +17200,9 @@
     },
     "/api/public/pages": {
       "get": {
-        "tags": ["Site content"],
+        "tags": [
+          "Site content"
+        ],
         "summary": "Link trang tĩnh cho footer",
         "description": "Trang đã xuất bản có nhóm footer, theo thứ tự admin đặt.",
         "operationId": "listPageLinks",
@@ -16942,7 +17275,9 @@
     },
     "/api/public/pages/{slug}": {
       "get": {
-        "tags": ["Site content"],
+        "tags": [
+          "Site content"
+        ],
         "summary": "Nội dung trang tĩnh",
         "description": "Chỉ trang đã xuất bản.",
         "operationId": "getPage",
@@ -17029,7 +17364,9 @@
     },
     "/api/public/locations/provinces": {
       "get": {
-        "tags": ["Locations"],
+        "tags": [
+          "Locations"
+        ],
         "summary": "Danh sách tỉnh/thành",
         "description": "34 tỉnh/thành kèm miền (NORTH, CENTRAL, SOUTH), sắp theo tên.",
         "operationId": "listProvinces",
@@ -17102,7 +17439,9 @@
     },
     "/api/public/locations/provinces/{provinceCode}/wards": {
       "get": {
-        "tags": ["Locations"],
+        "tags": [
+          "Locations"
+        ],
         "summary": "Danh sách xã/phường của tỉnh",
         "description": "Các xã/phường thuộc một tỉnh/thành, sắp theo tên.",
         "operationId": "listWards",
@@ -17195,7 +17534,9 @@
     },
     "/api/public/hello": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Chào public",
         "description": "Không cần auth. Nếu gửi JWT thì message cá nhân hóa theo sub.",
         "operationId": "publicHello",
@@ -17268,7 +17609,9 @@
     },
     "/api/public/faqs": {
       "get": {
-        "tags": ["Site content"],
+        "tags": [
+          "Site content"
+        ],
         "summary": "Câu hỏi thường gặp",
         "description": "FAQ đang hiện, theo nhóm rồi thứ tự.",
         "operationId": "listFaqs",
@@ -17341,7 +17684,9 @@
     },
     "/api/public/banners": {
       "get": {
-        "tags": ["Site content"],
+        "tags": [
+          "Site content"
+        ],
         "summary": "Banner đang chạy theo vị trí",
         "description": "Chỉ banner bật + trong khung giờ, theo thứ tự admin đặt.",
         "operationId": "listBanners",
@@ -17353,7 +17698,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["HOME_CAROUSEL", "HOME_STRIP"]
+              "enum": [
+                "HOME_CAROUSEL",
+                "HOME_STRIP"
+              ]
             },
             "example": "HOME_CAROUSEL"
           }
@@ -17435,7 +17783,9 @@
     },
     "/api/public/banks": {
       "get": {
-        "tags": ["Banks"],
+        "tags": [
+          "Banks"
+        ],
         "summary": "Danh sách ngân hàng Việt Nam",
         "description": "Danh sách hơn 50 ngân hàng trong mạng lưới Napas kèm mã BIN, tên viết tắt và logo.",
         "operationId": "listBanks",
@@ -17508,7 +17858,9 @@
     },
     "/api/products/{id}": {
       "get": {
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "summary": "Chi tiết sản phẩm",
         "description": "Chỉ product ACTIVE của shop APPROVED mới xem được, còn lại 404.",
         "operationId": "detail_1",
@@ -17595,7 +17947,9 @@
     },
     "/api/orders/{id}": {
       "get": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Chi tiet don",
         "description": "Chi buyer so huu moi xem duoc.",
         "operationId": "detail_2",
@@ -17692,7 +18046,9 @@
     },
     "/api/orders/returns/mine": {
       "get": {
-        "tags": ["Buyer - Returns"],
+        "tags": [
+          "Buyer - Returns"
+        ],
         "summary": "Danh sách yêu cầu đổi/trả của tôi",
         "operationId": "mine_1",
         "responses": {
@@ -17777,7 +18133,9 @@
     },
     "/api/orders/mine": {
       "get": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Don cua toi",
         "operationId": "mine_2",
         "responses": {
@@ -17862,7 +18220,9 @@
     },
     "/api/notifications": {
       "get": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "Danh sách thông báo của tôi",
         "description": "Lấy danh sách thông báo của người dùng hiện tại theo phân trang, mới nhất trước.",
         "operationId": "listNotifications",
@@ -17980,7 +18340,9 @@
     },
     "/api/notifications/unread-count": {
       "get": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "Số thông báo chưa đọc",
         "description": "Đếm số lượng thông báo chưa đọc của người dùng hiện tại.",
         "operationId": "getUnreadNotificationCount",
@@ -18076,7 +18438,9 @@
     },
     "/api/invitations/{token}": {
       "get": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Chi tiết lời mời theo token",
         "description": "Trả về shop, vai trò, email được mời và trạng thái lời mời để trang chấp nhận hiển thị.",
         "operationId": "getInvitation",
@@ -18172,7 +18536,9 @@
     },
     "/api/conversations/mine": {
       "get": {
-        "tags": ["Chat"],
+        "tags": [
+          "Chat"
+        ],
         "summary": "Danh sách hội thoại của tôi (Buyer)",
         "operationId": "myConversations",
         "responses": {
@@ -18257,7 +18623,9 @@
     },
     "/api/categories": {
       "get": {
-        "tags": ["Categories"],
+        "tags": [
+          "Categories"
+        ],
         "summary": "Liệt kê danh mục",
         "description": "Public, xếp theo sort_order.",
         "operationId": "listCategories",
@@ -18330,7 +18698,9 @@
     },
     "/api/cart": {
       "get": {
-        "tags": ["Cart"],
+        "tags": [
+          "Cart"
+        ],
         "summary": "Xem gio hang",
         "description": "Gia va ton hien thi theo du lieu live, khong giu truoc.",
         "operationId": "view",
@@ -18408,7 +18778,9 @@
         ]
       },
       "delete": {
-        "tags": ["Cart"],
+        "tags": [
+          "Cart"
+        ],
         "summary": "Xoa sach gio",
         "operationId": "clear",
         "responses": {
@@ -18487,7 +18859,9 @@
     },
     "/api/admin/users": {
       "get": {
-        "tags": ["Admin - Users"],
+        "tags": [
+          "Admin - Users"
+        ],
         "summary": "Danh sách tài khoản",
         "description": "Lọc trạng thái/role, tìm theo email hoặc tên. Mới tạo trước.",
         "operationId": "listAdminUsers",
@@ -18499,7 +18873,10 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["ACTIVE", "LOCKED"]
+              "enum": [
+                "ACTIVE",
+                "LOCKED"
+              ]
             },
             "example": "LOCKED"
           },
@@ -18510,7 +18887,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["CUSTOMER", "SHOP", "ADMIN"]
+              "enum": [
+                "CUSTOMER",
+                "SHOP",
+                "ADMIN"
+              ]
             },
             "example": "CUSTOMER"
           },
@@ -18635,7 +19016,9 @@
     },
     "/api/admin/users/{id}": {
       "get": {
-        "tags": ["Admin - Users"],
+        "tags": [
+          "Admin - Users"
+        ],
         "summary": "Chi tiết tài khoản",
         "description": "Profile + shop tham gia + số đơn đã đặt + lịch sử khóa.",
         "operationId": "getAdminUser",
@@ -18737,7 +19120,9 @@
     },
     "/api/admin/stats": {
       "get": {
-        "tags": ["Admin - Stats"],
+        "tags": [
+          "Admin - Stats"
+        ],
         "summary": "Số liệu tổng quan",
         "description": "Tài khoản theo trạng thái/role, shop theo trạng thái, đơn hàng theo trạng thái, GMV + doanh thu COD đã thu, và xu hướng 14 ngày gần nhất (giờ Việt Nam).",
         "operationId": "getAdminStats",
@@ -18822,7 +19207,9 @@
     },
     "/api/admin/shops": {
       "get": {
-        "tags": ["Admin - Shops"],
+        "tags": [
+          "Admin - Shops"
+        ],
         "summary": "Danh sách shop",
         "description": "Lọc theo trạng thái + tìm theo tên/slug/email owner. PENDING xếp ai nộp trước lên trước (hàng đợi duyệt), trạng thái khác xếp mới cập nhật trước.",
         "operationId": "listAdminShops",
@@ -18834,7 +19221,12 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["PENDING", "APPROVED", "REJECTED", "SUSPENDED"]
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "REJECTED",
+                "SUSPENDED"
+              ]
             },
             "example": "PENDING"
           },
@@ -18959,7 +19351,9 @@
     },
     "/api/admin/shops/{id}": {
       "get": {
-        "tags": ["Admin - Shops"],
+        "tags": [
+          "Admin - Shops"
+        ],
         "summary": "Chi tiết shop",
         "description": "Hồ sơ + owner + số sản phẩm/đơn + lịch sử trạng thái.",
         "operationId": "getAdminShop",
@@ -19061,7 +19455,9 @@
     },
     "/api/admin/products": {
       "get": {
-        "tags": ["Admin - Products"],
+        "tags": [
+          "Admin - Products"
+        ],
         "summary": "Danh sách sản phẩm toàn sàn",
         "description": "Lọc theo trạng thái, shop + tìm theo tên/slug sản phẩm, tên shop, SKU. Mới cập nhật lên đầu.",
         "operationId": "listAdminProducts",
@@ -19073,7 +19469,13 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["PENDING", "ACTIVE", "HIDDEN", "DELETED", "BANNED"]
+              "enum": [
+                "PENDING",
+                "ACTIVE",
+                "HIDDEN",
+                "DELETED",
+                "BANNED"
+              ]
             },
             "example": "BANNED"
           },
@@ -19218,7 +19620,9 @@
     },
     "/api/admin/products/{id}": {
       "get": {
-        "tags": ["Admin - Products"],
+        "tags": [
+          "Admin - Products"
+        ],
         "summary": "Chi tiết sản phẩm",
         "description": "Thông tin + shop + biến thể + ảnh + lịch sử kiểm duyệt, kể cả sản phẩm đã ẩn/gỡ/xóa.",
         "operationId": "getAdminProduct",
@@ -19320,7 +19724,9 @@
     },
     "/api/admin/orders": {
       "get": {
-        "tags": ["Admin - Orders"],
+        "tags": [
+          "Admin - Orders"
+        ],
         "summary": "Danh sách đơn toàn sàn",
         "description": "Lọc theo trạng thái, cảnh báo SLA, shop, người mua, khoảng ngày đặt (giờ VN) + tìm theo mã đơn, tên/SĐT người nhận, tên shop, email người mua. Mặc định mới đặt trước; lọc theo cảnh báo thì đơn trễ lâu nhất lên đầu.",
         "operationId": "listAdminOrders",
@@ -19332,7 +19738,13 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["PENDING", "CONFIRMED", "SHIPPING", "DELIVERED", "CANCELLED"]
+              "enum": [
+                "PENDING",
+                "CONFIRMED",
+                "SHIPPING",
+                "DELIVERED",
+                "CANCELLED"
+              ]
             },
             "example": "PENDING"
           },
@@ -19343,7 +19755,12 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["CONFIRM_LATE", "HANDOVER_LATE", "DELIVERY_LATE", "RETURN_OPEN"]
+              "enum": [
+                "CONFIRM_LATE",
+                "HANDOVER_LATE",
+                "DELIVERY_LATE",
+                "RETURN_OPEN"
+              ]
             },
             "example": "CONFIRM_LATE"
           },
@@ -19510,7 +19927,9 @@
     },
     "/api/admin/orders/{id}": {
       "get": {
-        "tags": ["Admin - Orders"],
+        "tags": [
+          "Admin - Orders"
+        ],
         "summary": "Chi tiết đơn",
         "description": "Đơn + shop + người mua + sản phẩm + tiền + dòng thời gian (ai làm gì, lúc nào) + yêu cầu trả hàng.",
         "operationId": "getAdminOrder",
@@ -19612,7 +20031,9 @@
     },
     "/api/admin/orders/summary": {
       "get": {
-        "tags": ["Admin - Orders"],
+        "tags": [
+          "Admin - Orders"
+        ],
         "summary": "Đếm đơn theo trạng thái và cảnh báo",
         "description": "Cùng bộ lọc với danh sách nhưng không lọc trạng thái/cảnh báo, để hiện số trên từng tab và thẻ cảnh báo (tính ngày làm việc, không tính Chủ nhật/ngày lễ): chờ xác nhận quá 1 ngày, chưa bàn giao vận chuyển sau 2 ngày, đang giao quá 7 ngày, trả hàng chưa xong.",
         "operationId": "getAdminOrderSummary",
@@ -19755,7 +20176,9 @@
     },
     "/api/admin/holidays": {
       "get": {
-        "tags": ["Admin - Holidays"],
+        "tags": [
+          "Admin - Holidays"
+        ],
         "summary": "Lịch nghỉ lễ theo năm",
         "description": "Mọi ngày của năm kể cả ngày đã bỏ, lần đồng bộ gần nhất, đã cấu hình API key chưa.",
         "operationId": "listHolidays",
@@ -19860,7 +20283,9 @@
     },
     "/api/admin/config-audit": {
       "get": {
-        "tags": ["Admin - Settings"],
+        "tags": [
+          "Admin - Settings"
+        ],
         "summary": "Lịch sử thay đổi cấu hình",
         "description": "Các thay đổi cấu hình của admin, mới nhất lên đầu; lọc theo loại đối tượng.",
         "operationId": "listConfigAudit",
@@ -19994,7 +20419,9 @@
     },
     "/api/wishlist/items/{productId}": {
       "delete": {
-        "tags": ["Wishlist"],
+        "tags": [
+          "Wishlist"
+        ],
         "summary": "Xoa khoi wishlist",
         "operationId": "remove",
         "parameters": [
@@ -20073,7 +20500,9 @@
     },
     "/api/shops/{shopId}/products/{id}/images/{imageId}": {
       "delete": {
-        "tags": ["Shop - Products"],
+        "tags": [
+          "Shop - Products"
+        ],
         "summary": "Xóa ảnh sản phẩm",
         "description": "Gỡ ảnh khỏi sản phẩm.",
         "operationId": "deleteImage",
@@ -20173,7 +20602,9 @@
     },
     "/api/seller/shops/{shopId}/members/{memberId}": {
       "delete": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Vô hiệu hóa nhân viên khỏi shop",
         "description": "Chủ shop vô hiệu hóa nhân viên: nhân viên mất quyền truy cập shop ngay lập tức nhưng vẫn còn trong danh sách thành viên để có thể kích hoạt lại.",
         "operationId": "removeMember",
@@ -20263,7 +20694,9 @@
     },
     "/api/seller/shops/{shopId}/invitations/{invitationId}": {
       "delete": {
-        "tags": ["Seller - Staff & Roles"],
+        "tags": [
+          "Seller - Staff & Roles"
+        ],
         "summary": "Thu hồi lời mời",
         "description": "Chủ shop thu hồi một lời mời đang chờ; thông báo trong website của người được mời cũng bị xóa.",
         "operationId": "revokeInvitation",
@@ -20353,7 +20786,9 @@
     },
     "/api/notifications/{id}": {
       "delete": {
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "summary": "Xóa thông báo",
         "description": "Xóa một thông báo của người dùng hiện tại.",
         "operationId": "deleteNotification",
@@ -20433,7 +20868,9 @@
     },
     "/api/admin/banned-keywords/{id}": {
       "delete": {
-        "tags": ["Admin - Banned Keywords"],
+        "tags": [
+          "Admin - Banned Keywords"
+        ],
         "summary": "Xóa từ khóa cấm",
         "description": "Không đóng các cờ đã tạo trước đó, admin vẫn xử lý nốt trong hàng đợi.",
         "operationId": "deleteBannedKeyword",
@@ -20569,7 +21006,11 @@
           "label": {
             "type": "string",
             "description": "Nhan dia chi (HOME, OFFICE, OTHER)",
-            "enum": ["HOME", "OFFICE", "OTHER"],
+            "enum": [
+              "HOME",
+              "OFFICE",
+              "OTHER"
+            ],
             "example": "HOME"
           },
           "defaultAddress": {
@@ -20577,7 +21018,13 @@
             "description": "Dat lam dia chi mac dinh"
           }
         },
-        "required": ["defaultAddress", "fullAddress", "label", "phoneNumber", "recipientName"]
+        "required": [
+          "defaultAddress",
+          "fullAddress",
+          "label",
+          "phoneNumber",
+          "recipientName"
+        ]
       },
       "AddressResponse": {
         "type": "object",
@@ -20601,7 +21048,11 @@
           "label": {
             "type": "string",
             "description": "Nhan dia chi",
-            "enum": ["HOME", "OFFICE", "OTHER"]
+            "enum": [
+              "HOME",
+              "OFFICE",
+              "OTHER"
+            ]
           },
           "defaultAddress": {
             "type": "boolean",
@@ -20619,7 +21070,10 @@
             "minLength": 1
           },
           "variantId": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
             "description": "Gắn vào variant cụ thể, null = ảnh chung product"
           },
@@ -20630,37 +21084,54 @@
             "minimum": 0
           }
         },
-        "required": ["s3Key"]
+        "required": [
+          "s3Key"
+        ]
       },
       "UpdateProductRequest": {
         "type": "object",
         "properties": {
           "name": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tên mới, null = giữ nguyên",
             "maxLength": 300,
             "minLength": 0,
             "pattern": "^(?!\\s*$).+"
           },
           "description": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Mô tả mới, null = giữ nguyên",
             "maxLength": 20000,
             "minLength": 0
           },
           "categoryId": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
             "description": "Danh mục mới, null = giữ nguyên"
           },
           "status": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "ACTIVE, HIDDEN hoặc PENDING (giữ nguyên), null = giữ nguyên",
             "example": "HIDDEN",
             "pattern": "^(ACTIVE|HIDDEN|PENDING)$"
           },
           "variants": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "description": "Sửa variant theo id hoặc thêm mới nếu id null, null = không đụng variants",
             "items": {
               "$ref": "#/components/schemas/UpdateVariantRequest"
@@ -20669,7 +21140,10 @@
             "minItems": 1
           },
           "images": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "description": "Danh sách ảnh mới, null = giữ nguyên danh sách ảnh cũ",
             "items": {
               "$ref": "#/components/schemas/ImageItemRequest"
@@ -20678,53 +21152,86 @@
             "minItems": 0
           },
           "videoKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key video giới thiệu sản phẩm (tối đa 60s), null = giữ nguyên"
           },
           "garmentKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh sản phẩm phẳng cho Virtual Try-On, null = giữ nguyên"
           },
           "tryOnEnabled": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "description": "Bật/tắt tính năng thử đồ ảo, null = giữ nguyên"
           },
           "material": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Chất liệu sản phẩm, null = giữ nguyên"
           },
           "origin": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Xuất xứ sản phẩm, null = giữ nguyên"
           },
           "careInstructions": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Hướng dẫn bảo quản, null = giữ nguyên"
           },
           "sizeGuide": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Bảng hướng dẫn chọn size, null = giữ nguyên"
           },
           "weightGrams": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "Cân nặng đóng gói tính bằng grams",
             "exclusiveMinimum": 0
           },
           "lengthCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "Chiều dài đóng gói (cm)",
             "exclusiveMinimum": 0
           },
           "widthCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "Chiều rộng đóng gói (cm)",
             "exclusiveMinimum": 0
           },
           "heightCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "Chiều cao đóng gói (cm)",
             "exclusiveMinimum": 0
@@ -20735,48 +21242,72 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
             "description": "Id variant cần sửa (để null nếu thêm biến thể mới)"
           },
           "sku": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Mã SKU",
             "maxLength": 100,
             "minLength": 0
           },
           "size": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Kích cỡ",
             "maxLength": 50,
             "minLength": 0
           },
           "color": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Màu sắc",
             "maxLength": 50,
             "minLength": 0
           },
           "price": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
             "description": "Giá mới, null = giữ nguyên",
             "minimum": 0
           },
           "compareAtPrice": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
             "description": "Giá gốc mới, null = giữ nguyên",
             "minimum": 0
           },
           "stockQuantity": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "Tồn kho mới, null = giữ nguyên",
             "minimum": 0
           },
           "defaultVariant": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "description": "Đặt làm default, null = giữ nguyên"
           }
         }
@@ -20789,7 +21320,10 @@
             "format": "uuid"
           },
           "variantId": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           },
           "s3Key": {
@@ -20814,7 +21348,10 @@
             "format": "uuid"
           },
           "categoryId": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
             "description": "Danh mục, null nếu chưa gán"
           },
@@ -20847,7 +21384,10 @@
             "format": "date-time"
           },
           "averageRating": {
-            "type": ["number", "null"],
+            "type": [
+              "number",
+              "null"
+            ],
             "format": "double",
             "description": "Diem trung binh, null khi chua ai danh gia"
           },
@@ -20857,41 +21397,71 @@
             "description": "So luot danh gia"
           },
           "videoKey": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "garmentKey": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "tryOnEnabled": {
             "type": "boolean",
             "description": "Hỗ trợ thử đồ ảo"
           },
           "material": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "origin": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "careInstructions": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "sizeGuide": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "weightGrams": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32"
           },
           "lengthCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32"
           },
           "widthCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32"
           },
           "heightCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32"
           }
         }
@@ -20917,7 +21487,10 @@
             "format": "int64"
           },
           "compareAtPrice": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64"
           },
           "stockQuantity": {
@@ -20937,23 +21510,35 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "null = giữ nguyên",
             "maxLength": 200,
             "minLength": 0
           },
           "description": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "null = giữ nguyên",
             "maxLength": 2000,
             "minLength": 0
           },
           "logoKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "null = giữ nguyên"
           },
           "bannerKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "null = giữ nguyên"
           }
         }
@@ -20975,11 +21560,17 @@
             "type": "string"
           },
           "logoKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key, frontend tự ghép base URL"
           },
           "bannerKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key, frontend tự ghép base URL"
           },
           "status": {
@@ -20987,19 +21578,31 @@
             "example": "APPROVED"
           },
           "statusReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do từ chối/tạm khóa gần nhất, null khi PENDING/APPROVED"
           },
           "phone": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Số điện thoại liên hệ"
           },
           "address": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Địa chỉ lấy hàng"
           },
           "returnPolicy": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Chính sách đổi trả"
           },
           "processingDays": {
@@ -21010,7 +21613,10 @@
             "type": "string"
           },
           "rating": {
-            "type": ["number", "null"],
+            "type": [
+              "number",
+              "null"
+            ],
             "format": "double",
             "description": "Đánh giá trung bình"
           },
@@ -21023,59 +21629,101 @@
             "format": "int32"
           },
           "bankName": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tên ngân hàng"
           },
           "bankAccount": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Số tài khoản"
           },
           "bankHolder": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Chủ tài khoản"
           },
           "autoReplyText": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tin nhắn tự động"
           },
           "workingHours": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Giờ làm việc"
           },
           "legalName": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Họ tên thật chủ shop theo CCCD"
           },
           "idNumber": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Số CCCD"
           },
           "idIssuedDate": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Ngày cấp CCCD"
           },
           "idIssuedPlace": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Nơi cấp CCCD"
           },
           "taxCode": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Mã số thuế"
           },
           "idFrontKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh mặt trước CCCD"
           },
           "idBackKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh mặt sau CCCD"
           },
           "idSelfieKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh selfie cầm CCCD"
           },
           "businessCertKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key giấy chứng nhận ĐKKD"
           },
           "kycStatus": {
@@ -21084,7 +21732,10 @@
             "example": "PENDING_REVIEW"
           },
           "kycRejectionReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do từ chối định danh nếu có"
           },
           "isTrusted": {
@@ -21109,14 +21760,20 @@
           "permissions": {
             "type": "array",
             "description": "Danh sách quyền",
-            "example": ["ORDER_READ", "INVENTORY_WRITE"],
+            "example": [
+              "ORDER_READ",
+              "INVENTORY_WRITE"
+            ],
             "items": {
               "type": "string"
             },
             "minItems": 1
           }
         },
-        "required": ["name", "permissions"]
+        "required": [
+          "name",
+          "permissions"
+        ]
       },
       "ShopRoleResponse": {
         "type": "object",
@@ -21139,7 +21796,10 @@
           "permissions": {
             "type": "array",
             "description": "Danh sách mã quyền thuộc vai trò",
-            "example": ["ORDER_READ", "INVENTORY_WRITE"],
+            "example": [
+              "ORDER_READ",
+              "INVENTORY_WRITE"
+            ],
             "items": {
               "type": "string"
             }
@@ -21170,7 +21830,9 @@
             "minLength": 1
           }
         },
-        "required": ["layoutJson"]
+        "required": [
+          "layoutJson"
+        ]
       },
       "DecorationResponse": {
         "type": "object",
@@ -21211,7 +21873,10 @@
             "minimum": 1
           },
           "comment": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Nhan xet, null neu chi cham diem",
             "maxLength": 2000,
             "minLength": 0
@@ -21238,7 +21903,10 @@
             "format": "int32"
           },
           "comment": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "createdAt": {
             "type": "string",
@@ -21288,7 +21956,10 @@
             "description": "Ten product hien tai"
           },
           "imageKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key anh dai dien, null neu chua co"
           },
           "variantLabel": {
@@ -21519,13 +22190,22 @@
           "audience": {
             "type": "string",
             "description": "Ai thấy popup",
-            "enum": ["ALL", "GUEST", "MEMBER"],
+            "enum": [
+              "ALL",
+              "GUEST",
+              "MEMBER"
+            ],
             "example": "ALL"
           },
           "frequency": {
             "type": "string",
             "description": "Tần suất hiện trên cùng trình duyệt",
-            "enum": ["EVERY_VISIT", "ONCE_PER_SESSION", "ONCE_PER_DAY", "ONCE"],
+            "enum": [
+              "EVERY_VISIT",
+              "ONCE_PER_SESSION",
+              "ONCE_PER_DAY",
+              "ONCE"
+            ],
             "example": "ONCE_PER_DAY"
           },
           "delaySeconds": {
@@ -21559,7 +22239,11 @@
             "description": "Ngừng hiển thị, bỏ trống = không hạn, phải sau startsAt"
           }
         },
-        "required": ["audience", "frequency", "name"]
+        "required": [
+          "audience",
+          "frequency",
+          "name"
+        ]
       },
       "PopupResponse": {
         "type": "object",
@@ -21588,11 +22272,20 @@
           },
           "audience": {
             "type": "string",
-            "enum": ["ALL", "GUEST", "MEMBER"]
+            "enum": [
+              "ALL",
+              "GUEST",
+              "MEMBER"
+            ]
           },
           "frequency": {
             "type": "string",
-            "enum": ["EVERY_VISIT", "ONCE_PER_SESSION", "ONCE_PER_DAY", "ONCE"]
+            "enum": [
+              "EVERY_VISIT",
+              "ONCE_PER_SESSION",
+              "ONCE_PER_DAY",
+              "ONCE"
+            ]
           },
           "delaySeconds": {
             "type": "integer",
@@ -21616,7 +22309,12 @@
           "scheduleState": {
             "type": "string",
             "description": "Trạng thái lịch chạy tính tại thời điểm gọi API",
-            "enum": ["INACTIVE", "SCHEDULED", "RUNNING", "EXPIRED"]
+            "enum": [
+              "INACTIVE",
+              "SCHEDULED",
+              "RUNNING",
+              "EXPIRED"
+            ]
           },
           "updatedAt": {
             "type": "string",
@@ -21658,7 +22356,12 @@
           "footerGroup": {
             "type": "string",
             "description": "Cột footer chứa link trang",
-            "enum": ["ABOUT", "POLICY", "SUPPORT", "NONE"],
+            "enum": [
+              "ABOUT",
+              "POLICY",
+              "SUPPORT",
+              "NONE"
+            ],
             "example": "POLICY"
           },
           "sortOrder": {
@@ -21670,7 +22373,12 @@
             "minimum": 0
           }
         },
-        "required": ["content", "footerGroup", "slug", "title"]
+        "required": [
+          "content",
+          "footerGroup",
+          "slug",
+          "title"
+        ]
       },
       "SitePageResponse": {
         "type": "object",
@@ -21694,7 +22402,12 @@
           },
           "footerGroup": {
             "type": "string",
-            "enum": ["ABOUT", "POLICY", "SUPPORT", "NONE"]
+            "enum": [
+              "ABOUT",
+              "POLICY",
+              "SUPPORT",
+              "NONE"
+            ]
           },
           "sortOrder": {
             "type": "integer",
@@ -21702,7 +22415,10 @@
           },
           "status": {
             "type": "string",
-            "enum": ["DRAFT", "PUBLISHED"]
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ]
           },
           "publishedAt": {
             "type": "string",
@@ -21726,11 +22442,17 @@
           "kind": {
             "type": "string",
             "description": "HOLIDAY (nghỉ) | WORKING_DAY (đi làm bù)",
-            "enum": ["HOLIDAY", "WORKING_DAY"],
+            "enum": [
+              "HOLIDAY",
+              "WORKING_DAY"
+            ],
             "example": "HOLIDAY"
           }
         },
-        "required": ["kind", "name"]
+        "required": [
+          "kind",
+          "name"
+        ]
       },
       "HolidayResponse": {
         "type": "object",
@@ -21760,7 +22482,10 @@
             "description": "false = admin đã bỏ ngày này, đồng bộ không thêm lại"
           },
           "updatedByEmail": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Email admin sửa gần nhất, null nếu do seed/đồng bộ"
           },
           "updatedAt": {
@@ -21775,7 +22500,14 @@
           "category": {
             "type": "string",
             "description": "Nhóm câu hỏi",
-            "enum": ["ORDER", "PAYMENT", "SHIPPING", "RETURN", "ACCOUNT", "OTHER"],
+            "enum": [
+              "ORDER",
+              "PAYMENT",
+              "SHIPPING",
+              "RETURN",
+              "ACCOUNT",
+              "OTHER"
+            ],
             "example": "RETURN"
           },
           "question": {
@@ -21804,7 +22536,11 @@
             "description": "Hiện trên trang FAQ"
           }
         },
-        "required": ["answer", "category", "question"]
+        "required": [
+          "answer",
+          "category",
+          "question"
+        ]
       },
       "FaqResponse": {
         "type": "object",
@@ -21815,7 +22551,14 @@
           },
           "category": {
             "type": "string",
-            "enum": ["ORDER", "PAYMENT", "SHIPPING", "RETURN", "ACCOUNT", "OTHER"]
+            "enum": [
+              "ORDER",
+              "PAYMENT",
+              "SHIPPING",
+              "RETURN",
+              "ACCOUNT",
+              "OTHER"
+            ]
           },
           "question": {
             "type": "string"
@@ -21843,7 +22586,10 @@
           "placement": {
             "type": "string",
             "description": "Vị trí hiển thị",
-            "enum": ["HOME_CAROUSEL", "HOME_STRIP"],
+            "enum": [
+              "HOME_CAROUSEL",
+              "HOME_STRIP"
+            ],
             "example": "HOME_CAROUSEL"
           },
           "title": {
@@ -21897,7 +22643,11 @@
             "description": "Ngừng hiển thị, bỏ trống = không hạn, phải sau startsAt"
           }
         },
-        "required": ["imageKey", "placement", "title"]
+        "required": [
+          "imageKey",
+          "placement",
+          "title"
+        ]
       },
       "BannerResponse": {
         "type": "object",
@@ -21908,7 +22658,10 @@
           },
           "placement": {
             "type": "string",
-            "enum": ["HOME_CAROUSEL", "HOME_STRIP"]
+            "enum": [
+              "HOME_CAROUSEL",
+              "HOME_STRIP"
+            ]
           },
           "title": {
             "type": "string"
@@ -21942,7 +22695,12 @@
           "scheduleState": {
             "type": "string",
             "description": "Trạng thái lịch chạy tính tại thời điểm gọi API",
-            "enum": ["INACTIVE", "SCHEDULED", "RUNNING", "EXPIRED"]
+            "enum": [
+              "INACTIVE",
+              "SCHEDULED",
+              "RUNNING",
+              "EXPIRED"
+            ]
           },
           "updatedAt": {
             "type": "string",
@@ -21959,7 +22717,9 @@
             "description": "Product id muon luu/bo luu"
           }
         },
-        "required": ["productId"]
+        "required": [
+          "productId"
+        ]
       },
       "WishlistToggleResponse": {
         "type": "object",
@@ -21993,11 +22753,17 @@
             "minLength": 0
           },
           "avatarKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key của avatar, null nếu chưa có"
           }
         },
-        "required": ["displayName", "email"]
+        "required": [
+          "displayName",
+          "email"
+        ]
       },
       "UserResponse": {
         "type": "object",
@@ -22030,7 +22796,10 @@
             "example": "ACTIVE"
           },
           "statusReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do khóa, null khi ACTIVE"
           },
           "createdAt": {
@@ -22050,7 +22819,9 @@
             "pattern": "^(image|video)/[a-zA-Z0-9.+-]+$"
           }
         },
-        "required": ["contentType"]
+        "required": [
+          "contentType"
+        ]
       },
       "PresignResponse": {
         "type": "object",
@@ -22114,7 +22885,10 @@
             "minLength": 0
           },
           "sellerType": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Loại hình người bán: INDIVIDUAL hoặc CORPORATE",
             "example": "INDIVIDUAL",
             "pattern": "INDIVIDUAL|CORPORATE"
@@ -22147,7 +22921,10 @@
             "minLength": 1
           },
           "taxCode": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Mã số thuế cá nhân hoặc doanh nghiệp (nếu có)"
           },
           "idFrontKey": {
@@ -22166,7 +22943,10 @@
             "minLength": 1
           },
           "businessCertKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key giấy chứng nhận ĐKKD (nếu có)"
           },
           "bankName": {
@@ -22257,72 +23037,113 @@
             "minItems": 3
           },
           "videoKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key video giới thiệu sản phẩm (tối đa 60s)"
           },
           "garmentKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh sản phẩm phẳng (nền trắng) cho Virtual Try-On"
           },
           "tryOnEnabled": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "description": "Bật tính năng thử đồ ảo (Virtual Try-On)"
           },
           "material": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Chất liệu sản phẩm",
             "example": "100% Cotton"
           },
           "origin": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Xuất xứ sản phẩm",
             "example": "Việt Nam"
           },
           "careInstructions": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Hướng dẫn bảo quản",
             "example": "Giặt máy ở nhiệt độ thường"
           },
           "sizeGuide": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Bảng hướng dẫn chọn size"
           },
           "weightGrams": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "Cân nặng đóng gói tính bằng grams",
             "example": 250,
             "exclusiveMinimum": 0
           },
           "lengthCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "Chiều dài đóng gói (cm)",
             "example": 25,
             "exclusiveMinimum": 0
           },
           "widthCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "Chiều rộng đóng gói (cm)",
             "example": 18,
             "exclusiveMinimum": 0
           },
           "heightCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "Chiều cao đóng gói (cm)",
             "example": 5,
             "exclusiveMinimum": 0
           },
           "status": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Trạng thái mong muốn khi đăng bán: ACTIVE (Đang bán) hoặc HIDDEN (Tạm ẩn)",
             "example": "ACTIVE",
             "pattern": "ACTIVE|HIDDEN"
           }
         },
-        "required": ["images", "name", "slug", "variants"]
+        "required": [
+          "images",
+          "name",
+          "slug",
+          "variants"
+        ]
       },
       "CreateVariantRequest": {
         "type": "object",
@@ -22351,7 +23172,10 @@
             "minimum": 0
           },
           "compareAtPrice": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
             "description": "Giá gốc để hiện % giảm, null nếu không có",
             "minimum": 0
@@ -22368,11 +23192,21 @@
             "description": "Đúng 1 variant default mỗi product"
           },
           "imageKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh riêng cho màu/biến thể này"
           }
         },
-        "required": ["color", "defaultVariant", "price", "size", "sku", "stockQuantity"]
+        "required": [
+          "color",
+          "defaultVariant",
+          "price",
+          "size",
+          "sku",
+          "stockQuantity"
+        ]
       },
       "AttachImagesRequest": {
         "type": "object",
@@ -22386,7 +23220,9 @@
             "minItems": 1
           }
         },
-        "required": ["images"]
+        "required": [
+          "images"
+        ]
       },
       "CreateWithdrawalRequest": {
         "type": "object",
@@ -22403,19 +23239,31 @@
             "minimum": 50000
           },
           "bankName": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tên ngân hàng (để trống sẽ lấy theo hồ sơ shop)"
           },
           "bankAccount": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Số tài khoản ngân hàng (để trống sẽ lấy theo hồ sơ shop)"
           },
           "bankHolder": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Chủ tài khoản (để trống sẽ lấy theo hồ sơ shop)"
           }
         },
-        "required": ["amount", "shopId"]
+        "required": [
+          "amount",
+          "shopId"
+        ]
       },
       "WithdrawalResponse": {
         "type": "object",
@@ -22487,7 +23335,9 @@
             "minItems": 0
           }
         },
-        "required": ["productIds"]
+        "required": [
+          "productIds"
+        ]
       },
       "BulkOperationResult": {
         "type": "object",
@@ -22529,7 +23379,10 @@
             "description": "Id vai trò gán cho nhân viên"
           }
         },
-        "required": ["email", "roleId"]
+        "required": [
+          "email",
+          "roleId"
+        ]
       },
       "StaffInvitationResponse": {
         "type": "object",
@@ -22590,7 +23443,9 @@
             "minLength": 1
           }
         },
-        "required": ["reason"]
+        "required": [
+          "reason"
+        ]
       },
       "SellerReviewResponse": {
         "type": "object",
@@ -22646,7 +23501,9 @@
             "minItems": 1
           }
         },
-        "required": ["orderIds"]
+        "required": [
+          "orderIds"
+        ]
       },
       "BulkConfirmFailureItem": {
         "type": "object",
@@ -22725,7 +23582,10 @@
             "minLength": 6
           }
         },
-        "required": ["accountNumber", "bin"]
+        "required": [
+          "accountNumber",
+          "bin"
+        ]
       },
       "LookupAccountResponse": {
         "type": "object",
@@ -22760,7 +23620,10 @@
             "minimum": 1
           },
           "comment": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Nhan xet, null neu chi cham diem",
             "maxLength": 2000,
             "minLength": 0
@@ -22785,14 +23648,19 @@
             "example": "COUNTERFEIT"
           },
           "description": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Mô tả thêm cho admin, tối đa 1000 ký tự",
             "example": "Logo in lệch, vải khác ảnh",
             "maxLength": 1000,
             "minLength": 0
           }
         },
-        "required": ["reason"]
+        "required": [
+          "reason"
+        ]
       },
       "ProductReportResponse": {
         "type": "object",
@@ -22831,7 +23699,9 @@
             "minimum": 1
           }
         },
-        "required": ["variantId"]
+        "required": [
+          "variantId"
+        ]
       },
       "CheckoutRequest": {
         "type": "object",
@@ -22868,13 +23738,22 @@
             "minLength": 0
           },
           "shippingFee": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
             "description": "Phi ship VND, null = 0",
             "minimum": 0
           }
         },
-        "required": ["items", "shippingAddress", "shippingName", "shippingPhone", "shopId"]
+        "required": [
+          "items",
+          "shippingAddress",
+          "shippingName",
+          "shippingPhone",
+          "shopId"
+        ]
       },
       "OrderItemResponse": {
         "type": "object",
@@ -22884,11 +23763,17 @@
             "format": "uuid"
           },
           "productId": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           },
           "variantId": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           },
           "productName": {
@@ -23039,18 +23924,26 @@
             "minLength": 1
           },
           "description": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Mô tả chi tiết lỗi/vấn đề"
           },
           "evidenceKeys": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "description": "Mảng S3 keys ảnh hoặc video chứng minh",
             "items": {
               "type": "string"
             }
           }
         },
-        "required": ["reason"]
+        "required": [
+          "reason"
+        ]
       },
       "ReturnRequestResponse": {
         "type": "object",
@@ -23115,7 +24008,9 @@
             "description": "Id shop cần chat"
           }
         },
-        "required": ["shopId"]
+        "required": [
+          "shopId"
+        ]
       },
       "ChatConversationResponse": {
         "type": "object",
@@ -23161,11 +24056,16 @@
             "minLength": 1
           },
           "imageKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh đính kèm"
           }
         },
-        "required": ["content"]
+        "required": [
+          "content"
+        ]
       },
       "ChatMessageResponse": {
         "type": "object",
@@ -23215,7 +24115,9 @@
             "minimum": 1
           }
         },
-        "required": ["variantId"]
+        "required": [
+          "variantId"
+        ]
       },
       "CartCheckoutRequest": {
         "type": "object",
@@ -23239,13 +24141,19 @@
             "minLength": 0
           },
           "shippingFee": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
             "description": "Phi ship VND ap cho moi don, null = 0",
             "minimum": 0
           },
           "variantIds": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "description": "Chi thanh toan cac variant nay, null/rong = toan bo gio",
             "items": {
               "type": "string",
@@ -23253,7 +24161,11 @@
             }
           }
         },
-        "required": ["shippingAddress", "shippingName", "shippingPhone"]
+        "required": [
+          "shippingAddress",
+          "shippingName",
+          "shippingPhone"
+        ]
       },
       "HolidaySyncResultResponse": {
         "type": "object",
@@ -23309,7 +24221,10 @@
             "example": "COUNTERFEIT"
           }
         },
-        "required": ["keyword", "violationType"]
+        "required": [
+          "keyword",
+          "violationType"
+        ]
       },
       "BannedKeywordCreatedResponse": {
         "type": "object",
@@ -23341,7 +24256,10 @@
             "example": "COUNTERFEIT"
           },
           "createdByEmail": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "createdAt": {
             "type": "string",
@@ -23353,56 +24271,83 @@
         "type": "object",
         "properties": {
           "phone": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Số điện thoại liên hệ",
             "maxLength": 20,
             "minLength": 0
           },
           "address": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Địa chỉ kho / lấy hàng",
             "maxLength": 500,
             "minLength": 0
           },
           "returnPolicy": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Chính sách đổi trả",
             "maxLength": 5000,
             "minLength": 0
           },
           "processingDays": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "Số ngày chuẩn bị hàng (1-3 ngày)",
             "maximum": 3,
             "minimum": 1
           },
           "bankName": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tên ngân hàng",
             "maxLength": 100,
             "minLength": 0
           },
           "bankAccount": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Số tài khoản ngân hàng",
             "maxLength": 50,
             "minLength": 0
           },
           "bankHolder": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tên chủ tài khoản",
             "maxLength": 100,
             "minLength": 0
           },
           "autoReplyText": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tin nhắn tự động trả lời",
             "maxLength": 1000,
             "minLength": 0
           },
           "workingHours": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Giờ làm việc JSON",
             "maxLength": 2000,
             "minLength": 0
@@ -23419,12 +24364,17 @@
             "example": 50
           },
           "reason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do điều chỉnh (MANUAL_ADJUST, RESTOCK, DAMAGE, v.v.)",
             "example": "RESTOCK"
           }
         },
-        "required": ["newStock"]
+        "required": [
+          "newStock"
+        ]
       },
       "InventoryItemResponse": {
         "type": "object",
@@ -23495,7 +24445,10 @@
             "minimum": -100000
           }
         },
-        "required": ["mode", "productIds"]
+        "required": [
+          "mode",
+          "productIds"
+        ]
       },
       "BulkUpdateProductStatusRequest": {
         "type": "object",
@@ -23518,7 +24471,10 @@
             "pattern": "^(ACTIVE|HIDDEN)$"
           }
         },
-        "required": ["productIds", "status"]
+        "required": [
+          "productIds",
+          "status"
+        ]
       },
       "BulkUpdatePriceRequest": {
         "type": "object",
@@ -23549,7 +24505,10 @@
             "minimum": -90.0
           }
         },
-        "required": ["mode", "productIds"]
+        "required": [
+          "mode",
+          "productIds"
+        ]
       },
       "UpdateMemberStatusRequest": {
         "type": "object",
@@ -23557,13 +24516,18 @@
           "status": {
             "type": "string",
             "description": "Trạng thái mới của nhân viên",
-            "enum": ["ACTIVE", "DEACTIVATED"],
+            "enum": [
+              "ACTIVE",
+              "DEACTIVATED"
+            ],
             "example": "DEACTIVATED",
             "minLength": 1,
             "pattern": "ACTIVE|DEACTIVATED"
           }
         },
-        "required": ["status"]
+        "required": [
+          "status"
+        ]
       },
       "ChangeMemberRoleRequest": {
         "type": "object",
@@ -23574,7 +24538,9 @@
             "description": "Id vai trò mới"
           }
         },
-        "required": ["roleId"]
+        "required": [
+          "roleId"
+        ]
       },
       "ReplyReviewRequest": {
         "type": "object",
@@ -23586,7 +24552,9 @@
             "minLength": 1
           }
         },
-        "required": ["reply"]
+        "required": [
+          "reply"
+        ]
       },
       "RejectReturnRequest": {
         "type": "object",
@@ -23598,7 +24566,9 @@
             "minLength": 1
           }
         },
-        "required": ["sellerNote"]
+        "required": [
+          "sellerNote"
+        ]
       },
       "ApproveReturnRequest": {
         "type": "object",
@@ -23610,16 +24580,24 @@
             "minLength": 1
           },
           "refundAmount": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
             "description": "Số tiền hoàn lại (VND) nếu refund"
           },
           "sellerNote": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Ghi chú của seller"
           }
         },
-        "required": ["resolution"]
+        "required": [
+          "resolution"
+        ]
       },
       "CancelOrderRequest": {
         "type": "object",
@@ -23631,11 +24609,16 @@
             "minLength": 1
           },
           "note": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Ghi chú thêm"
           }
         },
-        "required": ["reason"]
+        "required": [
+          "reason"
+        ]
       },
       "ModerationReasonRequest": {
         "type": "object",
@@ -23648,7 +24631,9 @@
             "minLength": 5
           }
         },
-        "required": ["reason"]
+        "required": [
+          "reason"
+        ]
       },
       "AdminProductResponse": {
         "type": "object",
@@ -23673,11 +24658,17 @@
             "example": "APPROVED"
           },
           "categoryId": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           },
           "categoryName": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "example": "Áo thun"
           },
           "name": {
@@ -23692,12 +24683,18 @@
             "example": "BANNED"
           },
           "violationType": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Loại vi phạm của lần gỡ gần nhất, null nếu không bị gỡ",
             "example": "COUNTERFEIT"
           },
           "statusReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do gỡ gần nhất, null nếu không bị gỡ"
           },
           "minPrice": {
@@ -23723,7 +24720,10 @@
             "description": "Số biến thể"
           },
           "imageKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh đầu tiên, frontend tự ghép base URL"
           },
           "createdAt": {
@@ -23740,12 +24740,18 @@
             "description": "Số báo cáo đang chờ xử lý (người mua + hệ thống)"
           },
           "topReportReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do bị báo cáo nhiều nhất trong các báo cáo đang mở",
             "example": "COUNTERFEIT"
           },
           "lastReportedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
             "description": "Lần bị báo cáo gần nhất (báo cáo đang mở)"
           },
@@ -23759,7 +24765,10 @@
         "type": "object",
         "properties": {
           "note": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Ghi chú vì sao không vi phạm, tùy chọn",
             "example": "Ảnh đúng thực tế",
             "maxLength": 500,
@@ -23788,7 +24797,9 @@
             "minLength": 5
           }
         },
-        "required": ["reason"]
+        "required": [
+          "reason"
+        ]
       },
       "BanProductRequest": {
         "type": "object",
@@ -23815,7 +24826,10 @@
             "minLength": 5
           }
         },
-        "required": ["reason", "violationType"]
+        "required": [
+          "reason",
+          "violationType"
+        ]
       },
       "AdminCancelOrderRequest": {
         "type": "object",
@@ -23840,7 +24854,10 @@
             "minLength": 5
           }
         },
-        "required": ["note", "reason"]
+        "required": [
+          "note",
+          "reason"
+        ]
       },
       "AdminOrderResponse": {
         "type": "object",
@@ -23904,26 +24921,41 @@
             "description": "Tổng số lượng sản phẩm trong đơn"
           },
           "firstItemName": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tên sản phẩm đầu tiên, để nhận diện nhanh"
           },
           "alert": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Cảnh báo SLA: CONFIRM_LATE | HANDOVER_LATE | DELIVERY_LATE | RETURN_OPEN, null nếu bình thường",
             "example": "CONFIRM_LATE"
           },
           "returnStatus": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Trạng thái yêu cầu trả hàng gần nhất, null nếu không có",
             "example": "REQUESTED"
           },
           "cancelledBy": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Ai hủy đơn: BUYER | SELLER | ADMIN, null nếu chưa hủy",
             "example": "ADMIN"
           },
           "cancelReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Mã lý do hủy, null nếu chưa hủy",
             "example": "FRAUD_SUSPECTED"
           },
@@ -23945,18 +24977,30 @@
             "format": "uuid"
           },
           "name": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "slug": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "minPrice": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
             "description": "Gia thap nhat hien tai, null khi khong con ban"
           },
           "defaultImageKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Anh bia hien tai, null khi khong con ban"
           },
           "available": {
@@ -23964,7 +25008,10 @@
             "description": "false = van luu nhung tam khong mua duoc"
           },
           "unavailableReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Ly do khi available = false, null khi mua duoc"
           }
         }
@@ -24015,7 +25062,10 @@
             "description": "Id gian hàng"
           },
           "changedBy": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
             "description": "Id người thực hiện"
           },
@@ -24028,11 +25078,17 @@
             "description": "Tóm tắt thay đổi"
           },
           "oldValues": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Dữ liệu trước thay đổi (JSON)"
           },
           "newValues": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Dữ liệu sau thay đổi (JSON)"
           },
           "createdAt": {
@@ -24241,7 +25297,10 @@
             "example": "Áo Polo Nam Classic"
           },
           "imageKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key của ảnh đại diện sản phẩm"
           },
           "totalSold": {
@@ -24546,12 +25605,18 @@
             "example": "ACTIVE"
           },
           "violationType": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Loại vi phạm khi bị admin gỡ (status = BANNED), null nếu không bị gỡ",
             "example": "COUNTERFEIT"
           },
           "statusReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do admin gỡ, null nếu không bị gỡ"
           },
           "totalStock": {
@@ -24601,7 +25666,10 @@
           "permissions": {
             "type": "array",
             "description": "Danh sách tên quyền đã sắp xếp",
-            "example": ["ORDER_READ", "REVIEW_REPLY"],
+            "example": [
+              "ORDER_READ",
+              "REVIEW_REPLY"
+            ],
             "items": {
               "type": "string"
             }
@@ -24634,7 +25702,10 @@
           "role": {
             "type": "string",
             "description": "Vai trò trong shop",
-            "enum": ["OWNER", "STAFF"]
+            "enum": [
+              "OWNER",
+              "STAFF"
+            ]
           },
           "roleId": {
             "type": "string",
@@ -24658,7 +25729,10 @@
           "status": {
             "type": "string",
             "description": "Trạng thái thành viên",
-            "enum": ["ACTIVE", "DEACTIVATED"]
+            "enum": [
+              "ACTIVE",
+              "DEACTIVATED"
+            ]
           },
           "joinedAt": {
             "type": "string",
@@ -24721,16 +25795,25 @@
             "description": "Mã hành động, ví dụ PRODUCT_CREATE"
           },
           "targetType": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Loại đối tượng bị tác động"
           },
           "targetId": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
             "description": "Id đối tượng bị tác động"
           },
           "detail": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Mô tả ngắn gọn, không chứa nội dung chat/đánh giá"
           },
           "createdAt": {
@@ -24849,7 +25932,10 @@
         "type": "object",
         "properties": {
           "fromStatus": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Trạng thái trước, null ở bước tạo đơn",
             "example": "PENDING"
           },
@@ -24863,11 +25949,17 @@
             "example": "SELLER"
           },
           "changedBy": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           },
           "changedByEmail": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "note": {
             "type": "string",
@@ -24910,13 +26002,21 @@
           "shopStatus": {
             "type": "string",
             "description": "Trạng thái phê duyệt gian hàng",
-            "enum": ["PENDING", "APPROVED", "REJECTED", "SUSPENDED"],
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "SUSPENDED"
+            ],
             "example": "APPROVED"
           },
           "role": {
             "type": "string",
             "description": "Vai trò trong shop: OWNER hoặc STAFF",
-            "enum": ["OWNER", "STAFF"],
+            "enum": [
+              "OWNER",
+              "STAFF"
+            ],
             "example": "STAFF"
           },
           "roleId": {
@@ -24996,11 +26096,17 @@
             "format": "int64"
           },
           "defaultImageKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh đại diện, null nếu chưa có"
           },
           "rank": {
-            "type": ["number", "null"],
+            "type": [
+              "number",
+              "null"
+            ],
             "format": "double",
             "description": "Khoảng cách BM25, càng nhỏ càng khớp. Null khi không có từ khóa"
           }
@@ -25024,12 +26130,18 @@
             }
           },
           "minPrice": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
             "description": "Giá variant rẻ nhất, null nếu không có kết quả"
           },
           "maxPrice": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
             "description": "Giá variant đắt nhất, null nếu không có kết quả"
           }
@@ -25093,11 +26205,20 @@
           "audience": {
             "type": "string",
             "description": "Trình duyệt tự lọc theo trạng thái đăng nhập",
-            "enum": ["ALL", "GUEST", "MEMBER"]
+            "enum": [
+              "ALL",
+              "GUEST",
+              "MEMBER"
+            ]
           },
           "frequency": {
             "type": "string",
-            "enum": ["EVERY_VISIT", "ONCE_PER_SESSION", "ONCE_PER_DAY", "ONCE"]
+            "enum": [
+              "EVERY_VISIT",
+              "ONCE_PER_SESSION",
+              "ONCE_PER_DAY",
+              "ONCE"
+            ]
           },
           "delaySeconds": {
             "type": "integer",
@@ -25116,7 +26237,12 @@
           },
           "footerGroup": {
             "type": "string",
-            "enum": ["ABOUT", "POLICY", "SUPPORT", "NONE"]
+            "enum": [
+              "ABOUT",
+              "POLICY",
+              "SUPPORT",
+              "NONE"
+            ]
           }
         }
       },
@@ -25159,7 +26285,11 @@
           "region": {
             "type": "string",
             "description": "Miền",
-            "enum": ["NORTH", "CENTRAL", "SOUTH"],
+            "enum": [
+              "NORTH",
+              "CENTRAL",
+              "SOUTH"
+            ],
             "example": "NORTH"
           }
         }
@@ -25188,7 +26318,14 @@
           },
           "category": {
             "type": "string",
-            "enum": ["ORDER", "PAYMENT", "SHIPPING", "RETURN", "ACCOUNT", "OTHER"]
+            "enum": [
+              "ORDER",
+              "PAYMENT",
+              "SHIPPING",
+              "RETURN",
+              "ACCOUNT",
+              "OTHER"
+            ]
           },
           "question": {
             "type": "string"
@@ -25422,7 +26559,10 @@
             "example": "An"
           },
           "avatarKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key avatar"
           },
           "role": {
@@ -25434,7 +26574,10 @@
             "example": "ACTIVE"
           },
           "statusReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do khóa hiện tại"
           },
           "createdAt": {
@@ -25501,7 +26644,10 @@
         "type": "object",
         "properties": {
           "fromStatus": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Trạng thái trước, null nếu là bản ghi tạo mới",
             "example": "PENDING"
           },
@@ -25510,12 +26656,18 @@
             "example": "APPROVED"
           },
           "changedBy": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
             "description": "id người thao tác"
           },
           "changedByEmail": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Email người thao tác"
           },
           "reason": {
@@ -25683,11 +26835,17 @@
             "type": "string"
           },
           "logoKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key, frontend tự ghép base URL"
           },
           "bannerKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key, frontend tự ghép base URL"
           },
           "status": {
@@ -25695,24 +26853,39 @@
             "example": "PENDING"
           },
           "statusReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do từ chối/tạm khóa gần nhất"
           },
           "ownerId": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
             "description": "id owner, null nếu shop mất owner"
           },
           "ownerEmail": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "example": "an@t.local"
           },
           "ownerName": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "example": "An"
           },
           "ownerStatus": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Trạng thái tài khoản owner",
             "example": "ACTIVE"
           },
@@ -25722,7 +26895,10 @@
             "description": "Lần nộp hồ sơ gần nhất, hàng đợi duyệt xếp theo cột này"
           },
           "approvedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "createdAt": {
@@ -25734,59 +26910,101 @@
             "format": "date-time"
           },
           "phone": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Số điện thoại kho"
           },
           "address": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Địa chỉ lấy hàng"
           },
           "legalName": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Họ tên thật chủ shop theo CCCD"
           },
           "idNumber": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Số CCCD/CMND"
           },
           "idIssuedDate": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Ngày cấp CCCD"
           },
           "idIssuedPlace": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Nơi cấp CCCD"
           },
           "taxCode": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Mã số thuế"
           },
           "idFrontKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh mặt trước CCCD"
           },
           "idBackKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh mặt sau CCCD"
           },
           "idSelfieKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key ảnh selfie cầm CCCD"
           },
           "businessCertKey": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "S3 key giấy chứng nhận ĐKKD (nếu có)"
           },
           "bankName": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tên ngân hàng thụ hưởng"
           },
           "bankAccount": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Số tài khoản ngân hàng"
           },
           "bankHolder": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Tên chủ tài khoản ngân hàng"
           },
           "kycStatus": {
@@ -25795,7 +27013,10 @@
             "example": "PENDING_REVIEW"
           },
           "kycRejectionReason": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do từ chối định danh nếu có"
           }
         }
@@ -25915,41 +27136,71 @@
             }
           },
           "videoKey": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "garmentKey": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "tryOnEnabled": {
             "type": "boolean",
             "description": "Hỗ trợ thử đồ ảo"
           },
           "material": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "origin": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "careInstructions": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "sizeGuide": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "weightGrams": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32"
           },
           "lengthCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32"
           },
           "widthCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32"
           },
           "heightCm": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32"
           }
         }
@@ -25975,7 +27226,10 @@
             "description": "Mô tả của người báo cáo; với SYSTEM là các từ khóa khớp, cách nhau bởi dấu phẩy"
           },
           "reporterEmail": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Email người báo cáo, null với SYSTEM"
           },
           "status": {
@@ -25988,14 +27242,23 @@
             "format": "date-time"
           },
           "resolvedByEmail": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "resolvedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "resolutionNote": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Lý do gỡ hoặc ghi chú khi bác bỏ"
           }
         }
@@ -26012,17 +27275,26 @@
             "example": "BANNED"
           },
           "violationType": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Loại vi phạm khi gỡ, null khi khôi phục",
             "example": "COUNTERFEIT"
           },
           "changedBy": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid",
             "description": "id admin thao tác"
           },
           "changedByEmail": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Email admin thao tác"
           },
           "reason": {
@@ -26050,7 +27322,12 @@
           },
           "footerGroup": {
             "type": "string",
-            "enum": ["ABOUT", "POLICY", "SUPPORT", "NONE"]
+            "enum": [
+              "ABOUT",
+              "POLICY",
+              "SUPPORT",
+              "NONE"
+            ]
           },
           "sortOrder": {
             "type": "integer",
@@ -26058,7 +27335,10 @@
           },
           "status": {
             "type": "string",
-            "enum": ["DRAFT", "PUBLISHED"]
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ]
           },
           "publishedAt": {
             "type": "string",
@@ -26128,23 +27408,38 @@
             "description": "Ghi chú của người mua"
           },
           "cancelNote": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Ghi chú khi hủy"
           },
           "confirmedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "shippedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "deliveredAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "cancelledAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "items": {
