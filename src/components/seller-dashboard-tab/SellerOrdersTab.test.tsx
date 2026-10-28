@@ -17,6 +17,7 @@ const mockOrders: OrderResponse[] = [
     buyerId: 'buyer-1',
     status: 'PENDING',
     paymentStatus: 'UNPAID',
+    paymentMethod: 'COD',
     subtotal: 100000,
     shippingFee: 20000,
     total: 120000,
@@ -45,6 +46,7 @@ const mockOrders: OrderResponse[] = [
     buyerId: 'buyer-2',
     status: 'CONFIRMED',
     paymentStatus: 'UNPAID',
+    paymentMethod: 'COD',
     subtotal: 250000,
     shippingFee: 30000,
     total: 280000,
@@ -75,9 +77,18 @@ vi.mock('@generated/endpoints/seller-orders/seller-orders', () => ({
     isLoading: false,
   })),
   useConfirm: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useBulkConfirm: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useShip: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeliver: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useCancel: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useTimeline: vi.fn(() => ({ data: { status: 200, data: [] }, isLoading: false })),
+}))
+
+vi.mock('@generated/endpoints/seller-returns/seller-returns', () => ({
+  useList4: vi.fn(() => ({
+    data: { status: 200, data: [] },
+    isLoading: false,
+  })),
 }))
 
 vi.mock('@generated/endpoints/seller-products-inventory/seller-products-inventory', () => ({
@@ -108,7 +119,13 @@ describe('SellerOrdersTab', () => {
     )
 
     expect(html).toContain('Quản lý Đơn hàng')
+    expect(html).toContain('Tất cả')
     expect(html).toContain('Chờ xác nhận')
+    expect(html).toContain('Đang chuẩn bị')
+    expect(html).toContain('Đã giao cho ĐVVC')
+    expect(html).toContain('Hoàn thành')
+    expect(html).toContain('Đã hủy')
+    expect(html).toContain('Đổi trả')
     expect(html).toContain('ORD-AAA111')
     expect(html).toContain('Ao Polo Nam Phong Cach')
     expect(html).toContain('ORD-BBB222')
@@ -136,6 +153,26 @@ describe('SellerOrdersTab', () => {
     expect(html).toContain('Ao Polo Nam Phong Cach')
     expect(html).not.toContain('ORD-BBB222')
     expect(html).not.toContain('Quan Jean Nu Slimfit')
-    expect(html).not.toContain('Chờ lấy hàng')
+    expect(html).not.toContain('Đang chuẩn bị')
+  })
+
+  it('rendersSlaCountdownBadgeForPendingOrder', () => {
+    const queryClient = new QueryClient()
+
+    const html = renderToString(
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(
+          MemoryRouter,
+          { initialEntries: ['/shop?tab=orders&status=PENDING'] },
+          createElement(SellerOrdersTab, { shopId: 'shop-1' }),
+        ),
+      ),
+    )
+
+    expect(html).toContain('ORD-AAA111')
+    // Sla countdown badge is rendered (either "Còn..." or "Đã quá hạn")
+    expect(html).toMatch(/(Còn|Đã quá hạn)/)
   })
 })

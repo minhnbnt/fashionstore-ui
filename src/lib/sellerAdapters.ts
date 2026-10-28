@@ -130,6 +130,14 @@ export function orderItem(order: OrderResponse): OrderItem {
   const items: OrderItem['items'] = []
   for (const item of order.items ?? []) {
     const label = splitVariantLabel(item.variantLabel)
+    let sku: string | undefined
+    if (item.sku) {
+      sku = item.sku
+    }
+    let lineTotal: number | undefined
+    if (item.lineTotal !== undefined && item.lineTotal !== null) {
+      lineTotal = item.lineTotal
+    }
     items.push({
       productId: safeId(item.productId),
       productName: safeText(item.productName),
@@ -137,6 +145,8 @@ export function orderItem(order: OrderResponse): OrderItem {
       color: label.color,
       quantity: item.quantity ?? 0,
       price: item.unitPrice ?? 0,
+      sku,
+      lineTotal,
     })
   }
 
@@ -150,16 +160,59 @@ export function orderItem(order: OrderResponse): OrderItem {
     status = order.status
   }
 
+  let paymentMethod: string | undefined
+  if (order.paymentMethod) {
+    paymentMethod = order.paymentMethod
+  }
+
+  let note: string | undefined
+  if (order.note) {
+    note = order.note
+  }
+
+  let cancelReason: string | undefined
+  if (order.cancelReason) {
+    cancelReason = order.cancelReason
+  }
+
+  let cancelNote: string | undefined
+  if (order.cancelNote) {
+    cancelNote = order.cancelNote
+  }
+
+  let cancelledBy: string | undefined
+  if (order.cancelledBy) {
+    cancelledBy = order.cancelledBy
+  }
+
+  let confirmedAt: string | undefined
+  if (order.confirmedAt) {
+    confirmedAt = formatDateTime(order.confirmedAt)
+  }
+
+  let cancelledAt: string | undefined
+  if (order.cancelledAt) {
+    cancelledAt = formatDateTime(order.cancelledAt)
+  }
+
   return {
     id: safeId(order.id),
     code: safeText(order.code),
     buyerName: safeText(order.shippingName),
     buyerPhone: safeText(order.shippingPhone),
     shippingAddress: safeText(order.shippingAddress),
+    paymentMethod,
+    note,
     items,
     totalAmount: order.total ?? order.subtotal ?? 0,
     status,
+    cancelReason,
+    cancelNote,
+    cancelledBy,
+    confirmedAt,
+    cancelledAt,
     createdAt: formatDateTime(order.createdAt),
+    rawCreatedAt: safeText(order.createdAt),
   }
 }
 

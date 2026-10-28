@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { apiErrorMessage, hookErrorMessage, imageUrl, priceInfo, takeData } from './apiAdapters'
+import {
+  apiErrorMessage,
+  apiErrorText,
+  hookErrorMessage,
+  imageUrl,
+  priceInfo,
+  takeData,
+} from './apiAdapters'
 import { ApiError } from './apiFetch'
 
 import type { ProductResponse } from '@generated/model/productResponse'
@@ -109,5 +116,22 @@ describe('hookErrorMessage', () => {
     expect(hookErrorMessage('search', new Error('down'))).toBe(
       'Đã xảy ra lỗi. Vui lòng thử lại sau.',
     )
+  })
+})
+
+describe('apiErrorText', () => {
+  it('ApiError thi tra ve message BE (detail/message da duoc map trong apiFetch)', () => {
+    expect(apiErrorText(new ApiError(409, 'Vai trò đang có thành viên, không thể xóa'), 'F')).toBe(
+      'Vai trò đang có thành viên, không thể xóa',
+    )
+  })
+
+  it('khong phai ApiError thi tra ve fallback', () => {
+    expect(apiErrorText(new Error('network down'), 'Fallback')).toBe('Fallback')
+    expect(apiErrorText(undefined, 'Fallback')).toBe('Fallback')
+  })
+
+  it('ApiError message rong thi tra ve fallback', () => {
+    expect(apiErrorText(new ApiError(500, ''), 'Fallback')).toBe('Fallback')
   })
 })
