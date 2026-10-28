@@ -557,6 +557,11 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
         displayStyle = record['displayStyle']
       }
 
+      let videoKey: string | undefined
+      if (typeof record['videoKey'] === 'string') {
+        videoKey = record['videoKey']
+      }
+
       let blockId = `block-${blocks.length + 1}`
       if (typeof record['id'] === 'string') {
         blockId = record['id']
@@ -583,6 +588,9 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
       }
       if (displayStyle !== undefined) {
         block.displayStyle = displayStyle
+      }
+      if (videoKey !== undefined) {
+        block.videoKey = videoKey
       }
       blocks.push(block)
     }

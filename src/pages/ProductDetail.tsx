@@ -103,7 +103,11 @@ export default function ProductDetail() {
         <span className="font-bold text-zinc-900 dark:text-zinc-100">{product.name}</span>
       </nav>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <ProductGallery images={product.images ?? []} name={product.name ?? ''} />
+        <ProductGallery
+          images={product.images ?? []}
+          videoKey={product.videoKey ?? null}
+          name={product.name ?? ''}
+        />
         <ProductInfo product={product} />
       </div>
       {product.shopId !== undefined && product.shopId !== null && product.shopId !== '' && (
