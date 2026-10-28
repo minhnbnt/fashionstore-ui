@@ -9,8 +9,8 @@
 
 ## Font
 
-- Inter tự host qua `@fontsource/inter` (400/500/600/700/800 import trong `src/main.tsx`).
-- Cấm link Google Fonts. `--font-sans: 'Inter', system-ui, sans-serif`.
+- Inter Variable tự host qua `@fontsource-variable/inter` (import 1 dòng trong `src/main.tsx`, family `'Inter Variable'`, trục `wght` 100–900 — mọi weight đều dùng được).
+- Cấm link Google Fonts. `--font-sans: 'Inter Variable', system-ui, sans-serif`.
 
 ## Bo góc (shape lock)
 

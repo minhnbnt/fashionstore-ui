@@ -16,7 +16,8 @@ import {
 } from '@phosphor-icons/react'
 
 import { useSessionQuery } from '@/hooks/useSession'
-import { takeData } from '@/lib/apiAdapters'
+import { apiErrorText, takeData } from '@/lib/apiAdapters'
+import { ApiError } from '@/lib/apiFetch'
 import { formatDateTime } from '@/lib/format'
 
 import type { InvitationDetailResponse } from '@generated/model/invitationDetailResponse'
@@ -39,18 +40,19 @@ export default function InvitationAccept() {
         void navigate('/shop')
       },
       onError: (err: unknown) => {
+        let status = 0
+        if (err instanceof ApiError) {
+          status = err.status
+        }
         let msg = 'Có lỗi xảy ra khi chấp nhận lời mời.'
-        const errObj = err as { status?: number; detail?: string }
-        if (errObj.status === 403) {
+        if (status === 403) {
           const targetEmail = invitation?.email ?? ''
           const currentEmail = session?.user?.email ?? ''
           msg = `Lời mời dành cho email ${targetEmail}, bạn đang đăng nhập bằng ${currentEmail}`
-        }
-        if (errObj.status === 410) {
+        } else if (status === 410) {
           msg = 'Lời mời đã hết hạn hoặc bị thu hồi.'
-        }
-        if (errObj.detail) {
-          msg = errObj.detail
+        } else {
+          msg = apiErrorText(err, msg)
         }
         setErrorMessage(msg)
       },

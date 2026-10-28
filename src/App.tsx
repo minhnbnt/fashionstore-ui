@@ -32,6 +32,8 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const Cart = lazy(() => import('./pages/Cart'))
 const Checkout = lazy(() => import('./pages/Checkout'))
 const Addresses = lazy(() => import('./pages/Addresses'))
+const Orders = lazy(() => import('./pages/Orders'))
+const OrderDetail = lazy(() => import('./pages/OrderDetail'))
 const Wishlist = lazy(() => import('./pages/Wishlist'))
 const InvitationAccept = lazy(() => import('./pages/InvitationAccept'))
 
@@ -104,6 +106,22 @@ function App() {
             element={
               <RequireAuth>
                 <Addresses />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/account/orders"
+            element={
+              <RequireAuth>
+                <Orders />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/account/orders/:id"
+            element={
+              <RequireAuth>
+                <OrderDetail />
               </RequireAuth>
             }
           />

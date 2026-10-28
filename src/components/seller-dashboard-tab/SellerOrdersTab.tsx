@@ -36,7 +36,7 @@ import { useSellerPermissions } from '@/lib/sellerPermissions'
 import { sellerStatusMeta } from '@/lib/sellerStatus'
 
 import type { OrderItem, ReturnItem } from '@/types/seller'
-import type { BulkConfirmOrderResponse, List5Params } from '@generated/model'
+import type { BulkConfirmOrderResponse, List5Params, OrderResponse } from '@generated/model'
 
 interface Props {
   shopId: string
@@ -133,9 +133,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
       onSuccess: function (response) {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
         setSelectedOrderIds([])
-        if (response.data !== undefined) {
-          setBulkResult(response.data as BulkConfirmOrderResponse)
-        }
+        setBulkResult(takeData(response))
       },
     },
   })
@@ -173,17 +171,17 @@ export default function SellerOrdersTab({ shopId }: Props) {
     orders = takeData(ordersQuery.data).map(orderItem)
   }
 
-  const orderById = new Map<string, (typeof orders)[number]>()
-  for (const o of orders) {
-    orderById.set(o.id, o)
+  const orderById = new Map<string, OrderResponse>()
+  if (ordersQuery.data !== undefined) {
+    for (const o of takeData(ordersQuery.data)) {
+      orderById.set(o.id ?? '', o)
+    }
   }
 
   let returns: ReturnItem[] = []
   if (returnsQuery.data !== undefined) {
-    const rawReturns = takeData(returnsQuery.data)
-    returns = rawReturns.map(function (r) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return returnItem(r, orderById as any)
+    returns = takeData(returnsQuery.data).map(function (r) {
+      return returnItem(r, orderById)
     })
   }
 
@@ -1008,7 +1006,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                           <span className="font-bold text-zinc-900 dark:text-white">
                             {entry.toStatus}
                           </span>
-                          <span className="py-0.2 rounded bg-zinc-100 px-1.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                          <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
                             {entry.actor}
                           </span>
                           <span className="text-[10px] text-zinc-400">

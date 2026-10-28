@@ -1,20 +1,26 @@
 import { Link } from 'react-router'
 
-import { useGetMyShops } from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
+import {
+  getGetMyShopsQueryKey,
+  useGetMyShops,
+} from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
+import { useResubmitShop } from '@generated/endpoints/shops/shops'
 import {
   ArrowClockwise,
   ArrowRight,
   ClockCountdown,
   Crown,
   Key,
+  PaperPlaneTilt,
   Plus,
   Sparkle,
   Storefront,
   WarningCircle,
   WarningOctagon,
 } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
 
-import { takeData } from '@/lib/apiAdapters'
+import { apiErrorText, takeData } from '@/lib/apiAdapters'
 import { formatDateTime } from '@/lib/format'
 
 import type { SellerShopMembershipResponse } from '@generated/model/sellerShopMembershipResponse'
@@ -91,6 +97,15 @@ function canEnterShop(membership: SellerShopMembershipResponse): boolean {
 
 export default function MyShopsTab({ onOpenRegisterModal }: MyShopsTabProps) {
   const query = useGetMyShops()
+  const queryClient = useQueryClient()
+
+  const resubmitMutation = useResubmitShop({
+    mutation: {
+      onSuccess: function () {
+        void queryClient.invalidateQueries({ queryKey: getGetMyShopsQueryKey() })
+      },
+    },
+  })
 
   let shops: SellerShopMembershipResponse[] = []
   if (query.data !== undefined) {
@@ -248,9 +263,29 @@ export default function MyShopsTab({ onOpenRegisterModal }: MyShopsTabProps) {
                   )}
 
                   {shop.shopStatus === 'REJECTED' && (
-                    <div className="flex items-center gap-2 text-xs text-rose-700 dark:text-rose-300">
-                      <WarningCircle size={16} weight="bold" className="shrink-0" />
-                      <span>Hồ sơ mở shop bị từ chối. Vui lòng kiểm tra lại thông tin eKYC.</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-rose-700 dark:text-rose-300">
+                        <WarningCircle size={16} weight="bold" className="shrink-0" />
+                        <span>Hồ sơ mở shop bị từ chối. Vui lòng kiểm tra lại thông tin eKYC.</span>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={resubmitMutation.isPending}
+                        onClick={function () {
+                          if (shop.shopId !== undefined) {
+                            resubmitMutation.mutate({ id: shop.shopId })
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
+                      >
+                        <PaperPlaneTilt size={13} weight="bold" />
+                        <span>Nộp lại hồ sơ duyệt</span>
+                      </button>
+                      {resubmitMutation.isError && (
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400">
+                          {apiErrorText(resubmitMutation.error, 'Không thể nộp lại hồ sơ.')}
+                        </p>
+                      )}
                     </div>
                   )}
 

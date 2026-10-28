@@ -2,9 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Bank, CaretDown, Check, MagnifyingGlass, X } from '@phosphor-icons/react'
 
+import { PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
 import { filterBanks } from '@/lib/bankSearch'
 
 import type { BankResponse } from '@/types/bank'
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
 
 export interface BankSearchSelectorProps {
   banks: BankResponse[]
@@ -93,6 +101,7 @@ export default function BankSearchSelector({
             <img
               src={selectedBank.logo}
               alt={selectedBank.shortName}
+              onError={handleImageError}
               className="h-6 w-6 shrink-0 rounded bg-white object-contain p-0.5 shadow-xs"
             />
           )}
@@ -184,6 +193,7 @@ export default function BankSearchSelector({
                       <img
                         src={b.logo}
                         alt={b.shortName}
+                        onError={handleImageError}
                         className="h-6 w-6 shrink-0 rounded bg-white object-contain p-0.5 shadow-2xs"
                       />
                     )}
