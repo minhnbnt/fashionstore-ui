@@ -15,9 +15,10 @@ import {
   Sparkle,
 } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
+import type { PageResponseProductResponse } from '@generated/model/pageResponseProductResponse'
 import type { ProductResponse } from '@generated/model/productResponse'
 import type { ShopCategorySummaryResponse } from '@generated/model/shopCategorySummaryResponse'
 
@@ -28,6 +29,15 @@ export interface ShopProductsTabProps {
   selectedCategoryId?: string
   onSelectCategory?: (categoryId: string | undefined) => void
 }
+
+type ProductSortKey = 'NEWEST' | 'BEST_SELLER' | 'PRICE_ASC' | 'PRICE_DESC'
+
+const PRODUCT_SORT_OPTIONS: Array<{ key: ProductSortKey; label: string }> = [
+  { key: 'NEWEST', label: 'Mới nhất' },
+  { key: 'BEST_SELLER', label: 'Bán chạy' },
+  { key: 'PRICE_ASC', label: 'Giá tăng dần' },
+  { key: 'PRICE_DESC', label: 'Giá giảm dần' },
+]
 
 function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
   e.currentTarget.onerror = null
@@ -75,14 +85,6 @@ function getProductDisplayInfo(p: ProductResponse) {
   }
 }
 
-interface PageData {
-  items?: ProductResponse[]
-  total?: number
-  page?: number
-  limit?: number
-  totalPages?: number
-}
-
 export default function ShopProductsTab({
   shopId,
   searchQuery = '',
@@ -90,9 +92,24 @@ export default function ShopProductsTab({
   selectedCategoryId,
   onSelectCategory,
 }: ShopProductsTabProps) {
-  const [sort, setSort] = useState<'NEWEST' | 'BEST_SELLER' | 'PRICE_ASC' | 'PRICE_DESC'>('NEWEST')
-  const [page, setPage] = useState(0)
+  const [sort, setSort] = useState<ProductSortKey>('NEWEST')
+  // Page lưu kèm filter tại thời điểm bấm: khi searchQuery/selectedCategoryId đổi (từ header,
+  // không qua click trong tab) thì page tự derive về 0 — tránh query chạy ở page cũ rồi
+  // báo "không tìm thấy" oan uổng. Derive lúc render, không dùng effect.
+  const [pageState, setPageState] = useState({
+    search: searchQuery,
+    category: selectedCategoryId,
+    page: 0,
+  })
   const pageSize = 12
+
+  const filterChanged =
+    pageState.search !== searchQuery || pageState.category !== selectedCategoryId
+  const page = filterChanged ? 0 : pageState.page
+
+  const updatePage = (next: number) => {
+    setPageState({ search: searchQuery, category: selectedCategoryId, page: next })
+  }
 
   // Categories query
   const categoriesQuery = useGetShopCategories(shopId, {
@@ -128,25 +145,25 @@ export default function ShopProductsTab({
     },
   )
 
-  let pageData: PageData | null = null
+  let pageData: PageResponseProductResponse | null = null
   if (productsQuery.data !== undefined && productsQuery.data.status === 200) {
-    pageData = takeData(productsQuery.data) as PageData
+    pageData = takeData(productsQuery.data)
   }
 
   const products = pageData?.items ?? []
   const totalItems = pageData?.total ?? 0
-  const totalPages = pageData?.totalPages ?? Math.ceil(totalItems / pageSize)
+  const totalPages = Math.ceil(totalItems / (pageData?.size ?? pageSize))
 
   const handleCategoryClick = (catId: string | undefined) => {
-    setPage(0)
+    updatePage(0)
     if (onSelectCategory) {
       onSelectCategory(catId)
     }
   }
 
-  const handleSortChange = (newSort: 'NEWEST' | 'BEST_SELLER' | 'PRICE_ASC' | 'PRICE_DESC') => {
+  const handleSortChange = (newSort: ProductSortKey) => {
     setSort(newSort)
-    setPage(0)
+    updatePage(0)
   }
 
   return (
@@ -230,12 +247,7 @@ export default function ShopProductsTab({
             Sắp xếp:
           </span>
           <div className="flex rounded-full bg-zinc-100 p-1 dark:bg-white/10">
-            {[
-              { key: 'NEWEST', label: 'Mới nhất' },
-              { key: 'BEST_SELLER', label: 'Bán chạy' },
-              { key: 'PRICE_ASC', label: 'Giá tăng dần' },
-              { key: 'PRICE_DESC', label: 'Giá giảm dần' },
-            ].map((opt) => {
+            {PRODUCT_SORT_OPTIONS.map((opt) => {
               const isActive = sort === opt.key
               let sortBtnClass =
                 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white'
@@ -247,11 +259,7 @@ export default function ShopProductsTab({
                 <button
                   key={opt.key}
                   type="button"
-                  onClick={() =>
-                    handleSortChange(
-                      opt.key as 'NEWEST' | 'BEST_SELLER' | 'PRICE_ASC' | 'PRICE_DESC',
-                    )
-                  }
+                  onClick={() => handleSortChange(opt.key)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${sortBtnClass}`}
                 >
                   {opt.label}
@@ -278,8 +286,17 @@ export default function ShopProductsTab({
         </div>
       )}
 
+      {/* Error State — API lỗi thì nói thẳng, không nhầm là "không có kết quả" */}
+      {productsQuery.isError && (
+        <div className="rounded-3xl border border-red-200 bg-red-50/60 p-8 text-center dark:border-red-900/50 dark:bg-red-950/20">
+          <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+            {hookErrorMessage('shops-catalog', productsQuery.error)}
+          </p>
+        </div>
+      )}
+
       {/* Empty State */}
-      {!productsQuery.isLoading && products.length === 0 && (
+      {!productsQuery.isLoading && !productsQuery.isError && products.length === 0 && (
         <div className="rounded-3xl border border-dashed border-zinc-200 bg-white/50 p-12 text-center dark:border-white/10 dark:bg-white/5">
           <Sparkle size={36} className="mx-auto text-zinc-300 dark:text-zinc-600" />
           <h3 className="mt-3 text-base font-bold text-zinc-800 dark:text-zinc-200">
@@ -292,6 +309,7 @@ export default function ShopProductsTab({
             <button
               type="button"
               onClick={() => {
+                updatePage(0)
                 if (onClearSearch) onClearSearch()
                 if (onSelectCategory) onSelectCategory(undefined)
               }}
@@ -354,7 +372,7 @@ export default function ShopProductsTab({
           <button
             type="button"
             disabled={page === 0}
-            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
+            onClick={() => updatePage(Math.max(0, page - 1))}
             className="flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
           >
             <CaretLeft size={14} />
@@ -366,7 +384,7 @@ export default function ShopProductsTab({
           <button
             type="button"
             disabled={page >= totalPages - 1}
-            onClick={() => setPage((prev) => prev + 1)}
+            onClick={() => updatePage(page + 1)}
             className="flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
           >
             Sau

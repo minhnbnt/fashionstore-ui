@@ -152,12 +152,19 @@ export default function ShopStorefront() {
 
       {/* Tab 1: Home (Decoration Layout) */}
       {activeTab === 'HOME' && (
-        <ShopDecorationRenderer
-          blocks={blocks}
-          shopId={shopId}
-          onSelectCategory={handleSelectCategory}
-          onViewAllProducts={() => setActiveTab('PRODUCTS')}
-        />
+        <>
+          {decorationQuery.isError && (
+            <p className="rounded-2xl border border-red-200 bg-red-50/60 px-4 py-3 text-xs font-semibold text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
+              Không tải được giao diện trang trí của shop. Vui lòng thử lại sau.
+            </p>
+          )}
+          <ShopDecorationRenderer
+            blocks={blocks}
+            shopId={shopId}
+            onSelectCategory={handleSelectCategory}
+            onViewAllProducts={() => setActiveTab('PRODUCTS')}
+          />
+        </>
       )}
 
       {/* Tab 2: All Products */}

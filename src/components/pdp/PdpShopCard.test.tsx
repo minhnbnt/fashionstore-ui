@@ -20,7 +20,7 @@ vi.mock('@generated/endpoints/shops/shops', () => ({
         followerCount: 3500,
         processingDays: 2,
         isTrusted: true,
-        sellerType: 'BRAND',
+        sellerType: 'CORPORATE',
       },
     },
     isLoading: false,
@@ -49,8 +49,8 @@ describe('PdpShopCard', () => {
     expect(html).toContain('nét Concept Studio')
     expect(html).toContain('href="/shops/net-concept"')
 
-    // Badge uy tín & thương hiệu
-    expect(html).toContain('Thương hiệu')
+    // Badge uy tín & thương hiệu (CORPORATE = giá trị duy nhất BE gửi, xem V8__seller_center.sql)
+    expect(html).toContain('Chính hãng (Mall)')
     expect(html).toContain('Shop uy tín được xác thực')
 
     // Rating & người theo dõi & thời gian chuẩn bị hàng

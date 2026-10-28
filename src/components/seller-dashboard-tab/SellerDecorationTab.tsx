@@ -33,6 +33,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
 import { takeData, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
+import { reorderBlocks } from '@/lib/decoration'
 import { decorationBlocks, decorationDraftJson } from '@/lib/sellerAdapters'
 import { useSellerPermissions } from '@/lib/sellerPermissions'
 
@@ -118,27 +119,11 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
   }
 
   const handleMoveUp = (index: number) => {
-    if (index === 0) return
-    const updated = [...blocks]
-    const temp = updated[index - 1]
-    const current = updated[index]
-    if (temp && current) {
-      updated[index - 1] = current
-      updated[index] = temp
-      setDraftBlocks(updated)
-    }
+    setDraftBlocks(reorderBlocks(blocks, index, index - 1))
   }
 
   const handleMoveDown = (index: number) => {
-    if (index === blocks.length - 1) return
-    const updated = [...blocks]
-    const temp = updated[index + 1]
-    const current = updated[index]
-    if (temp && current) {
-      updated[index + 1] = current
-      updated[index] = temp
-      setDraftBlocks(updated)
-    }
+    setDraftBlocks(reorderBlocks(blocks, index, index + 1))
   }
 
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
@@ -167,13 +152,8 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
     const sourceIndex = draggedIdx
     setDraggedIdx(null)
     setDragOverIdx(null)
-    if (sourceIndex === null || sourceIndex === targetIndex) return
-    const updated = [...blocks]
-    const [movedItem] = updated.splice(sourceIndex, 1)
-    if (movedItem) {
-      updated.splice(targetIndex, 0, movedItem)
-      setDraftBlocks(updated)
-    }
+    if (sourceIndex === null) return
+    setDraftBlocks(reorderBlocks(blocks, sourceIndex, targetIndex))
   }
 
   const handleDragEnd = () => {

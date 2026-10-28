@@ -2,7 +2,6 @@ import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 
 import BuyerChatWidget from './BuyerChatWidget'
@@ -19,50 +18,32 @@ vi.mock('@tanstack/react-query', async () => {
 })
 
 vi.mock('@/hooks/useSession', () => ({
-  useSessionQuery: vi.fn(() => ({
+  useSessionQuery: () => ({
     data: {
       access_token: 'fake-jwt',
       user: { id: 'cust-1', email: 'customer@example.com', role: 'customer' },
     },
-  })),
-}))
-
-vi.mock('@/hooks/useWebSocket', () => ({
-  useWebSocket: vi.fn(),
-}))
-
-vi.mock('@generated/endpoints/products/products', () => ({
-  useDetail1: vi.fn(() => ({ data: undefined })),
-}))
-
-vi.mock('@generated/endpoints/chat/chat', () => ({
-  useMyConversations: vi.fn(() => ({
-    data: {
-      status: 200,
-      data: [
-        {
-          id: 'conv-1',
-          shopId: 'shop-uuid-1',
-          shopName: 'nét Boutique',
-          lastMessageText: 'Chào bạn!',
-          lastMessageAt: '2026-10-27T10:00:00Z',
-          unreadCount: 0,
-        },
-      ],
-    },
-  })),
-  useMarkRead: vi.fn(() => ({ mutate: vi.fn() })),
-  useSendMessage: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-  useStartConversation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
-  useMessages: vi.fn(() => ({ data: { status: 200, data: [] } })),
-  getMyConversationsQueryKey: vi.fn(() => ['my-conversations']),
-  getSellerConversationsQueryKey: vi.fn(() => ['seller-conversations']),
-  getMessagesQueryKey: vi.fn(() => ['messages']),
+  }),
 }))
 
 vi.mock('@/hooks/useChatRealtime', () => ({
   useChatMessagesRealtime: vi.fn(),
   useConversationListRealtime: vi.fn(),
+}))
+
+vi.mock('@generated/endpoints/products/products', () => ({
+  useDetail1: () => ({ data: undefined }),
+}))
+
+vi.mock('@generated/endpoints/chat/chat', () => ({
+  useMyConversations: vi.fn(),
+  useMarkRead: () => ({ mutate: vi.fn() }),
+  useSendMessage: () => ({ mutate: vi.fn() }),
+  useStartConversation: () => ({ mutate: vi.fn() }),
+  useMessages: () => ({ data: undefined }),
+  getMyConversationsQueryKey: vi.fn(),
+  getSellerConversationsQueryKey: vi.fn(),
+  getMessagesQueryKey: vi.fn(),
 }))
 
 import { useMyConversations } from '@generated/endpoints/chat/chat'
@@ -139,18 +120,28 @@ describe('BuyerChatWidget', () => {
     expect(html).toContain('>99+</span>')
   })
 
-  it('render nút mở khung chat khi buyer đã đăng nhập trên storefront /shops/net-boutique', () => {
-    const queryClient = new QueryClient()
+  it('render nút mở khung chat khi buyer đã đăng nhập', () => {
+    vi.mocked(useMyConversations).mockReturnValue({
+      data: {
+        status: 200,
+        data: [
+          {
+            id: 'conv-1',
+            shopId: 'shop-uuid-1',
+            shopName: 'nét Boutique',
+            lastMessageText: 'Chào bạn!',
+            lastMessageAt: '2026-10-27T10:00:00Z',
+            unreadCount: 0,
+          },
+        ],
+      },
+    } as unknown as ReturnType<typeof useMyConversations>)
 
     const html = renderToString(
       createElement(
-        QueryClientProvider,
-        { client: queryClient },
-        createElement(
-          MemoryRouter,
-          { initialEntries: ['/shops/net-boutique'] },
-          createElement(BuyerChatWidget),
-        ),
+        MemoryRouter,
+        { initialEntries: ['/shops/net-boutique'] },
+        createElement(BuyerChatWidget, null),
       ),
     )
 
