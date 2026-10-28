@@ -186,7 +186,7 @@ export default function Header() {
             </Link>
 
             {/* Notification Bell */}
-            <NotificationBell />
+            <NotificationBell categories={['ORDER', 'ACTIVITY']} />
 
             {/* User avatar / dropdown */}
             <div className="relative" ref={dropdownRef} onBlur={handleBlur}>

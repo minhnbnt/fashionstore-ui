@@ -324,12 +324,26 @@ function BuyerChatWidgetBody() {
   const [open, setOpen] = useState(false)
   const [selectedConvId, setSelectedConvId] = useState('')
 
+  useEffect(() => {
+    function handleOpenChat() {
+      setOpen(true)
+    }
+    window.addEventListener('fashionstore:open-chat', handleOpenChat)
+    return () => {
+      window.removeEventListener('fashionstore:open-chat', handleOpenChat)
+    }
+  }, [])
+
   const productId = isProductPath(location.pathname)
   const productQuery = useDetail1(productId, {
     query: { enabled: productId !== '' },
   })
 
-  const conversationsQuery = useMyConversations()
+  const conversationsQuery = useMyConversations({
+    query: {
+      refetchInterval: 30000,
+    },
+  })
 
   useConversationListRealtime()
 
@@ -361,6 +375,11 @@ function BuyerChatWidgetBody() {
     return sum + (conv.unreadCount ?? 0)
   }, 0)
 
+  let unreadBadgeText = String(totalUnread)
+  if (totalUnread > 99) {
+    unreadBadgeText = '99+'
+  }
+
   const selectedConv = conversations.find(function (c) {
     return c.id === selectedConvId
   })
@@ -387,6 +406,7 @@ function BuyerChatWidgetBody() {
     <>
       <button
         type="button"
+        id="buyer-chat-widget-toggle"
         onClick={handleToggle}
         aria-label={chatToggleLabel(open)}
         className="btn-primary fixed right-5 bottom-5 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-xl"
@@ -395,7 +415,7 @@ function BuyerChatWidgetBody() {
         {open && <X size={22} weight="bold" />}
         {!open && totalUnread > 0 && (
           <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
-            {totalUnread}
+            {unreadBadgeText}
           </span>
         )}
       </button>
