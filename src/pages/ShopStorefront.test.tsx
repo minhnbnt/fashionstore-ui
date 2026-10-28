@@ -19,7 +19,7 @@ vi.mock('@generated/endpoints/shops/shops', () => ({
         slug: 'net-design',
         description: 'Thương hiệu thời trang cao cấp.',
         status: 'APPROVED',
-        sellerType: 'BUSINESS',
+        sellerType: 'CORPORATE',
         rating: 4.9,
         ratingCount: 350,
         followerCount: 1250,

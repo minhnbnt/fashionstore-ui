@@ -25,6 +25,8 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Lưu ý: truyền shopId (UUID) vào endpoint by-slug — BE ShopService.getBySlug có fallback
+  // parse UUID, nên card vẫn hoạt động; nếu BE siết endpoint này thì card sẽ biến mất lặng lẽ.
   const shopQuery = useBySlug(shopId, {
     query: {
       enabled: shopId !== '',
@@ -66,12 +68,10 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
   const isTrusted = shop.isTrusted ?? false
   const sellerType = shop.sellerType ?? 'INDIVIDUAL'
 
+  // BE chỉ gửi INDIVIDUAL/CORPORATE (CHECK constraint V8__seller_center.sql)
   let sellerTypeBadge = ''
-  if (sellerType === 'MALL') {
+  if (sellerType === 'CORPORATE') {
     sellerTypeBadge = 'Chính hãng (Mall)'
-  }
-  if (sellerType === 'BRAND') {
-    sellerTypeBadge = 'Thương hiệu'
   }
 
   const handleOpenChat = () => {

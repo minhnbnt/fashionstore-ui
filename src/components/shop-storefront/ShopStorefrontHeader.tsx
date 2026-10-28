@@ -81,7 +81,8 @@ export default function ShopStorefrontHeader({
   if (shop.rating !== null && shop.rating !== undefined) {
     ratingDisplay = shop.rating.toFixed(1)
   }
-  const isMall = shop.sellerType === 'BUSINESS'
+  // BE chỉ gửi INDIVIDUAL/CORPORATE (CHECK constraint V8__seller_center.sql)
+  const isMall = shop.sellerType === 'CORPORATE'
 
   function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
     e.currentTarget.onerror = null
@@ -241,6 +242,7 @@ export default function ShopStorefrontHeader({
             <input
               type="text"
               placeholder="Tìm trong Shop này..."
+              aria-label="Tìm trong Shop"
               value={searchInput}
               onChange={(e) => setLocalSearch(e.target.value)}
               className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-1.5 pr-8 pl-9 text-xs transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none sm:w-60 dark:border-white/10 dark:bg-white/5 dark:focus:bg-[#11182a]"

@@ -14,10 +14,11 @@ import {
   ArrowRight,
 } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import type { DecorationBlock } from '@/types/seller'
+import type { PageResponseProductResponse } from '@generated/model/pageResponseProductResponse'
 import type { ProductResponse } from '@generated/model/productResponse'
 import type { ShopCategorySummaryResponse } from '@generated/model/shopCategorySummaryResponse'
 
@@ -227,17 +228,23 @@ function ProductCollectionBlock({
     },
   )
 
-  interface PageResult {
-    items?: ProductResponse[]
-    total?: number
-  }
-
-  let pageData: PageResult | null = null
+  let pageData: PageResponseProductResponse | null = null
   if (productsQuery.data !== undefined && productsQuery.data.status === 200) {
-    pageData = takeData(productsQuery.data) as PageResult
+    pageData = takeData(productsQuery.data)
   }
 
   const items = pageData?.items ?? []
+
+  // API lỗi thì báo lỗi thay vì tự biến mất im lặng
+  if (productsQuery.isError) {
+    return (
+      <div className="rounded-3xl border border-red-200 bg-red-50/60 p-6 text-center dark:border-red-900/50 dark:bg-red-950/20">
+        <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+          {hookErrorMessage('shops-catalog', productsQuery.error)}
+        </p>
+      </div>
+    )
+  }
 
   // Auto-hide when no products match this smart collection
   if (!productsQuery.isLoading && items.length === 0) {
@@ -353,7 +360,7 @@ function CategoryGridBlock({
             key={c.id}
             type="button"
             onClick={() => {
-              if (onSelectCategory) {
+              if (onSelectCategory && c.id !== undefined) {
                 onSelectCategory(c.id)
               }
             }}
@@ -371,6 +378,8 @@ function CategoryGridBlock({
   )
 }
 
+// TODO(mock): FLASH_SALE vẫn render dữ liệu cứng (ảnh picsum, giá 199.000đ, countdown đứng yên)
+// — cần nối API khuyến mãi thật hoặc chặn seller cấu hình block này trước khi bật public.
 function FlashSaleBlock({ block }: { block: DecorationBlock }) {
   return (
     <div className="rounded-3xl border border-red-200 bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 p-5 text-white shadow-lg">

@@ -17,11 +17,19 @@ vi.mock('@generated/endpoints/shops-catalog/shops-catalog', () => ({
             items: [],
             total: 0,
             page: 0,
-            limit: 12,
-            totalPages: 0,
+            size: 12,
           },
         },
         isLoading: false,
+        isError: false,
+      }
+    }
+    if (params.q === 'api-error') {
+      return {
+        data: undefined,
+        isLoading: false,
+        isError: true,
+        error: new Error('Internal Server Error'),
       }
     }
     return {
@@ -44,11 +52,11 @@ vi.mock('@generated/endpoints/shops-catalog/shops-catalog', () => ({
           ],
           total: 2,
           page: 0,
-          limit: 12,
-          totalPages: 1,
+          size: 12,
         },
       },
       isLoading: false,
+      isError: false,
     }
   }),
   useGetShopCategories: vi.fn(() => ({
@@ -126,5 +134,27 @@ describe('ShopProductsTab', () => {
 
     expect(html).toContain('Không tìm thấy sản phẩm nào phù hợp')
     expect(html).toContain('Xem tất cả sản phẩm')
+  })
+
+  it('hiển thị thông báo lỗi khi API lỗi thay vì nhầm là không có kết quả', () => {
+    const queryClient = new QueryClient()
+
+    const html = renderToString(
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(
+          MemoryRouter,
+          null,
+          createElement(ShopProductsTab, {
+            shopId: 'shop-uuid-1',
+            searchQuery: 'api-error',
+          }),
+        ),
+      ),
+    )
+
+    expect(html).toContain('Đã xảy ra lỗi. Vui lòng thử lại sau.')
+    expect(html).not.toContain('Không tìm thấy sản phẩm nào phù hợp')
   })
 })

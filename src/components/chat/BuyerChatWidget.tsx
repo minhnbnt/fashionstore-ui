@@ -18,7 +18,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import UserAvatar from '@/components/UserAvatar'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
 import { useSessionQuery } from '@/hooks/useSession'
-import { takeData } from '@/lib/apiAdapters'
+import { apiErrorText, takeData } from '@/lib/apiAdapters'
 import { getRoleFromSession } from '@/lib/auth'
 import { formatDateTime } from '@/lib/format'
 
@@ -319,6 +319,7 @@ function BuyerChatWidgetBody() {
 
   const [open, setOpen] = useState(false)
   const [selectedConvId, setSelectedConvId] = useState('')
+  const [startError, setStartError] = useState('')
 
   const productId = isProductPath(location.pathname)
   const productQuery = useDetail1(productId, {
@@ -343,6 +344,9 @@ function BuyerChatWidgetBody() {
 
   const startMutation = useStartConversation({
     mutation: {
+      onMutate: function () {
+        setStartError('')
+      },
       onSuccess: function (data) {
         const conversation = takeData(data)
         if (conversation.id !== undefined) {
@@ -350,6 +354,9 @@ function BuyerChatWidgetBody() {
           markReadMutation.mutate({ id: conversation.id })
         }
         void queryClient.invalidateQueries({ queryKey: getMyConversationsQueryKey() })
+      },
+      onError: function (error) {
+        setStartError(apiErrorText(error, 'Không bắt đầu được hội thoại. Vui lòng thử lại.'))
       },
     },
   })
@@ -367,8 +374,10 @@ function BuyerChatWidgetBody() {
   useEffect(() => {
     function handleOpenChat(e: Event) {
       setOpen(true)
-      const customEvent = e as CustomEvent<OpenChatEventDetail>
-      const detail = customEvent.detail
+      if (!(e instanceof CustomEvent)) {
+        return
+      }
+      const detail = e.detail as OpenChatEventDetail | undefined
       if (detail === undefined || detail === null) {
         return
       }
@@ -382,6 +391,9 @@ function BuyerChatWidgetBody() {
 
       const targetShopId = detail.shopId
       if (targetShopId !== undefined && targetShopId !== '') {
+        if (startMutation.isPending) {
+          return
+        }
         const existing = conversations.find(function (c) {
           return c.shopId === targetShopId
         })
@@ -469,6 +481,11 @@ function BuyerChatWidgetBody() {
                 setSelectedConvId('')
               }}
             />
+          )}
+          {!showThread && startError !== '' && (
+            <p className="px-4 pb-2 text-xs font-semibold text-red-600 dark:text-red-400">
+              {startError}
+            </p>
           )}
           {!showThread && (
             <BuyerChatList
