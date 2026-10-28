@@ -500,7 +500,6 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
         'VOUCHER_CAROUSEL',
         'BANNER',
         'COLLECTION',
-        'FLASH_SALE',
         'VIDEO',
       ]
       if (typeof rawType !== 'string' || !allowedTypes.includes(rawType)) {

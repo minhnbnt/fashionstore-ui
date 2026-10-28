@@ -22,7 +22,6 @@ import {
   FloppyDisk,
   Broadcast,
   Image as ImageIcon,
-  Lightning,
   SquaresFour,
   VideoCamera,
   Gear,
@@ -357,9 +356,6 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                         {(block.type === 'BANNER_SLIDER' || block.type === 'BANNER') && (
                           <ImageIcon size={14} className="text-blue-500" />
                         )}
-                        {block.type === 'FLASH_SALE' && (
-                          <Lightning size={14} className="text-amber-500" />
-                        )}
                         {(block.type === 'PRODUCT_COLLECTION' || block.type === 'COLLECTION') && (
                           <SquaresFour size={14} className="text-emerald-500" />
                         )}
@@ -613,39 +609,6 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                     )
                   }
 
-                  if (b.type === 'FLASH_SALE') {
-                    return (
-                      <div
-                        key={b.id}
-                        className="rounded border border-red-100 bg-white p-2.5 shadow-sm dark:bg-white/10"
-                      >
-                        <div className="mb-2 flex items-center justify-between">
-                          <div className="flex items-center gap-1 text-xs font-bold text-red-600">
-                            <Lightning size={14} weight="fill" />
-                            <span>FLASH SALE</span>
-                          </div>
-                          <span className="rounded bg-black px-1.5 py-0.5 font-mono text-[9px] font-bold text-white">
-                            02 : 14 : 58
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          <div className="rounded bg-zinc-50 p-1 text-center dark:bg-white/5">
-                            <div className="mb-1 h-12 rounded bg-zinc-200 dark:bg-white/10" />
-                            <span className="text-[10px] font-bold text-red-600">189k</span>
-                          </div>
-                          <div className="rounded bg-zinc-50 p-1 text-center dark:bg-white/5">
-                            <div className="mb-1 h-12 rounded bg-zinc-200 dark:bg-white/10" />
-                            <span className="text-[10px] font-bold text-red-600">349k</span>
-                          </div>
-                          <div className="rounded bg-zinc-50 p-1 text-center dark:bg-white/5">
-                            <div className="mb-1 h-12 rounded bg-zinc-200 dark:bg-white/10" />
-                            <span className="text-[10px] font-bold text-red-600">450k</span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-
                   if (b.type === 'COLLECTION') {
                     return (
                       <div key={b.id} className="rounded bg-white p-2.5 shadow-sm dark:bg-white/10">
@@ -756,7 +719,6 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                 </option>
                 <option value="CATEGORY_GRID">Danh mục nổi bật của gian hàng</option>
                 <option value="BANNER">Banner đơn tĩnh</option>
-                <option value="FLASH_SALE">Đồng hồ Flash Sale & Sản phẩm hot</option>
                 <option value="COLLECTION">Danh mục sản phẩm cơ bản</option>
                 <option value="VIDEO">Video trải nghiệm / Livestream preview</option>
               </select>
