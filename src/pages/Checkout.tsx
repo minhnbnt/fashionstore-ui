@@ -131,7 +131,7 @@ export default function Checkout() {
       { data: payload },
       {
         onSuccess: function () {
-          void navigate('/account#orders')
+          void navigate('/account/orders')
         },
         onError: function () {
           showToast('Không thể hoàn tất đặt hàng. Vui lòng thử lại.')
