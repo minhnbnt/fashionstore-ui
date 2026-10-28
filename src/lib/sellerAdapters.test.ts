@@ -350,6 +350,20 @@ describe('decoration adapter', () => {
     expect(parsed).toEqual(blocks)
   })
 
+  it('parse giu videoKey cua block VIDEO qua vong tron', () => {
+    const withVideo: DecorationBlock[] = [
+      {
+        id: 'b-v',
+        type: 'VIDEO',
+        title: 'Video giới thiệu',
+        enabled: true,
+        videoKey: 'decoration/shop-intro.mp4',
+      },
+    ]
+    const parsed = decorationBlocks({ draft: decorationDraftJson(withVideo) })
+    expect(parsed[0]?.videoKey).toBe('decoration/shop-intro.mp4')
+  })
+
   it('JSON loi thi tra mang rong', () => {
     expect(decorationBlocks({ draft: '{khong phai json' })).toEqual([])
     expect(decorationBlocks(undefined)).toEqual([])

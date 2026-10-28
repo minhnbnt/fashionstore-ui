@@ -38,6 +38,7 @@ import { useSellerPermissions } from '@/lib/sellerPermissions'
 
 import BannerSliderConfigModal from './decoration/BannerSliderConfigModal'
 import CollectionConfigModal from './decoration/CollectionConfigModal'
+import VideoConfigModal from './decoration/VideoConfigModal'
 
 import type { DecorationBlock } from '@/types/seller'
 
@@ -69,6 +70,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
   const [editingBlock, setEditingBlock] = useState<DecorationBlock | null>(null)
   const [isSliderModalOpen, setIsSliderModalOpen] = useState(false)
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false)
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
 
   const decorationQuery = useGetDecoration(shopId, { query: { enabled: shopId !== '' } })
 
@@ -198,6 +200,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
     setEditingBlock(null)
     setIsSliderModalOpen(false)
     setIsCollectionModalOpen(false)
+    setIsVideoModalOpen(false)
     setSaveSuccessMsg(`Đã cập nhật cấu hình module ${updated.title}!`)
   }
 
@@ -381,7 +384,8 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                       {(block.type === 'BANNER_SLIDER' ||
                         block.type === 'BANNER' ||
                         block.type === 'PRODUCT_COLLECTION' ||
-                        block.type === 'COLLECTION') && (
+                        block.type === 'COLLECTION' ||
+                        block.type === 'VIDEO') && (
                         <button
                           type="button"
                           title="Cấu hình chi tiết module"
@@ -389,6 +393,8 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                             setEditingBlock(block)
                             if (block.type === 'BANNER_SLIDER' || block.type === 'BANNER') {
                               setIsSliderModalOpen(true)
+                            } else if (block.type === 'VIDEO') {
+                              setIsVideoModalOpen(true)
                             } else {
                               setIsCollectionModalOpen(true)
                             }
@@ -637,13 +643,21 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   }
 
                   if (b.type === 'VIDEO') {
+                    const hasVideo = b.videoKey !== undefined && b.videoKey !== ''
                     return (
                       <div
                         key={b.id}
-                        className="flex items-center justify-center gap-2 rounded bg-zinc-900 p-3 text-xs text-white"
+                        className={
+                          hasVideo
+                            ? 'flex items-center justify-center gap-2 rounded bg-zinc-900 p-3 text-xs text-white'
+                            : 'flex items-center justify-center gap-2 rounded border border-dashed border-zinc-300 bg-zinc-50 p-3 text-xs text-zinc-400 dark:border-white/15 dark:bg-white/5'
+                        }
                       >
                         <VideoCamera size={16} />
-                        <span>{b.title} (Live Feed)</span>
+                        <span>
+                          {b.title}
+                          {hasVideo ? '' : ' — chưa có video'}
+                        </span>
                       </div>
                     )
                   }
@@ -781,6 +795,19 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
           isOpen={isCollectionModalOpen}
           onClose={() => {
             setIsCollectionModalOpen(false)
+            setEditingBlock(null)
+          }}
+          onSave={handleSaveConfig}
+        />
+      )}
+
+      {/* Video Config Modal */}
+      {isVideoModalOpen && editingBlock && (
+        <VideoConfigModal
+          block={editingBlock}
+          isOpen={isVideoModalOpen}
+          onClose={() => {
+            setIsVideoModalOpen(false)
             setEditingBlock(null)
           }}
           onSave={handleSaveConfig}

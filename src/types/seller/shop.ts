@@ -33,6 +33,8 @@ export interface DecorationBlock {
   collectionType?: 'NEW_ARRIVALS' | 'BEST_SELLER' | 'SALE_OFF' | 'CUSTOM'
   itemLimit?: number
   displayStyle?: 'GRID' | 'SLIDER'
+  /** S3 key của video (upload qua presign video/*) — block VIDEO dùng. */
+  videoKey?: string
 }
 
 export interface ShopProfileData {

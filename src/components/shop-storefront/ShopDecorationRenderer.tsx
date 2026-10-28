@@ -5,7 +5,14 @@ import {
   useGetShopCategories,
   useGetShopProducts,
 } from '@generated/endpoints/shops-catalog/shops-catalog'
-import { CaretLeft, CaretRight, Sparkle, SquaresFour, ArrowRight } from '@phosphor-icons/react'
+import {
+  CaretLeft,
+  CaretRight,
+  Sparkle,
+  SquaresFour,
+  ArrowRight,
+  VideoCamera,
+} from '@phosphor-icons/react'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
@@ -418,8 +425,43 @@ export default function ShopDecorationRenderer({
             />
           )
         }
+        if (b.type === 'VIDEO') {
+          // Block chưa gắn video thì bỏ qua, đừng render hộp rỗng cho buyer
+          if (b.videoKey === undefined || b.videoKey === '') {
+            return null
+          }
+          return <VideoBlock key={b.id} block={b} />
+        }
         return null
       })}
+    </div>
+  )
+}
+
+/** Block VIDEO: một video do seller upload qua presign, stream thẳng từ S3. */
+function VideoBlock({ block }: { block: DecorationBlock }) {
+  return (
+    <div className="overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-md dark:border-white/10 dark:bg-white/5">
+      {block.title !== '' && (
+        <div className="flex items-center gap-2 px-5 pt-4">
+          <VideoCamera size={18} weight="fill" className="text-indigo-500" />
+          <h2 className="text-base font-extrabold text-zinc-900 sm:text-lg dark:text-white">
+            {block.title}
+          </h2>
+        </div>
+      )}
+      <div className={block.title !== '' ? 'p-4 pt-3' : 'p-4'}>
+        {block.videoKey !== undefined && block.videoKey !== '' && (
+          // eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track
+          <video
+            src={imageUrl(block.videoKey)}
+            controls
+            playsInline
+            preload="none"
+            className="aspect-video w-full rounded-2xl bg-black object-contain"
+          />
+        )}
+      </div>
     </div>
   )
 }
