@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
   getMessagesQueryKey,
@@ -117,10 +117,19 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
     return chatConversationItem(c, buyerNameByBuyerId)
   })
 
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null)
+
   let messages: ChatMessageItem[] = []
   if (messagesQuery.data !== undefined) {
     messages = takeData(messagesQuery.data).map(chatMessageItem)
   }
+
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (container !== null) {
+      container.scrollTop = container.scrollHeight
+    }
+  }, [activeConvId, messages.length])
 
   function handleSelectConversation(id: string) {
     setSelectedConvId(id)
@@ -162,6 +171,12 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
     }
     handleSendMessage(activeConvId, messageInput)
     setMessageInput('')
+    setTimeout(() => {
+      const container = messagesContainerRef.current
+      if (container !== null) {
+        container.scrollTop = container.scrollHeight
+      }
+    }, 50)
   }
 
   function handleSaveAutoReplyConfirm() {
@@ -204,10 +219,10 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
       </div>
 
       {/* Cửa sổ Chat 2 cột */}
-      <div className="grid h-[620px] grid-cols-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/80 shadow-sm md:grid-cols-3 dark:border-white/10 dark:bg-[#11182a]">
+      <div className="grid h-[calc(100vh-210px)] max-h-[750px] min-h-[520px] grid-cols-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/80 shadow-sm md:grid-cols-3 dark:border-white/10 dark:bg-[#11182a]">
         {/* Cột trái: Danh sách hội thoại */}
-        <div className="flex flex-col border-r border-zinc-100 md:col-span-1 dark:border-white/10">
-          <div className="border-b border-zinc-100 p-3.5 dark:border-white/10">
+        <div className="flex h-full min-h-0 flex-col border-r border-zinc-100 md:col-span-1 dark:border-white/10">
+          <div className="shrink-0 border-b border-zinc-100 p-3.5 dark:border-white/10">
             <div className="relative">
               <MagnifyingGlass
                 size={15}
@@ -226,7 +241,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
             </div>
           </div>
 
-          <div className="flex-1 divide-y divide-zinc-100 overflow-y-auto dark:divide-white/10">
+          <div className="min-h-0 flex-1 divide-y divide-zinc-100 overflow-y-auto dark:divide-white/10">
             {filteredConversations.map(function (conv) {
               const isCurrent = conv.id === activeConvId
               return (
@@ -260,11 +275,11 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
         </div>
 
         {/* Cột phải: Khung chat chi tiết */}
-        <div className="flex flex-col md:col-span-2">
+        <div className="flex h-full min-h-0 flex-col md:col-span-2">
           {selectedConv !== undefined && (
             <>
               {/* Header khung chat */}
-              <div className="flex items-center justify-between border-b border-zinc-100 p-3.5 dark:border-white/10">
+              <div className="flex shrink-0 items-center justify-between border-b border-zinc-100 p-3.5 dark:border-white/10">
                 <div className="flex items-center gap-2.5">
                   <UserAvatar name={selectedConv.buyerName} size={32} />
                   <div>
@@ -290,7 +305,10 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
               </div>
 
               {/* Vùng tin nhắn dạng bong bóng */}
-              <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              <div
+                ref={messagesContainerRef}
+                className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4"
+              >
                 {messages.map(function (msg) {
                   const isMe = msg.senderType === 'SELLER'
                   return (
@@ -303,7 +321,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
               </div>
 
               {/* Ô nhập tin nhắn */}
-              <div className="border-t border-zinc-100 p-3 dark:border-white/10">
+              <div className="shrink-0 border-t border-zinc-100 bg-white/50 p-3 backdrop-blur-xs dark:border-white/10 dark:bg-white/5">
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
