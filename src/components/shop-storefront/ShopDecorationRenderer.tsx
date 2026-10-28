@@ -5,14 +5,7 @@ import {
   useGetShopCategories,
   useGetShopProducts,
 } from '@generated/endpoints/shops-catalog/shops-catalog'
-import {
-  CaretLeft,
-  CaretRight,
-  Lightning,
-  Sparkle,
-  SquaresFour,
-  ArrowRight,
-} from '@phosphor-icons/react'
+import { CaretLeft, CaretRight, Sparkle, SquaresFour, ArrowRight } from '@phosphor-icons/react'
 
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { formatVnd } from '@/lib/format'
@@ -378,51 +371,10 @@ function CategoryGridBlock({
   )
 }
 
-// TODO(mock): FLASH_SALE vẫn render dữ liệu cứng (ảnh picsum, giá 199.000đ, countdown đứng yên)
-// — cần nối API khuyến mãi thật hoặc chặn seller cấu hình block này trước khi bật public.
-function FlashSaleBlock({ block }: { block: DecorationBlock }) {
-  return (
-    <div className="rounded-3xl border border-red-200 bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 p-5 text-white shadow-lg">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Lightning size={24} weight="fill" className="animate-pulse text-yellow-300" />
-          <h2 className="text-lg font-extrabold tracking-wide uppercase sm:text-xl">
-            {block.title || 'FLASH SALE GIỜ VÀNG'}
-          </h2>
-        </div>
-
-        <div className="flex items-center gap-1.5 font-mono text-xs font-extrabold">
-          <span className="rounded bg-black/60 px-2 py-1 text-yellow-300">02</span> :
-          <span className="rounded bg-black/60 px-2 py-1 text-yellow-300">45</span> :
-          <span className="rounded bg-black/60 px-2 py-1 text-yellow-300">19</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="rounded-2xl bg-white p-2.5 text-zinc-900 shadow-sm dark:bg-[#11182a] dark:text-white"
-          >
-            <div className="relative mb-2 aspect-square overflow-hidden rounded-xl bg-zinc-100 dark:bg-white/10">
-              <img
-                src={`https://picsum.photos/seed/flashsale${i}/300/300`}
-                alt="Flash sale product"
-                onError={handleImageError}
-                className="h-full w-full object-cover"
-              />
-              <span className="absolute bottom-1.5 left-1.5 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-bold text-white">
-                Đã bán 89%
-              </span>
-            </div>
-            <p className="truncate text-xs font-semibold">Ưu Đãi Đặc Biệt #{i}</p>
-            <span className="text-sm font-extrabold text-red-600">{formatVnd(199000)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+// NOTE: Block FLASH_SALE đã bị xoá hoàn toàn (type + parser) — BE chưa có API
+// khuyến mãi, block cũ render dữ liệu mock cứng (ảnh picsum, giá 199.000đ) lên
+// storefront công khai. Layout legacy chứa block này bị bỏ qua lúc parse
+// (allowedTypes trong lib/sellerAdapters.ts).
 
 export default function ShopDecorationRenderer({
   blocks,
@@ -465,9 +417,6 @@ export default function ShopDecorationRenderer({
               onSelectCategory={onSelectCategory}
             />
           )
-        }
-        if (b.type === 'FLASH_SALE') {
-          return <FlashSaleBlock key={b.id} block={b} />
         }
         return null
       })}

@@ -22,7 +22,6 @@ export type DecorationBlockType =
   | 'VOUCHER_CAROUSEL'
   | 'BANNER'
   | 'COLLECTION'
-  | 'FLASH_SALE'
   | 'VIDEO'
 
 export interface DecorationBlock {
