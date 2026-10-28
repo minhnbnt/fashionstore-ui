@@ -4,7 +4,7 @@ import { useListAdminShops } from '@generated/endpoints/admin-shops/admin-shops'
 import { ListAdminShopsStatus } from '@generated/model/listAdminShopsStatus'
 import { HourglassMedium, Storefront } from '@phosphor-icons/react'
 
-import { hookErrorMessage, imageUrl, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 
 const QUEUE_SIZE = 5
 
@@ -50,6 +50,11 @@ export default function PendingShopsQueue({ pendingCount }: { pendingCount: numb
                     width={36}
                     height={36}
                     loading="lazy"
+                    onError={function (e) {
+                      if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                        e.currentTarget.src = PLACEHOLDER_IMAGE
+                      }
+                    }}
                     className="h-9 w-9 shrink-0 rounded-2xl object-cover"
                   />
                 )}

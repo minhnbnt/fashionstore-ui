@@ -54,6 +54,24 @@ export async function customFetch<T>(url: string, options?: RequestInit): Promis
   }
   // Orval sinh type dang { data, status, headers } nen phai goi dung hinh do,
   // khong tra JSON tran.
-  const body = (await response.json()) as unknown
+  const contentType = response.headers.get('content-type') ?? ''
+  let body: unknown = null
+  if (
+    contentType.includes('application/vnd.openxmlformats-officedocument') ||
+    contentType.includes('application/vnd.ms-excel') ||
+    contentType.includes('application/pdf') ||
+    contentType.includes('application/zip') ||
+    contentType.includes('application/octet-stream')
+  ) {
+    body = (await response.blob()) as unknown
+  } else if (contentType.includes('text/csv') || contentType.includes('text/plain')) {
+    body = (await response.text()) as unknown
+  } else {
+    try {
+      body = (await response.json()) as unknown
+    } catch {
+      body = (await response.text()) as unknown
+    }
+  }
   return { data: body, status: response.status, headers: response.headers } as T
 }

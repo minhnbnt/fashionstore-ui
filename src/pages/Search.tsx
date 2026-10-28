@@ -436,8 +436,8 @@ export default function Search() {
                       className="animate-pulse rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5"
                     >
                       <div className="aspect-[4/5] rounded-2xl bg-zinc-200 dark:bg-white/10" />
-                      <div className="mt-4 h-4 w-3/4 rounded-md bg-zinc-200 dark:bg-white/10" />
-                      <div className="mt-2 h-4 w-1/2 rounded-md bg-zinc-200 dark:bg-white/10" />
+                      <div className="mt-4 h-4 w-3/4 rounded-full bg-zinc-200 dark:bg-white/10" />
+                      <div className="mt-2 h-4 w-1/2 rounded-full bg-zinc-200 dark:bg-white/10" />
                     </div>
                   )
                 })}

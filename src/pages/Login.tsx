@@ -25,6 +25,14 @@ const PERKS = [
   { icon: ArrowsLeftRight, text: 'Đổi trả trong 30 ngày' },
 ]
 
+// Không ternary (AGENTS.md): helper if/return.
+function resolveDest(from: string, defaultPath: string): string {
+  if (from !== '') {
+    return from
+  }
+  return defaultPath
+}
+
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -74,7 +82,7 @@ export default function Login() {
   if (session !== null && session !== undefined) {
     const role = getRoleFromSession(session)
     const defaultPath = getDefaultPathForRole(role)
-    const dest = from !== '' ? from : defaultPath
+    const dest = resolveDest(from, defaultPath)
     return <Navigate to={dest} replace />
   }
 
@@ -140,7 +148,7 @@ export default function Login() {
           if (newSession !== null) {
             const role = getRoleFromSession(newSession)
             const defaultPath = getDefaultPathForRole(role)
-            const dest = from !== '' ? from : defaultPath
+            const dest = resolveDest(from, defaultPath)
             void navigate(dest, { replace: true })
           }
         },
@@ -155,7 +163,7 @@ export default function Login() {
         if (newSession !== null) {
           const role = getRoleFromSession(newSession)
           const defaultPath = getDefaultPathForRole(role)
-          const dest = from !== '' ? from : defaultPath
+          const dest = resolveDest(from, defaultPath)
           void navigate(dest, { replace: true })
           return
         }

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
+import { useMine } from '@generated/endpoints/shops/shops'
 import {
   Heart,
   MagnifyingGlass,
@@ -21,6 +22,7 @@ import { useCart } from '../hooks/useCart'
 import { useSessionQuery } from '../hooks/useSession'
 import { useWishlist } from '../hooks/useWishlist'
 import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
+import NotificationBell from './NotificationBell'
 import ThemeToggle from './ui/ThemeToggle'
 import UserAvatar from './UserAvatar'
 
@@ -101,6 +103,20 @@ export default function Header() {
   }
 
   const isLoggedIn = session !== null && session !== undefined
+  const mineQuery = useMine({
+    query: {
+      enabled: isLoggedIn,
+    },
+  })
+
+  let hasAnyShop = false
+  if (mineQuery.data !== undefined) {
+    const shopList = takeData(mineQuery.data)
+    if (Array.isArray(shopList) && shopList.length > 0) {
+      hasAnyShop = true
+    }
+  }
+
   let role = 'customer'
   let dashboardPath = '/account'
   let dashboardLabel = 'Trang cá nhân'
@@ -110,13 +126,16 @@ export default function Header() {
     if (role === 'admin') {
       dashboardLabel = 'Bảng quản trị'
     }
-    if (role === 'shop') {
+    if (role === 'shop' || hasAnyShop) {
       dashboardLabel = 'Kênh người bán'
+      if (role !== 'admin') {
+        dashboardPath = '/shop'
+      }
     }
   }
 
   let sellerChannelPath = '/account#seller-channel'
-  if (role === 'shop') {
+  if (role === 'shop' || hasAnyShop) {
     sellerChannelPath = '/shop'
   }
 
@@ -166,6 +185,9 @@ export default function Header() {
               <span>Kênh Người Bán</span>
             </Link>
 
+            {/* Notification Bell */}
+            <NotificationBell />
+
             {/* User avatar / dropdown */}
             <div className="relative" ref={dropdownRef} onBlur={handleBlur}>
               <button
@@ -182,7 +204,7 @@ export default function Header() {
               </button>
 
               {dropdownOpen && isLoggedIn && (
-                <div className="absolute top-full right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-white/30 bg-white/90 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/90">
+                <div className="absolute top-full right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-white/30 bg-white/90 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-[#11182a]/95">
                   {/* User info */}
                   <div className="border-b border-zinc-100 px-4 py-3 dark:border-white/10">
                     <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-100">

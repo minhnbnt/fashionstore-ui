@@ -1,7 +1,17 @@
 import type { AddressResponse } from '@generated/model/addressResponse'
 
-export function formatVnd(n: number): string {
+export function formatVnd(n: number | null | undefined): string {
+  if (n === null || n === undefined || Number.isNaN(n)) {
+    return '0 ₫'
+  }
   return n.toLocaleString('vi-VN') + ' ₫'
+}
+
+export function priceLabel(price: number | null | undefined): string {
+  if (price === null || price === undefined) {
+    return 'Liên hệ'
+  }
+  return formatVnd(price)
 }
 
 export function formatDateTime(iso: string | null | undefined): string {

@@ -80,7 +80,7 @@ function parseNumberFromDots(val: string): number | null {
 function renderActionBadge(action: string) {
   let label = action
   let colorClass =
-    'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700'
+    'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-white/10 dark:text-zinc-300 dark:border-white/15'
 
   if (action === 'CREATE_PRODUCT') {
     label = 'Tạo sản phẩm'
@@ -600,7 +600,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
     <div className="space-y-6 pb-20">
       {/* Toast Notification */}
       {notification !== null && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-white p-4 shadow-xl dark:border-emerald-900/60 dark:bg-zinc-900">
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-white p-4 shadow-xl dark:border-emerald-500/30 dark:bg-[#11182a]">
           <CheckCircle size={20} weight="fill" className="text-emerald-500" />
           <p className="text-xs font-bold text-zinc-900 dark:text-white">{notification}</p>
         </div>
@@ -627,12 +627,12 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       )}
 
       {/* Top Bar Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
         <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={onBack}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
             title="Quay lại danh sách"
           >
             <ArrowLeft size={18} weight="bold" />
@@ -650,7 +650,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 </span>
               )}
               {status === 'HIDDEN' && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300">
                   <EyeSlash size={12} weight="bold" />
                   Tạm ẩn (HIDDEN)
                 </span>
@@ -676,7 +676,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             onClick={function () {
               setShowAuditModal(true)
             }}
-            className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
           >
             <ClockCounterClockwise size={16} weight="bold" />
             Lịch sử chỉnh sửa
@@ -687,7 +687,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             type="button"
             disabled={isTogglingStatus}
             onClick={handleToggleStatus}
-            className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 px-3.5 py-2 text-xs font-bold text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 px-3.5 py-2 text-xs font-bold text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
           >
             {isTogglingStatus && <SpinnerGap size={14} weight="bold" className="animate-spin" />}
             {!isTogglingStatus && status === 'ACTIVE' && <EyeSlash size={16} weight="bold" />}
@@ -711,8 +711,8 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       </div>
 
       {/* Section 1: Thông tin cơ bản */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-        <h3 className="border-b border-zinc-100 pb-3 text-sm font-bold tracking-wider text-zinc-900 uppercase dark:border-zinc-800 dark:text-white">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+        <h3 className="border-b border-zinc-100 pb-3 text-sm font-bold tracking-wider text-zinc-900 uppercase dark:border-white/10 dark:text-white">
           1. Thông tin cơ bản
         </h3>
 
@@ -732,7 +732,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setName(e.target.value)
               }}
               placeholder="Nhập tên sản phẩm thời trang..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
 
@@ -746,7 +746,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 <LockKey size={13} weight="bold" className="text-zinc-400" />
                 Đường dẫn tĩnh (Slug)
               </label>
-              <div className="mt-1.5 flex items-center rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/80 dark:text-zinc-400">
+              <div className="mt-1.5 flex items-center rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                 <input
                   id="editProductSlug"
                   type="text"
@@ -786,7 +786,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setCategoryId(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
               >
                 <option value="">-- Chọn danh mục --</option>
                 {categoriesList.map(function (cat) {
@@ -813,7 +813,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setStatus(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
               >
                 <option value="ACTIVE">ACTIVE - Đang bán công khai</option>
                 <option value="HIDDEN">HIDDEN - Tạm ẩn khỏi sàn</option>
@@ -854,8 +854,8 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       />
 
       {/* Section 3: Quản lý biến thể & Tồn kho */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-4 dark:border-zinc-800">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-4 dark:border-white/10">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
@@ -881,7 +881,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         </div>
 
         {/* Công cụ Áp dụng hàng loạt (Bulk Apply Bar) */}
-        <div className="mt-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-4 dark:border-zinc-800/80 dark:bg-zinc-950/50">
+        <div className="mt-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-4 dark:border-white/10 dark:bg-white/5">
           <div className="flex items-center gap-2 text-xs font-bold text-zinc-800 dark:text-zinc-200">
             <Lightning size={16} weight="bold" className="text-indigo-600 dark:text-indigo-400" />
             <span>Công cụ áp dụng hàng loạt (Bulk Apply):</span>
@@ -901,7 +901,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setBulkTarget(e.target.value)
                 }}
-                className="mt-1 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900"
+                className="mt-1 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               >
                 <option value="ALL">Tất cả {variants.length} biến thể</option>
                 {distinctColors.map(function (c) {
@@ -934,7 +934,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                     setBulkPrice('')
                   }
                 }}
-                className="mt-1 w-32 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900"
+                className="mt-1 w-32 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
 
@@ -958,7 +958,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                     setBulkCompareAtPrice('')
                   }
                 }}
-                className="mt-1 w-32 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900"
+                className="mt-1 w-32 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
 
@@ -978,7 +978,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setBulkStock(e.target.value)
                 }}
-                className="mt-1 w-24 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-700 dark:bg-zinc-900"
+                className="mt-1 w-24 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
 
@@ -997,7 +997,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-zinc-800">
+              <tr className="border-b border-zinc-100 text-[11px] font-bold text-zinc-400 uppercase dark:border-white/10">
                 <th scope="col" className="w-14 pb-3 pl-2 text-center">
                   Mặc định
                 </th>
@@ -1027,7 +1027,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
               {variants.map(function (v) {
                 return (
-                  <tr key={v.keyId} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30">
+                  <tr key={v.keyId} className="dark:hover:bg-white/10/30 hover:bg-zinc-50/50">
                     <td className="py-2.5 pl-2 text-center">
                       <input
                         type="radio"
@@ -1051,7 +1051,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         }}
                         aria-label="Màu sắc"
                         placeholder="VD: Trắng"
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
                       />
                     </td>
 
@@ -1064,7 +1064,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         }}
                         aria-label="Kích cỡ"
                         placeholder="VD: M, L"
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
                       />
                     </td>
 
@@ -1077,7 +1077,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         }}
                         aria-label="Mã SKU"
                         placeholder="SKU"
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 font-mono text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 font-mono text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
                       />
                     </td>
 
@@ -1094,7 +1094,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                           handleUpdateVariantField(v.keyId, 'price', val)
                         }}
                         aria-label="Giá bán"
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-bold text-zinc-900 outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 text-xs font-bold text-zinc-900 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
                       />
                     </td>
 
@@ -1108,7 +1108,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         }}
                         aria-label="Giá gốc"
                         placeholder="Không có"
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold text-zinc-500 outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400"
+                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 text-xs font-semibold text-zinc-500 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-400"
                       />
                     </td>
 
@@ -1125,7 +1125,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                           )
                         }}
                         aria-label="Tồn kho"
-                        className="w-full rounded-xl border border-zinc-200 px-2.5 py-1.5 text-center text-xs font-bold outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 text-center text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
                       />
                     </td>
 
@@ -1156,8 +1156,8 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       </div>
 
       {/* Section 4: Thuộc tính thời trang & Thông số kiện hàng */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-        <h3 className="border-b border-zinc-100 pb-3 text-sm font-bold tracking-wider text-zinc-900 uppercase dark:border-zinc-800 dark:text-white">
+      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+        <h3 className="border-b border-zinc-100 pb-3 text-sm font-bold tracking-wider text-zinc-900 uppercase dark:border-white/10 dark:text-white">
           4. Thuộc tính thời trang & Thông số kiện hàng
         </h3>
 
@@ -1177,7 +1177,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setMaterial(e.target.value)
               }}
               placeholder="VD: 100% Cotton Organic, Lụa Satin, Kaki..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
 
@@ -1196,7 +1196,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setOrigin(e.target.value)
               }}
               placeholder="VD: Việt Nam, Hàn Quốc, Nhật Bản..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
         </div>
@@ -1217,7 +1217,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setCareInstructions(e.target.value)
               }}
               placeholder="Cách giặt, nhiệt độ là ủi, lưu ý bảo quản..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
 
@@ -1236,13 +1236,13 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setSizeGuide(e.target.value)
               }}
               placeholder="Quy đổi chiều cao, cân nặng, số đo các vòng..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-200 p-3 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
         </div>
 
         {/* Thông số kiện hàng */}
-        <div className="mt-5 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+        <div className="mt-5 border-t border-zinc-100 pt-4 dark:border-white/10">
           <h4 className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
             Thông số kiện hàng đóng gói (Dùng tính phí vận chuyển):
           </h4>
@@ -1262,7 +1262,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setWeightGrams(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
             <div>
@@ -1280,7 +1280,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setLengthCm(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
             <div>
@@ -1298,7 +1298,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setWidthCm(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
             <div>
@@ -1316,7 +1316,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setHeightCm(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-200 p-2 text-xs outline-none focus:border-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
           </div>
@@ -1324,11 +1324,11 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       </div>
 
       {/* Floating Save Actions at bottom */}
-      <div className="sticky bottom-6 flex items-center justify-between rounded-3xl border border-zinc-200/80 bg-white/95 p-4 shadow-xl backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/95">
+      <div className="sticky bottom-6 flex items-center justify-between rounded-3xl border border-zinc-200/80 bg-white/95 p-4 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-[#11182a]/95">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 px-4 py-2.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 px-4 py-2.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
         >
           <ArrowLeft size={16} weight="bold" />
           Hủy & Quay lại
@@ -1381,7 +1381,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 return (
                   <div key={log.id} className="group relative">
                     {/* Dot on timeline */}
-                    <div className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full border-2 border-white bg-indigo-600 dark:border-zinc-900" />
+                    <div className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full border-2 border-white bg-indigo-600 dark:border-[#11182a]" />
 
                     <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-3.5 dark:border-white/10 dark:bg-white/5">
                       <div className="flex flex-wrap items-center justify-between gap-2">

@@ -14,16 +14,20 @@ import {
   PaintBrushBroad,
   UsersThree,
   Storefront,
-  Bell,
   ArrowSquareOut,
   List,
   X,
   CaretRight,
   ShieldCheck,
+  ChartLineUp,
+  ChartBar,
 } from '@phosphor-icons/react'
 
+import NotificationBell from '@/components/NotificationBell'
+import ShopSwitcher from '@/components/seller/ShopSwitcher'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import UserAvatar from '@/components/UserAvatar'
+import { canSeeTab } from '@/lib/sellerPermissions'
 
 import type { MenuGroup, SellerTabId } from '@/types/seller'
 
@@ -36,6 +40,10 @@ interface SellerLayoutProps {
   returnRequestsCount: number
   lowStockCount: number
   unreadChatCount: number
+  permissions?: string[]
+  isOwner?: boolean
+  shopId?: string
+  onSwitchShop?: (shopId: string) => void
 }
 
 export function SellerLayout({
@@ -47,6 +55,10 @@ export function SellerLayout({
   returnRequestsCount,
   lowStockCount,
   unreadChatCount,
+  permissions = [],
+  isOwner = false,
+  shopId,
+  onSwitchShop,
 }: SellerLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -113,6 +125,26 @@ export function SellerLayout({
       ],
     },
     {
+      groupTitle: 'THỐNG KÊ & BÁO CÁO',
+      items: [
+        {
+          id: 'STATS_REVENUE',
+          label: 'Thống kê doanh thu',
+          icon: ChartLineUp,
+        },
+        {
+          id: 'STATS_PRODUCTS',
+          label: 'Phân tích sản phẩm',
+          icon: ChartBar,
+        },
+        {
+          id: 'STATS_CUSTOMERS',
+          label: 'Phân tích khách hàng',
+          icon: UsersThree,
+        },
+      ],
+    },
+    {
       groupTitle: 'CHĂM SÓC KHÁCH HÀNG',
       items: [
         {
@@ -151,6 +183,15 @@ export function SellerLayout({
     },
   ]
 
+  const filteredGroups: MenuGroup[] = menuGroups
+    .map((group) => {
+      const items = group.items.filter((item) => canSeeTab(item.id, permissions, isOwner))
+      return { ...group, items }
+    })
+    .filter((group) => group.items.length > 0)
+
+  const canAccessChat = isOwner || permissions.includes('CHAT_ACCESS')
+
   const handleSelectTab = (tab: SellerTabId) => {
     onSelectTab(tab)
     setIsMobileMenuOpen(false)
@@ -183,34 +224,35 @@ export function SellerLayout({
                   Seller Center
                 </span>
               </div>
+
+              {shopId !== undefined && shopId !== '' && onSwitchShop !== undefined && (
+                <div className="ml-1 sm:ml-2">
+                  <ShopSwitcher currentShopId={shopId} onSwitchShop={onSwitchShop} />
+                </div>
+              )}
             </div>
 
             {/* Right Header Navigation */}
             <div className="flex items-center gap-3 md:gap-4">
               {/* Quick Chat Shortcut with Badge */}
-              <button
-                type="button"
-                onClick={() => handleSelectTab('CHAT')}
-                className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10"
-                title="Tin nhắn CSKH"
-              >
-                <ChatCircleDots size={20} />
-                {unreadChatCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-700 text-[10px] font-bold text-white">
-                    {unreadChatCount}
-                  </span>
-                )}
-              </button>
+              {canAccessChat && (
+                <button
+                  type="button"
+                  onClick={() => handleSelectTab('CHAT')}
+                  className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10"
+                  title="Tin nhắn CSKH"
+                >
+                  <ChatCircleDots size={20} />
+                  {unreadChatCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-700 text-[10px] font-bold text-white">
+                      {unreadChatCount}
+                    </span>
+                  )}
+                </button>
+              )}
 
               {/* Notification Bell */}
-              <button
-                type="button"
-                className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10"
-                title="Thông báo"
-              >
-                <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-indigo-700" />
-              </button>
+              <NotificationBell />
 
               {/* Theme Toggle — component dùng chung với Header storefront */}
               <ThemeToggle className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10" />
@@ -253,7 +295,7 @@ export function SellerLayout({
         {/* Left Sidebar for Desktop */}
         <aside className="sticky top-20 hidden max-h-[calc(100vh-96px)] w-64 shrink-0 flex-col overflow-y-auto rounded-3xl border border-zinc-200/80 bg-white/80 p-3 shadow-sm lg:flex dark:border-white/10 dark:bg-[#11182a]">
           <nav className="space-y-4">
-            {menuGroups.map((group) => (
+            {filteredGroups.map((group) => (
               <div key={group.groupTitle} className="space-y-1">
                 <span className="mb-1 block px-3 text-[10px] font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
                   {group.groupTitle}
@@ -321,7 +363,7 @@ export function SellerLayout({
               </div>
 
               <nav className="space-y-4">
-                {menuGroups.map((group) => (
+                {filteredGroups.map((group) => (
                   <div key={group.groupTitle} className="space-y-1">
                     <span className="mb-1 block px-2 text-[10px] font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
                       {group.groupTitle}
@@ -392,6 +434,9 @@ export function SellerLayout({
               {activeTab === 'DECORATION' && 'Trang trí gian hàng'}
               {activeTab === 'STAFF' && 'Phân quyền & Quản lý nhân viên'}
               {activeTab === 'PROFILE' && 'Hồ sơ Shop & KYC'}
+              {activeTab === 'STATS_REVENUE' && 'Thống kê & Báo cáo doanh thu'}
+              {activeTab === 'STATS_PRODUCTS' && 'Phân tích hiệu suất sản phẩm'}
+              {activeTab === 'STATS_CUSTOMERS' && 'Phân tích khách hàng & Theo dõi'}
             </span>
           </div>
 

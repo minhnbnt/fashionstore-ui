@@ -7,12 +7,30 @@ import {
   formatFullAddress,
   formatSoldCount,
   formatVnd,
+  priceLabel,
   splitFullAddress,
 } from './format'
+
+describe('priceLabel', () => {
+  it('tra ve gia khi co du lieu', () => {
+    expect(priceLabel(391000)).toBe('391.000 ₫')
+  })
+
+  it('tra ve Lien he khi null hoac undefined', () => {
+    expect(priceLabel(null)).toBe('Liên hệ')
+    expect(priceLabel(undefined)).toBe('Liên hệ')
+  })
+})
 
 describe('formatVnd', () => {
   it('dinh dang tien Viet', () => {
     expect(formatVnd(391000)).toBe('391.000 ₫')
+  })
+
+  it('an toan khi truyen null hoac undefined hoac NaN', () => {
+    expect(formatVnd(null)).toBe('0 ₫')
+    expect(formatVnd(undefined)).toBe('0 ₫')
+    expect(formatVnd(NaN)).toBe('0 ₫')
   })
 })
 

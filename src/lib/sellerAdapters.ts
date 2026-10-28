@@ -26,7 +26,7 @@ import type { ReturnRequestResponse } from '@generated/model/returnRequestRespon
 import type { SellerProductResponse } from '@generated/model/sellerProductResponse'
 import type { SellerReviewResponse } from '@generated/model/sellerReviewResponse'
 import type { SettlementResponse } from '@generated/model/settlementResponse'
-import type { ShopMemberAuditResponse } from '@generated/model/shopMemberAuditResponse'
+import type { ShopActivityResponse } from '@generated/model/shopActivityResponse'
 import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
 import type { ShopResponse } from '@generated/model/shopResponse'
 import type { ShopRoleResponse } from '@generated/model/shopRoleResponse'
@@ -171,7 +171,10 @@ export function returnItem(
   request: ReturnRequestResponse,
   orderById: Map<string, OrderResponse>,
 ): ReturnItem {
-  const order = request.orderId === undefined ? undefined : orderById.get(request.orderId)
+  let order: OrderResponse | undefined
+  if (request.orderId !== undefined) {
+    order = orderById.get(request.orderId)
+  }
   const evidenceKeys = request.evidenceKeys ?? []
   const firstKey = evidenceKeys[0]
 
@@ -184,13 +187,25 @@ export function returnItem(
     status = request.status
   }
 
+  let orderCode = ''
+  let buyerName = ''
+  if (order !== undefined) {
+    orderCode = safeText(order.code)
+    buyerName = safeText(order.shippingName)
+  }
+
+  let evidenceImage = ''
+  if (firstKey !== undefined) {
+    evidenceImage = imageFromKey(firstKey)
+  }
+
   return {
     id: safeId(request.id),
-    orderCode: order === undefined ? '' : safeText(order.code),
-    buyerName: order === undefined ? '' : safeText(order.shippingName),
+    orderCode,
+    buyerName,
     reason: safeText(request.reason),
     description: safeText(request.description),
-    evidenceImage: firstKey === undefined ? '' : imageFromKey(firstKey),
+    evidenceImage,
     status,
     resolution: safeText(request.resolution),
     refundAmount: request.refundAmount,
@@ -221,20 +236,32 @@ export function settlementItem(
   settlement: SettlementResponse,
   orderById: Map<string, OrderResponse>,
 ): SettlementItem {
-  const order = settlement.orderId === undefined ? undefined : orderById.get(settlement.orderId)
-  const status: SettlementItem['status'] = settlement.status === 'RELEASED' ? 'RELEASED' : 'HOLDING'
+  let order: OrderResponse | undefined
+  if (settlement.orderId !== undefined) {
+    order = orderById.get(settlement.orderId)
+  }
+  let status: SettlementItem['status'] = 'HOLDING'
+  if (settlement.status === 'RELEASED') {
+    status = 'RELEASED'
+  }
+  let orderCode = ''
+  if (order !== undefined) {
+    orderCode = safeText(order.code)
+  }
+  let releasedAt: string | undefined
+  if (settlement.releasedAt !== null && settlement.releasedAt !== undefined) {
+    releasedAt = formatDateTime(settlement.releasedAt)
+  }
+
   return {
     id: safeId(settlement.id),
-    orderCode: order === undefined ? '' : safeText(order.code),
+    orderCode,
     grossAmount: settlement.grossAmount ?? 0,
     platformFee: settlement.platformFee ?? 0,
     netAmount: settlement.netAmount ?? 0,
     status,
     holdUntil: formatDateTime(settlement.holdUntil),
-    releasedAt:
-      settlement.releasedAt === null || settlement.releasedAt === undefined
-        ? undefined
-        : formatDateTime(settlement.releasedAt),
+    releasedAt,
   }
 }
 
@@ -320,23 +347,41 @@ export function roleItem(
 
 export function memberItem(member: ShopMemberDetailResponse): ShopMemberItem {
   let status: ShopMemberItem['status'] = 'ACTIVE'
-  if (member.status !== 'ACTIVE') {
-    status = 'INVITED'
+  if (member.status === 'DEACTIVATED') {
+    status = 'DEACTIVATED'
+  }
+  let email = safeId(member.userId)
+  if (member.email !== null && member.email !== undefined && member.email.trim() !== '') {
+    email = member.email
+  }
+  let displayName = email
+  if (
+    member.displayName !== null &&
+    member.displayName !== undefined &&
+    member.displayName.trim() !== ''
+  ) {
+    displayName = member.displayName
+  }
+  let roleName = safeText(member.roleName)
+  if (roleName === '') {
+    roleName = safeText(member.role)
   }
   return {
     id: safeId(member.userId),
-    // API member chua tra ve email, tam hien userId
-    email: safeId(member.userId),
+    email,
+    displayName,
     roleId: safeId(member.roleId),
-    roleName: safeText(member.roleName) === '' ? safeText(member.role) : safeText(member.roleName),
+    roleName,
     status,
     joinedAt: formatDateTime(member.joinedAt),
   }
 }
 
-export function auditItem(audit: ShopMemberAuditResponse): ShopAuditItem {
+export function auditItem(audit: ShopActivityResponse): ShopAuditItem {
   return {
     id: safeId(audit.id),
+    actorEmail: safeText(audit.actorEmail),
+    actorName: safeText(audit.actorName),
     action: safeText(audit.action),
     detail: safeText(audit.detail),
     targetType: safeText(audit.targetType),
@@ -362,22 +407,29 @@ export function chatConversationItem(
 }
 
 export function chatMessageItem(message: ChatMessageResponse): ChatMessageItem {
+  let senderType: ChatMessageItem['senderType'] = 'SELLER'
+  if (message.senderType === 'BUYER') {
+    senderType = 'BUYER'
+  }
   return {
     id: safeId(message.id),
-    senderType: message.senderType === 'BUYER' ? 'BUYER' : 'SELLER',
+    senderType,
     content: safeText(message.content),
     sentAt: formatDateTime(message.sentAt),
   }
 }
 
-/** Parse draft JSON thanh block list, JSON loi thi tra ve mang rong */
+/** Parse draft hoặc layout JSON thanh block list, JSON loi thi tra ve mang rong */
 export function decorationBlocks(decoration: DecorationResponse | undefined): DecorationBlock[] {
-  const draft = decoration?.draft
-  if (draft === null || draft === undefined || draft === '') {
+  let jsonStr = decoration?.layout
+  if (decoration?.draft !== null && decoration?.draft !== undefined && decoration?.draft !== '') {
+    jsonStr = decoration.draft
+  }
+  if (jsonStr === null || jsonStr === undefined || jsonStr === '') {
     return []
   }
   try {
-    const parsed: unknown = JSON.parse(draft)
+    const parsed: unknown = JSON.parse(jsonStr)
     if (Array.isArray(parsed) === false) {
       return []
     }
@@ -387,16 +439,100 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
         continue
       }
       const record = item as Record<string, unknown>
-      const type = record['type']
-      if (type !== 'BANNER' && type !== 'COLLECTION' && type !== 'FLASH_SALE' && type !== 'VIDEO') {
+      const rawType = record['type']
+      const allowedTypes = [
+        'BANNER_SLIDER',
+        'PRODUCT_COLLECTION',
+        'CATEGORY_GRID',
+        'VOUCHER_CAROUSEL',
+        'BANNER',
+        'COLLECTION',
+        'FLASH_SALE',
+        'VIDEO',
+      ]
+      if (typeof rawType !== 'string' || !allowedTypes.includes(rawType)) {
         continue
       }
-      blocks.push({
-        id: typeof record['id'] === 'string' ? record['id'] : `block-${blocks.length + 1}`,
+      const type = rawType as DecorationBlock['type']
+
+      let banners: DecorationBlock['banners']
+      if (Array.isArray(record['banners'])) {
+        banners = []
+        for (const b of record['banners']) {
+          if (typeof b === 'object' && b !== null) {
+            const bRec = b as Record<string, unknown>
+            let bannerId = `slide-${banners.length + 1}`
+            if (typeof bRec['id'] === 'string') {
+              bannerId = bRec['id']
+            }
+            let imageKey = ''
+            if (typeof bRec['imageKey'] === 'string') {
+              imageKey = bRec['imageKey']
+            }
+            let title: string | undefined
+            if (typeof bRec['title'] === 'string') {
+              title = bRec['title']
+            }
+            let linkUrl: string | undefined
+            if (typeof bRec['linkUrl'] === 'string') {
+              linkUrl = bRec['linkUrl']
+            }
+            banners.push({
+              id: bannerId,
+              imageKey,
+              title,
+              linkUrl,
+            })
+          }
+        }
+      }
+
+      let collectionType: DecorationBlock['collectionType']
+      if (typeof record['collectionType'] === 'string') {
+        const ct = record['collectionType']
+        if (ct === 'NEW_ARRIVALS' || ct === 'BEST_SELLER' || ct === 'SALE_OFF' || ct === 'CUSTOM') {
+          collectionType = ct
+        }
+      }
+
+      let itemLimit: number | undefined
+      if (typeof record['itemLimit'] === 'number') {
+        itemLimit = record['itemLimit']
+      }
+
+      let displayStyle: DecorationBlock['displayStyle']
+      if (record['displayStyle'] === 'GRID' || record['displayStyle'] === 'SLIDER') {
+        displayStyle = record['displayStyle']
+      }
+
+      let blockId = `block-${blocks.length + 1}`
+      if (typeof record['id'] === 'string') {
+        blockId = record['id']
+      }
+      let blockTitle = ''
+      if (typeof record['title'] === 'string') {
+        blockTitle = record['title']
+      }
+
+      const block: DecorationBlock = {
+        id: blockId,
         type,
-        title: typeof record['title'] === 'string' ? record['title'] : '',
+        title: blockTitle,
         enabled: record['enabled'] === true,
-      })
+      }
+      if (banners !== undefined) {
+        block.banners = banners
+      }
+      if (collectionType !== undefined) {
+        block.collectionType = collectionType
+      }
+      if (itemLimit !== undefined) {
+        block.itemLimit = itemLimit
+      }
+      if (displayStyle !== undefined) {
+        block.displayStyle = displayStyle
+      }
+      blocks.push(block)
     }
     return blocks
   } catch {
@@ -413,6 +549,10 @@ export function shopProfile(shop: ShopResponse): ShopProfileData {
   if (shop.sellerType === 'BUSINESS') {
     businessType = 'BUSINESS'
   }
+  let taxOrIdNumber = safeText(shop.taxCode)
+  if (taxOrIdNumber === '') {
+    taxOrIdNumber = safeText(shop.idNumber)
+  }
   return {
     shopName: safeText(shop.name),
     slug: safeText(shop.slug),
@@ -426,12 +566,13 @@ export function shopProfile(shop: ShopResponse): ShopProfileData {
     city: '',
     daysToShip: shop.processingDays ?? 2,
     businessType,
-    taxOrIdNumber: safeText(shop.taxCode) === '' ? safeText(shop.idNumber) : safeText(shop.taxCode),
+    taxOrIdNumber,
     isVerified: shop.status === 'APPROVED',
     bankName: safeText(shop.bankName),
     bankAccount: safeText(shop.bankAccount),
     bankHolder: safeText(shop.bankHolder),
     workingHours: safeText(shop.workingHours),
+    returnPolicy: safeText(shop.returnPolicy),
   }
 }
 

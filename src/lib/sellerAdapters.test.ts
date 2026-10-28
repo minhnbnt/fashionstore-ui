@@ -24,7 +24,7 @@ import type { ReturnRequestResponse } from '@generated/model/returnRequestRespon
 import type { SellerProductResponse } from '@generated/model/sellerProductResponse'
 import type { SellerReviewResponse } from '@generated/model/sellerReviewResponse'
 import type { SettlementResponse } from '@generated/model/settlementResponse'
-import type { ShopMemberAuditResponse } from '@generated/model/shopMemberAuditResponse'
+import type { ShopActivityResponse } from '@generated/model/shopActivityResponse'
 import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
 import type { ShopResponse } from '@generated/model/shopResponse'
 import type { ShopRoleResponse } from '@generated/model/shopRoleResponse'
@@ -247,16 +247,42 @@ describe('roleItem va memberItem', () => {
   })
 
   it('member khong co roleName thi lay role', () => {
-    const item = memberItem({ userId: 'u9', role: 'STAFF', status: 'PENDING' })
+    const item = memberItem({ userId: 'u9', role: 'STAFF', status: 'ACTIVE' })
     expect(item.roleName).toBe('STAFF')
-    expect(item.status).toBe('INVITED')
+    expect(item.status).toBe('ACTIVE')
+  })
+
+  it('memberItem lay email tu response va status DEACTIVATED map dung', () => {
+    const item = memberItem({
+      userId: 'u10',
+      email: 'staff@example.com',
+      displayName: 'Nguyen Van A',
+      role: 'STAFF',
+      roleName: 'CSKH',
+      status: 'DEACTIVATED',
+    })
+    expect(item.email).toBe('staff@example.com')
+    expect(item.displayName).toBe('Nguyen Van A')
+    expect(item.status).toBe('DEACTIVATED')
+  })
+
+  it('memberItem thieu email thi fallback ve userId', () => {
+    const item = memberItem({
+      userId: 'u11',
+      role: 'STAFF',
+      status: 'ACTIVE',
+    })
+    expect(item.email).toBe('u11')
+    expect(item.displayName).toBe('u11')
   })
 })
 
 describe('auditItem', () => {
   it('map cac truong co ban', () => {
-    const audit: ShopMemberAuditResponse = {
+    const audit: ShopActivityResponse = {
       id: 'a1',
+      actorEmail: 'owner@demo.local',
+      actorName: 'Chủ shop',
       action: 'INVITE_STAFF',
       targetType: 'INVITATION',
       detail: 'Mời hanh@demo.local',
@@ -264,6 +290,8 @@ describe('auditItem', () => {
     }
     const item = auditItem(audit)
     expect(item.id).toBe('a1')
+    expect(item.actorEmail).toBe('owner@demo.local')
+    expect(item.actorName).toBe('Chủ shop')
     expect(item.action).toBe('INVITE_STAFF')
     expect(item.detail).toBe('Mời hanh@demo.local')
     expect(item.targetType).toBe('INVITATION')
@@ -292,6 +320,29 @@ describe('decoration adapter', () => {
   const blocks: DecorationBlock[] = [
     { id: 'b-1', type: 'BANNER', title: 'Banner', enabled: true },
     { id: 'b-2', type: 'VIDEO', title: 'Video', enabled: false },
+    {
+      id: 'b-3',
+      type: 'BANNER_SLIDER',
+      title: 'Slider Chính',
+      enabled: true,
+      banners: [
+        {
+          id: 'slide-1',
+          imageKey: 'banners/slide1.jpg',
+          title: 'Khuyến mãi hè',
+          linkUrl: '/search?category=he',
+        },
+      ],
+    },
+    {
+      id: 'b-4',
+      type: 'PRODUCT_COLLECTION',
+      title: 'Hàng Mới Về',
+      enabled: true,
+      collectionType: 'NEW_ARRIVALS',
+      itemLimit: 8,
+      displayStyle: 'GRID',
+    },
   ]
 
   it('vong tron stringify -> parse', () => {
@@ -316,6 +367,7 @@ describe('shopProfile', () => {
       status: 'APPROVED',
       phone: '0901',
       address: 'Hà Nội',
+      returnPolicy: 'Đổi trả miễn phí trong 7 ngày',
       processingDays: 2,
       sellerType: 'BUSINESS',
       taxCode: '0123',
@@ -333,5 +385,6 @@ describe('shopProfile', () => {
     expect(profile.taxOrIdNumber).toBe('0123')
     expect(profile.isVerified).toBe(true)
     expect(profile.city).toBe('')
+    expect(profile.returnPolicy).toBe('Đổi trả miễn phí trong 7 ngày')
   })
 })

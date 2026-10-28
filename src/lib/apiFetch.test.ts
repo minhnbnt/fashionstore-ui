@@ -49,4 +49,22 @@ describe('customFetch', () => {
     expect((caught as ApiError).status).toBe(409)
     expect((caught as ApiError).message).toBe('SKU already taken')
   })
+
+  it('tra ve chuoi text khi endpoint tra ve text/csv', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/csv;charset=UTF-8' }),
+        text: () => Promise.resolve('Ngày,Doanh thu\n2026-10-01,1000000'),
+      }),
+    )
+    const res = (await customFetch('/api/seller/shops/1/stats/revenue/export')) as {
+      data: unknown
+      status: number
+    }
+    expect(res.status).toBe(200)
+    expect(res.data).toBe('Ngày,Doanh thu\n2026-10-01,1000000')
+  })
 })

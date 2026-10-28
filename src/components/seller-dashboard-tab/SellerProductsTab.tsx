@@ -40,6 +40,7 @@ import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
 import { formatDateTime, formatVnd } from '@/lib/format'
 import { productItem } from '@/lib/sellerAdapters'
+import { useSellerPermissions } from '@/lib/sellerPermissions'
 import { sellerProductStatusMeta } from '@/lib/sellerStatus'
 
 import type { ProductItem } from '@/types/seller'
@@ -81,6 +82,7 @@ export default function SellerProductsTab({
   onNavigateAddProduct,
   onNavigateEditProduct,
 }: Props) {
+  const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
 
   // Tab & Filters state
@@ -818,14 +820,16 @@ export default function SellerProductsTab({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={onNavigateAddProduct}
-            className="btn-primary flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-bold shadow-md"
-          >
-            <Plus size={16} weight="bold" />
-            Đăng sản phẩm mới
-          </button>
+          {can('PRODUCT_WRITE') && (
+            <button
+              type="button"
+              onClick={onNavigateAddProduct}
+              className="btn-primary flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-bold shadow-md"
+            >
+              <Plus size={16} weight="bold" />
+              Đăng sản phẩm mới
+            </button>
+          )}
         </div>
       </div>
 
@@ -1234,7 +1238,7 @@ export default function SellerProductsTab({
                     {/* Thao tác đơn lẻ */}
                     <td className="py-3.5 pr-4 pl-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
-                        {product.status !== 'DELETED' && (
+                        {can('PRODUCT_WRITE') && product.status !== 'DELETED' && (
                           <button
                             type="button"
                             onClick={function () {
@@ -1246,7 +1250,8 @@ export default function SellerProductsTab({
                             <PencilSimple size={14} weight="bold" />
                           </button>
                         )}
-                        {product.status !== 'DELETED' &&
+                        {can('PRODUCT_WRITE') &&
+                          product.status !== 'DELETED' &&
                           product.status !== 'PENDING' &&
                           product.status !== 'BANNED' && (
                             <button
@@ -1256,13 +1261,14 @@ export default function SellerProductsTab({
                                 handleToggleProductStatus(product.id)
                               }}
                               title={toggleActionTitle}
+                              aria-label={toggleActionTitle}
                               className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
                             >
                               {product.status === 'ACTIVE' && <EyeSlash size={14} weight="bold" />}
                               {product.status !== 'ACTIVE' && <Eye size={14} weight="bold" />}
                             </button>
                           )}
-                        {product.status !== 'DELETED' && (
+                        {can('PRODUCT_WRITE') && product.status !== 'DELETED' && (
                           <button
                             type="button"
                             onClick={function () {
@@ -1454,6 +1460,11 @@ export default function SellerProductsTab({
                 <img
                   src={singleSelectedProduct.image}
                   alt={singleSelectedProduct.name}
+                  onError={function (e) {
+                    if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                      e.currentTarget.src = PLACEHOLDER_IMAGE
+                    }
+                  }}
                   className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
                 />
                 <div className="min-w-0 flex-1">
@@ -1608,6 +1619,11 @@ export default function SellerProductsTab({
                 <img
                   src={singleSelectedProduct.image}
                   alt={singleSelectedProduct.name}
+                  onError={function (e) {
+                    if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                      e.currentTarget.src = PLACEHOLDER_IMAGE
+                    }
+                  }}
                   className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
                 />
                 <div className="min-w-0 flex-1">
@@ -1913,6 +1929,11 @@ export default function SellerProductsTab({
               <img
                 src={deleteTargetProduct.image}
                 alt={deleteTargetProduct.name}
+                onError={function (e) {
+                  if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
+                    e.currentTarget.src = PLACEHOLDER_IMAGE
+                  }
+                }}
                 className="h-12 w-12 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
               />
               <div className="min-w-0 flex-1">

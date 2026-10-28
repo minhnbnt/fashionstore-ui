@@ -25,15 +25,26 @@ import {
   Lightning,
   SquaresFour,
   VideoCamera,
+  Gear,
+  Ticket,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
-import { takeData } from '@/lib/apiAdapters'
+import { takeData, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
 import { decorationBlocks, decorationDraftJson } from '@/lib/sellerAdapters'
+import { useSellerPermissions } from '@/lib/sellerPermissions'
+
+import BannerSliderConfigModal from './decoration/BannerSliderConfigModal'
+import CollectionConfigModal from './decoration/CollectionConfigModal'
 
 import type { DecorationBlock } from '@/types/seller'
+
+function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.onerror = null
+  e.currentTarget.src = PLACEHOLDER_IMAGE
+}
 
 // Id block chỉ dùng cho React key — sinh ở module-level để khỏi gọi Date.now trong render
 function newBlockId(): string {
@@ -46,13 +57,18 @@ interface SellerDecorationTabProps {
 }
 
 export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabProps) {
+  const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
   const [draftBlocks, setDraftBlocks] = useState<DecorationBlock[] | null>(null)
   const [devicePreview, setDevicePreview] = useState<'MOBILE' | 'DESKTOP'>('MOBILE')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [newBlockType, setNewBlockType] = useState<DecorationBlock['type']>('BANNER')
+  const [newBlockType, setNewBlockType] = useState<DecorationBlock['type']>('BANNER_SLIDER')
   const [newBlockTitle, setNewBlockTitle] = useState('')
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('')
+
+  const [editingBlock, setEditingBlock] = useState<DecorationBlock | null>(null)
+  const [isSliderModalOpen, setIsSliderModalOpen] = useState(false)
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false)
 
   const decorationQuery = useGetDecoration(shopId, { query: { enabled: shopId !== '' } })
 
@@ -138,10 +154,32 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
       title: newBlockTitle.trim(),
       enabled: true,
     }
+    if (newBlockType === 'BANNER_SLIDER') {
+      newBlock.banners = []
+    }
+    if (newBlockType === 'PRODUCT_COLLECTION') {
+      newBlock.collectionType = 'NEW_ARRIVALS'
+      newBlock.itemLimit = 8
+      newBlock.displayStyle = 'GRID'
+    }
     setDraftBlocks([...blocks, newBlock])
     setNewBlockTitle('')
     setIsAddModalOpen(false)
     setSaveSuccessMsg('Đã thêm module trang trí mới vào bố cục!')
+  }
+
+  const handleSaveConfig = (updated: DecorationBlock) => {
+    const nextBlocks = blocks.map((b) => {
+      if (b.id === updated.id) {
+        return updated
+      }
+      return b
+    })
+    setDraftBlocks(nextBlocks)
+    setEditingBlock(null)
+    setIsSliderModalOpen(false)
+    setIsCollectionModalOpen(false)
+    setSaveSuccessMsg(`Đã cập nhật cấu hình module ${updated.title}!`)
   }
 
   const handleSaveDraft = () => {
@@ -171,8 +209,8 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
             </h2>
           </div>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Thiết kế bố cục trang chủ shop, kéo-thả sắp xếp banner, flash sale và danh mục nổi bật
-            thu hút người mua.
+            Thiết kế bố cục trang chủ shop: Banner slider xoay vòng (tối đa 5 banner), bộ sưu tập
+            nổi bật New / Best Seller / Sale Off, sắp xếp linh hoạt.
           </p>
         </div>
 
@@ -182,7 +220,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
               Có thay đổi chưa lưu
             </span>
           )}
-          {hasLocalChanges && (
+          {hasLocalChanges && can('DECORATION_WRITE') && (
             <button
               type="button"
               onClick={handleDiscard}
@@ -192,22 +230,26 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
               Bỏ thay đổi
             </button>
           )}
-          <button
-            type="button"
-            onClick={handleSaveDraft}
-            className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
-          >
-            <FloppyDisk size={16} />
-            Lưu nháp
-          </button>
-          <button
-            type="button"
-            onClick={handlePublish}
-            className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition-colors"
-          >
-            <Broadcast size={16} />
-            Áp dụng gian hàng
-          </button>
+          {can('DECORATION_WRITE') && (
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+            >
+              <FloppyDisk size={16} />
+              Lưu nháp
+            </button>
+          )}
+          {can('DECORATION_WRITE') && (
+            <button
+              type="button"
+              onClick={handlePublish}
+              className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition-colors"
+            >
+              <Broadcast size={16} />
+              Áp dụng gian hàng
+            </button>
+          )}
         </div>
       </div>
 
@@ -241,14 +283,16 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                 {blocks.length} khối nội dung đang cấu hình
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-900/40 dark:bg-indigo-900/40 dark:text-indigo-400"
-            >
-              <Plus size={14} />
-              Thêm module
-            </button>
+            {can('DECORATION_WRITE') && (
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-900/40 dark:bg-indigo-900/40 dark:text-indigo-400"
+              >
+                <Plus size={14} />
+                Thêm module
+              </button>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -263,12 +307,20 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   </span>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      {block.type === 'BANNER' && <ImageIcon size={14} className="text-blue-500" />}
+                      {(block.type === 'BANNER_SLIDER' || block.type === 'BANNER') && (
+                        <ImageIcon size={14} className="text-blue-500" />
+                      )}
                       {block.type === 'FLASH_SALE' && (
                         <Lightning size={14} className="text-amber-500" />
                       )}
-                      {block.type === 'COLLECTION' && (
+                      {(block.type === 'PRODUCT_COLLECTION' || block.type === 'COLLECTION') && (
                         <SquaresFour size={14} className="text-emerald-500" />
+                      )}
+                      {block.type === 'CATEGORY_GRID' && (
+                        <SquaresFour size={14} className="text-sky-500" />
+                      )}
+                      {block.type === 'VOUCHER_CAROUSEL' && (
+                        <Ticket size={14} className="text-rose-500" />
                       )}
                       {block.type === 'VIDEO' && (
                         <VideoCamera size={14} className="text-indigo-500" />
@@ -283,58 +335,82 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1">
-                  {/* Reorder Buttons */}
-                  <button
-                    type="button"
-                    title="Di chuyển lên"
-                    onClick={() => handleMoveUp(idx)}
-                    disabled={idx === 0}
-                    className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
-                  >
-                    <ArrowUp size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    title="Di chuyển xuống"
-                    onClick={() => handleMoveDown(idx)}
-                    disabled={idx === blocks.length - 1}
-                    className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
-                  >
-                    <ArrowDown size={14} />
-                  </button>
-
-                  {/* Toggle Visibility */}
-                  <button
-                    type="button"
-                    title="Ẩn/Hiện module"
-                    onClick={() => handleToggle(block.id)}
-                    className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
-                  >
-                    {block.enabled && <Eye size={15} className="text-emerald-600" />}
-                    {!block.enabled && (
-                      <EyeSlash size={15} className="text-zinc-400 dark:text-zinc-500" />
+                {can('DECORATION_WRITE') && (
+                  <div className="flex items-center gap-1">
+                    {/* Config Button for Slider / Collection */}
+                    {(block.type === 'BANNER_SLIDER' ||
+                      block.type === 'BANNER' ||
+                      block.type === 'PRODUCT_COLLECTION' ||
+                      block.type === 'COLLECTION') && (
+                      <button
+                        type="button"
+                        title="Cấu hình chi tiết module"
+                        onClick={() => {
+                          setEditingBlock(block)
+                          if (block.type === 'BANNER_SLIDER' || block.type === 'BANNER') {
+                            setIsSliderModalOpen(true)
+                          } else {
+                            setIsCollectionModalOpen(true)
+                          }
+                        }}
+                        className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
+                      >
+                        <Gear size={15} />
+                      </button>
                     )}
-                  </button>
 
-                  {/* Delete */}
-                  <button
-                    type="button"
-                    title="Xóa module"
-                    onClick={() => handleDelete(block.id)}
-                    className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-white/10"
-                  >
-                    <Trash size={14} />
-                  </button>
-                </div>
+                    {/* Reorder Buttons */}
+                    <button
+                      type="button"
+                      title="Di chuyển lên"
+                      onClick={() => handleMoveUp(idx)}
+                      disabled={idx === 0}
+                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
+                    >
+                      <ArrowUp size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Di chuyển xuống"
+                      onClick={() => handleMoveDown(idx)}
+                      disabled={idx === blocks.length - 1}
+                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
+                    >
+                      <ArrowDown size={14} />
+                    </button>
+
+                    {/* Toggle Visibility */}
+                    <button
+                      type="button"
+                      title="Ẩn/Hiện module"
+                      onClick={() => handleToggle(block.id)}
+                      className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
+                    >
+                      {block.enabled && <Eye size={15} className="text-emerald-600" />}
+                      {!block.enabled && (
+                        <EyeSlash size={15} className="text-zinc-400 dark:text-zinc-500" />
+                      )}
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      title="Xóa module"
+                      onClick={() => handleDelete(block.id)}
+                      className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-white/10"
+                    >
+                      <Trash size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
           <div className="rounded border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800">
-            💡 <strong>Mẹo gian hàng chuyên nghiệp:</strong> Đặt <em>Banner Khuyến Mãi</em> ở vị trí
-            đầu tiên, tiếp theo là <em>Flash Sale Giờ Vàng</em> để tối ưu tỷ lệ chuyển đổi đơn hàng
-            lên tới +35%.
+            💡 <strong>Mẹo gian hàng chuyên nghiệp:</strong> Đặt <em>Banner Slider</em> ở vị trí đầu
+            tiên, tiếp theo là <em>Bộ Sưu Tập Nổi Bật</em> để tối ưu tỷ lệ chuyển đổi đơn hàng lên
+            tới +35%.
           </div>
         </div>
 
@@ -395,12 +471,94 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                 {blocks.map((b) => {
                   if (!b.enabled) return null
 
+                  if (b.type === 'BANNER_SLIDER') {
+                    let slideCount = 0
+                    if (b.banners !== undefined) {
+                      slideCount = b.banners.length
+                    }
+                    return (
+                      <div
+                        key={b.id}
+                        className="relative overflow-hidden rounded-xl bg-zinc-900 shadow-sm"
+                      >
+                        <div className="flex h-32 w-full flex-col items-center justify-center bg-gradient-to-r from-indigo-950 to-sky-800 p-3 text-center text-white">
+                          <ImageIcon size={26} className="mb-1 opacity-70" />
+                          <p className="text-xs font-bold">{b.title}</p>
+                          <span className="text-[10px] text-white/70">
+                            {slideCount} banner trong slider
+                          </span>
+                        </div>
+                        <div className="absolute right-0 bottom-2 left-0 flex justify-center gap-1.5">
+                          {Array.from({ length: Math.max(1, slideCount) }).map((_, dotIdx) => {
+                            let dotClass = 'w-1.5 bg-white/40'
+                            if (dotIdx === 0) {
+                              dotClass = 'w-3.5 bg-white'
+                            }
+                            return (
+                              <span
+                                key={dotIdx}
+                                className={`h-1.5 rounded-full transition-all ${dotClass}`}
+                              />
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  if (b.type === 'PRODUCT_COLLECTION') {
+                    let badgeText = 'MỚI NHẤT'
+                    if (b.collectionType === 'BEST_SELLER') {
+                      badgeText = 'BÁN CHẠY'
+                    }
+                    if (b.collectionType === 'SALE_OFF') {
+                      badgeText = 'GIẢM SỐC'
+                    }
+                    if (b.collectionType === 'CUSTOM') {
+                      badgeText = 'TUYỂN CHỌN'
+                    }
+
+                    return (
+                      <div
+                        key={b.id}
+                        className="rounded-xl bg-white p-2.5 shadow-sm dark:bg-white/10"
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+                              {badgeText}
+                            </span>
+                            <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
+                              {b.title}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
+                            Xem tất cả &gt;
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="rounded border border-zinc-100 p-1.5 dark:border-white/10">
+                            <div className="mb-1 h-16 rounded bg-zinc-200 dark:bg-white/10" />
+                            <p className="truncate text-[10px] font-medium">Áo thun Oversize</p>
+                            <span className="text-[10px] font-bold text-red-500">189.000đ</span>
+                          </div>
+                          <div className="rounded border border-zinc-100 p-1.5 dark:border-white/10">
+                            <div className="mb-1 h-16 rounded bg-zinc-200 dark:bg-white/10" />
+                            <p className="truncate text-[10px] font-medium">Quần Jeans Baggy</p>
+                            <span className="text-[10px] font-bold text-red-500">349.000đ</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+
                   if (b.type === 'BANNER') {
                     return (
                       <div key={b.id} className="relative overflow-hidden rounded shadow-sm">
                         <img
-                          src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&q=80"
+                          src="https://picsum.photos/seed/sellerbanner/500/300"
                           alt="Banner"
+                          onError={handleImageError}
                           className="h-28 w-full object-cover"
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/30 px-4 text-center text-xs font-bold text-white">
@@ -547,9 +705,15 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                 onChange={(e) => setNewBlockType(e.target.value as DecorationBlock['type'])}
                 className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
               >
-                <option value="BANNER">Banner Khuyến mãi lớn (Carousel / Slider)</option>
+                <option value="BANNER_SLIDER">Banner Slider (Trình chiếu tối đa 5 ảnh)</option>
+                <option value="PRODUCT_COLLECTION">
+                  Bộ sưu tập nổi bật (New / Best Seller / Sale Off)
+                </option>
+                <option value="CATEGORY_GRID">Danh mục nổi bật của gian hàng</option>
+                <option value="VOUCHER_CAROUSEL">Băng chuyền Voucher giảm giá</option>
+                <option value="BANNER">Banner đơn tĩnh</option>
                 <option value="FLASH_SALE">Đồng hồ Flash Sale & Sản phẩm hot</option>
-                <option value="COLLECTION">Danh mục bộ sưu tập nổi bật</option>
+                <option value="COLLECTION">Danh mục sản phẩm cơ bản</option>
                 <option value="VIDEO">Video trải nghiệm / Livestream preview</option>
               </select>
             </div>
@@ -589,6 +753,32 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
             </button>
           </div>
         </Modal>
+      )}
+
+      {/* Banner Slider Config Modal */}
+      {isSliderModalOpen && editingBlock && (
+        <BannerSliderConfigModal
+          block={editingBlock}
+          isOpen={isSliderModalOpen}
+          onClose={() => {
+            setIsSliderModalOpen(false)
+            setEditingBlock(null)
+          }}
+          onSave={handleSaveConfig}
+        />
+      )}
+
+      {/* Collection Config Modal */}
+      {isCollectionModalOpen && editingBlock && (
+        <CollectionConfigModal
+          block={editingBlock}
+          isOpen={isCollectionModalOpen}
+          onClose={() => {
+            setIsCollectionModalOpen(false)
+            setEditingBlock(null)
+          }}
+          onSave={handleSaveConfig}
+        />
       )}
     </div>
   )

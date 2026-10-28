@@ -19,3 +19,6 @@ export const SellerReviewsTab = lazy(() => import('./SellerReviewsTab'))
 export const SellerStaffTab = lazy(() =>
   import('./SellerStaffTab').then((m) => ({ default: m.SellerStaffTab })),
 )
+export const SellerStatsRevenueTab = lazy(() => import('./SellerStatsRevenueTab'))
+export const SellerStatsProductsTab = lazy(() => import('./SellerStatsProductsTab'))
+export const SellerStatsCustomersTab = lazy(() => import('./SellerStatsCustomersTab'))

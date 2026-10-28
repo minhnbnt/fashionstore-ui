@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { useSearch } from '@generated/endpoints/search/search'
 
 import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
-import { formatVnd } from '@/lib/format'
+import { priceLabel } from '@/lib/format'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 
@@ -52,9 +52,7 @@ export default function RelatedProducts(props: {
               <div className="p-4">
                 <h3 className="truncate text-sm font-bold">{p.name}</h3>
                 <p className="mt-1 font-extrabold text-blue-700 dark:text-sky-300">
-                  {p.minPrice !== undefined && p.minPrice !== null
-                    ? formatVnd(p.minPrice)
-                    : 'Liên hệ'}
+                  {priceLabel(p.minPrice)}
                 </p>
               </div>
             </Link>

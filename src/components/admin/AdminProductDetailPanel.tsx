@@ -99,6 +99,9 @@ function DetailBody({
             alt=""
             width={120}
             height={150}
+            onError={(event) => {
+              event.currentTarget.src = PLACEHOLDER_IMAGE
+            }}
             className="h-[150px] w-[120px] shrink-0 rounded-2xl object-cover opacity-60"
           />
         )}
@@ -233,6 +236,9 @@ function DetailBody({
                 <img
                   src={imageUrl(detail.garmentKey)}
                   alt="Garment Flat Lay"
+                  onError={(event) => {
+                    event.currentTarget.src = PLACEHOLDER_IMAGE
+                  }}
                   className="h-20 w-16 rounded-xl border border-indigo-200 bg-white object-contain p-1 dark:border-indigo-500/30"
                 />
               )}

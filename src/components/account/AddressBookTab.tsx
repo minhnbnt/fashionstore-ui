@@ -28,7 +28,7 @@ const MAX_ADDRESSES = 10
 
 function addAddressButtonClass(isMaxReached: boolean): string {
   if (isMaxReached) {
-    return 'cursor-not-allowed bg-zinc-200 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-600'
+    return 'cursor-not-allowed bg-zinc-200 text-zinc-400 dark:bg-white/5 dark:text-zinc-600'
   }
   return 'bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 text-white shadow-indigo-900/20 hover:opacity-90'
 }
@@ -279,7 +279,7 @@ export default function AddressBookTab() {
                     onClick={function () {
                       openEditModal(addr)
                     }}
-                    className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-blue-500 hover:text-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                    className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-blue-500 hover:text-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/15"
                   >
                     <PencilSimple size={13} />
                     <span>Sửa</span>
@@ -293,7 +293,7 @@ export default function AddressBookTab() {
                           handleSetDefault(addr.id)
                         }}
                         disabled={isMutating}
-                        className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-blue-500 hover:text-blue-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-blue-500 hover:text-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/15"
                       >
                         <span>Đặt làm mặc định</span>
                       </button>
@@ -304,7 +304,7 @@ export default function AddressBookTab() {
                           handleDeleteAddress(addr.id)
                         }}
                         disabled={isMutating}
-                        className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-2xs transition hover:border-rose-300 hover:bg-rose-50 dark:border-zinc-800 dark:bg-zinc-800 dark:hover:bg-rose-950/30"
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-2xs transition hover:border-rose-300 hover:bg-rose-50 dark:border-white/15 dark:bg-white/10 dark:hover:bg-rose-950/30"
                         title="Xóa địa chỉ"
                       >
                         <Trash size={13} />

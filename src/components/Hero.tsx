@@ -1,9 +1,29 @@
 import { ArrowRight, Sparkle } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
+import { PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
+
+// Không ternary (AGENTS.md): helper if/return cho JSX prop.
+function imageInitial(reduce: boolean | null): { opacity: number; scale: number } | false {
+  if (reduce) {
+    return false
+  }
+  return { opacity: 0, scale: 0.96 }
+}
+
 export default function Hero() {
   const reduce = useReducedMotion()
-  const initial = reduce ? false : { opacity: 0, y: 28 }
+  let initial: { opacity: number; y: number } | false = { opacity: 0, y: 28 }
+  if (reduce) {
+    initial = false
+  }
 
   return (
     <section id="top" className="relative scroll-mt-24 overflow-hidden pt-[76px]">
@@ -63,7 +83,7 @@ export default function Hero() {
         </motion.div>
 
         <motion.div
-          initial={reduce ? false : { opacity: 0, scale: 0.96 }}
+          initial={imageInitial(reduce)}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.12 }}
           className="relative"
@@ -73,6 +93,7 @@ export default function Hero() {
             alt="Người mẫu mặc đồ nét"
             width={900}
             height={1100}
+            onError={handleImageError}
             className="h-[480px] w-full rounded-3xl object-cover shadow-2xl shadow-blue-300/40 lg:h-[560px]"
           />
           <div className="glass absolute right-5 bottom-5 left-5 flex items-center gap-4 rounded-3xl p-4 md:right-auto md:left-8">
@@ -81,6 +102,7 @@ export default function Hero() {
               alt=""
               width={56}
               height={56}
+              onError={handleImageError}
               className="h-14 w-14 rounded-2xl object-cover"
             />
             <div>

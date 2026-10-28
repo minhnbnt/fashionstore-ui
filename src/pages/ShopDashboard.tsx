@@ -1,14 +1,18 @@
-import { useSearchParams } from 'react-router'
+import { useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router'
 
 import { useSellerConversations } from '@generated/endpoints/chat/chat'
 import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
 import { useInventory } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
 import { useList4 } from '@generated/endpoints/seller-returns/seller-returns'
+import { useGetMyShops } from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
 import { useMine } from '@generated/endpoints/shops/shops'
+import { Storefront, WarningCircle } from '@phosphor-icons/react'
 
 import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
 import { shopProfile } from '@/lib/sellerAdapters'
-import { parseSellerTab, sellerTabParam } from '@/lib/sellerNavigation'
+import { getFirstAllowedTab, parseSellerTab, sellerTabParam } from '@/lib/sellerNavigation'
+import { canSeeTab } from '@/lib/sellerPermissions'
 
 import {
   SellerAddProductTab,
@@ -24,10 +28,14 @@ import {
   SellerRevenueTab,
   SellerReviewsTab,
   SellerStaffTab,
+  SellerStatsCustomersTab,
+  SellerStatsProductsTab,
+  SellerStatsRevenueTab,
 } from '../components/seller-dashboard-tab'
 import { SellerLayout } from '../components/seller-dashboard-tab/SellerLayout'
 
 import type { SellerTabId, ShopProfileData } from '@/types/seller'
+import type { SellerShopMembershipResponse } from '@generated/model/sellerShopMembershipResponse'
 import type { ShopResponse } from '@generated/model/shopResponse'
 
 const FALLBACK_AUTO_REPLY =
@@ -84,61 +92,149 @@ function errorStatus(error: unknown): number {
 export default function ShopDashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
 
+  const membershipsQuery = useGetMyShops()
   const mineQuery = useMine()
+
+  let memberships: SellerShopMembershipResponse[] = []
+  if (membershipsQuery.data !== undefined) {
+    const raw = takeData(membershipsQuery.data)
+    if (Array.isArray(raw)) {
+      memberships = raw
+    }
+  }
+
+  const paramShopId = searchParams.get('shopId')
+  let currentMembership: SellerShopMembershipResponse | null = null
+
+  if (paramShopId !== null && paramShopId !== '') {
+    for (const m of memberships) {
+      if (m.shopId === paramShopId) {
+        currentMembership = m
+        break
+      }
+    }
+  }
+
+  if (currentMembership === null && memberships.length > 0) {
+    currentMembership = memberships[0]
+  }
 
   let shopId = ''
   let shopName = ''
   let autoReplyText = FALLBACK_AUTO_REPLY
   let shopReady = false
+  let isOwner = false
+  let permissions: string[] = []
+
+  if (currentMembership !== null) {
+    shopId = currentMembership.shopId ?? ''
+    shopName = currentMembership.shopName ?? ''
+    shopReady = true
+    if (currentMembership.role === 'OWNER') {
+      isOwner = true
+    }
+    if (currentMembership.permissions) {
+      permissions = currentMembership.permissions
+    }
+  }
+
   let currentShop: ShopResponse | null = null
   if (mineQuery.data !== undefined) {
-    currentShop = takeData(mineQuery.data)[0] ?? null
-    if (currentShop !== null) {
-      shopId = currentShop.id ?? ''
-      shopName = currentShop.name ?? ''
-      if (
-        currentShop.autoReplyText !== null &&
-        currentShop.autoReplyText !== undefined &&
-        currentShop.autoReplyText !== ''
-      ) {
-        autoReplyText = currentShop.autoReplyText
+    const rawMine = takeData(mineQuery.data)
+    if (Array.isArray(rawMine)) {
+      for (const s of rawMine) {
+        if (s.id === shopId) {
+          currentShop = s
+          if (s.autoReplyText !== null && s.autoReplyText !== undefined && s.autoReplyText !== '') {
+            autoReplyText = s.autoReplyText
+          }
+          break
+        }
       }
-      shopReady = true
     }
   }
 
   // Sidebar badge cần 4 bộ đếm này ở mọi tab nên fetch ngay tại page.
-  // Dữ liệu riêng của từng tab (sản phẩm, doanh thu, chat…) do tab component tự tải.
   const ordersQuery = useList5({ shopId }, { query: { enabled: shopReady } })
   const returnsQuery = useList4({ shopId }, { query: { enabled: shopReady } })
   const inventoryQuery = useInventory(shopId, undefined, { query: { enabled: shopReady } })
   const conversationsQuery = useSellerConversations({ shopId }, { query: { enabled: shopReady } })
 
-  // Tab đang mở nằm trên URL (/shop?tab=orders) để F5/gửi link giữ nguyên tab.
-  // Thiếu hoặc sai param thì về OVERVIEW; OVERVIEW không cần param cho URL gọn.
   const activeTab = parseSellerTab(searchParams.get('tab'))
   const editProductId = searchParams.get('productId') ?? ''
 
-  function handleSelectTab(tab: SellerTabId) {
+  function handleSelectTab(tab: SellerTabId, extraParams?: Record<string, string>) {
     const param = sellerTabParam(tab)
-    if (param === null) {
-      setSearchParams({})
+    const next: Record<string, string> = { ...extraParams }
+    if (shopId !== '') {
+      next.shopId = shopId
+    }
+    if (param !== null) {
+      next.tab = param
+    }
+    setSearchParams(next)
+  }
+
+  function handleOverviewNavigate(tabId: string, extraParams?: Record<string, string>) {
+    handleSelectTab(parseSellerTab(tabId), extraParams)
+  }
+
+  function handleSwitchShop(newShopId: string) {
+    setSearchParams({ shopId: newShopId })
+  }
+
+  const isTabAllowed = canSeeTab(activeTab, permissions, isOwner)
+  const permissionsKey = permissions.join(',')
+
+  // Smart Auto-Navigation: If user cannot access the current tab, find the first allowed tab
+  useEffect(() => {
+    if (!shopReady) {
       return
     }
-    setSearchParams({ tab: param })
-  }
+    if (!isTabAllowed) {
+      let activePerms: string[] = []
+      if (permissionsKey !== '') {
+        activePerms = permissionsKey.split(',')
+      }
+      const firstAllowed = getFirstAllowedTab(activePerms, isOwner)
+      if (firstAllowed !== null && firstAllowed !== activeTab) {
+        const param = sellerTabParam(firstAllowed)
+        const next: Record<string, string> = { shopId }
+        if (param !== null) {
+          next.tab = param
+        }
+        setSearchParams(next, { replace: true })
+      }
+    }
+  }, [shopReady, isTabAllowed, permissionsKey, isOwner, activeTab, shopId, setSearchParams])
 
-  // Card Tổng quan điều hướng bằng tabId kiểu 'orders' — chuẩn hoá về SellerTabId
-  function handleOverviewNavigate(tabId: string) {
-    handleSelectTab(parseSellerTab(tabId))
-  }
-
-  if (mineQuery.isPending) {
+  if (membershipsQuery.isPending) {
     return <TabLoading />
   }
 
-  if (mineQuery.isError) {
-    return <ShopError status={errorStatus(mineQuery.error)} />
+  if (membershipsQuery.isError) {
+    return <ShopError status={errorStatus(membershipsQuery.error)} />
+  }
+
+  if (memberships.length === 0) {
+    return (
+      <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center p-8 text-center">
+        <Storefront size={56} className="text-orange-500" />
+        <h2 className="mt-4 text-xl font-bold text-zinc-900 dark:text-zinc-100">
+          Bạn chưa tham gia gian hàng nào
+        </h2>
+        <p className="mt-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+          Hãy đăng ký mở gian hàng mới trên sàn nét hoặc liên hệ chủ shop để nhận thư mời làm nhân
+          viên.
+        </p>
+        <Link
+          to="/account?tab=shops"
+          className="btn-primary mt-6 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-bold"
+        >
+          <span>Đến trang Hồ sơ & Mở Shop</span>
+        </Link>
+      </main>
+    )
   }
 
   let pendingOrdersCount = 0
@@ -193,31 +289,56 @@ export default function ShopDashboard() {
       returnRequestsCount={pendingReturnsCount}
       lowStockCount={lowStockCount}
       unreadChatCount={unreadChatCount}
+      permissions={permissions}
+      isOwner={isOwner}
+      shopId={shopId}
+      onSwitchShop={handleSwitchShop}
     >
-      {activeTab === 'OVERVIEW' && (
+      {!isTabAllowed && (
+        <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center p-8 text-center">
+          <WarningCircle size={48} className="text-amber-500" />
+          <h2 className="mt-4 text-lg font-bold text-zinc-900 dark:text-zinc-100">
+            Bạn không có quyền truy cập mục này
+          </h2>
+          <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+            Tài khoản của bạn chưa được cấp quyền để xem hoặc thao tác tính năng này tại gian hàng{' '}
+            {shopName}.
+          </p>
+          <Link
+            to="/account?tab=shops"
+            className="btn-primary mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-semibold"
+          >
+            Quay về Hồ sơ của tôi
+          </Link>
+        </div>
+      )}
+
+      {isTabAllowed && activeTab === 'OVERVIEW' && (
         <SellerOverviewTab
+          shopId={shopId}
           onNavigateTab={handleOverviewNavigate}
           shopName={shopName}
           pendingOrdersCount={pendingOrdersCount}
           confirmedOrdersCount={confirmedOrdersCount}
           pendingReturnsCount={pendingReturnsCount}
           lowStockCount={lowStockCount}
+          unreadChatCount={unreadChatCount}
         />
       )}
 
-      {activeTab === 'PRODUCTS' && (
+      {isTabAllowed && activeTab === 'PRODUCTS' && (
         <SellerProductsTab
           shopId={shopId}
           onNavigateAddProduct={function () {
             handleSelectTab('ADD_PRODUCT')
           }}
           onNavigateEditProduct={function (id: string) {
-            setSearchParams({ tab: 'edit_product', productId: id })
+            handleSelectTab('EDIT_PRODUCT', { productId: id })
           }}
         />
       )}
 
-      {activeTab === 'ADD_PRODUCT' && (
+      {isTabAllowed && activeTab === 'ADD_PRODUCT' && (
         <SellerAddProductTab
           shopId={shopId}
           onBack={function () {
@@ -226,7 +347,7 @@ export default function ShopDashboard() {
         />
       )}
 
-      {activeTab === 'EDIT_PRODUCT' && (
+      {isTabAllowed && activeTab === 'EDIT_PRODUCT' && editProductId !== '' && (
         <SellerEditProductTab
           shopId={shopId}
           productId={editProductId}
@@ -236,13 +357,13 @@ export default function ShopDashboard() {
         />
       )}
 
-      {activeTab === 'INVENTORY' && <SellerInventoryTab shopId={shopId} />}
+      {isTabAllowed && activeTab === 'INVENTORY' && <SellerInventoryTab shopId={shopId} />}
 
-      {activeTab === 'ORDERS' && <SellerOrdersTab shopId={shopId} />}
+      {isTabAllowed && activeTab === 'ORDERS' && <SellerOrdersTab shopId={shopId} />}
 
-      {activeTab === 'RETURNS' && <SellerReturnsTab shopId={shopId} />}
+      {isTabAllowed && activeTab === 'RETURNS' && <SellerReturnsTab shopId={shopId} />}
 
-      {activeTab === 'REVENUE' && (
+      {isTabAllowed && activeTab === 'REVENUE' && (
         <SellerRevenueTab
           shopId={shopId}
           bankName={profile.bankName}
@@ -251,16 +372,28 @@ export default function ShopDashboard() {
         />
       )}
 
-      {activeTab === 'REVIEWS' && <SellerReviewsTab shopId={shopId} />}
+      {isTabAllowed && activeTab === 'REVIEWS' && <SellerReviewsTab shopId={shopId} />}
 
-      {activeTab === 'CHAT' && <SellerChatTab shopId={shopId} autoReplyText={autoReplyText} />}
+      {isTabAllowed && activeTab === 'CHAT' && (
+        <SellerChatTab shopId={shopId} autoReplyText={autoReplyText} />
+      )}
 
-      {activeTab === 'DECORATION' && <SellerDecorationTab shopId={shopId} shopName={shopName} />}
+      {isTabAllowed && activeTab === 'DECORATION' && (
+        <SellerDecorationTab shopId={shopId} shopName={shopName} />
+      )}
 
-      {activeTab === 'STAFF' && <SellerStaffTab shopId={shopId} />}
+      {isTabAllowed && activeTab === 'STAFF' && <SellerStaffTab shopId={shopId} />}
 
-      {activeTab === 'PROFILE' && (
+      {isTabAllowed && activeTab === 'PROFILE' && (
         <SellerProfileTab key={shopId} shopId={shopId} profile={profile} />
+      )}
+
+      {isTabAllowed && activeTab === 'STATS_REVENUE' && <SellerStatsRevenueTab shopId={shopId} />}
+
+      {isTabAllowed && activeTab === 'STATS_PRODUCTS' && <SellerStatsProductsTab shopId={shopId} />}
+
+      {isTabAllowed && activeTab === 'STATS_CUSTOMERS' && (
+        <SellerStatsCustomersTab shopId={shopId} />
       )}
     </SellerLayout>
   )

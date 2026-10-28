@@ -9,8 +9,9 @@ export interface ShopRoleItem {
 export interface ShopMemberItem {
   id: string
   email: string
+  displayName: string
   roleId: string
   roleName: string
-  status: 'ACTIVE' | 'INVITED'
+  status: 'ACTIVE' | 'DEACTIVATED'
   joinedAt: string
 }

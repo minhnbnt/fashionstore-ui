@@ -25,9 +25,16 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import ProductMediaUploader from '@/components/seller/ProductMediaUploader'
 import RichTextEditor from '@/components/ui/RichTextEditor'
-import { imageUrl, takeData } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import { ApiError } from '@/lib/apiFetch'
 import { uploadImage } from '@/lib/uploadImage'
+
+function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
+  const target = event.currentTarget
+  if (target.src !== PLACEHOLDER_IMAGE) {
+    target.src = PLACEHOLDER_IMAGE
+  }
+}
 
 import type { CreateProductRequest } from '@generated/model/createProductRequest'
 import type { CreateVariantRequest } from '@generated/model/createVariantRequest'
@@ -1104,7 +1111,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                             type="button"
                             disabled={isSelected}
                             onClick={() => handleAddSizeToColor(colorName, sz)}
-                            className={`rounded-md px-2 py-0.5 text-[10px] font-semibold transition ${sizeChipClass}`}
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition ${sizeChipClass}`}
                           >
                             + {sz}
                           </button>
@@ -1320,6 +1327,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                       <img
                         src={imageUrl(imgKey)}
                         alt={colorName}
+                        onError={handleImageError}
                         className="h-10 w-10 rounded-lg object-cover"
                       />
                     )}
@@ -1467,7 +1475,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                     </td>
                     <td className="py-2.5">
                       {discountPct > 0 && (
-                        <span className="rounded-md bg-red-100 px-2 py-0.5 text-[11px] font-extrabold text-red-600 dark:bg-red-950/50 dark:text-red-400">
+                        <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-extrabold text-red-600 dark:bg-red-950/50 dark:text-red-400">
                           -{discountPct}%
                         </span>
                       )}
