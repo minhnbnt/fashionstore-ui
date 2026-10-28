@@ -60,6 +60,10 @@ describe('paymentStatusLabel', () => {
     expect(paymentStatusLabel('COLLECTED')).toBe('Đã thu tiền')
   })
 
+  it('map trang thai thanh toan loi FAILED', () => {
+    expect(paymentStatusLabel('FAILED')).toBe('Thanh toán lỗi')
+  })
+
   it('trang thai la thi hien nguyen van', () => {
     expect(paymentStatusLabel('REFUNDED')).toBe('REFUNDED')
   })

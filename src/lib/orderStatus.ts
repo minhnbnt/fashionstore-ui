@@ -64,5 +64,8 @@ export function paymentStatusLabel(status: string | null | undefined): string {
   if (status === 'COLLECTED') {
     return 'Đã thu tiền'
   }
+  if (status === 'FAILED') {
+    return 'Thanh toán lỗi'
+  }
   return status ?? 'Không rõ'
 }

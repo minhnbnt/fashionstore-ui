@@ -136,7 +136,6 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     404: 'Đơn hàng không tồn tại.',
     409: 'Đơn đã bàn giao vận chuyển, đã giao hoặc đã hủy. Tải lại danh sách để xem trạng thái mới.',
   },
-  orders: {},
   orderDetail: {
     404: 'Đơn hàng không tồn tại hoặc không phải của bạn.',
   },
