@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
 
-import BuyerChatWidget from './components/chat/BuyerChatWidget'
+import BuyerChatGate from './components/chat/BuyerChatGate'
 import Header from './components/Header'
 import RequireAuth from './components/RequireAuth'
 import RequireRole from './components/RequireRole'
@@ -240,7 +240,7 @@ function App() {
         </Routes>
       </Suspense>
       {!isSellerDashboard && <Footer />}
-      {!isSellerDashboard && <BuyerChatWidget />}
+      {!isSellerDashboard && <BuyerChatGate />}
     </div>
   )
 }

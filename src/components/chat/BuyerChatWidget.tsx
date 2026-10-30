@@ -17,9 +17,7 @@ import { motion, useReducedMotion } from 'motion/react'
 
 import UserAvatar from '@/components/UserAvatar'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
-import { useSessionQuery } from '@/hooks/useSession'
 import { apiErrorText, takeData } from '@/lib/apiAdapters'
-import { getRoleFromSession } from '@/lib/auth'
 import { formatDateTime } from '@/lib/format'
 
 import type { ChatConversationResponse } from '@generated/model/chatConversationResponse'
@@ -505,22 +503,8 @@ function BuyerChatWidgetBody() {
   )
 }
 
-/** Floating chat cho buyer: nút tròn góc phải, panel hội thoại + thread realtime. */
+/** Floating chat cho buyer: nút tròn góc phải, panel hội thoại + thread realtime.
+ *  Điều kiện ẩn/hiện (session/role/route) nằm ở BuyerChatGate — file này chỉ lo UI. */
 export default function BuyerChatWidget() {
-  const sessionQuery = useSessionQuery()
-  const location = useLocation()
-
-  const session = sessionQuery.data
-  if (session === null || session === undefined) {
-    return null
-  }
-  if (getRoleFromSession(session) === 'admin') {
-    return null
-  }
-  const isSellerDashboard = location.pathname === '/shop' || location.pathname.startsWith('/shop/')
-  if (isSellerDashboard || location.pathname.startsWith('/admin')) {
-    return null
-  }
-
   return <BuyerChatWidgetBody />
 }

@@ -69,12 +69,24 @@ export default defineConfig({
               test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
             },
             {
+              name: 'router-vendor',
+              test: /node_modules[\\/]react-router[\\/]/,
+            },
+            {
               name: 'query-vendor',
               test: /node_modules[\\/]@tanstack[\\/]/,
             },
             {
               name: 'motion-vendor',
               test: /node_modules[\\/](motion|framer-motion)[\\/]/,
+            },
+            {
+              name: 'zod-vendor',
+              test: /node_modules[\\/]zod[\\/]/,
+            },
+            {
+              name: 'ai-vendor',
+              test: /node_modules[\\/]ai[\\/]/,
             },
           ],
         },

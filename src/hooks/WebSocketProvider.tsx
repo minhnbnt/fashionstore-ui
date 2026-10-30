@@ -27,19 +27,36 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
         return
       }
 
-      const stompClient = createChatSocketClient(token)
-      stompClient.onConnect = function onConnected() {
-        setClient(stompClient)
-      }
-      stompClient.onWebSocketClose = function onClosed() {
-        setClient(null)
-      }
-      stompClient.activate()
+      // Client được tạo bất đồng bộ (stompjs lazy-load); cờ cancelled chặn case
+      // unmount/đổi token diễn ra trước khi import kịp resolve.
+      let cancelled = false
+      let stompClient: Client | null = null
+
+      void createChatSocketClient(token)
+        .then(function (created) {
+          if (cancelled) {
+            return
+          }
+          stompClient = created
+          created.onConnect = function onConnected() {
+            setClient(created)
+          }
+          created.onWebSocketClose = function onClosed() {
+            setClient(null)
+          }
+          created.activate()
+        })
+        .catch(function () {
+          // Lỗi mạng/env: bỏ qua — chỉ mất realtime chat, đừng làm vỡ app.
+        })
 
       return function cleanup() {
-        stompClient.onConnect = function () {}
-        stompClient.onWebSocketClose = function () {}
-        void stompClient.deactivate()
+        cancelled = true
+        if (stompClient !== null) {
+          stompClient.onConnect = function () {}
+          stompClient.onWebSocketClose = function () {}
+          void stompClient.deactivate()
+        }
       }
     },
     [userId, token],
