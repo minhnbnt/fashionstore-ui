@@ -64,6 +64,8 @@ describe('readAgentConfig', () => {
   it('thiếu một biến env thì trả null', function () {
     vi.stubEnv('VITE_AI_BASE_URL', 'https://ai.example.com/v1')
     vi.stubEnv('VITE_AI_MODEL', 'gpt-test')
+    // Giả lập biến bị thiếu triệt để — .env của máy chạy test có thể đang đặt key thật.
+    vi.stubEnv('VITE_AI_API_KEY', undefined)
 
     expect(readAgentConfig()).toBeNull()
   })

@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { WebSocketContext } from '@/hooks/useWebSocket'
 
-import BuyerChatWidget from './BuyerChatWidget'
+import ChatDock from './ChatDock'
 
 import type { ChatConversationResponse } from '@generated/model/chatConversationResponse'
 import type { ChatMessageResponse } from '@generated/model/chatMessageResponse'
@@ -31,6 +31,13 @@ vi.mock('@/hooks/useSession', () => ({
       user: { id: 'buyer-1', app_metadata: { role: 'customer' } },
     },
   }),
+}))
+
+// happy-dom không dựng WAAPI đủ nên animation của motion văng unhandled rejection;
+// test này không đo animation nên ép nhánh reduced-motion, render div thường.
+vi.mock('motion/react', () => ({
+  motion: { div: 'div' },
+  useReducedMotion: () => true,
 }))
 
 function conversationFixture(): ChatConversationResponse {
@@ -119,7 +126,7 @@ function renderChat(): FakeStompClient {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/']}>
         <WebSocketContext.Provider value={fakeClient as unknown as Client}>
-          <BuyerChatWidget />
+          <ChatDock />
         </WebSocketContext.Provider>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -150,7 +157,7 @@ beforeEach(() => {
 
 afterEach(cleanup)
 
-describe('BuyerChatWidget — luồng realtime (DOM)', () => {
+describe('ChatDock — luồng realtime (DOM)', () => {
   it('tin nhắn đẩy realtime hiện trong thread mà không cần refetch', async () => {
     const client = renderChat()
     await openThread()

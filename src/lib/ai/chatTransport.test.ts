@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { createAgentTransport } from './chatTransport'
+import { createAgentTransport, MAX_AGENT_STEPS } from './chatTransport'
 
 import type { AgentConfig } from './agent'
 
@@ -24,5 +24,10 @@ describe('createAgentTransport', () => {
     } as never)
 
     expect(stream).toBeNull()
+  })
+
+  it('vòng lặp agent đủ dài cho chuỗi nhiều lần gọi tool', function () {
+    // listCategories → searchProducts → nới bộ lọc tìm lại → trả lời cần > 5 bước
+    expect(MAX_AGENT_STEPS).toBe(10)
   })
 })

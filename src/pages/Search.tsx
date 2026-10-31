@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
@@ -32,16 +32,12 @@ import EmptySearchState from '../components/search/EmptySearchState'
 import FilterPanel from '../components/search/FilterPanel'
 import Pagination from '../components/search/Pagination'
 import ProductRow from '../components/search/ProductRow'
-import SearchAgentLauncher from '../components/search/SearchAgentLauncher'
 import { ProductCard } from '../components/Sections'
 
 import type { SearchFilters } from '@/types/search'
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 import type { SearchFacetsResponse } from '@generated/model/searchFacetsResponse'
-
-// Widget trợ lý AI lazy-load: chunk ai-vendor (~430KB) chỉ tải khi bấm nút mở trợ lý.
-const SearchAgentWidget = lazy(() => import('../components/search/SearchAgentWidget'))
 
 const PAGE_SIZE = 16
 
@@ -150,7 +146,6 @@ export default function Search() {
   const filters = parseFilters(params)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [agentMounted, setAgentMounted] = useState(false)
 
   const searchQuery = useSearch(toApiParams(filters, PAGE_SIZE), {
     query: { placeholderData: keepPreviousData },
@@ -503,30 +498,6 @@ export default function Search() {
           )}
         </section>
       </div>
-
-      {/* Trợ lý AI tìm sản phẩm bằng ngôn ngữ tự nhiên — chunk chỉ tải khi bấm nút */}
-      {!agentMounted && (
-        <SearchAgentLauncher
-          label="Mở trợ lý tìm kiếm"
-          onClick={function () {
-            setAgentMounted(true)
-          }}
-        />
-      )}
-      {agentMounted && (
-        <Suspense
-          fallback={
-            <SearchAgentLauncher
-              label="Mở trợ lý tìm kiếm"
-              onClick={function () {
-                setAgentMounted(true)
-              }}
-            />
-          }
-        >
-          <SearchAgentWidget filters={filters} onApplyFilters={change} autoOpen />
-        </Suspense>
-      )}
     </main>
   )
 }

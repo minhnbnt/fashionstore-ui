@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
 import {
@@ -11,18 +11,34 @@ import {
   useStartConversation,
 } from '@generated/endpoints/chat/chat'
 import { useDetail1 } from '@generated/endpoints/products/products'
-import { ArrowLeft, ChatCircleDots, PaperPlaneRight, X } from '@phosphor-icons/react'
+import { ArrowLeft, ChatCircleDots, PaperPlaneRight, Sparkle, X } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'motion/react'
 
 import UserAvatar from '@/components/UserAvatar'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
+import { useSessionQuery } from '@/hooks/useSession'
 import { apiErrorText, takeData } from '@/lib/apiAdapters'
 import { formatDateTime } from '@/lib/format'
 
+import { bubbleClass, messageRowClass } from './bubble'
+
+import type { AgentConfig, AgentUIMessage } from '@/lib/ai/agent'
 import type { ChatConversationResponse } from '@generated/model/chatConversationResponse'
 import type { ChatMessageResponse } from '@generated/model/chatMessageResponse'
 import type { ProductResponse } from '@generated/model/productResponse'
+import type { ChatTransport } from 'ai'
+
+// Tab trợ lý AI nặng (chunk ai-vendor ~430KB) nên lazy-load lần đầu mở tab.
+const AgentTab = lazy(() => import('./AgentTab'))
+
+export type ChatTab = 'agent' | 'messages'
+
+export interface ChatDockProps {
+  /** Inject config/transport cho test tab AI; production bỏ trống. */
+  config?: AgentConfig
+  transport?: ChatTransport<AgentUIMessage>
+}
 
 function isProductPath(pathname: string): string {
   const match = pathname.match(/^\/product\/([^/]+)$/)
@@ -30,20 +46,6 @@ function isProductPath(pathname: string): string {
     return ''
   }
   return match[1] ?? ''
-}
-
-function bubbleClass(isMine: boolean): string {
-  if (isMine) {
-    return 'max-w-[78%] rounded-2xl rounded-tr-xs bg-indigo-600 p-3 text-xs leading-relaxed text-white'
-  }
-  return 'max-w-[78%] rounded-2xl rounded-tl-xs bg-zinc-100 p-3 text-xs leading-relaxed text-zinc-900 dark:bg-white/10 dark:text-zinc-100'
-}
-
-function messageRowClass(isMine: boolean): string {
-  if (isMine) {
-    return 'flex flex-col items-end'
-  }
-  return 'flex flex-col items-start'
 }
 
 function chatToggleLabel(open: boolean): string {
@@ -92,7 +94,7 @@ interface ThreadProps {
   onBack: () => void
 }
 
-function BuyerChatThread({ conversation, onBack }: ThreadProps) {
+function ChatDockThread({ conversation, onBack }: ThreadProps) {
   const conversationId = conversation.id ?? ''
   const messagesQuery = useMessages(conversationId, {
     query: { enabled: conversationId !== '' },
@@ -225,7 +227,7 @@ interface ListProps {
   isStarting: boolean
 }
 
-function BuyerChatList({
+function ChatDockList({
   conversations,
   shopIdFromProduct,
   shopNameFromProduct,
@@ -249,10 +251,9 @@ function BuyerChatList({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-zinc-100 p-3.5 dark:border-white/10">
-        <p className="text-sm font-extrabold text-zinc-900 dark:text-white">Tin nhắn</p>
-        <p className="text-[11px] text-zinc-500">Trao đổi trực tiếp với các shop bạn quan tâm</p>
-      </div>
+      <p className="border-b border-zinc-100 px-3.5 py-3 text-[11px] text-zinc-500 dark:border-white/10">
+        Trao đổi trực tiếp với các shop bạn quan tâm
+      </p>
 
       {shopIdFromProduct !== '' && (
         <button
@@ -311,13 +312,27 @@ function BuyerChatList({
   )
 }
 
-function BuyerChatWidgetBody() {
+function tabClass(active: boolean): string {
+  if (active) {
+    return 'flex items-center gap-1.5 rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-bold text-white dark:bg-white dark:text-zinc-900'
+  }
+  return 'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white'
+}
+
+function ChatDockBody(props: ChatDockProps) {
   const queryClient = useQueryClient()
   const location = useLocation()
 
+  const session = useSessionQuery().data
+  const isLoggedIn = session !== null && session !== undefined
+
   const [open, setOpen] = useState(false)
+  // Tab chưa chọn lần nào thì suy theo trạng thái đăng nhập lúc mở dock.
+  const [chosenTab, setChosenTab] = useState<ChatTab | null>(null)
   const [selectedConvId, setSelectedConvId] = useState('')
   const [startError, setStartError] = useState('')
+
+  const activeTab: ChatTab = chosenTab ?? (isLoggedIn ? 'messages' : 'agent')
 
   const productId = isProductPath(location.pathname)
   const productQuery = useDetail1(productId, {
@@ -372,7 +387,8 @@ function BuyerChatWidgetBody() {
   useEffect(() => {
     function handleOpenChat(e: Event) {
       setOpen(true)
-      if (!(e instanceof CustomEvent)) {
+      setChosenTab('messages')
+      if (!isLoggedIn || !(e instanceof CustomEvent)) {
         return
       }
       const detail = e.detail as OpenChatEventDetail | undefined
@@ -408,7 +424,7 @@ function BuyerChatWidgetBody() {
     return () => {
       window.removeEventListener('fashionstore:open-chat', handleOpenChat)
     }
-  }, [conversations, markReadMutation, startMutation])
+  }, [conversations, isLoggedIn, markReadMutation, startMutation])
 
   let product: ProductResponse | null = null
   if (productQuery.data !== undefined) {
@@ -456,14 +472,14 @@ function BuyerChatWidgetBody() {
     <>
       <button
         type="button"
-        id="buyer-chat-widget-toggle"
+        id="chat-dock-toggle"
         onClick={handleToggle}
         aria-label={chatToggleLabel(open)}
         className="btn-primary fixed right-5 bottom-5 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-xl"
       >
         {!open && <ChatCircleDots size={24} weight="bold" />}
         {open && <X size={22} weight="bold" />}
-        {!open && totalUnread > 0 && (
+        {!open && isLoggedIn && totalUnread > 0 && (
           <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
             {unreadBadgeText}
           </span>
@@ -471,31 +487,75 @@ function BuyerChatWidgetBody() {
       </button>
 
       {open && (
-        <ChatPanel className="fixed inset-x-3 bottom-[88px] z-50 flex h-[min(68dvh,540px)] flex-col overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/95 shadow-2xl backdrop-blur md:inset-x-auto md:right-6 md:w-[380px] dark:border-white/10 dark:bg-[#11182a]">
-          {showThread && (
-            <BuyerChatThread
-              conversation={selectedConv}
-              onBack={function () {
-                setSelectedConvId('')
-              }}
-            />
+        <ChatPanel className="fixed inset-x-3 bottom-[88px] z-50 flex h-[min(68dvh,540px)] flex-col overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/95 shadow-2xl backdrop-blur md:inset-x-auto md:right-6 md:w-[560px] dark:border-white/10 dark:bg-[#11182a]">
+          {/* Header: 2 tab (nút toggle nổi bên dưới đã là nút đóng khi panel mở) */}
+          <div className="flex items-center border-b border-zinc-100 px-3 py-2.5 dark:border-white/10">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={function () {
+                  setChosenTab('agent')
+                }}
+                className={tabClass(activeTab === 'agent')}
+              >
+                <Sparkle size={13} weight="bold" />
+                Trợ lý AI
+              </button>
+              {isLoggedIn && (
+                <button
+                  type="button"
+                  onClick={function () {
+                    setChosenTab('messages')
+                  }}
+                  className={tabClass(activeTab === 'messages')}
+                >
+                  <ChatCircleDots size={13} weight="bold" />
+                  Tin nhắn
+                </button>
+              )}
+            </div>
+          </div>
+
+          {activeTab === 'agent' && (
+            <Suspense
+              fallback={
+                <div className="flex flex-1 items-center justify-center text-xs text-zinc-400">
+                  Đang tải trợ lý…
+                </div>
+              }
+            >
+              <AgentTab config={props.config} transport={props.transport} />
+            </Suspense>
           )}
-          {!showThread && startError !== '' && (
-            <p className="px-4 pb-2 text-xs font-semibold text-red-600 dark:text-red-400">
-              {startError}
-            </p>
-          )}
-          {!showThread && (
-            <BuyerChatList
-              conversations={conversations}
-              shopIdFromProduct={shopIdFromProduct}
-              shopNameFromProduct={shopNameFromProduct}
-              onSelect={handleSelect}
-              onStartForShop={function (targetShopId) {
-                startMutation.mutate({ data: { shopId: targetShopId } })
-              }}
-              isStarting={startMutation.isPending}
-            />
+
+          {activeTab === 'messages' && (
+            <>
+              {showThread && (
+                <ChatDockThread
+                  conversation={selectedConv}
+                  onBack={function () {
+                    setSelectedConvId('')
+                  }}
+                />
+              )}
+              {!showThread && startError !== '' && (
+                <p className="px-4 pb-2 text-xs font-semibold text-red-600 dark:text-red-400">
+                  {startError}
+                </p>
+              )}
+              {!showThread && (
+                <ChatDockList
+                  conversations={conversations}
+                  shopIdFromProduct={shopIdFromProduct}
+                  shopNameFromProduct={shopNameFromProduct}
+                  onSelect={handleSelect}
+                  onStartForShop={function (targetShopId) {
+                    startMutation.mutate({ data: { shopId: targetShopId } })
+                  }}
+                  isStarting={startMutation.isPending}
+                />
+              )}
+            </>
           )}
         </ChatPanel>
       )}
@@ -503,8 +563,9 @@ function BuyerChatWidgetBody() {
   )
 }
 
-/** Floating chat cho buyer: nút tròn góc phải, panel hội thoại + thread realtime.
- *  Điều kiện ẩn/hiện (session/role/route) nằm ở BuyerChatGate — file này chỉ lo UI. */
-export default function BuyerChatWidget() {
-  return <BuyerChatWidgetBody />
+/** ChatDock — một nút chat duy nhất góc phải: tab "Trợ lý AI" (agent tìm sản phẩm,
+ *  dùng được mọi trang) và tab "Tin nhắn" (chat realtime với shop, cần đăng nhập).
+ *  Điều kiện ẩn/hiện theo route/role nằm ở ChatDockGate — file này chỉ lo UI. */
+export default function ChatDock(props: ChatDockProps) {
+  return <ChatDockBody {...props} />
 }

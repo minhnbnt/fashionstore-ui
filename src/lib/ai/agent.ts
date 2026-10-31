@@ -209,7 +209,9 @@ export function createSearchTools() {
       description:
         'Liệt kê danh mục sản phẩm của cửa hàng (slug + tên) để biết giá trị danh mục hợp lệ.',
       inputSchema: z.object({}),
-      execute: async function (): Promise<{ categories: Array<{ slug: string; name: string }> }> {
+      execute: async function (): Promise<{
+        categories: Array<{ slug: string; name: string }>
+      }> {
         const categories = takeData(await listCategories())
         return {
           categories: categories.map(function (category) {

@@ -7,7 +7,8 @@ import type { AgentConfig, AgentUIMessage } from './agent'
 import type { ChatTransport } from 'ai'
 
 // Số bước tối đa mỗi lượt agent: gọi tool → đọc kết quả → trả lời, lặp đến khi xong.
-const MAX_AGENT_STEPS = 5
+// Đủ dài cho chuỗi listCategories → searchProducts → nới bộ lọc tìm lại → trả lời.
+export const MAX_AGENT_STEPS = 10
 
 /**
  * Transport chạy agent ngay trong browser: streamText gọi thẳng endpoint

@@ -22,9 +22,15 @@ const COMPONENTS: Components = {
   },
 }
 
-export default function Markdown({ source }: { source: string }) {
+export default function Markdown({ source, className }: { source: string; className?: string }) {
+  const classes = [
+    'prose prose-zinc dark:prose-invert prose-a:font-semibold prose-a:text-indigo-600 prose-a:underline-offset-2 dark:prose-a:text-indigo-300 max-w-none',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
   return (
-    <article className="prose prose-zinc dark:prose-invert prose-a:font-semibold prose-a:text-indigo-600 prose-a:underline-offset-2 dark:prose-a:text-indigo-300 max-w-none">
+    <article className={classes}>
       <ReactMarkdown components={COMPONENTS}>{source}</ReactMarkdown>
     </article>
   )
