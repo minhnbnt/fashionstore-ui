@@ -46,6 +46,22 @@ function transportOf(chunks: UIMessageChunk[]): ChatTransport<AgentUIMessage> {
   }
 }
 
+// Transport giả kèm ghi lại messages nhận được — để assert metadata gửi kèm tin nhắn.
+function capturingTransport(
+  chunks: UIMessageChunk[],
+  captured: { messages: AgentUIMessage[] },
+): ChatTransport<AgentUIMessage> {
+  return {
+    sendMessages: async function ({ messages }) {
+      captured.messages = messages
+      return transportOf(chunks).sendMessages({ messages, abortSignal: undefined } as never)
+    },
+    reconnectToStream: async function () {
+      return null
+    },
+  }
+}
+
 /** Probe lộ location hiện tại của router để assert việc navigate. */
 function LocationProbe() {
   const location = useLocation()
@@ -302,5 +318,117 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
 
     const link = await screen.findByRole('link', { name: /Váy hoa nhí/ })
     expect(link.getAttribute('href')).toBe('/product/p1')
+  })
+
+  it('đang ở trang chi tiết thì tin nhắn mang id sản phẩm đang xem', async function () {
+    const user = userEvent.setup()
+    const captured: { messages: AgentUIMessage[] } = { messages: [] }
+    renderTab({
+      config: configFixture(),
+      transport: capturingTransport([], captured),
+      route: '/product/p-123',
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'còn size L không')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    await screen.findByText('còn size L không')
+    const last = captured.messages[captured.messages.length - 1]
+    expect(last?.role).toBe('user')
+    expect(last?.metadata?.product).toEqual({ id: 'p-123' })
+  })
+
+  it('không ở trang chi tiết thì metadata không có product', async function () {
+    const user = userEvent.setup()
+    const captured: { messages: AgentUIMessage[] } = { messages: [] }
+    renderTab({
+      config: configFixture(),
+      transport: capturingTransport([], captured),
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'váy hoa')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    await screen.findByText('váy hoa')
+    const last = captured.messages[captured.messages.length - 1]
+    expect(last?.metadata?.product).toBeUndefined()
+  })
+
+  it('tool getProductDetail đang chạy thì hiện trạng thái đang tra cứu', async function () {
+    const user = userEvent.setup()
+    renderTab({
+      config: configFixture(),
+      transport: transportOf([
+        { type: 'start', messageId: 'a1' },
+        { type: 'start-step' },
+        {
+          type: 'tool-input-available',
+          toolCallId: 'tc1',
+          toolName: 'getProductDetail',
+          input: { productId: 'p-123' },
+        },
+        { type: 'finish-step' },
+        { type: 'finish' },
+      ]),
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'áo này chất gì')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    expect(await screen.findByText('Đang tra cứu sản phẩm…')).toBeTruthy()
+  })
+
+  it('tool getProductDetail lỗi thì hiện trạng thái lỗi', async function () {
+    const user = userEvent.setup()
+    renderTab({
+      config: configFixture(),
+      transport: transportOf([
+        { type: 'start', messageId: 'a1' },
+        { type: 'start-step' },
+        {
+          type: 'tool-input-available',
+          toolCallId: 'tc1',
+          toolName: 'getProductDetail',
+          input: { productId: 'p-123' },
+        },
+        { type: 'tool-output-error', toolCallId: 'tc1', errorText: '404' },
+        { type: 'finish-step' },
+        { type: 'finish' },
+      ]),
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'áo này chất gì')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    expect(await screen.findByText('Có lỗi khi tra cứu sản phẩm.')).toBeTruthy()
+  })
+
+  it('tool getProductDetail xong thì giữ dấu vết tra cứu kèm tên sản phẩm', async function () {
+    const user = userEvent.setup()
+    renderTab({
+      config: configFixture(),
+      transport: transportOf([
+        { type: 'start', messageId: 'a1' },
+        { type: 'start-step' },
+        {
+          type: 'tool-input-available',
+          toolCallId: 'tc1',
+          toolName: 'getProductDetail',
+          input: { productId: 'p-123' },
+        },
+        {
+          type: 'tool-output-available',
+          toolCallId: 'tc1',
+          output: { id: 'p-123', name: 'Áo Sơ Mi Lụa', variants: [] },
+        },
+        { type: 'finish-step' },
+        { type: 'finish' },
+      ]),
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'áo này chất gì')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    expect(await screen.findByText('Đã tra cứu sản phẩm: Áo Sơ Mi Lụa')).toBeTruthy()
   })
 })

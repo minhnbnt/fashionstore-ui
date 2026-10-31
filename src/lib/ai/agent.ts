@@ -1,4 +1,5 @@
 import { listCategories } from '@generated/endpoints/categories/categories'
+import { detail1 } from '@generated/endpoints/products/products'
 import { search } from '@generated/endpoints/search/search'
 import { SearchSort } from '@generated/model/searchSort'
 import { tool } from 'ai'
@@ -8,6 +9,7 @@ import { takeData } from '@/lib/apiAdapters'
 import { EMPTY_FILTERS } from '@/lib/searchFilters'
 
 import type { SearchFilters } from '@/types/search'
+import type { ProductResponse } from '@generated/model/productResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 import type { SearchParams } from '@generated/model/searchParams'
 import type { InferUITool, UIDataTypes, UIMessage } from 'ai'
@@ -48,6 +50,41 @@ export interface SearchToolOutput {
   items: ProductSummaryResponse[]
 }
 
+export const getProductDetailInputSchema = z.object({
+  productId: z.string().describe('Id sản phẩm khách đang xem, lấy từ ngữ cảnh hệ thống'),
+})
+
+export type ProductDetailToolInput = z.infer<typeof getProductDetailInputSchema>
+
+/** Một dòng variant gọn cho model: chỉ dữ liệu trả lời được câu hỏi của khách. */
+export interface AgentProductDetailVariant {
+  size?: string
+  color?: string
+  price?: number
+  stockQuantity?: number
+}
+
+/** ProductResponse rút gọn: bỏ ảnh, video, garment… vô ích với LLM. */
+export interface AgentProductDetailOutput {
+  id?: string
+  name?: string
+  slug?: string
+  description?: string
+  status?: string
+  material?: string | null
+  origin?: string | null
+  careInstructions?: string | null
+  sizeGuide?: string | null
+  averageRating?: number | null
+  reviewCount?: number
+  variants: AgentProductDetailVariant[]
+}
+
+/** Snapshot sản phẩm khách đang xem ở trang chi tiết: chỉ cần id, chi tiết lấy qua tool. */
+export interface AgentProductContext {
+  id: string
+}
+
 const SEARCH_SORT_VALUES: string[] = Object.values(SearchSort)
 const DEFAULT_SEARCH_LIMIT = 8
 
@@ -69,8 +106,9 @@ export function readAgentConfig(): AgentConfig | null {
   return { baseUrl, apiKey, model }
 }
 
-/** System prompt tiếng Việt, nhúng bộ lọc khách đang đặt trên trang tìm kiếm. */
-export function buildSystemPrompt(filters: SearchFilters): string {
+/** System prompt tiếng Việt, nhúng bộ lọc khách đang đặt trên trang tìm kiếm
+ *  và id sản phẩm khách đang xem ở trang chi tiết (nếu có). */
+export function buildSystemPrompt(filters: SearchFilters, product?: AgentProductContext): string {
   const lines: string[] = [
     'Bạn là trợ lý mua sắm của cửa hàng thời trang "nét" — marketplace thời trang.',
     'Luôn trả lời bằng tiếng Việt, ngắn gọn, thân thiện. Giá sản phẩm tính bằng VND.',
@@ -100,6 +138,14 @@ export function buildSystemPrompt(filters: SearchFilters): string {
   }
   if (lines.length === filterLineCount) {
     lines.push('Không có bộ lọc nào đang bật.')
+  }
+
+  if (product !== undefined) {
+    lines.push('')
+    lines.push('Khách đang xem trang chi tiết sản phẩm (id: ' + product.id + ').')
+    lines.push(
+      'Muốn biết giá, size/màu còn hàng, chất liệu hoặc mô tả của sản phẩm này thì gọi tool getProductDetail với id trên, không được bịa thông tin.',
+    )
   }
 
   return lines.join('\n')
@@ -189,8 +235,8 @@ export function toSearchParams(input: SearchToolInput): SearchParams {
   return params
 }
 
-/** Hai tool của agent: tìm sản phẩm qua API có sẵn và tra danh mục. */
-export function createSearchTools() {
+/** Ba tool của agent: tìm sản phẩm qua API có sẵn, tra danh mục, xem chi tiết sản phẩm. */
+export function createAgentTools() {
   return {
     searchProducts: tool({
       description:
@@ -220,17 +266,53 @@ export function createSearchTools() {
         }
       },
     }),
+    getProductDetail: tool({
+      description:
+        'Xem chi tiết sản phẩm theo id: giá, size/màu còn hàng, chất liệu, mô tả, đánh giá. Dùng khi khách hỏi về sản phẩm đang xem ở trang chi tiết.',
+      inputSchema: getProductDetailInputSchema,
+      execute: async function (input): Promise<AgentProductDetailOutput> {
+        const payload = takeData(await detail1(input.productId))
+        return toProductDetailOutput(payload)
+      },
+    }),
+  }
+}
+
+/** ProductResponse → bản rút gọn cho model: giữ dữ liệu trả lời được khách, bỏ ảnh/video/garment. */
+export function toProductDetailOutput(payload: ProductResponse): AgentProductDetailOutput {
+  return {
+    id: payload.id,
+    name: payload.name,
+    slug: payload.slug,
+    description: payload.description,
+    status: payload.status,
+    material: payload.material ?? null,
+    origin: payload.origin ?? null,
+    careInstructions: payload.careInstructions ?? null,
+    sizeGuide: payload.sizeGuide ?? null,
+    averageRating: payload.averageRating ?? null,
+    reviewCount: payload.reviewCount,
+    variants: (payload.variants ?? []).map(function (variant) {
+      return {
+        size: variant.size,
+        color: variant.color,
+        price: variant.price,
+        stockQuantity: variant.stockQuantity,
+      }
+    }),
   }
 }
 
 export type AgentTools = {
-  searchProducts: InferUITool<ReturnType<typeof createSearchTools>['searchProducts']>
-  listCategories: InferUITool<ReturnType<typeof createSearchTools>['listCategories']>
+  searchProducts: InferUITool<ReturnType<typeof createAgentTools>['searchProducts']>
+  listCategories: InferUITool<ReturnType<typeof createAgentTools>['listCategories']>
+  getProductDetail: InferUITool<ReturnType<typeof createAgentTools>['getProductDetail']>
 }
 
-/** Mỗi tin nhắn user mang theo snapshot bộ lọc trang lúc gửi. */
+/** Mỗi tin nhắn user mang theo snapshot bộ lọc trang lúc gửi, kèm id sản phẩm đang xem (nếu ở PDP). */
 export interface AgentMessageMetadata {
   filters: SearchFilters
+  product?: AgentProductContext
 }
 
 export type AgentUIMessage = UIMessage<AgentMessageMetadata, UIDataTypes, AgentTools>
@@ -248,4 +330,19 @@ export function filtersFromMessages(messages: AgentUIMessage[]): SearchFilters {
     }
   }
   return { ...EMPTY_FILTERS }
+}
+
+/** Sản phẩm đang xem: snapshot trong tin nhắn user gần nhất, thiếu thì undefined. */
+export function productFromMessages(messages: AgentUIMessage[]): AgentProductContext | undefined {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i]
+    if (
+      message !== undefined &&
+      message.role === 'user' &&
+      message.metadata?.product !== undefined
+    ) {
+      return message.metadata.product
+    }
+  }
+  return undefined
 }

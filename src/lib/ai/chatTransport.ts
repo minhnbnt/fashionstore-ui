@@ -1,7 +1,12 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { convertToModelMessages, stepCountIs, streamText, toUIMessageStream } from 'ai'
 
-import { buildSystemPrompt, createSearchTools, filtersFromMessages } from './agent'
+import {
+  buildSystemPrompt,
+  createAgentTools,
+  filtersFromMessages,
+  productFromMessages,
+} from './agent'
 
 import type { AgentConfig, AgentUIMessage } from './agent'
 import type { ChatTransport } from 'ai'
@@ -28,9 +33,9 @@ export function createAgentTransport(options: {
     sendMessages: async function ({ messages, abortSignal }) {
       const result = streamText({
         model: provider(options.config.model),
-        system: buildSystemPrompt(filtersFromMessages(messages)),
+        system: buildSystemPrompt(filtersFromMessages(messages), productFromMessages(messages)),
         messages: await convertToModelMessages(messages),
-        tools: createSearchTools(),
+        tools: createAgentTools(),
         stopWhen: stepCountIs(MAX_AGENT_STEPS),
         abortSignal,
       })

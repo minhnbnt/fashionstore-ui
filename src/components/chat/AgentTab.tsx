@@ -33,6 +33,7 @@ export interface AgentTabProps {
 }
 
 type SearchToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-searchProducts' }>
+type ProductDetailToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-getProductDetail' }>
 
 function StatusPill(props: { text: string }) {
   return (
@@ -127,6 +128,36 @@ function filtersFromLocation(pathname: string, search: string): SearchFilters {
   return { ...EMPTY_FILTERS }
 }
 
+/** Id sản phẩm đang xem nếu đang ở trang chi tiết /product/:id, ngoài đó undefined. */
+function productIdFromLocation(pathname: string): string | undefined {
+  const match = pathname.match(/^\/product\/([^/]+)$/)
+  if (match === null) {
+    return undefined
+  }
+  return match[1]
+}
+
+/** Kết quả tool getProductDetail: đang chạy → pill tra cứu, lỗi → pill lỗi,
+ *  xong → giữ lại dấu vết đã tra cứu kèm tên sản phẩm (như searchProducts còn khối kết quả). */
+function ProductDetailToolBlock(props: { part: ProductDetailToolPart }) {
+  const part = props.part
+  if (part.state === 'input-streaming' || part.state === 'input-available') {
+    return <StatusPill text="Đang tra cứu sản phẩm…" />
+  }
+  if (part.state === 'output-error') {
+    return <StatusPill text="Có lỗi khi tra cứu sản phẩm." />
+  }
+  if (part.state === 'output-available') {
+    const output = part.output
+    let name = output.name
+    if (name === undefined || name === '') {
+      name = part.input.productId
+    }
+    return <StatusPill text={'Đã tra cứu sản phẩm: ' + name} />
+  }
+  return null
+}
+
 /** Nội dung tab "Trợ lý AI" của ChatDock: chat streaming với agent tìm sản phẩm.
  *  Hoạt động ở mọi trang — bộ lọc đọc từ URL, "Lọc trên trang" navigate về /search. */
 export default function AgentTab(props: AgentTabProps) {
@@ -187,6 +218,10 @@ export default function AgentTab(props: AgentTabProps) {
       return
     }
     const metadata: AgentMessageMetadata = { filters }
+    const productId = productIdFromLocation(location.pathname)
+    if (productId !== undefined) {
+      metadata.product = { id: productId }
+    }
     void chat.sendMessage({ text, metadata })
     setInput('')
   }
@@ -229,6 +264,9 @@ export default function AgentTab(props: AgentTabProps) {
           }
           if (part.type === 'tool-searchProducts') {
             return <SearchToolBlock key={key} part={part} onApplyFilters={applyFilters} />
+          }
+          if (part.type === 'tool-getProductDetail') {
+            return <ProductDetailToolBlock key={key} part={part} />
           }
           return null
         })}

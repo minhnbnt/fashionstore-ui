@@ -5,8 +5,9 @@ import { EMPTY_FILTERS } from '@/lib/searchFilters'
 
 import {
   buildSystemPrompt,
-  createSearchTools,
+  createAgentTools,
   filtersFromMessages,
+  productFromMessages,
   readAgentConfig,
   searchProductsInputSchema,
   toFilterPatch,
@@ -16,15 +17,17 @@ import {
 import type { AgentUIMessage } from './agent'
 import type { SearchFilters } from '@/types/search'
 
-const { searchMock, listCategoriesMock } = vi.hoisted(() => ({
+const { searchMock, listCategoriesMock, detail1Mock } = vi.hoisted(() => ({
   searchMock: vi.fn(),
   listCategoriesMock: vi.fn(),
+  detail1Mock: vi.fn(),
 }))
 
 vi.mock('@generated/endpoints/search/search', () => ({ search: searchMock }))
 vi.mock('@generated/endpoints/categories/categories', () => ({
   listCategories: listCategoriesMock,
 }))
+vi.mock('@generated/endpoints/products/products', () => ({ detail1: detail1Mock }))
 
 function filtersFixture(): SearchFilters {
   return {
@@ -36,6 +39,47 @@ function filtersFixture(): SearchFilters {
     color: 'Hồng',
     sort: SearchSort.RELEVANCE,
     page: 0,
+  }
+}
+
+/** ProductResponse đầy đủ như API trả về — tool getProductDetail phải rút gọn trước khi đưa cho model. */
+function productDetailFixture() {
+  return {
+    id: 'p-123',
+    shopId: 'shop-1',
+    categoryId: 'cat-1',
+    name: 'Áo Sơ Mi Lụa',
+    slug: 'ao-so-mi-lua',
+    description: 'Áo sơ mi lụa tay dài, form rộng.',
+    status: 'ACTIVE',
+    variants: [
+      {
+        id: 'v-1',
+        sku: 'ASM-001',
+        size: 'M',
+        color: 'Hồng',
+        price: 450000,
+        compareAtPrice: null,
+        stockQuantity: 3,
+        defaultVariant: true,
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    ],
+    images: [{ s3Key: 'img-1' }],
+    updatedAt: '2026-01-01T00:00:00Z',
+    averageRating: 4.5,
+    reviewCount: 12,
+    videoKey: null,
+    garmentKey: null,
+    tryOnEnabled: false,
+    material: 'Lụa tơ tằm',
+    origin: 'Việt Nam',
+    careInstructions: 'Giặt tay, không phơi nắng gắt.',
+    sizeGuide: null,
+    weightGrams: null,
+    lengthCm: null,
+    widthCm: null,
+    heightCm: null,
   }
 }
 
@@ -111,6 +155,42 @@ describe('buildSystemPrompt', () => {
 
     expect(prompt).toContain('searchProducts')
     expect(prompt).toContain('Không có bộ lọc nào đang bật')
+  })
+})
+
+describe('buildSystemPrompt — sản phẩm đang xem', () => {
+  it('có product thì nhúng id và nhắc tool getProductDetail', function () {
+    const prompt = buildSystemPrompt(filtersFixture(), { id: 'p-123' })
+
+    expect(prompt).toContain('p-123')
+    expect(prompt).toContain('getProductDetail')
+  })
+
+  it('không có product thì không nhắc getProductDetail', function () {
+    const prompt = buildSystemPrompt(filtersFixture())
+
+    expect(prompt).not.toContain('getProductDetail')
+  })
+})
+
+describe('productFromMessages', () => {
+  it('lấy sản phẩm từ metadata của tin nhắn user gần nhất', function () {
+    const messages = [
+      { id: 'u1', role: 'user', parts: [], metadata: { product: { id: 'p-cũ' } } },
+      { id: 'a1', role: 'assistant', parts: [] },
+      { id: 'u2', role: 'user', parts: [], metadata: { product: { id: 'p-mới' } } },
+    ] as unknown as AgentUIMessage[]
+
+    expect(productFromMessages(messages)).toEqual({ id: 'p-mới' })
+  })
+
+  it('không có metadata nào thì undefined', function () {
+    const messages = [
+      { id: 'u1', role: 'user', parts: [] },
+      { id: 'a1', role: 'assistant', parts: [] },
+    ] as unknown as AgentUIMessage[]
+
+    expect(productFromMessages(messages)).toBeUndefined()
   })
 })
 
@@ -197,14 +277,14 @@ describe('filtersFromMessages', () => {
   })
 })
 
-describe('createSearchTools', () => {
+describe('createAgentTools', () => {
   it('searchProducts gọi API search với SearchParams và trả kết quả gọn', async function () {
     searchMock.mockResolvedValue({
       status: 200,
       data: { items: [{ id: 'p1', name: 'Áo polo', minPrice: 250000 }], total: 1 },
     })
 
-    const tools = createSearchTools()
+    const tools = createAgentTools()
     const output = await tools.searchProducts.execute?.({ q: 'áo polo' }, executeOptions())
 
     expect(searchMock).toHaveBeenCalledWith({ q: 'áo polo', limit: 8 })
@@ -218,7 +298,7 @@ describe('createSearchTools', () => {
   it('searchProducts áp dụng đủ bộ lọc model truyền vào', async function () {
     searchMock.mockResolvedValue({ status: 200, data: { items: [], total: 0 } })
 
-    const tools = createSearchTools()
+    const tools = createAgentTools()
     await tools.searchProducts.execute?.(
       { category: 'van-nu', maxPrice: 500000, size: 'M', limit: 4 },
       executeOptions(),
@@ -238,9 +318,54 @@ describe('createSearchTools', () => {
       data: [{ id: '1', slug: 'ao', name: 'Áo', productCount: 5 }],
     })
 
-    const tools = createSearchTools()
+    const tools = createAgentTools()
     const output = await tools.listCategories.execute?.({}, executeOptions())
 
     expect(output).toEqual({ categories: [{ slug: 'ao', name: 'Áo' }] })
+  })
+
+  it('getProductDetail gọi API chi tiết với id và trả output rút gọn', async function () {
+    detail1Mock.mockResolvedValue({
+      status: 200,
+      data: productDetailFixture(),
+    })
+
+    const tools = createAgentTools()
+    const output = await tools.getProductDetail.execute?.({ productId: 'p-123' }, executeOptions())
+
+    expect(detail1Mock).toHaveBeenCalledWith('p-123')
+    expect(output).toEqual({
+      id: 'p-123',
+      name: 'Áo Sơ Mi Lụa',
+      slug: 'ao-so-mi-lua',
+      description: 'Áo sơ mi lụa tay dài, form rộng.',
+      status: 'ACTIVE',
+      material: 'Lụa tơ tằm',
+      origin: 'Việt Nam',
+      careInstructions: 'Giặt tay, không phơi nắng gắt.',
+      sizeGuide: null,
+      averageRating: 4.5,
+      reviewCount: 12,
+      variants: [{ size: 'M', color: 'Hồng', price: 450000, stockQuantity: 3 }],
+    })
+  })
+
+  it('getProductDetail bỏ field vô ích với model (ảnh, video, garment)', async function () {
+    detail1Mock.mockResolvedValue({
+      status: 200,
+      data: {
+        ...productDetailFixture(),
+        images: [{ s3Key: 'img-1' }],
+        videoKey: 'video-1',
+        garmentKey: 'garment-1',
+      },
+    })
+
+    const tools = createAgentTools()
+    const output = await tools.getProductDetail.execute?.({ productId: 'p-123' }, executeOptions())
+
+    expect(JSON.stringify(output)).not.toContain('img-1')
+    expect(JSON.stringify(output)).not.toContain('video-1')
+    expect(JSON.stringify(output)).not.toContain('garment-1')
   })
 })
