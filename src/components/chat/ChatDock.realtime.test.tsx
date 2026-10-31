@@ -14,8 +14,15 @@ import type { ChatConversationResponse } from '@generated/model/chatConversation
 import type { ChatMessageResponse } from '@generated/model/chatMessageResponse'
 import type { Client } from '@stomp/stompjs'
 
-const { customFetchMock } = vi.hoisted(() => ({
+const { customFetchMock, sessionMock } = vi.hoisted(() => ({
   customFetchMock: vi.fn<(url: string, options?: RequestInit) => Promise<unknown>>(),
+  // data đổi được giữa các test: object session khi đã đăng nhập, null khi chưa.
+  sessionMock: {
+    data: {
+      access_token: 'test-token',
+      user: { id: 'buyer-1', app_metadata: { role: 'customer' } },
+    } as unknown,
+  },
 }))
 
 // Giữ nguyên các export khác của apiFetch, chỉ thay customFetch để bắt HTTP
@@ -25,12 +32,7 @@ vi.mock('@/lib/apiFetch', async function (importOriginal) {
 })
 
 vi.mock('@/hooks/useSession', () => ({
-  useSessionQuery: () => ({
-    data: {
-      access_token: 'test-token',
-      user: { id: 'buyer-1', app_metadata: { role: 'customer' } },
-    },
-  }),
+  useSessionQuery: () => sessionMock,
 }))
 
 // happy-dom không dựng WAAPI đủ nên animation của motion văng unhandled rejection;
@@ -143,6 +145,11 @@ async function openThread() {
 
 beforeEach(() => {
   customFetchMock.mockReset()
+  // Mặc định mỗi test là đã đăng nhập; test riêng nào cần ẩn danh tự gán null.
+  sessionMock.data = {
+    access_token: 'test-token',
+    user: { id: 'buyer-1', app_metadata: { role: 'customer' } },
+  }
   customFetchMock.mockImplementation(function (url: string, options?: RequestInit) {
     const method = options?.method ?? 'GET'
     if (url === '/api/conversations/mine' && method === 'GET') {
@@ -253,5 +260,19 @@ describe('ChatDock — luồng realtime (DOM)', () => {
     await waitFor(function () {
       expect(countFetches('/api/conversations/mine', 'GET')).toBe(2)
     })
+  })
+})
+
+describe('ChatDock — trạng thái đăng nhập', () => {
+  it('chưa đăng nhập thì không gọi GET /api/conversations/mine', async function () {
+    sessionMock.data = null
+    renderChat()
+
+    // Đợi đủ lâu để (nếu bug còn) query kịp bắn fetch lần đầu
+    await new Promise(function (resolve) {
+      setTimeout(resolve, 50)
+    })
+
+    expect(countFetches('/api/conversations/mine', 'GET')).toBe(0)
   })
 })

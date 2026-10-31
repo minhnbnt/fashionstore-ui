@@ -341,6 +341,7 @@ function ChatDockBody(props: ChatDockProps) {
 
   const conversationsQuery = useMyConversations({
     query: {
+      enabled: isLoggedIn,
       refetchInterval: 30000,
     },
   })
