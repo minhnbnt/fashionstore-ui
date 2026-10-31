@@ -3,32 +3,41 @@ import { renderToString } from 'react-dom/server'
 import { MemoryRouter, Route, Routes } from 'react-router'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { describe, expect, it, vi } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import ShopStorefront from './ShopStorefront'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
 
+// Fixture đổi được giữa các test: mặc định có logo, test riêng ghi đè.
+const { shopFixture } = vi.hoisted(() => ({
+  shopFixture: { current: null as unknown as ShopResponse },
+}))
+
+function defaultShop(): ShopResponse {
+  return {
+    id: 'shop-uuid-1',
+    name: 'Thời Trang Thiết Kế Nét',
+    slug: 'net-design',
+    description: 'Thương hiệu thời trang cao cấp.',
+    status: 'APPROVED',
+    sellerType: 'CORPORATE',
+    rating: 4.9,
+    ratingCount: 350,
+    followerCount: 1250,
+    processingDays: 2,
+    address: '123 Phố Huế, Hai Bà Trưng, Hà Nội',
+    returnPolicy: 'Hỗ trợ đổi trả miễn phí trong 15 ngày với mọi lý do.',
+    logoKey: 'shops/logo.jpg',
+    bannerKey: 'shops/banner.jpg',
+  }
+}
+
 vi.mock('@generated/endpoints/shops/shops', () => ({
   useBySlug: vi.fn(() => ({
     data: {
       status: 200,
-      data: {
-        id: 'shop-uuid-1',
-        name: 'Thời Trang Thiết Kế Nét',
-        slug: 'net-design',
-        description: 'Thương hiệu thời trang cao cấp.',
-        status: 'APPROVED',
-        sellerType: 'CORPORATE',
-        rating: 4.9,
-        ratingCount: 350,
-        followerCount: 1250,
-        processingDays: 2,
-        address: '123 Phố Huế, Hai Bà Trưng, Hà Nội',
-        returnPolicy: 'Hỗ trợ đổi trả miễn phí trong 15 ngày với mọi lý do.',
-        logoKey: 'shops/logo.jpg',
-        bannerKey: 'shops/banner.jpg',
-      } as ShopResponse,
+      data: shopFixture.current,
     },
     isLoading: false,
     isPending: false,
@@ -104,28 +113,36 @@ vi.mock('@generated/endpoints/shops-catalog/shops-catalog', () => ({
   })),
 }))
 
-describe('ShopStorefront Customer Page', () => {
-  it('render đầy đủ header gian hàng, banner slider, thanh tìm kiếm nội bộ và bộ sưu tập sản phẩm thật', () => {
-    const queryClient = new QueryClient()
+function renderStorefrontHtml(): string {
+  const queryClient = new QueryClient()
 
-    const html = renderToString(
+  return renderToString(
+    createElement(
+      QueryClientProvider,
+      { client: queryClient },
       createElement(
-        QueryClientProvider,
-        { client: queryClient },
+        MemoryRouter,
+        { initialEntries: ['/shops/net-design'] },
         createElement(
-          MemoryRouter,
-          { initialEntries: ['/shops/net-design'] },
-          createElement(
-            Routes,
-            null,
-            createElement(Route, {
-              path: '/shops/:slug',
-              element: createElement(ShopStorefront),
-            }),
-          ),
+          Routes,
+          null,
+          createElement(Route, {
+            path: '/shops/:slug',
+            element: createElement(ShopStorefront),
+          }),
         ),
       ),
-    )
+    ),
+  )
+}
+
+describe('ShopStorefront Customer Page', () => {
+  beforeEach(() => {
+    shopFixture.current = defaultShop()
+  })
+
+  it('render đầy đủ header gian hàng, banner slider, thanh tìm kiếm nội bộ và bộ sưu tập sản phẩm thật', () => {
+    const html = renderStorefrontHtml()
 
     // Tên gian hàng & slug
     expect(html).toContain('Thời Trang Thiết Kế Nét')
@@ -155,5 +172,17 @@ describe('ShopStorefront Customer Page', () => {
     expect(html).toContain('199.000')
     expect(html).toContain('33')
     expect(html).toContain('%')
+  })
+
+  it('shop chưa upload logo thì hiện avatar generated thay cho ảnh placeholder', () => {
+    shopFixture.current = { ...defaultShop(), logoKey: null }
+    const html = renderStorefrontHtml()
+
+    // Không còn ảnh placeholder "noimage" làm hình đại diện (alt = tên shop)
+    expect(html).not.toContain(
+      '<img src="https://picsum.photos/seed/net-noimage/600/750" alt="Thời Trang Thiết Kế Nét"',
+    )
+    // Có avatar generated (boring-avatars marble) với palette chàm của UserAvatar
+    expect(html).toContain('#312e81')
   })
 })

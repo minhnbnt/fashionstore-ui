@@ -13,6 +13,7 @@ import {
   X,
 } from '@phosphor-icons/react'
 
+import UserAvatar from '@/components/UserAvatar'
 import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
@@ -48,6 +49,10 @@ export default function ShopStorefrontHeader({
   onSearch,
 }: ShopStorefrontHeaderProps) {
   const [localSearch, setLocalSearch] = useState<string | null>(null)
+  // Logo có key nhưng object 404 / load lỗi thì dùng avatar generated thay vì placeholder.
+  // Lưu key của logo đã lỗi: đổi shop (logoKey khác) thì tự coi như chưa lỗi, không cần effect.
+  const [failedLogoKey, setFailedLogoKey] = useState<string | null>(null)
+
   let searchInput = searchQuery ?? ''
   if (localSearch !== null) {
     searchInput = localSearch
@@ -67,8 +72,10 @@ export default function ShopStorefrontHeader({
       onSearch('')
     }
   }
+  const hasLogo = shop.logoKey !== null && shop.logoKey !== undefined && shop.logoKey !== ''
+  const logoFailed = hasLogo && failedLogoKey !== null && failedLogoKey === shop.logoKey
   let logoSrc = PLACEHOLDER_IMAGE
-  if (shop.logoKey !== null && shop.logoKey !== undefined && shop.logoKey !== '') {
+  if (hasLogo) {
     logoSrc = imageUrl(shop.logoKey)
   }
 
@@ -133,13 +140,23 @@ export default function ShopStorefrontHeader({
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           {/* Avatar and Basic Details */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-white shadow-xl sm:h-28 sm:w-28 dark:border-[#11182a] dark:bg-white/10">
-              <img
-                src={logoSrc}
-                alt={shop.name}
-                onError={handleImageError}
-                className="h-full w-full object-cover"
-              />
+            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full shadow-xl">
+              {hasLogo && !logoFailed && (
+                <img
+                  src={logoSrc}
+                  alt={shop.name}
+                  onError={function () {
+                    setFailedLogoKey(shop.logoKey ?? null)
+                  }}
+                  className="h-full w-full object-cover"
+                />
+              )}
+              {(!hasLogo || logoFailed) && (
+                <div className="flex h-full w-full items-center justify-center">
+                  {/* Size 128 > khung 112 để mép antialias của svg tràn ra ngoài clip — hết viền sáng */}
+                  <UserAvatar name={shop.name ?? 'Shop'} size={128} />
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
