@@ -45,13 +45,13 @@ export default function ProductGallery(props: {
             src={imageUrl(activeImage?.s3Key)}
             alt={props.name}
             width={600}
-            height={750}
+            height={600}
             onError={function (e) {
               if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
                 e.currentTarget.src = PLACEHOLDER_IMAGE
               }
             }}
-            className="aspect-[4/5] w-full object-cover"
+            className="aspect-square w-full object-cover"
           />
         )}
       </div>

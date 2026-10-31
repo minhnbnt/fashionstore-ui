@@ -137,7 +137,7 @@ export default function ReportProductButton({ productId }: { productId: string }
       <button
         type="button"
         onClick={handleOpen}
-        className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 transition hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400"
+        className="flex items-center gap-1.5 text-sm font-semibold text-zinc-500 transition hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400"
       >
         <Flag size={14} weight="bold" />
         Báo cáo sản phẩm

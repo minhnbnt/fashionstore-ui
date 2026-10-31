@@ -10,6 +10,7 @@ import { findVariant, isOptionAvailable } from '@/lib/variants'
 import { useCart } from '../../hooks/useCart'
 import Markdown from '../Markdown'
 import WishlistButton from '../WishlistButton'
+import ReportProductButton from './ReportProductButton'
 
 import type { ProductResponse } from '@generated/model/productResponse'
 
@@ -128,7 +129,7 @@ export default function ProductInfo(props: { product: ProductResponse }) {
   }
 
   return (
-    <div>
+    <div className="flex flex-col">
       <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">{p.name}</h1>
       <p className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
         <Star size={16} weight="fill" className="text-sky-400" />
@@ -139,6 +140,11 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         )}
         {(p.averageRating === null || p.averageRating === undefined) && (
           <span>Chưa có đánh giá</span>
+        )}
+        {p.id !== undefined && (
+          <span className="ml-3">
+            <ReportProductButton productId={p.id} />
+          </span>
         )}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -220,7 +226,8 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         </div>
         <span className="text-xs text-zinc-500">Còn {stock} sản phẩm</span>
       </div>
-      <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+      {/* mt-auto: neo hàng CTA xuống đáy cột phải khi cột ảnh cao hơn */}
+      <div className="mt-auto flex flex-col gap-2 pt-5 sm:flex-row">
         <button
           type="button"
           onClick={addToCart}

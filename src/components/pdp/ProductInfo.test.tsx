@@ -28,6 +28,21 @@ vi.mock('@/hooks/useWishlist', () => ({
   }),
 }))
 
+// ProductInfo giờ render ReportProductButton — mock session (chưa đăng nhập) + endpoint report
+vi.mock('@/hooks/useSession', () => ({
+  useSessionQuery: () => ({ data: null }),
+}))
+
+vi.mock('@generated/endpoints/product-reports/product-reports', () => ({
+  useReportProduct: () => ({
+    mutate: vi.fn(),
+    reset: vi.fn(),
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+  }),
+}))
+
 function makeProduct(overrides?: Partial<ProductResponse>): ProductResponse {
   return {
     id: 'p-1',

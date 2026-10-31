@@ -101,7 +101,8 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
             className="group relative flex-shrink-0"
             title={`Xem gian hàng ${shopName}`}
           >
-            <div className="rounded-full ring-2 ring-indigo-100 transition-transform group-hover:scale-105 dark:ring-white/10">
+            {/* flex: tránh line-box cộng descender dưới inline-block làm khung avatar méo ellipse */}
+            <div className="flex rounded-full ring-2 ring-indigo-100 transition-transform group-hover:scale-105 dark:ring-white/10">
               <UserAvatar name={shopName} size={56} />
             </div>
             {isTrusted && (

@@ -11,7 +11,6 @@ import ProductGallery from '../components/pdp/ProductGallery'
 import ProductInfo from '../components/pdp/ProductInfo'
 import ProductTabs from '../components/pdp/ProductTabs'
 import RelatedProducts from '../components/pdp/RelatedProducts'
-import ReportProductButton from '../components/pdp/ReportProductButton'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 
@@ -113,9 +112,6 @@ export default function ProductDetail() {
       {product.shopId !== undefined && product.shopId !== null && product.shopId !== '' && (
         <PdpShopCard shopId={product.shopId} />
       )}
-      <div className="mt-4 flex justify-end">
-        <ReportProductButton productId={productId} />
-      </div>
       <ProductTabs product={product} />
       <div className="mt-10">
         <RelatedProducts category={category} currentId={productId} />
