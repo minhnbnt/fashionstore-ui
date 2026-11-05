@@ -20,6 +20,7 @@ import type {
   AgentTools,
   AgentUIMessage,
   SearchToolOutput,
+  ShowToolOutput,
 } from '@/lib/ai/agent'
 import type { SearchFilters } from '@/types/search'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
@@ -33,6 +34,7 @@ export interface AgentTabProps {
 }
 
 type SearchToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-searchProducts' }>
+type ShowToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-showProducts' }>
 type ProductDetailToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-getProductDetail' }>
 
 function StatusPill(props: { text: string }) {
@@ -78,11 +80,9 @@ function AgentProductRow(props: { item: ProductSummaryResponse }) {
   )
 }
 
-/** Kết quả tool searchProducts: trạng thái đang tìm, danh sách sản phẩm, nút áp dụng bộ lọc. */
-function SearchToolBlock(props: {
-  part: SearchToolPart
-  onApplyFilters: (patch: Partial<SearchFilters>) => void
-}) {
+/** Kết quả tool searchProducts: chỉ pill trạng thái/tổng số — agent có thể tìm lại
+ *  nhiều lần mà không đổ card vào chat; card do tool showProducts phụ trách. */
+function SearchToolBlock(props: { part: SearchToolPart }) {
   const part = props.part
   if (part.state === 'input-streaming' || part.state === 'input-available') {
     return <StatusPill text="Đang tìm sản phẩm…" />
@@ -92,21 +92,42 @@ function SearchToolBlock(props: {
   }
   if (part.state === 'output-available') {
     const output: SearchToolOutput = part.output
+    return <StatusPill text={'Tìm thấy ' + output.total + ' sản phẩm'} />
+  }
+  return null
+}
+
+/** Kết quả tool showProducts: danh sách card sản phẩm + nút áp dụng bộ lọc
+ *  lấy từ tool searchProducts gần nhất trong cùng tin nhắn (nếu có). */
+function ShowProductsBlock(props: {
+  part: ShowToolPart
+  appliedParams?: Partial<SearchFilters>
+  onApplyFilters: (patch: Partial<SearchFilters>) => void
+}) {
+  const part = props.part
+  if (part.state === 'input-streaming' || part.state === 'input-available') {
+    return <StatusPill text="Đang chuẩn bị sản phẩm…" />
+  }
+  if (part.state === 'output-error') {
+    return <StatusPill text="Có lỗi khi hiển thị sản phẩm." />
+  }
+  if (part.state === 'output-available') {
+    const output: ShowToolOutput = part.output
+    if (output.items.length === 0) {
+      return <StatusPill text="Không hiển thị được sản phẩm." />
+    }
     return (
       <div className="w-full rounded-2xl bg-zinc-100 p-3 dark:bg-white/10">
-        <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
-          Tìm thấy {output.total} sản phẩm
-        </p>
-        <div className="mt-2 flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
           {output.items.map(function (item) {
             return <AgentProductRow key={item.id} item={item} />
           })}
         </div>
-        {output.items.length > 0 && (
+        {props.appliedParams !== undefined && (
           <button
             type="button"
             onClick={function () {
-              props.onApplyFilters(output.appliedParams)
+              props.onApplyFilters(props.appliedParams as Partial<SearchFilters>)
             }}
             className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-extrabold text-sky-800 transition hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300 dark:hover:bg-sky-500/20"
           >
@@ -138,7 +159,7 @@ function productIdFromLocation(pathname: string): string | undefined {
 }
 
 /** Kết quả tool getProductDetail: đang chạy → pill tra cứu, lỗi → pill lỗi,
- *  xong → giữ lại dấu vết đã tra cứu kèm tên sản phẩm (như searchProducts còn khối kết quả). */
+ *  xong → giữ lại dấu vết đã tra cứu kèm tên sản phẩm (như các tool khác còn pill). */
 function ProductDetailToolBlock(props: { part: ProductDetailToolPart }) {
   const part = props.part
   if (part.state === 'input-streaming' || part.state === 'input-available') {
@@ -252,6 +273,9 @@ export default function AgentTab(props: AgentTabProps) {
         </div>
       )
     }
+    // appliedParams của tool searchProducts gần nhất trong cùng tin nhắn,
+    // để khối showProducts có dữ liệu cho nút "Lọc trên trang" mà không cần model truyền lại.
+    let lastSearchAppliedParams: Partial<SearchFilters> | undefined
     return (
       <div key={message.id} className="w-full space-y-4">
         {message.parts.map(function (part, index) {
@@ -263,7 +287,20 @@ export default function AgentTab(props: AgentTabProps) {
             return <Markdown key={key} source={part.text} className="prose-sm" />
           }
           if (part.type === 'tool-searchProducts') {
-            return <SearchToolBlock key={key} part={part} onApplyFilters={applyFilters} />
+            if (part.state === 'output-available') {
+              lastSearchAppliedParams = part.output.appliedParams
+            }
+            return <SearchToolBlock key={key} part={part} />
+          }
+          if (part.type === 'tool-showProducts') {
+            return (
+              <ShowProductsBlock
+                key={key}
+                part={part}
+                appliedParams={lastSearchAppliedParams}
+                onApplyFilters={applyFilters}
+              />
+            )
           }
           if (part.type === 'tool-getProductDetail') {
             return <ProductDetailToolBlock key={key} part={part} />

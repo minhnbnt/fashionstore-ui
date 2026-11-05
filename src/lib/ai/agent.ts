@@ -1,5 +1,5 @@
 import { listCategories } from '@generated/endpoints/categories/categories'
-import { detail1 } from '@generated/endpoints/products/products'
+import { batchProductSummaries, detail1 } from '@generated/endpoints/products/products'
 import { search } from '@generated/endpoints/search/search'
 import { SearchSort } from '@generated/model/searchSort'
 import { tool } from 'ai'
@@ -47,6 +47,20 @@ export type SearchToolInput = z.infer<typeof searchProductsInputSchema>
 export interface SearchToolOutput {
   total: number
   appliedParams: Partial<SearchFilters>
+  items: ProductSummaryResponse[]
+}
+
+export const showProductsInputSchema = z.object({
+  productIds: z
+    .array(z.string().min(1))
+    .min(1)
+    .max(8)
+    .describe('Id sản phẩm lấy từ kết quả tool searchProducts, không được bịa id'),
+})
+
+export type ShowToolInput = z.infer<typeof showProductsInputSchema>
+
+export interface ShowToolOutput {
   items: ProductSummaryResponse[]
 }
 
@@ -114,6 +128,7 @@ export function buildSystemPrompt(filters: SearchFilters, product?: AgentProduct
     'Luôn trả lời bằng tiếng Việt, ngắn gọn, thân thiện. Giá sản phẩm tính bằng VND.',
     'Nhiệm vụ: giúp khách tìm sản phẩm trong cửa hàng.',
     '- Trước khi gợi ý sản phẩm, phải gọi tool searchProducts với bộ lọc phù hợp, không được bịa sản phẩm.',
+    '- searchProducts chỉ để tra dữ liệu, khách không thấy gì; muốn hiện sản phẩm cho khách xem thì gọi tool showProducts với id lấy từ kết quả searchProducts (tối đa 8 id, chọn những sản phẩm phù hợp nhất), không được bịa id.',
     '- Chưa biết slug danh mục thì gọi tool listCategories trước.',
     '- Mỗi lần tìm tối đa 8 sản phẩm. Nếu không có kết quả, gợi ý khách nới bớt bộ lọc.',
     '',
@@ -235,7 +250,7 @@ export function toSearchParams(input: SearchToolInput): SearchParams {
   return params
 }
 
-/** Ba tool của agent: tìm sản phẩm qua API có sẵn, tra danh mục, xem chi tiết sản phẩm. */
+/** Bốn tool của agent: tìm sản phẩm, tra danh mục, xem chi tiết, hiện sản phẩm cho khách. */
 export function createAgentTools() {
   return {
     searchProducts: tool({
@@ -275,6 +290,15 @@ export function createAgentTools() {
         return toProductDetailOutput(payload)
       },
     }),
+    showProducts: tool({
+      description:
+        'Hiển thị danh sách sản phẩm cho khách trong khung chat. Gọi sau khi đã tìm bằng searchProducts; truyền id các sản phẩm phù hợp nhất từ kết quả tìm kiếm, không được bịa id.',
+      inputSchema: showProductsInputSchema,
+      execute: async function (input): Promise<ShowToolOutput> {
+        const items = takeData(await batchProductSummaries({ ids: input.productIds }))
+        return { items: items ?? [] }
+      },
+    }),
   }
 }
 
@@ -307,6 +331,7 @@ export type AgentTools = {
   searchProducts: InferUITool<ReturnType<typeof createAgentTools>['searchProducts']>
   listCategories: InferUITool<ReturnType<typeof createAgentTools>['listCategories']>
   getProductDetail: InferUITool<ReturnType<typeof createAgentTools>['getProductDetail']>
+  showProducts: InferUITool<ReturnType<typeof createAgentTools>['showProducts']>
 }
 
 /** Mỗi tin nhắn user mang theo snapshot bộ lọc trang lúc gửi, kèm id sản phẩm đang xem (nếu ở PDP). */

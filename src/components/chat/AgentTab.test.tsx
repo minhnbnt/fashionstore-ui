@@ -101,11 +101,47 @@ const TOOL_RESULT_CHUNKS: UIMessageChunk[] = [
       items: [{ id: 'p1', name: 'Váy hoa nhí', minPrice: 450000 }],
     },
   },
+  {
+    type: 'tool-input-available',
+    toolCallId: 'tc2',
+    toolName: 'showProducts',
+    input: { productIds: ['p1'] },
+  },
+  {
+    type: 'tool-output-available',
+    toolCallId: 'tc2',
+    output: {
+      items: [{ id: 'p1', name: 'Váy hoa nhí', minPrice: 450000 }],
+    },
+  },
   { type: 'finish-step' },
   { type: 'start-step' },
   { type: 'text-start', id: 'tx1' },
   { type: 'text-delta', id: 'tx1', delta: 'Mình tìm được 1 sản phẩm nhé.' },
   { type: 'text-end', id: 'tx1' },
+  { type: 'finish-step' },
+  { type: 'finish' },
+]
+
+// Chỉ tìm kiếm, chưa show — khách chỉ được thấy pill tổng số, không thấy card.
+const SEARCH_ONLY_CHUNKS: UIMessageChunk[] = [
+  { type: 'start', messageId: 'a1' },
+  { type: 'start-step' },
+  {
+    type: 'tool-input-available',
+    toolCallId: 'tc1',
+    toolName: 'searchProducts',
+    input: { q: 'váy hoa' },
+  },
+  {
+    type: 'tool-output-available',
+    toolCallId: 'tc1',
+    output: {
+      total: 1,
+      appliedParams: { q: 'váy hoa', maxPrice: 500000 },
+      items: [{ id: 'p1', name: 'Váy hoa nhí', minPrice: 450000 }],
+    },
+  },
   { type: 'finish-step' },
   { type: 'finish' },
 ]
@@ -194,9 +230,77 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
     await screen.findByText('Váy hoa nhí')
 
-    const card = screen.getByText('Tìm thấy 1 sản phẩm').closest('div')
+    const card = screen.getByText('Váy hoa nhí').closest('div.rounded-2xl')
     expect(card?.className).toContain('w-full')
     expect(card?.className).not.toContain('max-w-[86%]')
+  })
+
+  it('tool searchProducts chỉ hiện pill tổng số, không đổ card và không có nút lọc', async function () {
+    const user = userEvent.setup()
+    renderTab({
+      config: configFixture(),
+      transport: transportOf(SEARCH_ONLY_CHUNKS),
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'váy')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    expect(await screen.findByText('Tìm thấy 1 sản phẩm')).toBeTruthy()
+    expect(screen.queryByText('Váy hoa nhí')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Lọc trên trang' })).toBeNull()
+  })
+
+  it('tool showProducts đang chạy thì hiện trạng thái chuẩn bị', async function () {
+    const user = userEvent.setup()
+    renderTab({
+      config: configFixture(),
+      transport: transportOf([
+        { type: 'start', messageId: 'a1' },
+        { type: 'start-step' },
+        {
+          type: 'tool-input-available',
+          toolCallId: 'tc1',
+          toolName: 'showProducts',
+          input: { productIds: ['p1'] },
+        },
+        { type: 'finish-step' },
+        { type: 'finish' },
+      ]),
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'váy')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    expect(await screen.findByText('Đang chuẩn bị sản phẩm…')).toBeTruthy()
+  })
+
+  it('tool showProducts trả items rỗng thì hiện pill báo không hiển thị được', async function () {
+    const user = userEvent.setup()
+    renderTab({
+      config: configFixture(),
+      transport: transportOf([
+        { type: 'start', messageId: 'a1' },
+        { type: 'start-step' },
+        {
+          type: 'tool-input-available',
+          toolCallId: 'tc1',
+          toolName: 'showProducts',
+          input: { productIds: ['p1'] },
+        },
+        {
+          type: 'tool-output-available',
+          toolCallId: 'tc1',
+          output: { items: [] },
+        },
+        { type: 'finish-step' },
+        { type: 'finish' },
+      ]),
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'váy')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    expect(await screen.findByText('Không hiển thị được sản phẩm.')).toBeTruthy()
   })
 
   it('các khối trong tin nhắn agent có khoảng cách, không dính sát nhau', async function () {
@@ -232,9 +336,9 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
 
     await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'váy')
     await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
-    await screen.findByText('Váy hoa nhí')
+    await screen.findByText('Tìm thấy 1 sản phẩm')
 
-    // Wrapper của tin nhắn agent tách các part (text ↔ card tool) bằng space-y
+    // Wrapper của tin nhắn agent tách các part (text ↔ khối tool) bằng space-y
     const article = screen.getByText('Để mình tìm nhé.').closest('article')
     expect(article?.parentElement?.className).toContain('space-y-4')
     // Khoảng cách giữa các tin nhắn nới rộng hơn mặc định

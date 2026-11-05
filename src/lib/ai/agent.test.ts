@@ -10,6 +10,7 @@ import {
   productFromMessages,
   readAgentConfig,
   searchProductsInputSchema,
+  showProductsInputSchema,
   toFilterPatch,
   toSearchParams,
 } from './agent'
@@ -17,17 +18,23 @@ import {
 import type { AgentUIMessage } from './agent'
 import type { SearchFilters } from '@/types/search'
 
-const { searchMock, listCategoriesMock, detail1Mock } = vi.hoisted(() => ({
-  searchMock: vi.fn(),
-  listCategoriesMock: vi.fn(),
-  detail1Mock: vi.fn(),
-}))
+const { searchMock, listCategoriesMock, detail1Mock, batchProductSummariesMock } = vi.hoisted(
+  () => ({
+    searchMock: vi.fn(),
+    listCategoriesMock: vi.fn(),
+    detail1Mock: vi.fn(),
+    batchProductSummariesMock: vi.fn(),
+  }),
+)
 
 vi.mock('@generated/endpoints/search/search', () => ({ search: searchMock }))
 vi.mock('@generated/endpoints/categories/categories', () => ({
   listCategories: listCategoriesMock,
 }))
-vi.mock('@generated/endpoints/products/products', () => ({ detail1: detail1Mock }))
+vi.mock('@generated/endpoints/products/products', () => ({
+  detail1: detail1Mock,
+  batchProductSummaries: batchProductSummariesMock,
+}))
 
 function filtersFixture(): SearchFilters {
   return {
@@ -139,6 +146,12 @@ describe('buildSystemPrompt', () => {
     const prompt = buildSystemPrompt(filtersFixture())
 
     expect(prompt).toContain('searchProducts')
+  })
+
+  it('nhắc tool showProducts để hiện sản phẩm cho khách', function () {
+    const prompt = buildSystemPrompt(filtersFixture())
+
+    expect(prompt).toContain('showProducts')
   })
 
   it('bộ lọc trống thì báo không có bộ lọc, không crash', function () {
@@ -310,6 +323,36 @@ describe('createAgentTools', () => {
       size: 'M',
       limit: 4,
     })
+  })
+
+  it('showProducts gọi API batch với ids và trả items đúng thứ tự', async function () {
+    const summary1 = { id: 'p1', name: 'Áo polo', minPrice: 250000 }
+    const summary2 = { id: 'p2', name: 'Váy hoa', minPrice: 450000 }
+    batchProductSummariesMock.mockResolvedValue({
+      status: 200,
+      data: [summary1, summary2],
+    })
+
+    const tools = createAgentTools()
+    const output = await tools.showProducts.execute?.(
+      { productIds: ['p1', 'p2'] },
+      executeOptions(),
+    )
+
+    expect(batchProductSummariesMock).toHaveBeenCalledWith({ ids: ['p1', 'p2'] })
+    expect(output).toEqual({ items: [summary1, summary2] })
+  })
+
+  it('showProducts chặn quá 8 id và mảng rỗng', function () {
+    expect(showProductsInputSchema.safeParse({ productIds: [] }).success).toBe(false)
+    expect(
+      showProductsInputSchema.safeParse({
+        productIds: Array.from({ length: 9 }, function (_, i) {
+          return 'p' + String(i)
+        }),
+      }).success,
+    ).toBe(false)
+    expect(showProductsInputSchema.safeParse({ productIds: ['p1'] }).success).toBe(true)
   })
 
   it('listCategories trả danh sách slug + name gọn', async function () {
