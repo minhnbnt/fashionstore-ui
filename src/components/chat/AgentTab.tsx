@@ -41,6 +41,7 @@ type ShowToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-showProducts' 
 type ProductDetailToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-getProductDetail' }>
 type TryOnToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-tryOn' }>
 type ShowImageToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-showImage' }>
+type ReadImageToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-readImage' }>
 
 /** Ảnh đang soạn kèm tin nhắn: preview local, trạng thái upload, kết quả S3 (nếu xong). */
 interface AttachedImage {
@@ -224,6 +225,18 @@ function ShowImageBlock({ part }: { part: ShowImageToolPart }) {
         className="max-w-[78%] rounded-2xl rounded-tl-xs object-cover"
       />
     )
+  }
+  return null
+}
+
+/** Kết quả tool readImage: ảnh chỉ để agent xem, khách không thấy gì —
+ *  chỉ hiện pill chờ/lỗi để khách biết agent đang làm gì. */
+function ReadImageBlock({ part }: { part: ReadImageToolPart }) {
+  if (part.state === 'input-streaming' || part.state === 'input-available') {
+    return <StatusPill text="Đang xem ảnh…" />
+  }
+  if (part.state === 'output-error') {
+    return <StatusPill text="Có lỗi khi đọc ảnh." />
   }
   return null
 }
@@ -455,6 +468,9 @@ export default function AgentTab(props: AgentTabProps) {
           }
           if (part.type === 'tool-showImage') {
             return <ShowImageBlock key={key} part={part} />
+          }
+          if (part.type === 'tool-readImage') {
+            return <ReadImageBlock key={key} part={part} />
           }
           return null
         })}

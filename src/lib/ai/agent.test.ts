@@ -538,3 +538,28 @@ describe('buildSystemPrompt — thử đồ ảo', () => {
     expect(prompt).not.toContain('showImage')
   })
 })
+
+describe('createAgentTools — đọc ảnh', () => {
+  it('đăng ký tool readImage có execute', function () {
+    const tools = createAgentTools()
+
+    expect(typeof tools.readImage.execute).toBe('function')
+  })
+})
+
+describe('buildSystemPrompt — đọc ảnh', () => {
+  it('luôn nhắc tool readImage, kể cả khi không có ảnh đính kèm', function () {
+    const prompt = buildSystemPrompt(filtersFixture())
+
+    expect(prompt).toContain('readImage')
+  })
+
+  it('có ảnh đính kèm cũng nhắc readImage', function () {
+    const prompt = buildSystemPrompt(filtersFixture(), undefined, {
+      key: 'img-1',
+      url: 'https://assets.example.com/img-1',
+    })
+
+    expect(prompt).toContain('readImage')
+  })
+})

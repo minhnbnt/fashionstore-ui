@@ -2,6 +2,7 @@ import { EMPTY_FILTERS } from '@/lib/searchFilters'
 
 import { createGetProductDetailTool } from './tools/getProductDetail'
 import { createListCategoriesTool } from './tools/listCategories'
+import { createReadImageTool } from './tools/readImage'
 import { createSearchProductsTool } from './tools/searchProducts'
 import { createShowImageTool } from './tools/showImage'
 import { createShowProductsTool } from './tools/showProducts'
@@ -25,6 +26,8 @@ export { showImageInputSchema } from './tools/showImage'
 export type { ShowImageToolInput, ShowImageToolOutput } from './tools/showImage'
 export { tryOnInputSchema } from './tools/tryOn'
 export type { TryOnToolInput, TryOnToolOutput } from './tools/tryOn'
+export { readImageInputSchema } from './tools/readImage'
+export type { ReadImageToolInput, ReadImageToolOutput } from './tools/readImage'
 
 // TODO(oauth): token đang hard-code qua VITE_AI_API_KEY trong .env. Về sau chuyển sang
 // xác thực qua Supabase OAuth (đổi token ngắn hạn theo phiên đăng nhập) thay cho key tĩnh.
@@ -76,6 +79,7 @@ export function buildSystemPrompt(
     'Nhiệm vụ: giúp khách tìm sản phẩm trong cửa hàng.',
     '- Trước khi gợi ý sản phẩm, phải gọi tool searchProducts với bộ lọc phù hợp, không được bịa sản phẩm.',
     '- searchProducts chỉ để tra dữ liệu, khách không thấy gì; muốn hiện sản phẩm cho khách xem thì gọi tool showProducts với id lấy từ kết quả searchProducts (tối đa 8 id, chọn những sản phẩm phù hợp nhất), không được bịa id.',
+    '- Khi cần xem nội dung một ảnh (mô tả ảnh khách gửi, kiểm tra ảnh thử đồ ảo có giống sản phẩm không…), gọi tool readImage với link http(s) của ảnh; ảnh bạn xem khách không thấy.',
     '- Chưa biết slug danh mục thì gọi tool listCategories trước.',
     '- Mỗi lần tìm tối đa 8 sản phẩm. Nếu không có kết quả, gợi ý khách nới bớt bộ lọc.',
     '',
@@ -124,8 +128,8 @@ export function buildSystemPrompt(
   return lines.join('\n')
 }
 
-/** Sáu tool của agent: tìm sản phẩm, tra danh mục, xem chi tiết, hiện sản phẩm, thử đồ ảo, hiện ảnh.
- *  Định nghĩa từng tool nằm ở `tools/` — mỗi tool một file. */
+/** Bảy tool của agent: tìm sản phẩm, tra danh mục, xem chi tiết, hiện sản phẩm, thử đồ ảo,
+ *  hiện ảnh, đọc ảnh. Định nghĩa từng tool nằm ở `tools/` — mỗi tool một file. */
 export function createAgentTools() {
   return {
     searchProducts: createSearchProductsTool(),
@@ -134,6 +138,7 @@ export function createAgentTools() {
     showProducts: createShowProductsTool(),
     tryOn: createTryOnTool(),
     showImage: createShowImageTool(),
+    readImage: createReadImageTool(),
   }
 }
 
@@ -144,6 +149,7 @@ export type AgentTools = {
   showProducts: InferUITool<ReturnType<typeof createAgentTools>['showProducts']>
   tryOn: InferUITool<ReturnType<typeof createAgentTools>['tryOn']>
   showImage: InferUITool<ReturnType<typeof createAgentTools>['showImage']>
+  readImage: InferUITool<ReturnType<typeof createAgentTools>['readImage']>
 }
 
 /** Mỗi tin nhắn user mang theo snapshot bộ lọc trang lúc gửi, kèm id sản phẩm đang xem (nếu ở PDP)

@@ -869,4 +869,95 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
       expect(await screen.findByText('Có lỗi khi hiển thị ảnh.')).toBeTruthy()
     })
   })
+
+  describe('đọc ảnh', () => {
+    it('tool readImage đang chạy thì hiện trạng thái đang xem ảnh', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'readImage',
+            input: { url: 'https://assets.example.com/anh.png' },
+          },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'ảnh này là gì')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Đang xem ảnh…')).toBeTruthy()
+    })
+
+    it('tool readImage lỗi thì hiện trạng thái lỗi', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'readImage',
+            input: { url: 'https://assets.example.com/anh.png' },
+          },
+          { type: 'tool-output-error', toolCallId: 'tc1', errorText: 'lỗi lạ' },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'ảnh này là gì')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Có lỗi khi đọc ảnh.')).toBeTruthy()
+    })
+
+    it('tool readImage xong thì không hiện gì cho khách — ảnh chỉ để agent xem', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'readImage',
+            input: { url: 'https://assets.example.com/anh.png' },
+          },
+          {
+            type: 'tool-output-available',
+            toolCallId: 'tc1',
+            output: {
+              url: 'https://assets.example.com/anh.png',
+              mediaType: 'image/png',
+              data: 'YW5o',
+            },
+          },
+          { type: 'finish-step' },
+          { type: 'start-step' },
+          { type: 'text-start', id: 'tx1' },
+          { type: 'text-delta', id: 'tx1', delta: 'Mình đã xem ảnh rồi nhé.' },
+          { type: 'text-end', id: 'tx1' },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'ảnh này là gì')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      // Stream đã xử lý xong (text agent hiện), nhưng ảnh readImage không render cho khách.
+      expect(await screen.findByText('Mình đã xem ảnh rồi nhé.')).toBeTruthy()
+      expect(screen.queryByAltText('Ảnh trợ lý gửi')).toBeNull()
+    })
+  })
 })

@@ -32,6 +32,7 @@ export function createAgentTransport(options: {
 
   return {
     sendMessages: async function ({ messages, abortSignal }) {
+      const tools = createAgentTools()
       const result = streamText({
         model: provider(options.config.model),
         system: buildSystemPrompt(
@@ -39,8 +40,8 @@ export function createAgentTransport(options: {
           productFromMessages(messages),
           imageFromMessages(messages),
         ),
-        messages: await convertToModelMessages(messages),
-        tools: createAgentTools(),
+        messages: await convertToModelMessages(messages, { tools }),
+        tools,
         stopWhen: stepCountIs(MAX_AGENT_STEPS),
         abortSignal,
       })
