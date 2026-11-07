@@ -3,10 +3,10 @@ import { useState } from 'react'
 import { useList } from '@generated/endpoints/reviews/reviews'
 import { Package, Ruler, Star } from '@phosphor-icons/react'
 
-import { apiErrorMessage, priceInfo, takeData } from '@/lib/apiAdapters'
-import { ApiError } from '@/lib/apiFetch'
+import { apiErrorMessage, priceInfo, takeData } from '@/lib/api/apiAdapters'
+import { ApiError } from '@/lib/api/apiFetch'
 import { formatDateTime } from '@/lib/format'
-import { ratingSummary } from '@/lib/ratingSummary'
+import { ratingSummary } from '@/lib/shop/ratingSummary'
 
 import Markdown from '../Markdown'
 import UserAvatar from '../UserAvatar'

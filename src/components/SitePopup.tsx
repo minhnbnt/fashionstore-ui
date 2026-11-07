@@ -4,8 +4,13 @@ import { Link } from 'react-router'
 import { useListPopups } from '@generated/endpoints/site-content/site-content'
 import { X } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
-import { browserSeenStore, isInternalLink, markPopupSeen, pickPopup } from '@/lib/siteContent'
+import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  browserSeenStore,
+  isInternalLink,
+  markPopupSeen,
+  pickPopup,
+} from '@/lib/content/siteContent'
 
 import { useSessionQuery } from '../hooks/useSession'
 

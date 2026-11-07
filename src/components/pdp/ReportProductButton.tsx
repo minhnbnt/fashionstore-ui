@@ -4,8 +4,8 @@ import { useLocation, useNavigate } from 'react-router'
 import { useReportProduct } from '@generated/endpoints/product-reports/product-reports'
 import { CheckCircle, Flag, X } from '@phosphor-icons/react'
 
-import { hookErrorMessage } from '@/lib/apiAdapters'
-import { BUYER_REPORT_REASONS, REPORT_DESCRIPTION_MAX } from '@/lib/productModeration'
+import { BUYER_REPORT_REASONS, REPORT_DESCRIPTION_MAX } from '@/lib/admin/productModeration'
+import { hookErrorMessage } from '@/lib/api/apiAdapters'
 
 import { useSessionQuery } from '../../hooks/useSession'
 

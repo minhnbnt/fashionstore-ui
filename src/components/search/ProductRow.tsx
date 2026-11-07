@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router'
 
 import { Heart, ShoppingBag } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'

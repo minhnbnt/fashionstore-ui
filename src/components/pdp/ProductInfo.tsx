@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router'
 
 import { Minus, Plus, ShoppingBag, Star } from '@phosphor-icons/react'
 
-import { priceInfo } from '@/lib/apiAdapters'
+import { priceInfo } from '@/lib/api/apiAdapters'
 import { formatVnd, priceLabel } from '@/lib/format'
-import { findVariant, isOptionAvailable } from '@/lib/variants'
+import { findVariant, isOptionAvailable } from '@/lib/shop/variants'
 
 import { useCart } from '../../hooks/useCart'
 import Markdown from '../Markdown'

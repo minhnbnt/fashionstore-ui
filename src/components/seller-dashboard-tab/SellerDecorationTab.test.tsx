@@ -40,7 +40,7 @@ vi.mock('@generated/endpoints/seller-decoration/seller-decoration', () => ({
   useDiscardDraft: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }))
 
-vi.mock('@/lib/sellerPermissions', () => ({
+vi.mock('@/lib/seller/sellerPermissions', () => ({
   useSellerPermissions: vi.fn(() => ({
     can: () => true,
     isOwner: true,

@@ -6,7 +6,7 @@ import {
 } from '@generated/endpoints/wishlist/wishlist'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 
 import { useSessionQuery } from './useSession'
 

@@ -13,8 +13,8 @@ import {
   PlayCircle,
 } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
-import { checkVideoDuration, uploadImage, uploadVideo } from '@/lib/uploadImage'
+import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { checkVideoDuration, uploadImage, uploadVideo } from '@/lib/api/uploadImage'
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
   const target = event.currentTarget

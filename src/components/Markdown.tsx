@@ -2,7 +2,7 @@ import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import { Link } from 'react-router'
 
-import { isInternalLink } from '@/lib/siteContent'
+import { isInternalLink } from '@/lib/content/siteContent'
 
 // react-markdown không render HTML thô và tự lọc URL nguy hiểm (javascript:...),
 // nên nội dung admin soạn không thành XSS.

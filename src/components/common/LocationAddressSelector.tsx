@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useListProvinces, useListWards } from '@generated/endpoints/locations/locations'
 import { CaretDown, Check, MagnifyingGlass, X } from '@phosphor-icons/react'
 
-import { parseAddressForSelector } from '@/lib/addressParser'
-import { takeData } from '@/lib/apiAdapters'
-import { removeVietnameseAccents } from '@/lib/bankSearch'
+import { takeData } from '@/lib/api/apiAdapters'
+import { parseAddressForSelector } from '@/lib/shop/addressParser'
+import { removeVietnameseAccents } from '@/lib/shop/bankSearch'
 
 import type { ProvinceResponse } from '@generated/model/provinceResponse'
 import type { WardResponse } from '@generated/model/wardResponse'

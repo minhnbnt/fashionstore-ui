@@ -40,11 +40,15 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
-import { apiErrorText, takeData } from '@/lib/apiAdapters'
-import { ApiError } from '@/lib/apiFetch'
+import { apiErrorText, takeData } from '@/lib/api/apiAdapters'
+import { ApiError } from '@/lib/api/apiFetch'
 import { formatDateTime } from '@/lib/format'
-import { auditItem, memberItem, roleItem } from '@/lib/sellerAdapters'
-import { formatTargetType, getAuditActionBadgeMeta, permissionLabel } from '@/lib/sellerPermissions'
+import { auditItem, memberItem, roleItem } from '@/lib/seller/sellerAdapters'
+import {
+  formatTargetType,
+  getAuditActionBadgeMeta,
+  permissionLabel,
+} from '@/lib/seller/sellerPermissions'
 
 import type { ShopAuditItem, ShopMemberItem, ShopRoleItem } from '@/types/seller'
 import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'

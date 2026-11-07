@@ -15,7 +15,7 @@ import {
   UserCircle,
 } from '@phosphor-icons/react'
 
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useCart } from '../hooks/useCart'

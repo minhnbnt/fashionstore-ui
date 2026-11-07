@@ -3,8 +3,8 @@ import { Link, useParams } from 'react-router'
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useDetail1 } from '@generated/endpoints/products/products'
 
-import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
-import { ApiError } from '@/lib/apiFetch'
+import { apiErrorMessage, takeData } from '@/lib/api/apiAdapters'
+import { ApiError } from '@/lib/api/apiFetch'
 
 import PdpShopCard from '../components/pdp/PdpShopCard'
 import ProductGallery from '../components/pdp/ProductGallery'

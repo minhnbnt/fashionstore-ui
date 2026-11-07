@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
-import Hero from '../components/Hero'
-import { BannerCarousel, BannerStrip } from '../components/HomeBanners'
+import Hero from '../components/home/Hero'
+import { BannerCarousel, BannerStrip } from '../components/home/HomeBanners'
 import {
   CategoryBento,
   DealMarquee,
@@ -9,7 +9,7 @@ import {
   LogoStrip,
   ProductGrid,
   Testimonials,
-} from '../components/Sections'
+} from '../components/home/Sections'
 import SitePopup from '../components/SitePopup'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'

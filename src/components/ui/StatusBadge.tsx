@@ -1,4 +1,4 @@
-import { statusMeta } from '@/lib/admin'
+import { statusMeta } from '@/lib/admin/admin'
 
 import type { StatusMeta } from '@/types/admin'
 
