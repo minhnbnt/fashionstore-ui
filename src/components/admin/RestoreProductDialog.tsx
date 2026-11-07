@@ -1,8 +1,8 @@
 import { useRestoreProduct } from '@generated/endpoints/admin-products/admin-products'
 import { ArrowCounterClockwise } from '@phosphor-icons/react'
 
-import { hookErrorMessage } from '@/lib/apiAdapters'
-import { violationLabel } from '@/lib/productModeration'
+import { violationLabel } from '@/lib/admin/productModeration'
+import { hookErrorMessage } from '@/lib/api/apiAdapters'
 
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
 

@@ -10,20 +10,20 @@ import {
 } from '@generated/endpoints/admin-pages/admin-pages'
 import { ArrowLeft, ArrowSquareOut, Eye, EyeSlash, FloppyDisk, Trash } from '@phosphor-icons/react'
 
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import {
   FOOTER_GROUP_OPTIONS,
   pageStatusBadgeClass,
   pageStatusLabel,
   SLUG_PATTERN,
   slugify,
-} from '@/lib/siteContent'
+} from '@/lib/content/siteContent'
 
 import Markdown from '../Markdown'
 import ConfirmDialog from './ConfirmDialog'
 import { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, LABEL_CLASS, TEXTAREA_CLASS } from './ContentDialog'
 
-import type { FooterGroupValue } from '@/lib/siteContent'
+import type { FooterGroupValue } from '@/lib/content/siteContent'
 import type { SitePageRequest } from '@generated/model/sitePageRequest'
 import type { SitePageResponse } from '@generated/model/sitePageResponse'
 

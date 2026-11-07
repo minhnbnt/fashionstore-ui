@@ -6,7 +6,7 @@ import { useListPageLinks } from '@generated/endpoints/site-content/site-content
 import { Star, Truck, ShieldCheck, ArrowsLeftRight, ArrowRight } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { priceLabel } from '@/lib/format'
 
 import UserAvatar from './UserAvatar'

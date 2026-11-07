@@ -95,7 +95,7 @@ vi.mock('@generated/endpoints/seller-products-inventory/seller-products-inventor
   getInventoryQueryKey: vi.fn(() => ['inventory']),
 }))
 
-vi.mock('@/lib/sellerPermissions', () => ({
+vi.mock('@/lib/seller/sellerPermissions', () => ({
   useSellerPermissions: vi.fn(() => ({
     can: () => true,
     isOwner: true,

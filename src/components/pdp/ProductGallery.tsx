@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { Play } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 
 import type { ImageResponse } from '@generated/model/imageResponse'
 

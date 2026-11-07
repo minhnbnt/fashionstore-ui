@@ -4,7 +4,7 @@ import { useListAdminShops } from '@generated/endpoints/admin-shops/admin-shops'
 import { ListAdminShopsStatus } from '@generated/model/listAdminShopsStatus'
 import { HourglassMedium, Storefront } from '@phosphor-icons/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 
 const QUEUE_SIZE = 5
 

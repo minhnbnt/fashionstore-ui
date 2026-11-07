@@ -13,8 +13,8 @@ import {
   Users,
 } from '@phosphor-icons/react'
 
-import { formatCompactVnd, trendPoints } from '@/lib/adminStats'
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
+import { formatCompactVnd, trendPoints } from '@/lib/admin/adminStats'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import BreakdownCard from '../components/admin/BreakdownCard'

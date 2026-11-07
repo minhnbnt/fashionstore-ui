@@ -8,7 +8,7 @@ import {
 import { Megaphone, PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import {
   audienceLabel,
   frequencyLabel,
@@ -16,7 +16,7 @@ import {
   scheduleBadgeClass,
   scheduleLabel,
   scheduleWindowLabel,
-} from '@/lib/siteContent'
+} from '@/lib/content/siteContent'
 
 import ConfirmDialog from './ConfirmDialog'
 import PopupFormDialog from './PopupFormDialog'

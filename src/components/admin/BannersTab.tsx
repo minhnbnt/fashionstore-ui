@@ -8,7 +8,7 @@ import {
 import { PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import {
   PLACEMENT_OPTIONS,
   placementLabel,
@@ -16,12 +16,12 @@ import {
   scheduleBadgeClass,
   scheduleLabel,
   scheduleWindowLabel,
-} from '@/lib/siteContent'
+} from '@/lib/content/siteContent'
 
 import BannerFormDialog from './BannerFormDialog'
 import ConfirmDialog from './ConfirmDialog'
 
-import type { BannerPlacementValue } from '@/lib/siteContent'
+import type { BannerPlacementValue } from '@/lib/content/siteContent'
 import type { BannerResponse } from '@generated/model/bannerResponse'
 
 type PlacementFilter = BannerPlacementValue | 'ALL'

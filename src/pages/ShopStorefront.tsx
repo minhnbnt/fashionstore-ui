@@ -12,8 +12,8 @@ import ShopStorefrontHeader, {
   type StorefrontTab,
 } from '@/components/shop-storefront/ShopStorefrontHeader'
 import { useSessionQuery } from '@/hooks/useSession'
-import { takeData } from '@/lib/apiAdapters'
-import { decorationBlocks } from '@/lib/sellerAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
+import { decorationBlocks } from '@/lib/seller/sellerAdapters'
 
 import type { DecorationBlock } from '@/types/seller'
 import type { ShopResponse } from '@generated/model/shopResponse'

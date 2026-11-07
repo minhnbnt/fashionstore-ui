@@ -1,4 +1,4 @@
-import { breakdownRows } from '@/lib/adminStats'
+import { breakdownRows } from '@/lib/admin/adminStats'
 
 import type { BreakdownInput } from '@/types/admin'
 

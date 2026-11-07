@@ -15,9 +15,9 @@ import {
 } from '@phosphor-icons/react'
 
 import { BarChart } from '@/components/ui/charts'
-import { PLACEHOLDER_IMAGE, imageUrl, takeData } from '@/lib/apiAdapters'
+import { PLACEHOLDER_IMAGE, imageUrl, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
-import { productAnalyticsItems } from '@/lib/sellerStatsAdapters'
+import { productAnalyticsItems } from '@/lib/seller/sellerStatsAdapters'
 
 import type { ProductAnalyticsItem } from '@/types/seller'
 

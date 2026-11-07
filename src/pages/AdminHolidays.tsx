@@ -17,7 +17,8 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
+import { formatDateTime } from '@/lib/admin/productModeration'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import {
   formatDay,
   holidayNameError,
@@ -27,8 +28,7 @@ import {
   syncResultMessage,
   weekdayLabel,
   yearOptions,
-} from '@/lib/holidays'
-import { formatDateTime } from '@/lib/productModeration'
+} from '@/lib/order/holidays'
 
 import AdminNav from '../components/admin/AdminNav'
 

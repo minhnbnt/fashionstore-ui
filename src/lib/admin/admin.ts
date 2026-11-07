@@ -1,4 +1,4 @@
-import { ApiError } from './apiFetch'
+import { ApiError } from '../api/apiFetch'
 
 import type { StatusMeta } from '@/types/admin'
 

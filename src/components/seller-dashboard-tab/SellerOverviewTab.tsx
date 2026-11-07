@@ -23,9 +23,9 @@ import {
 } from '@phosphor-icons/react'
 
 import { LineChart } from '@/components/ui/charts'
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
-import { alertItems, dashboardData, revenueChartPoints } from '@/lib/sellerStatsAdapters'
+import { alertItems, dashboardData, revenueChartPoints } from '@/lib/seller/sellerStatsAdapters'
 
 import type { AlertData } from '@/types/seller'
 

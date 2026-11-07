@@ -12,7 +12,7 @@ import {
 
 import UserAvatar from '@/components/UserAvatar'
 import { useSessionQuery } from '@/hooks/useSession'
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
 

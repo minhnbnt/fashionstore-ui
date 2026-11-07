@@ -17,7 +17,6 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
 import {
   canApprove,
   canBan,
@@ -29,7 +28,8 @@ import {
   statusBadgeClass,
   statusLabel,
   violationLabel,
-} from '@/lib/productModeration'
+} from '@/lib/admin/productModeration'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 
 import AdminProductDetailPanel from '../components/admin/AdminProductDetailPanel'
 import AdminShell from '../components/admin/AdminShell'
@@ -39,7 +39,7 @@ import RejectProductDialog from '../components/admin/RejectProductDialog'
 import RestoreProductDialog from '../components/admin/RestoreProductDialog'
 import Pagination from '../components/search/Pagination'
 
-import type { ProductStatusFilter } from '@/lib/productModeration'
+import type { ProductStatusFilter } from '@/lib/admin/productModeration'
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
 import type { ListAdminProductsParams } from '@generated/model/listAdminProductsParams'
 

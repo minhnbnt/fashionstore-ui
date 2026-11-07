@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { useCreatePopup, useUpdatePopup } from '@generated/endpoints/admin-popups/admin-popups'
 
-import { hookErrorMessage } from '@/lib/apiAdapters'
+import { hookErrorMessage } from '@/lib/api/apiAdapters'
 import {
   AUDIENCE_OPTIONS,
   FREQUENCY_OPTIONS,
@@ -10,7 +10,7 @@ import {
   isSafeLink,
   scheduleError,
   toLocalInput,
-} from '@/lib/siteContent'
+} from '@/lib/content/siteContent'
 
 import ContentDialog, {
   ERROR_CLASS,
@@ -22,7 +22,11 @@ import ContentDialog, {
 import ImageUploadField from './ImageUploadField'
 import ScheduleFields from './ScheduleFields'
 
-import type { PopupAudienceValue, PopupFrequencyValue, ScheduleValue } from '@/lib/siteContent'
+import type {
+  PopupAudienceValue,
+  PopupFrequencyValue,
+  ScheduleValue,
+} from '@/lib/content/siteContent'
 import type { PopupRequest } from '@generated/model/popupRequest'
 import type { PopupResponse } from '@generated/model/popupResponse'
 

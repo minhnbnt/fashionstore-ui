@@ -17,8 +17,8 @@ import {
   WarningCircle,
 } from '@phosphor-icons/react'
 
-import { PLACEHOLDER_IMAGE, apiErrorText, takeData } from '@/lib/apiAdapters'
-import { uploadImage } from '@/lib/uploadImage'
+import { PLACEHOLDER_IMAGE, apiErrorText, takeData } from '@/lib/api/apiAdapters'
+import { uploadImage } from '@/lib/api/uploadImage'
 
 import LocationAddressSelector from './common/LocationAddressSelector'
 import Modal from './Modal'

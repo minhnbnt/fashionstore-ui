@@ -1,4 +1,4 @@
-import { getAuthClient } from './auth'
+import { getAuthClient } from '../auth'
 
 export class ApiError extends Error {
   status: number

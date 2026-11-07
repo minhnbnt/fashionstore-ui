@@ -16,7 +16,7 @@ import {
   Truck,
 } from '@phosphor-icons/react'
 
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 import { formatFullAddress, formatVnd } from '@/lib/format'
 
 import AddressFormModal from '../components/account/AddressFormModal'

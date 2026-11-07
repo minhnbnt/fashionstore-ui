@@ -14,7 +14,7 @@ export default defineConfig({
       clean: true,
       override: {
         mutator: {
-          path: './src/lib/apiFetch.ts',
+          path: './src/lib/api/apiFetch.ts',
           name: 'customFetch',
         },
       },

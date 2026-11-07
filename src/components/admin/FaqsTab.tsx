@@ -5,18 +5,18 @@ import { useDeleteFaq, useListAdminFaqs } from '@generated/endpoints/admin-faq/a
 import { ArrowSquareOut, EyeSlash, PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import {
   FAQ_CATEGORY_OPTIONS,
   faqCategoryLabel,
   groupBy,
   queryKeyStartsWith,
-} from '@/lib/siteContent'
+} from '@/lib/content/siteContent'
 
 import ConfirmDialog from './ConfirmDialog'
 import FaqFormDialog from './FaqFormDialog'
 
-import type { FaqCategoryValue } from '@/lib/siteContent'
+import type { FaqCategoryValue } from '@/lib/content/siteContent'
 import type { FaqResponse } from '@generated/model/faqResponse'
 
 const FAQ_KEYS = ['/api/admin/faqs', '/api/public/faqs']

@@ -21,9 +21,9 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
-import { apiErrorMessage, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
-import { productItem, stockMovementItem } from '@/lib/sellerAdapters'
-import { useSellerPermissions } from '@/lib/sellerPermissions'
+import { apiErrorMessage, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { productItem, stockMovementItem } from '@/lib/seller/sellerAdapters'
+import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 
 import type { ProductItem, StockMovementItem } from '@/types/seller'
 import type { InventoryItemResponse } from '@generated/model/inventoryItemResponse'

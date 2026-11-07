@@ -3,8 +3,8 @@ import { useRef, useState } from 'react'
 import { SpinnerGap, Trash, UploadSimple, VideoCamera } from '@phosphor-icons/react'
 
 import Modal from '@/components/Modal'
-import { imageUrl } from '@/lib/apiAdapters'
-import { checkVideoDuration, uploadVideo } from '@/lib/uploadImage'
+import { imageUrl } from '@/lib/api/apiAdapters'
+import { checkVideoDuration, uploadVideo } from '@/lib/api/uploadImage'
 
 import type { DecorationBlock } from '@/types/seller'
 

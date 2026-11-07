@@ -14,10 +14,10 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
-import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
-import { returnItem } from '@/lib/sellerAdapters'
-import { useSellerPermissions } from '@/lib/sellerPermissions'
-import { sellerStatusMeta } from '@/lib/sellerStatus'
+import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { returnItem } from '@/lib/seller/sellerAdapters'
+import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
+import { sellerStatusMeta } from '@/lib/seller/sellerStatus'
 
 import { formatVnd } from '../../lib/format'
 

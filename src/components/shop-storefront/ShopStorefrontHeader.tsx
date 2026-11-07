@@ -14,7 +14,7 @@ import {
 } from '@phosphor-icons/react'
 
 import UserAvatar from '@/components/UserAvatar'
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
 

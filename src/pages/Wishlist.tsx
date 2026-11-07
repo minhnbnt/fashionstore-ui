@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 
 import { Heart } from '@phosphor-icons/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import WishlistButton from '../components/WishlistButton'

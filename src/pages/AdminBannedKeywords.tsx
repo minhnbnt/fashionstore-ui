@@ -10,14 +10,14 @@ import {
 import { ArrowLeft, Plus, Trash, X } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
 import {
   formatDateTime,
   KEYWORD_MAX,
   keywordError,
   VIOLATION_OPTIONS,
   violationLabel,
-} from '@/lib/productModeration'
+} from '@/lib/admin/productModeration'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 
 import AdminShell from '../components/admin/AdminShell'
 

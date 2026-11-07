@@ -25,9 +25,9 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import ProductMediaUploader from '@/components/seller/ProductMediaUploader'
 import RichTextEditor from '@/components/ui/RichTextEditor'
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
-import { ApiError } from '@/lib/apiFetch'
-import { uploadImage } from '@/lib/uploadImage'
+import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { ApiError } from '@/lib/api/apiFetch'
+import { uploadImage } from '@/lib/api/uploadImage'
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
   const target = event.currentTarget

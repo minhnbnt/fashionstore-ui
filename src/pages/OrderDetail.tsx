@@ -12,9 +12,9 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 import StatePanel from '@/components/ui/StatePanel'
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatDateTime, formatVnd } from '@/lib/format'
-import { canCancel, orderStatusMeta, paymentStatusLabel } from '@/lib/orderStatus'
+import { canCancel, orderStatusMeta, paymentStatusLabel } from '@/lib/order/orderStatus'
 
 import type { OrderItemResponse } from '@generated/model/orderItemResponse'
 import type { OrderResponse } from '@generated/model/orderResponse'

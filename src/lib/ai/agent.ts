@@ -5,7 +5,7 @@ import { SearchSort } from '@generated/model/searchSort'
 import { tool } from 'ai'
 import { z } from 'zod'
 
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 import { EMPTY_FILTERS } from '@/lib/searchFilters'
 
 import type { SearchFilters } from '@/types/search'

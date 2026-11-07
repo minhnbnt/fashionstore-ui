@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { getFirstAllowedTab, sellerTabParam } from '@/lib/sellerNavigation'
-import { canSeeTab } from '@/lib/sellerPermissions'
+import { getFirstAllowedTab, sellerTabParam } from '@/lib/seller/sellerNavigation'
+import { canSeeTab } from '@/lib/seller/sellerPermissions'
 
 import type { SellerShopMembershipResponse } from '@generated/model/sellerShopMembershipResponse'
 

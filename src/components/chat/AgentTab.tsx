@@ -8,7 +8,7 @@ import { MagnifyingGlass, PaperPlaneRight, Stop } from '@phosphor-icons/react'
 import Markdown from '@/components/Markdown'
 import { readAgentConfig } from '@/lib/ai/agent'
 import { createAgentTransport } from '@/lib/ai/chatTransport'
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import { EMPTY_FILTERS, parseFilters, toQueryString, withFilter } from '@/lib/searchFilters'
 

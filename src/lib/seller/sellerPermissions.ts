@@ -1,6 +1,6 @@
 import { useGetMyPermissions } from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
 
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 
 import type { SellerTabId } from '@/types/seller'
 

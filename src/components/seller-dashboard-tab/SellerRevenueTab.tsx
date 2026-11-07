@@ -15,9 +15,9 @@ import { Wallet, Clock, Receipt, TrendUp, Bank, CheckCircle } from '@phosphor-ic
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
-import { takeData } from '@/lib/apiAdapters'
-import { settlementItem, withdrawalItem } from '@/lib/sellerAdapters'
-import { useSellerPermissions } from '@/lib/sellerPermissions'
+import { takeData } from '@/lib/api/apiAdapters'
+import { settlementItem, withdrawalItem } from '@/lib/seller/sellerAdapters'
+import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 
 import { formatDateTime, formatVnd } from '../../lib/format'
 

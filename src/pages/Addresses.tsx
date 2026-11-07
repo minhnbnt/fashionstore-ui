@@ -10,7 +10,7 @@ import {
 import { ArrowLeft, MapPin, PencilSimple, Plus, Star, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatFullAddress } from '@/lib/format'
 
 import AddressFormModal from '../components/account/AddressFormModal'

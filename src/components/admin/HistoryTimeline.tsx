@@ -1,5 +1,5 @@
 import StatusBadge from '@/components/ui/StatusBadge'
-import { formatDateTime, statusMeta } from '@/lib/admin'
+import { formatDateTime, statusMeta } from '@/lib/admin/admin'
 
 import type { StatusHistoryResponse } from '@generated/model/statusHistoryResponse'
 

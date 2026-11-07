@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { PropsWithChildren } from 'react'
 
-import { createChatSocketClient } from '@/lib/websocket'
+import { createChatSocketClient } from '@/lib/api/websocket'
 
 import { useSessionQuery } from './useSession'
 import { WebSocketContext } from './useWebSocket'

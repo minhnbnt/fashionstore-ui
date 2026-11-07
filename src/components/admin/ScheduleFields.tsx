@@ -1,8 +1,8 @@
-import { scheduleError } from '@/lib/siteContent'
+import { scheduleError } from '@/lib/content/siteContent'
 
 import { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, LABEL_CLASS } from './ContentDialog'
 
-import type { ScheduleValue } from '@/lib/siteContent'
+import type { ScheduleValue } from '@/lib/content/siteContent'
 
 /** Bật/tắt + khung giờ chạy dùng chung cho banner và popup. */
 export default function ScheduleFields({

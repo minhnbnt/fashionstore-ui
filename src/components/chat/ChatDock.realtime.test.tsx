@@ -26,8 +26,8 @@ const { customFetchMock, sessionMock } = vi.hoisted(() => ({
 }))
 
 // Giữ nguyên các export khác của apiFetch, chỉ thay customFetch để bắt HTTP
-vi.mock('@/lib/apiFetch', async function (importOriginal) {
-  const actual = await importOriginal<typeof import('@/lib/apiFetch')>()
+vi.mock('@/lib/api/apiFetch', async function (importOriginal) {
+  const actual = await importOriginal<typeof import('@/lib/api/apiFetch')>()
   return { ...actual, customFetch: customFetchMock }
 })
 

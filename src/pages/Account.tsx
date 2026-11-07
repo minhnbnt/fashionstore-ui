@@ -7,7 +7,7 @@ import { MapPin, ShieldWarning, SignOut, Storefront } from '@phosphor-icons/reac
 import { useQueryClient } from '@tanstack/react-query'
 
 import StatusBadge from '@/components/ui/StatusBadge'
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 import { getRoleFromSession, refreshAuthSession } from '@/lib/auth'
 
 import AddressBookTab from '../components/account/AddressBookTab'

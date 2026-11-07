@@ -1,4 +1,4 @@
-import { formatDayLabel, niceCeiling } from '@/lib/adminStats'
+import { formatDayLabel, niceCeiling } from '@/lib/admin/adminStats'
 
 import type { TrendPoint } from '@/types/admin'
 

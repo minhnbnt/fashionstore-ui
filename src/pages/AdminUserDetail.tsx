@@ -27,8 +27,8 @@ import ReasonDialog from '@/components/admin/ReasonDialog'
 import StatePanel from '@/components/ui/StatePanel'
 import StatusBadge from '@/components/ui/StatusBadge'
 import UserAvatar from '@/components/UserAvatar'
-import { adminErrorMessage, formatDateTime, roleLabel } from '@/lib/admin'
-import { takeData } from '@/lib/apiAdapters'
+import { adminErrorMessage, formatDateTime, roleLabel } from '@/lib/admin/admin'
+import { takeData } from '@/lib/api/apiAdapters'
 
 import type { AdminUserDetailResponse } from '@generated/model/adminUserDetailResponse'
 

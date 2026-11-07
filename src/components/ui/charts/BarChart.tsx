@@ -1,4 +1,4 @@
-import { niceCeiling } from '@/lib/adminStats'
+import { niceCeiling } from '@/lib/admin/adminStats'
 
 export interface BarChartItem {
   label: string

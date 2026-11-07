@@ -23,14 +23,14 @@ import {
 } from '@phosphor-icons/react'
 
 import { BarChart, DonutChart, LineChart } from '@/components/ui/charts'
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import {
   orderStatusSummaryData,
   revenueCategoryItems,
   revenueChartPoints,
   revenuePaymentItems,
-} from '@/lib/sellerStatsAdapters'
+} from '@/lib/seller/sellerStatsAdapters'
 
 interface Props {
   shopId: string

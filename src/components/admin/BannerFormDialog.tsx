@@ -2,20 +2,20 @@ import { useState } from 'react'
 
 import { useCreateBanner, useUpdateBanner } from '@generated/endpoints/admin-banners/admin-banners'
 
-import { hookErrorMessage } from '@/lib/apiAdapters'
+import { hookErrorMessage } from '@/lib/api/apiAdapters'
 import {
   fromLocalInput,
   isSafeLink,
   PLACEMENT_OPTIONS,
   scheduleError,
   toLocalInput,
-} from '@/lib/siteContent'
+} from '@/lib/content/siteContent'
 
 import ContentDialog, { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, LABEL_CLASS } from './ContentDialog'
 import ImageUploadField from './ImageUploadField'
 import ScheduleFields from './ScheduleFields'
 
-import type { BannerPlacementValue, ScheduleValue } from '@/lib/siteContent'
+import type { BannerPlacementValue, ScheduleValue } from '@/lib/content/siteContent'
 import type { BannerRequest } from '@generated/model/bannerRequest'
 import type { BannerResponse } from '@generated/model/bannerResponse'
 

@@ -3,9 +3,9 @@ import { Link } from 'react-router'
 import { useMine2 } from '@generated/endpoints/orders/orders'
 import { ArrowRight, Package, Receipt } from '@phosphor-icons/react'
 
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatDateTime, formatVnd } from '@/lib/format'
-import { orderItemSummary, orderStatusMeta } from '@/lib/orderStatus'
+import { orderItemSummary, orderStatusMeta } from '@/lib/order/orderStatus'
 
 import type { OrderResponse } from '@generated/model/orderResponse'
 

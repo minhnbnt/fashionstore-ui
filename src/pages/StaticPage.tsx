@@ -3,8 +3,8 @@ import { Link, useParams } from 'react-router'
 
 import { useGetPage } from '@generated/endpoints/site-content/site-content'
 
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
-import { formatDateTime } from '@/lib/productModeration'
+import { formatDateTime } from '@/lib/admin/productModeration'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 
 import Markdown from '../components/Markdown'
 

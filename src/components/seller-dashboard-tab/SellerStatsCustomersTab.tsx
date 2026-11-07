@@ -15,9 +15,9 @@ import {
 } from '@phosphor-icons/react'
 
 import { CircularProgress, DonutChart } from '@/components/ui/charts'
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 import { formatDateTime, formatVnd } from '@/lib/format'
-import { customerAnalyticsData, topCustomerItems } from '@/lib/sellerStatsAdapters'
+import { customerAnalyticsData, topCustomerItems } from '@/lib/seller/sellerStatsAdapters'
 
 import type { CustomerAnalyticsData, TopCustomerItem } from '@/types/seller'
 

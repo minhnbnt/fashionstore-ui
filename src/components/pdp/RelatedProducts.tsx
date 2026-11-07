@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 
 import { useSearch } from '@generated/endpoints/search/search'
 
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { priceLabel } from '@/lib/format'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'

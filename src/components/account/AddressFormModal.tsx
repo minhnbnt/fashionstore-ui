@@ -13,8 +13,8 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { takeData } from '@/lib/apiAdapters'
-import { ApiError } from '@/lib/apiFetch'
+import { takeData } from '@/lib/api/apiAdapters'
+import { ApiError } from '@/lib/api/apiFetch'
 import { formatAddressLabel, splitFullAddress } from '@/lib/format'
 
 import Modal from '../Modal'

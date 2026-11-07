@@ -9,10 +9,10 @@ import { useGetMyShops } from '@generated/endpoints/seller-staff-roles/seller-st
 import { useMine } from '@generated/endpoints/shops/shops'
 import { Storefront, WarningCircle } from '@phosphor-icons/react'
 
-import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
-import { shopProfile } from '@/lib/sellerAdapters'
-import { getFirstAllowedTab, parseSellerTab, sellerTabParam } from '@/lib/sellerNavigation'
-import { canSeeTab } from '@/lib/sellerPermissions'
+import { apiErrorMessage, takeData } from '@/lib/api/apiAdapters'
+import { shopProfile } from '@/lib/seller/sellerAdapters'
+import { getFirstAllowedTab, parseSellerTab, sellerTabParam } from '@/lib/seller/sellerNavigation'
+import { canSeeTab } from '@/lib/seller/sellerPermissions'
 
 import {
   SellerAddProductTab,

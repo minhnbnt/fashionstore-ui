@@ -3,10 +3,10 @@ import { useState } from 'react'
 import { useAdminCancelOrder } from '@generated/endpoints/admin-orders/admin-orders'
 import { XCircle, X } from '@phosphor-icons/react'
 
-import { hookErrorMessage } from '@/lib/apiAdapters'
+import { appendTemplate, REASON_MAX, reasonError } from '@/lib/admin/productModeration'
+import { hookErrorMessage } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
-import { CANCEL_REASON_OPTIONS } from '@/lib/orderMonitoring'
-import { appendTemplate, REASON_MAX, reasonError } from '@/lib/productModeration'
+import { CANCEL_REASON_OPTIONS } from '@/lib/order/orderMonitoring'
 
 import type { AdminCancelOrderRequestReason } from '@generated/model/adminCancelOrderRequestReason'
 import type { AdminOrderResponse } from '@generated/model/adminOrderResponse'

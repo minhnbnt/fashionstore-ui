@@ -4,14 +4,14 @@ import { useGetAdminPage, useListAdminPages } from '@generated/endpoints/admin-p
 import { FileText, Plus } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
-import { formatDateTime } from '@/lib/productModeration'
+import { formatDateTime } from '@/lib/admin/productModeration'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import {
   footerGroupLabel,
   pageStatusBadgeClass,
   pageStatusLabel,
   queryKeyStartsWith,
-} from '@/lib/siteContent'
+} from '@/lib/content/siteContent'
 
 import PageEditor from './PageEditor'
 

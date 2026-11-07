@@ -1,7 +1,7 @@
 import { ArrowRight, Sparkle } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
-import { PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
+import { PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
   const target = event.currentTarget

@@ -16,8 +16,8 @@ import {
 } from '@phosphor-icons/react'
 
 import { useSessionQuery } from '@/hooks/useSession'
-import { apiErrorText, takeData } from '@/lib/apiAdapters'
-import { ApiError } from '@/lib/apiFetch'
+import { apiErrorText, takeData } from '@/lib/api/apiAdapters'
+import { ApiError } from '@/lib/api/apiFetch'
 import { formatDateTime } from '@/lib/format'
 
 import type { InvitationDetailResponse } from '@generated/model/invitationDetailResponse'

@@ -2,8 +2,8 @@ import { useState } from 'react'
 
 import { useCreateFaq, useUpdateFaq } from '@generated/endpoints/admin-faq/admin-faq'
 
-import { hookErrorMessage } from '@/lib/apiAdapters'
-import { FAQ_CATEGORY_OPTIONS } from '@/lib/siteContent'
+import { hookErrorMessage } from '@/lib/api/apiAdapters'
+import { FAQ_CATEGORY_OPTIONS } from '@/lib/content/siteContent'
 
 import Markdown from '../Markdown'
 import ContentDialog, {
@@ -13,7 +13,7 @@ import ContentDialog, {
   TEXTAREA_CLASS,
 } from './ContentDialog'
 
-import type { FaqCategoryValue } from '@/lib/siteContent'
+import type { FaqCategoryValue } from '@/lib/content/siteContent'
 import type { FaqRequest } from '@generated/model/faqRequest'
 import type { FaqResponse } from '@generated/model/faqResponse'
 

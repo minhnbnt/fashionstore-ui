@@ -1,4 +1,4 @@
-import { formatVnd } from './format'
+import { formatVnd } from '../format'
 
 import type { BanProductRequestViolationType } from '@generated/model/banProductRequestViolationType'
 

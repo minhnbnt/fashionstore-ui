@@ -12,9 +12,9 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
-import { PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
-import { reviewItem } from '@/lib/sellerAdapters'
-import { useSellerPermissions } from '@/lib/sellerPermissions'
+import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { reviewItem } from '@/lib/seller/sellerAdapters'
+import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 
 import type { ReviewItem } from '@/types/seller'
 

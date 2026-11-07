@@ -4,8 +4,8 @@ import { Link } from 'react-router'
 import { useListFaqs } from '@generated/endpoints/site-content/site-content'
 import { CaretDown, MagnifyingGlass, Question } from '@phosphor-icons/react'
 
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
-import { FAQ_CATEGORY_OPTIONS, faqCategoryLabel, groupBy, slugify } from '@/lib/siteContent'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
+import { FAQ_CATEGORY_OPTIONS, faqCategoryLabel, groupBy, slugify } from '@/lib/content/siteContent'
 
 import Markdown from '../components/Markdown'
 

@@ -5,8 +5,8 @@ import { useListBanners } from '@generated/endpoints/site-content/site-content'
 import { CaretLeft, CaretRight, Pause, Play } from '@phosphor-icons/react'
 import { useReducedMotion } from 'motion/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
-import { isInternalLink } from '@/lib/siteContent'
+import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { isInternalLink } from '@/lib/content/siteContent'
 
 import type { PublicBannerResponse } from '@generated/model/publicBannerResponse'
 

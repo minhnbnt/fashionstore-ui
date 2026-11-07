@@ -3,8 +3,8 @@ import { useState } from 'react'
 import { useDismissProductReports } from '@generated/endpoints/admin-products/admin-products'
 import { ShieldCheck } from '@phosphor-icons/react'
 
-import { hookErrorMessage } from '@/lib/apiAdapters'
-import { REASON_MAX } from '@/lib/productModeration'
+import { REASON_MAX } from '@/lib/admin/productModeration'
+import { hookErrorMessage } from '@/lib/api/apiAdapters'
 
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
 

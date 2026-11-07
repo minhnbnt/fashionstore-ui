@@ -3,8 +3,8 @@ import { useState } from 'react'
 import { useRejectProduct } from '@generated/endpoints/admin-products/admin-products'
 import { Prohibit, X } from '@phosphor-icons/react'
 
-import { hookErrorMessage } from '@/lib/apiAdapters'
-import { appendTemplate, REASON_MAX, reasonError } from '@/lib/productModeration'
+import { appendTemplate, REASON_MAX, reasonError } from '@/lib/admin/productModeration'
+import { hookErrorMessage } from '@/lib/api/apiAdapters'
 
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
 
