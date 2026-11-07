@@ -5,7 +5,7 @@ import { ImageSquare, Trash, UploadSimple } from '@phosphor-icons/react'
 import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
 
-import { ERROR_CLASS, HINT_CLASS, LABEL_CLASS } from './ContentDialog'
+import { ERROR_CLASS, HINT_CLASS, LABEL_CLASS } from '../dialogs/ContentDialog'
 
 interface Props {
   label: string

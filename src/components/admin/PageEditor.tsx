@@ -20,8 +20,14 @@ import {
 } from '@/lib/content/siteContent'
 
 import Markdown from '../Markdown'
-import ConfirmDialog from './ConfirmDialog'
-import { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, LABEL_CLASS, TEXTAREA_CLASS } from './ContentDialog'
+import ConfirmDialog from './dialogs/ConfirmDialog'
+import {
+  ERROR_CLASS,
+  HINT_CLASS,
+  INPUT_CLASS,
+  LABEL_CLASS,
+  TEXTAREA_CLASS,
+} from './dialogs/ContentDialog'
 
 import type { FooterGroupValue } from '@/lib/content/siteContent'
 import type { SitePageRequest } from '@generated/model/sitePageRequest'

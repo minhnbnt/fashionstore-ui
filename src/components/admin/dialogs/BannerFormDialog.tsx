@@ -11,9 +11,9 @@ import {
   toLocalInput,
 } from '@/lib/content/siteContent'
 
+import ImageUploadField from '../fields/ImageUploadField'
+import ScheduleFields from '../fields/ScheduleFields'
 import ContentDialog, { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, LABEL_CLASS } from './ContentDialog'
-import ImageUploadField from './ImageUploadField'
-import ScheduleFields from './ScheduleFields'
 
 import type { BannerPlacementValue, ScheduleValue } from '@/lib/content/siteContent'
 import type { BannerRequest } from '@generated/model/bannerRequest'

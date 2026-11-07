@@ -36,7 +36,7 @@ import {
 
 import AdminNav from '../../components/admin/AdminNav'
 import AdminOrderDetailPanel from '../../components/admin/AdminOrderDetailPanel'
-import CancelOrderDialog from '../../components/admin/CancelOrderDialog'
+import CancelOrderDialog from '../../components/admin/dialogs/CancelOrderDialog'
 import Pagination from '../../components/search/Pagination'
 
 import type { OrderAlertFilter, OrderStatusFilter } from '@/lib/order/orderMonitoring'

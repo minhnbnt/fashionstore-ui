@@ -5,7 +5,7 @@ import { useCreateFaq, useUpdateFaq } from '@generated/endpoints/admin-faq/admin
 import { hookErrorMessage } from '@/lib/api/apiAdapters'
 import { FAQ_CATEGORY_OPTIONS } from '@/lib/content/siteContent'
 
-import Markdown from '../Markdown'
+import Markdown from '../../Markdown'
 import ContentDialog, {
   HINT_CLASS,
   INPUT_CLASS,

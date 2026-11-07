@@ -4,10 +4,10 @@ import { useSearchParams } from 'react-router'
 import { FileText, Image, Megaphone, Question, SquaresFour, X } from '@phosphor-icons/react'
 
 import AdminNav from '../../components/admin/AdminNav'
-import BannersTab from '../../components/admin/BannersTab'
-import FaqsTab from '../../components/admin/FaqsTab'
-import PagesTab from '../../components/admin/PagesTab'
-import PopupsTab from '../../components/admin/PopupsTab'
+import BannersTab from '../../components/admin/tabs/BannersTab'
+import FaqsTab from '../../components/admin/tabs/FaqsTab'
+import PagesTab from '../../components/admin/tabs/PagesTab'
+import PopupsTab from '../../components/admin/tabs/PopupsTab'
 
 const TABS = [
   { value: 'banners', label: 'Banner', icon: Image },

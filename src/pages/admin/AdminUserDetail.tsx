@@ -21,9 +21,9 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import AdminShell from '@/components/admin/AdminShell'
-import ConfirmDialog from '@/components/admin/ConfirmDialog'
-import HistoryTimeline from '@/components/admin/HistoryTimeline'
-import ReasonDialog from '@/components/admin/ReasonDialog'
+import HistoryTimeline from '@/components/admin/dashboard/HistoryTimeline'
+import ConfirmDialog from '@/components/admin/dialogs/ConfirmDialog'
+import ReasonDialog from '@/components/admin/dialogs/ReasonDialog'
 import StatePanel from '@/components/ui/StatePanel'
 import StatusBadge from '@/components/ui/StatusBadge'
 import UserAvatar from '@/components/UserAvatar'

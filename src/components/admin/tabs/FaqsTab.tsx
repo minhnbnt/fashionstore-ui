@@ -13,8 +13,8 @@ import {
   queryKeyStartsWith,
 } from '@/lib/content/siteContent'
 
-import ConfirmDialog from './ConfirmDialog'
-import FaqFormDialog from './FaqFormDialog'
+import ConfirmDialog from '../dialogs/ConfirmDialog'
+import FaqFormDialog from '../dialogs/FaqFormDialog'
 
 import type { FaqCategoryValue } from '@/lib/content/siteContent'
 import type { FaqResponse } from '@generated/model/faqResponse'

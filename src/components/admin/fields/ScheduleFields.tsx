@@ -1,6 +1,6 @@
 import { scheduleError } from '@/lib/content/siteContent'
 
-import { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, LABEL_CLASS } from './ContentDialog'
+import { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, LABEL_CLASS } from '../dialogs/ContentDialog'
 
 import type { ScheduleValue } from '@/lib/content/siteContent'
 

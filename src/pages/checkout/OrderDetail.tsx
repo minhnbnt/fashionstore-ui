@@ -10,7 +10,7 @@ import {
 import { ArrowLeft, Receipt } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import ConfirmDialog from '@/components/admin/ConfirmDialog'
+import ConfirmDialog from '@/components/admin/dialogs/ConfirmDialog'
 import StatePanel from '@/components/ui/StatePanel'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatDateTime, formatVnd } from '@/lib/format'

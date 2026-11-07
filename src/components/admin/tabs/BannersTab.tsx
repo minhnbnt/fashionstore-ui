@@ -18,8 +18,8 @@ import {
   scheduleWindowLabel,
 } from '@/lib/content/siteContent'
 
-import BannerFormDialog from './BannerFormDialog'
-import ConfirmDialog from './ConfirmDialog'
+import BannerFormDialog from '../dialogs/BannerFormDialog'
+import ConfirmDialog from '../dialogs/ConfirmDialog'
 
 import type { BannerPlacementValue } from '@/lib/content/siteContent'
 import type { BannerResponse } from '@generated/model/bannerResponse'

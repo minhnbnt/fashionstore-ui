@@ -18,8 +18,8 @@ import {
   scheduleWindowLabel,
 } from '@/lib/content/siteContent'
 
-import ConfirmDialog from './ConfirmDialog'
-import PopupFormDialog from './PopupFormDialog'
+import ConfirmDialog from '../dialogs/ConfirmDialog'
+import PopupFormDialog from '../dialogs/PopupFormDialog'
 
 import type { PopupRequest } from '@generated/model/popupRequest'
 import type { PopupResponse } from '@generated/model/popupResponse'

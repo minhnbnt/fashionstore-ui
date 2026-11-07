@@ -33,10 +33,10 @@ import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/a
 
 import AdminProductDetailPanel from '../../components/admin/AdminProductDetailPanel'
 import AdminShell from '../../components/admin/AdminShell'
-import BanProductDialog from '../../components/admin/BanProductDialog'
-import DismissReportsDialog from '../../components/admin/DismissReportsDialog'
-import RejectProductDialog from '../../components/admin/RejectProductDialog'
-import RestoreProductDialog from '../../components/admin/RestoreProductDialog'
+import BanProductDialog from '../../components/admin/dialogs/BanProductDialog'
+import DismissReportsDialog from '../../components/admin/dialogs/DismissReportsDialog'
+import RejectProductDialog from '../../components/admin/dialogs/RejectProductDialog'
+import RestoreProductDialog from '../../components/admin/dialogs/RestoreProductDialog'
 import Pagination from '../../components/search/Pagination'
 
 import type { ProductStatusFilter } from '@/lib/admin/productModeration'

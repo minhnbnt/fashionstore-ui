@@ -13,7 +13,7 @@ import {
   queryKeyStartsWith,
 } from '@/lib/content/siteContent'
 
-import PageEditor from './PageEditor'
+import PageEditor from '../PageEditor'
 
 import type { SitePageResponse } from '@generated/model/sitePageResponse'
 
