@@ -5,6 +5,7 @@ import {
   buildSystemPrompt,
   createAgentTools,
   filtersFromMessages,
+  imageFromMessages,
   productFromMessages,
 } from './agent'
 
@@ -33,7 +34,11 @@ export function createAgentTransport(options: {
     sendMessages: async function ({ messages, abortSignal }) {
       const result = streamText({
         model: provider(options.config.model),
-        system: buildSystemPrompt(filtersFromMessages(messages), productFromMessages(messages)),
+        system: buildSystemPrompt(
+          filtersFromMessages(messages),
+          productFromMessages(messages),
+          imageFromMessages(messages),
+        ),
         messages: await convertToModelMessages(messages),
         tools: createAgentTools(),
         stopWhen: stepCountIs(MAX_AGENT_STEPS),

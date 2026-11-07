@@ -7,6 +7,7 @@ import {
   buildSystemPrompt,
   createAgentTools,
   filtersFromMessages,
+  imageFromMessages,
   productFromMessages,
   readAgentConfig,
   searchProductsInputSchema,
@@ -204,6 +205,58 @@ describe('productFromMessages', () => {
     ] as unknown as AgentUIMessage[]
 
     expect(productFromMessages(messages)).toBeUndefined()
+  })
+})
+
+describe('imageFromMessages', () => {
+  it('lấy ảnh từ metadata của tin nhắn user gần nhất', function () {
+    const messages = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [],
+        metadata: { image: { key: 'img-cu', url: 'https://assets.example.com/img-cu' } },
+      },
+      { id: 'a1', role: 'assistant', parts: [] },
+      {
+        id: 'u2',
+        role: 'user',
+        parts: [],
+        metadata: { image: { key: 'img-moi', url: 'https://assets.example.com/img-moi' } },
+      },
+    ] as unknown as AgentUIMessage[]
+
+    expect(imageFromMessages(messages)).toEqual({
+      key: 'img-moi',
+      url: 'https://assets.example.com/img-moi',
+    })
+  })
+
+  it('không có metadata nào thì undefined', function () {
+    const messages = [
+      { id: 'u1', role: 'user', parts: [] },
+      { id: 'a1', role: 'assistant', parts: [] },
+    ] as unknown as AgentUIMessage[]
+
+    expect(imageFromMessages(messages)).toBeUndefined()
+  })
+})
+
+describe('buildSystemPrompt — ảnh đính kèm', () => {
+  it('có ảnh thì nhúng link ảnh vào prompt để model biết', function () {
+    const prompt = buildSystemPrompt(filtersFixture(), undefined, {
+      key: 'img-1',
+      url: 'https://assets.example.com/img-1',
+    })
+
+    expect(prompt).toContain('đính kèm')
+    expect(prompt).toContain('https://assets.example.com/img-1')
+  })
+
+  it('không có ảnh thì không nhắc ảnh trong prompt', function () {
+    const prompt = buildSystemPrompt(filtersFixture())
+
+    expect(prompt).not.toContain('đính kèm')
   })
 })
 

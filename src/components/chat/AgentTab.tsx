@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 
 import { useChat } from '@ai-sdk/react'
-import { MagnifyingGlass, PaperPlaneRight, Stop } from '@phosphor-icons/react'
+import { MagnifyingGlass, PaperPlaneRight, Paperclip, Stop, X } from '@phosphor-icons/react'
 
 import Markdown from '@/components/Markdown'
 import { readAgentConfig } from '@/lib/ai/agent'
 import { createAgentTransport } from '@/lib/ai/chatTransport'
 import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { uploadImage, MAX_IMAGE_BYTES } from '@/lib/api/uploadImage'
 import { formatVnd } from '@/lib/format'
 import { EMPTY_FILTERS, parseFilters, toQueryString, withFilter } from '@/lib/searchFilters'
 
@@ -16,6 +17,7 @@ import { bubbleClass, messageRowClass } from './bubble'
 
 import type {
   AgentConfig,
+  AgentImageContext,
   AgentMessageMetadata,
   AgentTools,
   AgentUIMessage,
@@ -24,7 +26,7 @@ import type {
 } from '@/lib/ai/agent'
 import type { SearchFilters } from '@/types/search'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
-import type { ToolUIPart, ChatTransport } from 'ai'
+import type { FileUIPart, ToolUIPart, ChatTransport } from 'ai'
 
 export interface AgentTabProps {
   /** Inject cho test; bỏ trống thì đọc từ biến env VITE_AI_*. */
@@ -37,19 +39,28 @@ type SearchToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-searchProduc
 type ShowToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-showProducts' }>
 type ProductDetailToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-getProductDetail' }>
 
-function StatusPill(props: { text: string }) {
+/** Ảnh đang soạn kèm tin nhắn: preview local, trạng thái upload, kết quả S3 (nếu xong). */
+interface AttachedImage {
+  previewUrl: string | null
+  status: 'uploading' | 'ready' | 'error'
+  mediaType?: string
+  filename?: string
+  image?: AgentImageContext
+  error?: string
+}
+
+function StatusPill({ text }: { text: string }) {
   return (
     <div className="flex flex-col items-start">
       <span className="max-w-[78%] rounded-2xl rounded-tl-xs bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-500 dark:bg-white/10 dark:text-zinc-400">
-        {props.text}
+        {text}
       </span>
     </div>
   )
 }
 
 /** Hàng sản phẩm gọn trong khung chat, dẫn tới trang chi tiết sản phẩm. */
-function AgentProductRow(props: { item: ProductSummaryResponse }) {
-  const item = props.item
+function AgentProductRow({ item }: { item: ProductSummaryResponse }) {
   return (
     <Link
       to={'/product/' + (item.id ?? '')}
@@ -82,8 +93,7 @@ function AgentProductRow(props: { item: ProductSummaryResponse }) {
 
 /** Kết quả tool searchProducts: chỉ pill trạng thái/tổng số — agent có thể tìm lại
  *  nhiều lần mà không đổ card vào chat; card do tool showProducts phụ trách. */
-function SearchToolBlock(props: { part: SearchToolPart }) {
-  const part = props.part
+function SearchToolBlock({ part }: { part: SearchToolPart }) {
   if (part.state === 'input-streaming' || part.state === 'input-available') {
     return <StatusPill text="Đang tìm sản phẩm…" />
   }
@@ -104,7 +114,7 @@ function ShowProductsBlock(props: {
   appliedParams?: Partial<SearchFilters>
   onApplyFilters: (patch: Partial<SearchFilters>) => void
 }) {
-  const part = props.part
+  const { part, appliedParams, onApplyFilters } = props
   if (part.state === 'input-streaming' || part.state === 'input-available') {
     return <StatusPill text="Đang chuẩn bị sản phẩm…" />
   }
@@ -123,11 +133,11 @@ function ShowProductsBlock(props: {
             return <AgentProductRow key={item.id} item={item} />
           })}
         </div>
-        {props.appliedParams !== undefined && (
+        {appliedParams !== undefined && (
           <button
             type="button"
             onClick={function () {
-              props.onApplyFilters(props.appliedParams as Partial<SearchFilters>)
+              onApplyFilters(appliedParams as Partial<SearchFilters>)
             }}
             className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-extrabold text-sky-800 transition hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300 dark:hover:bg-sky-500/20"
           >
@@ -160,8 +170,7 @@ function productIdFromLocation(pathname: string): string | undefined {
 
 /** Kết quả tool getProductDetail: đang chạy → pill tra cứu, lỗi → pill lỗi,
  *  xong → giữ lại dấu vết đã tra cứu kèm tên sản phẩm (như các tool khác còn pill). */
-function ProductDetailToolBlock(props: { part: ProductDetailToolPart }) {
-  const part = props.part
+function ProductDetailToolBlock({ part }: { part: ProductDetailToolPart }) {
   if (part.state === 'input-streaming' || part.state === 'input-available') {
     return <StatusPill text="Đang tra cứu sản phẩm…" />
   }
@@ -185,6 +194,10 @@ export default function AgentTab(props: AgentTabProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [input, setInput] = useState('')
+  const [attached, setAttached] = useState<AttachedImage | null>(null)
+
+  // Seq chống race: gỡ ảnh/đổi ảnh thì tăng, kết quả upload cũ về sau sẽ bị bỏ qua.
+  const attachSeqRef = useRef(0)
 
   // Cấu hình chốt một lần: ưu tiên prop inject (test), không thì đọc env.
   const config = useMemo(
@@ -232,10 +245,80 @@ export default function AgentTab(props: AgentTabProps) {
     [chat.messages],
   )
 
+  /** Xóa ảnh đang soạn (nếu có) và thu hồi preview URL; tăng seq để hủy kết quả upload đang treo. */
+  function clearAttached() {
+    attachSeqRef.current += 1
+    setAttached(function (current) {
+      if (current?.previewUrl !== null && current?.previewUrl !== undefined) {
+        window.URL.revokeObjectURL(current.previewUrl)
+      }
+      return null
+    })
+  }
+
+  /** Chọn file từ ô đính kèm: validate → upload S3 ngay → chờ kết quả để cho phép gửi. */
+  function handleAttach(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (file === undefined) {
+      return
+    }
+    if (file.type.startsWith('image/') === false) {
+      setAttached({ previewUrl: null, status: 'error', error: 'Chỉ nhận file ảnh.' })
+      return
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setAttached({ previewUrl: null, status: 'error', error: 'Ảnh tối đa 5 MB.' })
+      return
+    }
+    clearAttached()
+    const seq = attachSeqRef.current
+    const previewUrl = window.URL.createObjectURL(file)
+    setAttached({ previewUrl, status: 'uploading', mediaType: file.type, filename: file.name })
+    uploadImage(file)
+      .then(function (key) {
+        if (attachSeqRef.current !== seq) {
+          return
+        }
+        setAttached({
+          previewUrl,
+          status: 'ready',
+          mediaType: file.type,
+          filename: file.name,
+          image: { key, url: imageUrl(key) },
+        })
+      })
+      .catch(function () {
+        if (attachSeqRef.current !== seq) {
+          return
+        }
+        setAttached({ previewUrl, status: 'error', error: 'Không gửi được ảnh, thử ảnh khác nhé.' })
+      })
+  }
+
+  /** Ảnh đã upload xong thì mới tính là đính kèm hợp lệ cho tin nhắn. */
+  function readyImageContext(): AgentImageContext | undefined {
+    if (attached === null || attached.status !== 'ready' || attached.image === undefined) {
+      return undefined
+    }
+    return attached.image
+  }
+
+  function sendDisabled(): boolean {
+    if (config === null || busy) {
+      return true
+    }
+    if (attached !== null) {
+      return attached.image === undefined
+    }
+    return input.trim() === ''
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const text = input.trim()
-    if (text === '') {
+    const image = readyImageContext()
+    if (text === '' && image === undefined) {
       return
     }
     const metadata: AgentMessageMetadata = { filters }
@@ -243,8 +326,20 @@ export default function AgentTab(props: AgentTabProps) {
     if (productId !== undefined) {
       metadata.product = { id: productId }
     }
-    void chat.sendMessage({ text, metadata })
+    if (image !== undefined && attached !== null) {
+      metadata.image = image
+      const file: FileUIPart = {
+        type: 'file',
+        mediaType: attached.mediaType ?? 'image/png',
+        filename: attached.filename,
+        url: image.url,
+      }
+      void chat.sendMessage({ text, metadata, files: [file] })
+    } else {
+      void chat.sendMessage({ text, metadata })
+    }
     setInput('')
+    clearAttached()
   }
 
   function applyFilters(patch: Partial<SearchFilters>) {
@@ -266,6 +361,16 @@ export default function AgentTab(props: AgentTabProps) {
                 <p key={key} className={bubbleClass(true)}>
                   {part.text}
                 </p>
+              )
+            }
+            if (part.type === 'file') {
+              return (
+                <img
+                  key={key}
+                  src={part.url}
+                  alt="Ảnh bạn đã gửi"
+                  className="max-w-[78%] rounded-2xl rounded-tr-xs object-cover"
+                />
               )
             }
             return null
@@ -336,7 +441,46 @@ export default function AgentTab(props: AgentTabProps) {
 
       {/* Input */}
       <form onSubmit={handleSubmit} className="border-t border-zinc-100 p-3 dark:border-white/10">
+        {attached !== null && (
+          <div className="mb-2 flex items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 p-2 dark:border-white/10 dark:bg-white/5">
+            {attached.previewUrl !== null && (
+              <img
+                src={attached.previewUrl}
+                alt="Ảnh sẽ gửi kèm"
+                className="h-12 w-10 shrink-0 rounded-lg object-cover"
+              />
+            )}
+            <span className="min-w-0 flex-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+              {attached.status === 'uploading' && <span>Đang tải ảnh lên…</span>}
+              {attached.status === 'ready' && (
+                <span className="block truncate">{attached.filename}</span>
+              )}
+              {attached.status === 'error' && (
+                <span className="text-red-600 dark:text-red-400">{attached.error}</span>
+              )}
+            </span>
+            <button
+              type="button"
+              aria-label="Gỡ ảnh"
+              onClick={clearAttached}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-200 hover:text-zinc-600 dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              <X size={14} weight="bold" />
+            </button>
+          </div>
+        )}
         <div className="flex items-center gap-2">
+          <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-white/10">
+            <Paperclip size={16} weight="bold" />
+            <input
+              type="file"
+              accept="image/*"
+              aria-label="Đính kèm ảnh"
+              disabled={config === null}
+              onChange={handleAttach}
+              className="sr-only"
+            />
+          </label>
           <input
             value={input}
             onChange={function (e) {
@@ -362,7 +506,7 @@ export default function AgentTab(props: AgentTabProps) {
             <button
               type="submit"
               aria-label="Gửi câu hỏi"
-              disabled={input.trim() === '' || config === null}
+              disabled={sendDisabled()}
               className="btn-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full disabled:opacity-40"
             >
               <PaperPlaneRight size={16} weight="bold" />

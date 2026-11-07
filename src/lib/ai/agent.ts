@@ -33,6 +33,12 @@ export interface AgentProductContext {
   id: string
 }
 
+/** Ảnh khách đính kèm trong tin nhắn: key S3 (dành cho thay đổi sau) + url public cho model. */
+export interface AgentImageContext {
+  key: string
+  url: string
+}
+
 /** Đọc cấu hình LLM từ env; thiếu hoặc rỗng biến nào thì coi như chưa cấu hình. */
 export function readAgentConfig(): AgentConfig | null {
   const baseUrl = import.meta.env.VITE_AI_BASE_URL as string | undefined
@@ -51,9 +57,13 @@ export function readAgentConfig(): AgentConfig | null {
   return { baseUrl, apiKey, model }
 }
 
-/** System prompt tiếng Việt, nhúng bộ lọc khách đang đặt trên trang tìm kiếm
- *  và id sản phẩm khách đang xem ở trang chi tiết (nếu có). */
-export function buildSystemPrompt(filters: SearchFilters, product?: AgentProductContext): string {
+/** System prompt tiếng Việt, nhúng bộ lọc khách đang đặt trên trang tìm kiếm,
+ *  id sản phẩm khách đang xem ở trang chi tiết (nếu có) và link ảnh khách đính kèm (nếu có). */
+export function buildSystemPrompt(
+  filters: SearchFilters,
+  product?: AgentProductContext,
+  image?: AgentImageContext,
+): string {
   const lines: string[] = [
     'Bạn là trợ lý mua sắm của cửa hàng thời trang "nét" — marketplace thời trang.',
     'Luôn trả lời bằng tiếng Việt, ngắn gọn, thân thiện. Giá sản phẩm tính bằng VND.',
@@ -94,6 +104,11 @@ export function buildSystemPrompt(filters: SearchFilters, product?: AgentProduct
     )
   }
 
+  if (image !== undefined) {
+    lines.push('')
+    lines.push('Khách đã đính kèm 1 ảnh (link: ' + image.url + '). Tham khảo ảnh này khi tư vấn.')
+  }
+
   return lines.join('\n')
 }
 
@@ -115,10 +130,12 @@ export type AgentTools = {
   showProducts: InferUITool<ReturnType<typeof createAgentTools>['showProducts']>
 }
 
-/** Mỗi tin nhắn user mang theo snapshot bộ lọc trang lúc gửi, kèm id sản phẩm đang xem (nếu ở PDP). */
+/** Mỗi tin nhắn user mang theo snapshot bộ lọc trang lúc gửi, kèm id sản phẩm đang xem (nếu ở PDP)
+ *  và ảnh khách đính kèm (nếu có). */
 export interface AgentMessageMetadata {
   filters: SearchFilters
   product?: AgentProductContext
+  image?: AgentImageContext
 }
 
 export type AgentUIMessage = UIMessage<AgentMessageMetadata, UIDataTypes, AgentTools>
@@ -148,6 +165,17 @@ export function productFromMessages(messages: AgentUIMessage[]): AgentProductCon
       message.metadata?.product !== undefined
     ) {
       return message.metadata.product
+    }
+  }
+  return undefined
+}
+
+/** Ảnh đính kèm: snapshot trong tin nhắn user gần nhất, thiếu thì undefined. */
+export function imageFromMessages(messages: AgentUIMessage[]): AgentImageContext | undefined {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i]
+    if (message !== undefined && message.role === 'user' && message.metadata?.image !== undefined) {
+      return message.metadata.image
     }
   }
   return undefined
