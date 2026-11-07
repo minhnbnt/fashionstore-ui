@@ -692,4 +692,181 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
       expect(img.src).toContain('chat-img-1')
     })
   })
+
+  describe('thử đồ ảo', () => {
+    it('tool tryOn đang chạy thì hiện trạng thái đang thử đồ', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'tryOn',
+            input: {
+              personImageUrl: 'https://assets.example.com/person.jpg',
+              garmentImageKey: 'product-1',
+              category: 'tops',
+              garmentPhotoType: 'model',
+            },
+          },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Đang thử đồ, chờ chút nhé…')).toBeTruthy()
+    })
+
+    it('tool tryOn xong thì hiện pill đã tạo ảnh thử đồ', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'tryOn',
+            input: {
+              personImageUrl: 'https://assets.example.com/person.jpg',
+              garmentImageKey: 'product-1',
+              category: 'tops',
+              garmentPhotoType: 'model',
+            },
+          },
+          {
+            type: 'tool-output-available',
+            toolCallId: 'tc1',
+            output: {
+              image: { key: 'tryon-1', url: 'https://assets.example.com/tryon-1' },
+            },
+          },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Đã tạo ảnh thử đồ.')).toBeTruthy()
+    })
+
+    it('tool tryOn lỗi thì hiện trạng thái lỗi', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'tryOn',
+            input: {
+              personImageUrl: 'https://assets.example.com/person.jpg',
+              garmentImageKey: 'product-1',
+              category: 'tops',
+              garmentPhotoType: 'model',
+            },
+          },
+          { type: 'tool-output-error', toolCallId: 'tc1', errorText: 'GPU quota exceeded' },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Có lỗi khi tạo ảnh thử đồ.')).toBeTruthy()
+    })
+
+    it('tool showImage đang chạy thì hiện trạng thái đang tải ảnh', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'showImage',
+            input: { url: 'https://assets.example.com/tryon-1' },
+          },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Đang tải ảnh…')).toBeTruthy()
+    })
+
+    it('tool showImage xong thì hiện ảnh với link đúng và bo góc như bubble', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'showImage',
+            input: { url: 'https://assets.example.com/tryon-1' },
+          },
+          {
+            type: 'tool-output-available',
+            toolCallId: 'tc1',
+            output: { url: 'https://assets.example.com/tryon-1' },
+          },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      const img = (await screen.findByAltText('Ảnh trợ lý gửi')) as HTMLImageElement
+      expect(img.src).toBe('https://assets.example.com/tryon-1')
+      expect(img.className).toContain('rounded-2xl')
+    })
+
+    it('tool showImage lỗi thì hiện trạng thái lỗi', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'showImage',
+            input: { url: 'https://assets.example.com/tryon-1' },
+          },
+          { type: 'tool-output-error', toolCallId: 'tc1', errorText: 'lỗi lạ' },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Có lỗi khi hiển thị ảnh.')).toBeTruthy()
+    })
+  })
 })

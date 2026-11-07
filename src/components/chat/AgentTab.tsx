@@ -22,6 +22,7 @@ import type {
   AgentTools,
   AgentUIMessage,
   SearchToolOutput,
+  ShowImageToolOutput,
   ShowToolOutput,
 } from '@/lib/ai/agent'
 import type { SearchFilters } from '@/types/search'
@@ -38,6 +39,8 @@ export interface AgentTabProps {
 type SearchToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-searchProducts' }>
 type ShowToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-showProducts' }>
 type ProductDetailToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-getProductDetail' }>
+type TryOnToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-tryOn' }>
+type ShowImageToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-showImage' }>
 
 /** Ảnh đang soạn kèm tin nhắn: preview local, trạng thái upload, kết quả S3 (nếu xong). */
 interface AttachedImage {
@@ -184,6 +187,43 @@ function ProductDetailToolBlock({ part }: { part: ProductDetailToolPart }) {
       name = part.input.productId
     }
     return <StatusPill text={'Đã tra cứu sản phẩm: ' + name} />
+  }
+  return null
+}
+
+/** Kết quả tool tryOn: đang chạy → pill chờ (Space có thể mất phút), lỗi → pill lỗi,
+ *  xong → pill xác nhận đã tạo; ảnh kết quả do tool showImage hiển thị riêng. */
+function TryOnToolBlock({ part }: { part: TryOnToolPart }) {
+  if (part.state === 'input-streaming' || part.state === 'input-available') {
+    return <StatusPill text="Đang thử đồ, chờ chút nhé…" />
+  }
+  if (part.state === 'output-error') {
+    return <StatusPill text="Có lỗi khi tạo ảnh thử đồ." />
+  }
+  if (part.state === 'output-available') {
+    return <StatusPill text="Đã tạo ảnh thử đồ." />
+  }
+  return null
+}
+
+/** Kết quả tool showImage: hiện ảnh từ link tool trả về — block trung tính,
+ *  không biết ảnh từ đâu, mai sau tool khác có link đều dùng được. */
+function ShowImageBlock({ part }: { part: ShowImageToolPart }) {
+  if (part.state === 'input-streaming' || part.state === 'input-available') {
+    return <StatusPill text="Đang tải ảnh…" />
+  }
+  if (part.state === 'output-error') {
+    return <StatusPill text="Có lỗi khi hiển thị ảnh." />
+  }
+  if (part.state === 'output-available') {
+    const output: ShowImageToolOutput = part.output
+    return (
+      <img
+        src={output.url}
+        alt="Ảnh trợ lý gửi"
+        className="max-w-[78%] rounded-2xl rounded-tl-xs object-cover"
+      />
+    )
   }
   return null
 }
@@ -409,6 +449,12 @@ export default function AgentTab(props: AgentTabProps) {
           }
           if (part.type === 'tool-getProductDetail') {
             return <ProductDetailToolBlock key={key} part={part} />
+          }
+          if (part.type === 'tool-tryOn') {
+            return <TryOnToolBlock key={key} part={part} />
+          }
+          if (part.type === 'tool-showImage') {
+            return <ShowImageBlock key={key} part={part} />
           }
           return null
         })}

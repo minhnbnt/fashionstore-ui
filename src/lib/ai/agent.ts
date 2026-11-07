@@ -3,7 +3,9 @@ import { EMPTY_FILTERS } from '@/lib/searchFilters'
 import { createGetProductDetailTool } from './tools/getProductDetail'
 import { createListCategoriesTool } from './tools/listCategories'
 import { createSearchProductsTool } from './tools/searchProducts'
+import { createShowImageTool } from './tools/showImage'
 import { createShowProductsTool } from './tools/showProducts'
+import { createTryOnTool } from './tools/tryOn'
 
 import type { SearchFilters } from '@/types/search'
 import type { InferUITool, UIDataTypes, UIMessage } from 'ai'
@@ -19,6 +21,10 @@ export type {
 } from './tools/getProductDetail'
 export { showProductsInputSchema } from './tools/showProducts'
 export type { ShowToolInput, ShowToolOutput } from './tools/showProducts'
+export { showImageInputSchema } from './tools/showImage'
+export type { ShowImageToolInput, ShowImageToolOutput } from './tools/showImage'
+export { tryOnInputSchema } from './tools/tryOn'
+export type { TryOnToolInput, TryOnToolOutput } from './tools/tryOn'
 
 // TODO(oauth): token đang hard-code qua VITE_AI_API_KEY trong .env. Về sau chuyển sang
 // xác thực qua Supabase OAuth (đổi token ngắn hạn theo phiên đăng nhập) thay cho key tĩnh.
@@ -107,12 +113,18 @@ export function buildSystemPrompt(
   if (image !== undefined) {
     lines.push('')
     lines.push('Khách đã đính kèm 1 ảnh (link: ' + image.url + '). Tham khảo ảnh này khi tư vấn.')
+    lines.push(
+      '- Khách muốn thử đồ thì gọi tool tryOn: personImageUrl là link ảnh khách đính kèm ở trên, garmentImageKey là key ảnh sản phẩm (lấy từ kết quả searchProducts/showProducts), category và garmentPhotoType mô tả sản phẩm. tryOn chỉ tạo và lưu ảnh, khách không thấy gì.',
+    )
+    lines.push(
+      '- Muốn hiện ảnh cho khách (kết quả tryOn hoặc ảnh khác có link) thì gọi tool showImage với link ảnh, không được bịa link.',
+    )
   }
 
   return lines.join('\n')
 }
 
-/** Bốn tool của agent: tìm sản phẩm, tra danh mục, xem chi tiết, hiện sản phẩm cho khách.
+/** Sáu tool của agent: tìm sản phẩm, tra danh mục, xem chi tiết, hiện sản phẩm, thử đồ ảo, hiện ảnh.
  *  Định nghĩa từng tool nằm ở `tools/` — mỗi tool một file. */
 export function createAgentTools() {
   return {
@@ -120,6 +132,8 @@ export function createAgentTools() {
     listCategories: createListCategoriesTool(),
     getProductDetail: createGetProductDetailTool(),
     showProducts: createShowProductsTool(),
+    tryOn: createTryOnTool(),
+    showImage: createShowImageTool(),
   }
 }
 
@@ -128,6 +142,8 @@ export type AgentTools = {
   listCategories: InferUITool<ReturnType<typeof createAgentTools>['listCategories']>
   getProductDetail: InferUITool<ReturnType<typeof createAgentTools>['getProductDetail']>
   showProducts: InferUITool<ReturnType<typeof createAgentTools>['showProducts']>
+  tryOn: InferUITool<ReturnType<typeof createAgentTools>['tryOn']>
+  showImage: InferUITool<ReturnType<typeof createAgentTools>['showImage']>
 }
 
 /** Mỗi tin nhắn user mang theo snapshot bộ lọc trang lúc gửi, kèm id sản phẩm đang xem (nếu ở PDP)

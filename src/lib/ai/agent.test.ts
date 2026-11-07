@@ -465,3 +465,31 @@ describe('createAgentTools', () => {
     expect(JSON.stringify(output)).not.toContain('garment-1')
   })
 })
+
+describe('createAgentTools — thử đồ ảo', () => {
+  it('đăng ký tool tryOn và showImage có execute', function () {
+    const tools = createAgentTools()
+
+    expect(typeof tools.tryOn.execute).toBe('function')
+    expect(typeof tools.showImage.execute).toBe('function')
+  })
+})
+
+describe('buildSystemPrompt — thử đồ ảo', () => {
+  it('có ảnh đính kèm thì nhắc tool tryOn và showImage', function () {
+    const prompt = buildSystemPrompt(filtersFixture(), undefined, {
+      key: 'img-1',
+      url: 'https://assets.example.com/img-1',
+    })
+
+    expect(prompt).toContain('tryOn')
+    expect(prompt).toContain('showImage')
+  })
+
+  it('không có ảnh đính kèm thì không nhắc tryOn và showImage', function () {
+    const prompt = buildSystemPrompt(filtersFixture())
+
+    expect(prompt).not.toContain('tryOn')
+    expect(prompt).not.toContain('showImage')
+  })
+})
