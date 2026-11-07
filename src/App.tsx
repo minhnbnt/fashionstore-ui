@@ -3,9 +3,9 @@ import { Route, Routes, useLocation } from 'react-router'
 
 import ChatDockGate from './components/chat/ChatDockGate'
 import Header from './components/Header'
+import { Footer } from './components/home/Sections'
 import RequireAuth from './components/RequireAuth'
 import RequireRole from './components/RequireRole'
-import { Footer } from './components/Sections'
 import AmbientBackground from './components/ui/AmbientBackground'
 
 const Home = lazy(() => import('./pages/Home'))

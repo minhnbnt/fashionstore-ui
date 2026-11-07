@@ -2,8 +2,8 @@ import { useState } from 'react'
 
 import { CheckCircle, Eye, EyeSlash, Key, LockKey, WarningCircle, X } from '@phosphor-icons/react'
 
-import { useUpdatePassword } from '../hooks/useAuthMutations'
-import { friendlyAuthError, validatePasswordReset } from '../lib/auth'
+import { useUpdatePassword } from '../../hooks/useAuthMutations'
+import { friendlyAuthError, validatePasswordReset } from '../../lib/auth'
 
 export default function ChangePasswordForm() {
   const [isOpen, setIsOpen] = useState(false)

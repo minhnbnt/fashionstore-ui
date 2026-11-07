@@ -28,11 +28,11 @@ import {
   withFilter,
 } from '@/lib/searchFilters'
 
+import { ProductCard } from '../components/home/Sections'
 import EmptySearchState from '../components/search/EmptySearchState'
 import FilterPanel from '../components/search/FilterPanel'
 import Pagination from '../components/search/Pagination'
 import ProductRow from '../components/search/ProductRow'
-import { ProductCard } from '../components/Sections'
 
 import type { SearchFilters } from '@/types/search'
 import type { CategoryResponse } from '@generated/model/categoryResponse'

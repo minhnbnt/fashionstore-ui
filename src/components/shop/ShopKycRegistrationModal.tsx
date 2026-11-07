@@ -20,9 +20,9 @@ import {
 import { PLACEHOLDER_IMAGE, apiErrorText, takeData } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
 
-import LocationAddressSelector from './common/LocationAddressSelector'
-import Modal from './Modal'
-import BankSearchSelector from './seller/BankSearchSelector'
+import LocationAddressSelector from '../common/LocationAddressSelector'
+import Modal from '../Modal'
+import BankSearchSelector from '../seller/BankSearchSelector'
 
 import type { BankResponse } from '@/types/bank'
 import type { Step } from '@/types/seller'

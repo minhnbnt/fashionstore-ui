@@ -1,6 +1,6 @@
 import { MagnifyingGlass, Sparkle } from '@phosphor-icons/react'
 
-import { ProductCard } from '../Sections'
+import { ProductCard } from '../home/Sections'
 
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 
