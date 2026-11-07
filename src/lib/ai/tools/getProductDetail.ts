@@ -2,7 +2,7 @@ import { detail1 } from '@generated/endpoints/products/products'
 import { tool } from 'ai'
 import { z } from 'zod'
 
-import { takeData } from '@/lib/api/apiAdapters'
+import { imageUrl, takeData } from '@/lib/api/apiAdapters'
 
 import type { ImageResponse } from '@generated/model/imageResponse'
 import type { ProductResponse } from '@generated/model/productResponse'
@@ -37,8 +37,12 @@ export interface AgentProductDetailOutput {
   reviewCount?: number
   /** Key ảnh đại diện (sortOrder nhỏ nhất), null nếu sản phẩm chưa có ảnh. */
   defaultImageKey?: string | null
+  /** Link ảnh đại diện đầy đủ (ghép từ VITE_ASSETS_URL), null khi không có key. */
+  defaultImageUrl?: string | null
   /** Key ảnh garment dành cho thử đồ ảo, null nếu backend chưa tạo. */
   garmentKey?: string | null
+  /** Link ảnh garment đầy đủ, null khi không có key. */
+  garmentUrl?: string | null
   /** Sản phẩm có hỗ trợ thử đồ ảo hay không. */
   tryOnEnabled?: boolean
   variants: AgentProductDetailVariant[]
@@ -58,9 +62,18 @@ function defaultImageKey(images: ImageResponse[]): string | null {
   return best?.s3Key ?? null
 }
 
+/** Key → link đầy đủ cho model; không có key thì null (không dùng placeholder để khỏi misleading). */
+function assetUrl(key: string | null | undefined): string | null {
+  if (key === null || key === undefined || key === '') {
+    return null
+  }
+  return imageUrl(key)
+}
+
 /** ProductResponse → bản rút gọn cho model: giữ dữ liệu trả lời được khách và key ảnh thử đồ,
  *  bỏ video và dữ liệu thừa. */
 export function toProductDetailOutput(payload: ProductResponse): AgentProductDetailOutput {
+  const imageKey = defaultImageKey(payload.images ?? [])
   return {
     id: payload.id,
     name: payload.name,
@@ -73,8 +86,10 @@ export function toProductDetailOutput(payload: ProductResponse): AgentProductDet
     sizeGuide: payload.sizeGuide ?? null,
     averageRating: payload.averageRating ?? null,
     reviewCount: payload.reviewCount,
-    defaultImageKey: defaultImageKey(payload.images ?? []),
+    defaultImageKey: imageKey,
+    defaultImageUrl: assetUrl(imageKey),
     garmentKey: payload.garmentKey ?? null,
+    garmentUrl: assetUrl(payload.garmentKey),
     tryOnEnabled: payload.tryOnEnabled,
     variants: (payload.variants ?? []).map(function (variant) {
       return {

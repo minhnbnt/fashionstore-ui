@@ -421,6 +421,7 @@ describe('createAgentTools', () => {
   })
 
   it('getProductDetail gọi API chi tiết với id và trả output rút gọn', async function () {
+    vi.stubEnv('VITE_ASSETS_URL', 'https://assets.example.com')
     detail1Mock.mockResolvedValue({
       status: 200,
       data: productDetailFixture(),
@@ -443,13 +444,16 @@ describe('createAgentTools', () => {
       averageRating: 4.5,
       reviewCount: 12,
       defaultImageKey: 'img-1',
+      defaultImageUrl: 'https://assets.example.com/img-1',
       garmentKey: null,
+      garmentUrl: null,
       tryOnEnabled: false,
       variants: [{ size: 'M', color: 'Hồng', price: 450000, stockQuantity: 3 }],
     })
   })
 
   it('getProductDetail giữ key ảnh cho thử đồ nhưng bỏ video', async function () {
+    vi.stubEnv('VITE_ASSETS_URL', 'https://assets.example.com')
     detail1Mock.mockResolvedValue({
       status: 200,
       data: {
@@ -469,10 +473,13 @@ describe('createAgentTools', () => {
 
     expect(JSON.stringify(output)).toContain('img-1')
     expect(JSON.stringify(output)).toContain('garment-1')
+    expect(JSON.stringify(output)).toContain('https://assets.example.com/img-1')
+    expect(JSON.stringify(output)).toContain('https://assets.example.com/garment-1')
     expect(JSON.stringify(output)).not.toContain('video-1')
   })
 
-  it('defaultImageKey lấy ảnh sortOrder nhỏ nhất và bỏ ảnh thiếu key; thiếu ảnh thì null', async function () {
+  it('defaultImageKey lấy ảnh sortOrder nhỏ nhất, bỏ ảnh thiếu key; thiếu ảnh thì key và url null', async function () {
+    vi.stubEnv('VITE_ASSETS_URL', 'https://assets.example.com')
     detail1Mock.mockResolvedValue({
       status: 200,
       data: {
@@ -487,14 +494,17 @@ describe('createAgentTools', () => {
 
     const tools = createAgentTools()
     const output1 = await tools.getProductDetail.execute?.({ productId: 'p-123' }, executeOptions())
-    expect(output1).toMatchObject({ defaultImageKey: 'img-truoc' })
+    expect(output1).toMatchObject({
+      defaultImageKey: 'img-truoc',
+      defaultImageUrl: 'https://assets.example.com/img-truoc',
+    })
 
     detail1Mock.mockResolvedValue({
       status: 200,
       data: { ...productDetailFixture(), images: [] },
     })
     const output2 = await tools.getProductDetail.execute?.({ productId: 'p-123' }, executeOptions())
-    expect(output2).toMatchObject({ defaultImageKey: null })
+    expect(output2).toMatchObject({ defaultImageKey: null, defaultImageUrl: null })
   })
 })
 

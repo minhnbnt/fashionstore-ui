@@ -14,7 +14,7 @@ export const tryOnInputSchema = z.object({
     .string()
     .min(1)
     .describe(
-      'S3 key ảnh sản phẩm: ưu tiên garmentKey nếu có, không thì defaultImageKey — lấy từ getProductDetail hoặc searchProducts/showProducts',
+      'S3 key ảnh sản phẩm (chỉ truyền key, không truyền URL đầy đủ): ưu tiên garmentKey nếu có, không thì defaultImageKey — lấy từ getProductDetail hoặc searchProducts/showProducts',
     ),
   category: z.enum(['tops', 'bottoms', 'one-pieces']).describe('Loại trang phục của sản phẩm'),
   garmentPhotoType: z
