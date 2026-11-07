@@ -114,7 +114,7 @@ export function buildSystemPrompt(
     lines.push('')
     lines.push('Khách đã đính kèm 1 ảnh (link: ' + image.url + '). Tham khảo ảnh này khi tư vấn.')
     lines.push(
-      '- Khách muốn thử đồ thì gọi tool tryOn: personImageUrl là link ảnh khách đính kèm ở trên, garmentImageKey là key ảnh sản phẩm (lấy từ kết quả searchProducts/showProducts), category và garmentPhotoType mô tả sản phẩm. tryOn chỉ tạo và lưu ảnh, khách không thấy gì.',
+      '- Khách muốn thử đồ thì gọi tool tryOn: personImageUrl là link ảnh khách đính kèm ở trên, garmentImageKey là key ảnh sản phẩm (ưu tiên garmentKey nếu sản phẩm có, không thì defaultImageKey — lấy từ getProductDetail nếu khách đang xem sản phẩm đó, hoặc từ kết quả searchProducts/showProducts), category và garmentPhotoType mô tả sản phẩm. tryOn chỉ tạo và lưu ảnh, khách không thấy gì.',
     )
     lines.push(
       '- Muốn hiện ảnh cho khách (kết quả tryOn hoặc ảnh khác có link) thì gọi tool showImage với link ảnh, không được bịa link.',

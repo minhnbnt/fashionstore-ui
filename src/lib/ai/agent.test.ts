@@ -442,27 +442,59 @@ describe('createAgentTools', () => {
       sizeGuide: null,
       averageRating: 4.5,
       reviewCount: 12,
+      defaultImageKey: 'img-1',
+      garmentKey: null,
+      tryOnEnabled: false,
       variants: [{ size: 'M', color: 'Hồng', price: 450000, stockQuantity: 3 }],
     })
   })
 
-  it('getProductDetail bỏ field vô ích với model (ảnh, video, garment)', async function () {
+  it('getProductDetail giữ key ảnh cho thử đồ nhưng bỏ video', async function () {
     detail1Mock.mockResolvedValue({
       status: 200,
       data: {
         ...productDetailFixture(),
-        images: [{ s3Key: 'img-1' }],
+        images: [
+          { s3Key: 'img-2', sortOrder: 1 },
+          { s3Key: 'img-1', sortOrder: 0 },
+        ],
         videoKey: 'video-1',
         garmentKey: 'garment-1',
+        tryOnEnabled: true,
       },
     })
 
     const tools = createAgentTools()
     const output = await tools.getProductDetail.execute?.({ productId: 'p-123' }, executeOptions())
 
-    expect(JSON.stringify(output)).not.toContain('img-1')
+    expect(JSON.stringify(output)).toContain('img-1')
+    expect(JSON.stringify(output)).toContain('garment-1')
     expect(JSON.stringify(output)).not.toContain('video-1')
-    expect(JSON.stringify(output)).not.toContain('garment-1')
+  })
+
+  it('defaultImageKey lấy ảnh sortOrder nhỏ nhất và bỏ ảnh thiếu key; thiếu ảnh thì null', async function () {
+    detail1Mock.mockResolvedValue({
+      status: 200,
+      data: {
+        ...productDetailFixture(),
+        images: [
+          { s3Key: '', sortOrder: 0 },
+          { s3Key: 'img-sau', sortOrder: 5 },
+          { s3Key: 'img-truoc', sortOrder: 2 },
+        ],
+      },
+    })
+
+    const tools = createAgentTools()
+    const output1 = await tools.getProductDetail.execute?.({ productId: 'p-123' }, executeOptions())
+    expect(output1).toMatchObject({ defaultImageKey: 'img-truoc' })
+
+    detail1Mock.mockResolvedValue({
+      status: 200,
+      data: { ...productDetailFixture(), images: [] },
+    })
+    const output2 = await tools.getProductDetail.execute?.({ productId: 'p-123' }, executeOptions())
+    expect(output2).toMatchObject({ defaultImageKey: null })
   })
 })
 
@@ -484,6 +516,9 @@ describe('buildSystemPrompt — thử đồ ảo', () => {
 
     expect(prompt).toContain('tryOn')
     expect(prompt).toContain('showImage')
+    expect(prompt).toContain('garmentImageKey')
+    expect(prompt).toContain('defaultImageKey')
+    expect(prompt).toContain('garmentKey')
   })
 
   it('không có ảnh đính kèm thì không nhắc tryOn và showImage', function () {
