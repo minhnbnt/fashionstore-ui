@@ -19,7 +19,7 @@ import { returnItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 import { sellerStatusMeta } from '@/lib/seller/sellerStatus'
 
-import { formatVnd } from '../../lib/format'
+import { formatVnd } from '../../../lib/format'
 
 import type { ReturnItem } from '@/types/seller'
 import type { OrderResponse } from '@generated/model/orderResponse'

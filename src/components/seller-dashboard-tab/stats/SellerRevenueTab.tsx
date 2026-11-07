@@ -19,7 +19,7 @@ import { takeData } from '@/lib/api/apiAdapters'
 import { settlementItem, withdrawalItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 
-import { formatDateTime, formatVnd } from '../../lib/format'
+import { formatDateTime, formatVnd } from '../../../lib/format'
 
 import type { SettlementItem, WithdrawalItem } from '@/types/seller'
 import type { OrderResponse } from '@generated/model/orderResponse'
