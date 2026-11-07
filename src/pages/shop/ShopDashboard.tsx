@@ -31,8 +31,8 @@ import {
   SellerStatsCustomersTab,
   SellerStatsProductsTab,
   SellerStatsRevenueTab,
-} from '../components/seller-dashboard-tab'
-import { SellerLayout } from '../components/seller-dashboard-tab/SellerLayout'
+} from '../../components/seller-dashboard-tab'
+import { SellerLayout } from '../../components/seller-dashboard-tab/SellerLayout'
 
 import type { SellerTabId, ShopProfileData } from '@/types/seller'
 import type { SellerShopMembershipResponse } from '@generated/model/sellerShopMembershipResponse'

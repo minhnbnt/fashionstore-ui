@@ -8,14 +8,14 @@ import {
   useSignIn,
   useSignInWithGoogle,
   useSignUp,
-} from '../hooks/useAuthMutations'
-import { useSessionQuery } from '../hooks/useSession'
+} from '../../hooks/useAuthMutations'
+import { useSessionQuery } from '../../hooks/useSession'
 import {
   friendlyAuthError,
   getDefaultPathForRole,
   getRoleFromSession,
   validateLoginInput,
-} from '../lib/auth'
+} from '../../lib/auth'
 
 import type { Mode } from '@/types/auth'
 

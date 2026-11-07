@@ -34,10 +34,10 @@ import {
   tabCount,
 } from '@/lib/order/orderMonitoring'
 
-import AdminNav from '../components/admin/AdminNav'
-import AdminOrderDetailPanel from '../components/admin/AdminOrderDetailPanel'
-import CancelOrderDialog from '../components/admin/CancelOrderDialog'
-import Pagination from '../components/search/Pagination'
+import AdminNav from '../../components/admin/AdminNav'
+import AdminOrderDetailPanel from '../../components/admin/AdminOrderDetailPanel'
+import CancelOrderDialog from '../../components/admin/CancelOrderDialog'
+import Pagination from '../../components/search/Pagination'
 
 import type { OrderAlertFilter, OrderStatusFilter } from '@/lib/order/orderMonitoring'
 import type { AdminOrderResponse } from '@generated/model/adminOrderResponse'

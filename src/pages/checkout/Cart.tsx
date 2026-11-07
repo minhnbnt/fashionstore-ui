@@ -16,8 +16,8 @@ import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdap
 import { formatVnd } from '@/lib/format'
 import { classifyPriceChange, groupCartByShop, stockState } from '@/lib/shop/cartView'
 
-import { useCart } from '../hooks/useCart'
-import { useWishlist } from '../hooks/useWishlist'
+import { useCart } from '../../hooks/useCart'
+import { useWishlist } from '../../hooks/useWishlist'
 
 import type { CartShopGroup } from '@/lib/shop/cartView'
 import type { CartItemResponse } from '@generated/model/cartItemResponse'

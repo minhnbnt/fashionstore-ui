@@ -5,8 +5,8 @@ import { Heart } from '@phosphor-icons/react'
 import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
-import WishlistButton from '../components/WishlistButton'
-import { useWishlist } from '../hooks/useWishlist'
+import WishlistButton from '../../components/WishlistButton'
+import { useWishlist } from '../../hooks/useWishlist'
 
 import type { WishlistItemResponse } from '@generated/model/wishlistItemResponse'
 

@@ -19,7 +19,7 @@ import {
 } from '@/lib/admin/productModeration'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 
-import AdminShell from '../components/admin/AdminShell'
+import AdminShell from '../../components/admin/AdminShell'
 
 import type { BanProductRequestViolationType } from '@generated/model/banProductRequestViolationType'
 

@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router'
 
 import { CheckCircle, Eye, EyeSlash, Lock, WarningCircle } from '@phosphor-icons/react'
 
-import { useUpdatePassword } from '../hooks/useAuthMutations'
+import { useUpdatePassword } from '../../hooks/useAuthMutations'
 import {
   fetchSession,
   friendlyAuthError,
   subscribeToSessionChanges,
   validatePasswordReset,
-} from '../lib/auth'
+} from '../../lib/auth'
 
 import type { PageStatus } from '@/types/auth'
 

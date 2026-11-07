@@ -13,7 +13,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatFullAddress } from '@/lib/format'
 
-import AddressFormModal from '../components/account/AddressFormModal'
+import AddressFormModal from '../../components/account/AddressFormModal'
 
 import type { AddressResponse } from '@generated/model/addressResponse'
 

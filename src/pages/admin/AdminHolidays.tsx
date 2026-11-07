@@ -30,7 +30,7 @@ import {
   yearOptions,
 } from '@/lib/order/holidays'
 
-import AdminNav from '../components/admin/AdminNav'
+import AdminNav from '../../components/admin/AdminNav'
 
 import type { HolidayResponse } from '@generated/model/holidayResponse'
 import type { HolidaySyncResponse } from '@generated/model/holidaySyncResponse'

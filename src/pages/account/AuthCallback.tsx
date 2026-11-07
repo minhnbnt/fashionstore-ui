@@ -6,7 +6,7 @@ import {
   getDefaultPathForRole,
   getRoleFromSession,
   subscribeToSessionChanges,
-} from '../lib/auth'
+} from '../../lib/auth'
 
 import type { Status } from '@/types/auth'
 import type { Session } from '@supabase/auth-js'
