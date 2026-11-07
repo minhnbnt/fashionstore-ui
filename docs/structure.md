@@ -35,7 +35,7 @@ fashionstore-ui/
 │   │   ├── order/         # orderMonitoring, orderStatus, holidays
 │   │   ├── shop/          # cartView, variants, ratingSummary, bankSearch, addressParser
 │   │   ├── content/       # siteContent, notificationLinks
-│   │   └── ai/            # agent, chatTransport
+│   │   └── ai/            # agent (facade compose), tools/ (mỗi tool 1 file), chatTransport
 │   ├── pages/             # barrel index.ts export lazy mọi trang; root: Home, Search, ProductDetail, Faq, StaticPage
 │   │   ├── admin/         # 10 trang admin (Dashboard/Shops/ShopDetail/Users/UserDetail/Orders/Products/BannedKeywords/Content/Holidays)
 │   │   ├── shop/          # ShopDashboard, ShopStorefront, InvitationAccept
