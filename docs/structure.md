@@ -35,8 +35,8 @@ fashionstore-ui/
 │   │   ├── order/         # orderMonitoring, orderStatus, holidays
 │   │   ├── shop/          # cartView, variants, ratingSummary, bankSearch, addressParser
 │   │   ├── content/       # siteContent, notificationLinks
-│   │   └── ai/            # agent, chatTransport
-│   ├── pages/             # trang public chung: Home, Search, ProductDetail, Faq, StaticPage
+│   │   └── ai/            # agent (facade compose), tools/ (mỗi tool 1 file), chatTransport
+│   ├── pages/             # barrel index.ts export lazy mọi trang; root: Home, Search, ProductDetail, Faq, StaticPage
 │   │   ├── admin/         # 10 trang admin (Dashboard/Shops/ShopDetail/Users/UserDetail/Orders/Products/BannedKeywords/Content/Holidays)
 │   │   ├── shop/          # ShopDashboard, ShopStorefront, InvitationAccept
 │   │   ├── checkout/      # Cart, Checkout, Orders, OrderDetail, Wishlist
@@ -54,7 +54,7 @@ fashionstore-ui/
 
 - Component dùng chung (nút, badge): `src/components/ui/`.
 - Section trang chủ: thêm vào `src/components/home/Sections.tsx` nếu nhỏ, tách file riêng nếu trên ~150 dòng.
-- Trang mới: thuộc domain nào thì vào `src/pages/<domain>/` (admin, shop, checkout, account); public chung thì để `src/pages/`. Route ráp ở `src/App.tsx`.
+- Trang mới: thuộc domain nào thì vào `src/pages/<domain>/` (admin, shop, checkout, account); public chung thì để `src/pages/`. Thêm dòng `export const X = lazy(...)` vào `src/pages/index.ts`, route ráp ở `src/App.tsx`.
 - Logic dùng chung: `src/hooks/`; module `src/lib/` — thuộc domain thì vào `src/lib/<domain>/`, dùng chung nhiều domain thì để root lib. Đặt cạnh file test `X.test.ts`.
 - `src/lib/api/apiFetch.ts` là mutator mà `orval.config.ts` trỏ vào — không dời nếu không sửa kèm config + `pnpm codegen`.
 - Type dùng chung (domain): `src/types/` — seller đặt trong `src/types/seller/`, domain khác là file `.ts` cùng cấp; `index.ts` re-export tất cả.

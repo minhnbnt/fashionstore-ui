@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
 
 import ChatDockGate from './components/chat/ChatDockGate'
@@ -7,35 +7,36 @@ import { Footer } from './components/home/Sections'
 import RequireAuth from './components/RequireAuth'
 import RequireRole from './components/RequireRole'
 import AmbientBackground from './components/ui/AmbientBackground'
-
-const Home = lazy(() => import('./pages/Home'))
-const Login = lazy(() => import('./pages/account/Login'))
-const Account = lazy(() => import('./pages/account/Account'))
-const ProductDetail = lazy(() => import('./pages/ProductDetail'))
-const Search = lazy(() => import('./pages/Search'))
-const AuthCallback = lazy(() => import('./pages/account/AuthCallback'))
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
-const AdminShops = lazy(() => import('./pages/admin/AdminShops'))
-const AdminShopDetail = lazy(() => import('./pages/admin/AdminShopDetail'))
-const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
-const AdminUserDetail = lazy(() => import('./pages/admin/AdminUserDetail'))
-const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'))
-const AdminContent = lazy(() => import('./pages/admin/AdminContent'))
-const StaticPage = lazy(() => import('./pages/StaticPage'))
-const Faq = lazy(() => import('./pages/Faq'))
-const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'))
-const AdminHolidays = lazy(() => import('./pages/admin/AdminHolidays'))
-const AdminBannedKeywords = lazy(() => import('./pages/admin/AdminBannedKeywords'))
-const ShopDashboard = lazy(() => import('./pages/shop/ShopDashboard'))
-const ShopStorefront = lazy(() => import('./pages/shop/ShopStorefront'))
-const ResetPassword = lazy(() => import('./pages/account/ResetPassword'))
-const Cart = lazy(() => import('./pages/checkout/Cart'))
-const Checkout = lazy(() => import('./pages/checkout/Checkout'))
-const Addresses = lazy(() => import('./pages/account/Addresses'))
-const Orders = lazy(() => import('./pages/checkout/Orders'))
-const OrderDetail = lazy(() => import('./pages/checkout/OrderDetail'))
-const Wishlist = lazy(() => import('./pages/checkout/Wishlist'))
-const InvitationAccept = lazy(() => import('./pages/shop/InvitationAccept'))
+import {
+  Account,
+  Addresses,
+  AdminBannedKeywords,
+  AdminContent,
+  AdminDashboard,
+  AdminHolidays,
+  AdminOrders,
+  AdminProducts,
+  AdminShopDetail,
+  AdminShops,
+  AdminUserDetail,
+  AdminUsers,
+  AuthCallback,
+  Cart,
+  Checkout,
+  Faq,
+  Home,
+  InvitationAccept,
+  Login,
+  OrderDetail,
+  Orders,
+  ProductDetail,
+  ResetPassword,
+  Search,
+  ShopDashboard,
+  ShopStorefront,
+  StaticPage,
+  Wishlist,
+} from './pages'
 
 function PageLoading() {
   return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
@@ -65,7 +66,7 @@ function ScrollToHash() {
   return null
 }
 
-function App() {
+export default function App() {
   const location = useLocation()
   const isSellerDashboard = location.pathname === '/shop'
 
@@ -244,5 +245,3 @@ function App() {
     </div>
   )
 }
-
-export default App
