@@ -14,6 +14,7 @@ import {
   showProductsInputSchema,
   toFilterPatch,
   toSearchParams,
+  withImageNotes,
 } from './agent'
 
 import type { AgentUIMessage } from './agent'
@@ -242,15 +243,76 @@ describe('imageFromMessages', () => {
   })
 })
 
+describe('withImageNotes', () => {
+  it('tin nhắn user có ảnh được chèn ghi chú hệ thống chứa link và hướng dẫn readImage', function () {
+    const messages = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'món này còn không' }],
+        metadata: { image: { key: 'img-1', url: 'https://assets.example.com/img-1' } },
+      },
+    ] as unknown as AgentUIMessage[]
+
+    const result = withImageNotes(messages)
+
+    // Ghi chú nằm ở đúng lượt upload, chứa link + hướng dẫn gọi tool, nhắc model chưa xem ảnh.
+    const notes = result[0]?.parts.filter(function (part) {
+      return part.type === 'text' && part.text.includes('Ghi chú hệ thống')
+    })
+    expect(notes).toHaveLength(1)
+    const note = notes?.[0]
+    if (note?.type === 'text') {
+      expect(note.text).toContain('https://assets.example.com/img-1')
+      expect(note.text).toContain('readImage')
+      expect(note.text).toContain('chưa xem được nội dung ảnh')
+    }
+    // Text gốc của người dùng vẫn nguyên.
+    expect(
+      result[0]?.parts.some(function (part) {
+        return part.type === 'text' && part.text === 'món này còn không'
+      }),
+    ).toBe(true)
+  })
+
+  it('không đụng vào message gốc (tạo bản sao, không mutate)', function () {
+    const parts = [{ type: 'text', text: 'xem giúp' }]
+    const messages = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts,
+        metadata: { image: { key: 'img-1', url: 'https://assets.example.com/img-1' } },
+      },
+    ] as unknown as AgentUIMessage[]
+
+    withImageNotes(messages)
+
+    expect(parts).toHaveLength(1)
+  })
+
+  it('message không có ảnh hoặc không phải user thì giữ nguyên', function () {
+    const messages = [
+      { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'chào' }] },
+      { id: 'a1', role: 'assistant', parts: [] },
+    ] as unknown as AgentUIMessage[]
+
+    const result = withImageNotes(messages)
+
+    expect(result[0]?.parts).toHaveLength(1)
+    expect(result[1]?.parts).toHaveLength(0)
+  })
+})
+
 describe('buildSystemPrompt — ảnh đính kèm', () => {
-  it('có ảnh thì nhúng link ảnh vào prompt để model biết', function () {
+  it('có ảnh thì prompt không nhúng link ảnh — link nằm ở ghi chú hệ thống trong lượt upload', function () {
     const prompt = buildSystemPrompt(filtersFixture(), undefined, {
       key: 'img-1',
       url: 'https://assets.example.com/img-1',
     })
 
-    expect(prompt).toContain('đính kèm')
-    expect(prompt).toContain('https://assets.example.com/img-1')
+    expect(prompt).not.toContain('https://assets.example.com/img-1')
+    expect(prompt).not.toContain('đính kèm 1 ảnh')
   })
 
   it('không có ảnh thì không nhắc ảnh trong prompt', function () {
@@ -561,5 +623,21 @@ describe('buildSystemPrompt — đọc ảnh', () => {
     })
 
     expect(prompt).toContain('readImage')
+  })
+})
+
+describe('createAgentTools — ngữ cảnh trang', () => {
+  it('đăng ký tool getPageContext có execute', function () {
+    const tools = createAgentTools()
+
+    expect(typeof tools.getPageContext.execute).toBe('function')
+  })
+})
+
+describe('buildSystemPrompt — ngữ cảnh trang', () => {
+  it('luôn nhắc tool getPageContext, kể cả khi đã biết sản phẩm đang xem', function () {
+    const prompt = buildSystemPrompt(filtersFixture(), { id: 'p-123' })
+
+    expect(prompt).toContain('getPageContext')
   })
 })

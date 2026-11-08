@@ -556,7 +556,7 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
   }
 
   describe('đính kèm ảnh', () => {
-    it('chọn ảnh → upload lên S3, hiện preview và gửi kèm file part + metadata.image', async function () {
+    it('chọn ảnh → upload lên S3, hiện preview, gửi kèm metadata.image và không nhúng ảnh vào context', async function () {
       uploadImageMock.mockResolvedValue('chat-img-1')
       const user = userEvent.setup()
       const captured: { messages: AgentUIMessage[] } = { messages: [] }
@@ -576,13 +576,12 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
       expect(uploadImageMock).toHaveBeenCalledTimes(1)
       expect(last?.metadata?.image?.key).toBe('chat-img-1')
       expect(last?.metadata?.image?.url).toContain('chat-img-1')
+      // Ảnh không nhúng vào context (không file part) — agent chỉ nhận chỉ dẫn
+      // "khách vừa đính kèm ảnh, link…" trong system prompt, muốn xem thì gọi tool readImage.
       const filePart = last?.parts.find(function (part) {
         return part.type === 'file'
       })
-      expect(filePart).toMatchObject({ type: 'file', mediaType: 'image/png' })
-      if (filePart?.type === 'file') {
-        expect(filePart.url).toContain('chat-img-1')
-      }
+      expect(filePart).toBeUndefined()
     })
 
     it('chưa chọn chữ nhưng có ảnh thì vẫn gửi được tin nhắn', async function () {
@@ -597,16 +596,11 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
       })
       await user.click(sendButton())
 
-      const last = await waitFor(function () {
-        const message = captured.messages[captured.messages.length - 1]
-        expect(
-          message?.parts.some(function (part) {
-            return part.type === 'file'
-          }),
-        ).toBe(true)
-        return message
+      await waitFor(function () {
+        expect(captured.messages[captured.messages.length - 1]?.metadata?.image?.key).toBe(
+          'chat-img-1',
+        )
       })
-      expect(last.metadata?.image?.key).toBe('chat-img-1')
     })
 
     it('đang upload thì khóa nút gửi, xong thì mở lại', async function () {
@@ -677,7 +671,7 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
       expect(screen.queryByAltText('Ảnh sẽ gửi kèm')).toBeNull()
     })
 
-    it('ảnh đã gửi hiện thumbnail trong tin nhắn user với link S3', async function () {
+    it('ảnh đã gửi hiện thumbnail trong tin nhắn user theo link S3 trong metadata', async function () {
       uploadImageMock.mockResolvedValue('chat-img-1')
       const user = userEvent.setup()
       renderTab({ config: configFixture(), transport: transportOf([]) })

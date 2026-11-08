@@ -27,7 +27,7 @@ import type {
 } from '@/lib/ai/agent'
 import type { SearchFilters } from '@/types/search'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
-import type { FileUIPart, ToolUIPart, ChatTransport } from 'ai'
+import type { ToolUIPart, ChatTransport } from 'ai'
 
 export interface AgentTabProps {
   /** Inject cho test; bỏ trống thì đọc từ biến env VITE_AI_*. */
@@ -42,12 +42,14 @@ type ProductDetailToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-getPr
 type TryOnToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-tryOn' }>
 type ShowImageToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-showImage' }>
 type ReadImageToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-readImage' }>
+type PageContextToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-getPageContext' }>
 
-/** Ảnh đang soạn kèm tin nhắn: preview local, trạng thái upload, kết quả S3 (nếu xong). */
+/** Ảnh đang soạn kèm tin nhắn: preview local, trạng thái upload, kết quả S3 (nếu xong).
+ *  Ảnh KHÔNG nhúng vào context tin nhắn — agent chỉ nhận link qua metadata/system prompt,
+ *  muốn xem nội dung thì tự gọi tool readImage. */
 interface AttachedImage {
   previewUrl: string | null
   status: 'uploading' | 'ready' | 'error'
-  mediaType?: string
   filename?: string
   image?: AgentImageContext
   error?: string
@@ -241,6 +243,18 @@ function ReadImageBlock({ part }: { part: ReadImageToolPart }) {
   return null
 }
 
+/** Tool getPageContext chỉ cho model biết khách đang ở trang nào — khách không cần thấy
+ *  kết quả, chỉ hiện pill khi đang chạy (giữ khung chat sạch khi model tra lại nhiều lần). */
+function PageContextToolBlock({ part }: { part: PageContextToolPart }) {
+  if (part.state === 'input-streaming' || part.state === 'input-available') {
+    return <StatusPill text="Đang xem trang…" />
+  }
+  if (part.state === 'output-error') {
+    return <StatusPill text="Có lỗi khi xem trang." />
+  }
+  return null
+}
+
 /** Nội dung tab "Trợ lý AI" của ChatDock: chat streaming với agent tìm sản phẩm.
  *  Hoạt động ở mọi trang — bộ lọc đọc từ URL, "Lọc trên trang" navigate về /search. */
 export default function AgentTab(props: AgentTabProps) {
@@ -327,7 +341,7 @@ export default function AgentTab(props: AgentTabProps) {
     clearAttached()
     const seq = attachSeqRef.current
     const previewUrl = window.URL.createObjectURL(file)
-    setAttached({ previewUrl, status: 'uploading', mediaType: file.type, filename: file.name })
+    setAttached({ previewUrl, status: 'uploading', filename: file.name })
     uploadImage(file)
       .then(function (key) {
         if (attachSeqRef.current !== seq) {
@@ -336,7 +350,6 @@ export default function AgentTab(props: AgentTabProps) {
         setAttached({
           previewUrl,
           status: 'ready',
-          mediaType: file.type,
           filename: file.name,
           image: { key, url: imageUrl(key) },
         })
@@ -379,18 +392,13 @@ export default function AgentTab(props: AgentTabProps) {
     if (productId !== undefined) {
       metadata.product = { id: productId }
     }
-    if (image !== undefined && attached !== null) {
+    if (image !== undefined) {
       metadata.image = image
-      const file: FileUIPart = {
-        type: 'file',
-        mediaType: attached.mediaType ?? 'image/png',
-        filename: attached.filename,
-        url: image.url,
-      }
-      void chat.sendMessage({ text, metadata, files: [file] })
-    } else {
-      void chat.sendMessage({ text, metadata })
     }
+    // Không gửi file part: ảnh không vào context. Agent muốn xem thì gọi readImage
+    // với link trong system prompt — tool fetch bằng fetch thường nên không dính
+    // blocklist localhost của AI SDK, và các lượt sau không phải re-send base64.
+    void chat.sendMessage({ text, metadata })
     setInput('')
     clearAttached()
   }
@@ -404,6 +412,13 @@ export default function AgentTab(props: AgentTabProps) {
     if (message.role === 'user') {
       return (
         <div key={message.id} className={messageRowClass(true)}>
+          {message.metadata?.image !== undefined && (
+            <img
+              src={message.metadata.image.url}
+              alt="Ảnh bạn đã gửi"
+              className="max-w-[78%] rounded-2xl rounded-tr-xs object-cover"
+            />
+          )}
           {message.parts.map(function (part, index) {
             const key = message.id + '-' + String(index)
             if (part.type === 'text') {
@@ -414,16 +429,6 @@ export default function AgentTab(props: AgentTabProps) {
                 <p key={key} className={bubbleClass(true)}>
                   {part.text}
                 </p>
-              )
-            }
-            if (part.type === 'file') {
-              return (
-                <img
-                  key={key}
-                  src={part.url}
-                  alt="Ảnh bạn đã gửi"
-                  className="max-w-[78%] rounded-2xl rounded-tr-xs object-cover"
-                />
               )
             }
             return null
@@ -471,6 +476,9 @@ export default function AgentTab(props: AgentTabProps) {
           }
           if (part.type === 'tool-readImage') {
             return <ReadImageBlock key={key} part={part} />
+          }
+          if (part.type === 'tool-getPageContext') {
+            return <PageContextToolBlock key={key} part={part} />
           }
           return null
         })}

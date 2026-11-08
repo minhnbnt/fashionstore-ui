@@ -7,6 +7,7 @@ import {
   filtersFromMessages,
   imageFromMessages,
   productFromMessages,
+  withImageNotes,
 } from './agent'
 
 import type { AgentConfig, AgentUIMessage } from './agent'
@@ -28,6 +29,9 @@ export function createAgentTransport(options: {
     name: 'fashionstore-agent',
     baseURL: options.config.baseUrl,
     apiKey: options.config.apiKey,
+    // Ảnh trong tool result (readImage) phải gửi dạng content array (image_url);
+    // để mặc định false thì SDK JSON.stringify cả base64 thành text — phình token.
+    supportsMultiPartToolContent: true,
   })
 
   return {
@@ -40,7 +44,7 @@ export function createAgentTransport(options: {
           productFromMessages(messages),
           imageFromMessages(messages),
         ),
-        messages: await convertToModelMessages(messages, { tools }),
+        messages: await convertToModelMessages(withImageNotes(messages), { tools }),
         tools,
         stopWhen: stepCountIs(MAX_AGENT_STEPS),
         abortSignal,

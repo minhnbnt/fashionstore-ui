@@ -15,6 +15,19 @@ vi.mock('ai', async function (importOriginal) {
   }
 })
 
+// Giả provider để bắt options: phải bật multi-part tool content, nếu không ảnh
+// trong tool result (readImage) bị JSON.stringify thành text — phình token.
+vi.mock('@ai-sdk/openai-compatible', async function (importOriginal) {
+  const actual = await importOriginal<typeof import('@ai-sdk/openai-compatible')>()
+  return {
+    ...actual,
+    createOpenAICompatible: vi.fn(function () {
+      return vi.fn()
+    }),
+  }
+})
+
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { streamText, toUIMessageStream } from 'ai'
 
 function configFixture(): AgentConfig {
@@ -59,6 +72,14 @@ describe('createAgentTransport', () => {
     expect(typeof transport.reconnectToStream).toBe('function')
   })
 
+  it('bật multi-part tool content để ảnh trong tool result thành image_url', function () {
+    createAgentTransport({ config: configFixture() })
+
+    expect(vi.mocked(createOpenAICompatible)).toHaveBeenCalledWith(
+      expect.objectContaining({ supportsMultiPartToolContent: true }),
+    )
+  })
+
   it('không hỗ trợ resume: reconnectToStream trả null', async function () {
     const transport = createAgentTransport({ config: configFixture() })
 
@@ -101,5 +122,37 @@ describe('createAgentTransport', () => {
     expect(messagesJson).toContain('"type":"file"')
     expect(messagesJson).toContain('YW5o')
     expect(messagesJson).toContain('image/png')
+  })
+
+  it('tin nhắn user có ảnh đính kèm được chèn ghi chú hệ thống vào đúng lượt đó', async function () {
+    vi.mocked(streamText).mockReturnValue({ fullStream: 'full-stream' } as never)
+    vi.mocked(toUIMessageStream).mockReturnValue(new ReadableStream() as never)
+
+    const transport = createAgentTransport({ config: configFixture() })
+    await transport.sendMessages({
+      chatId: 'chat-1',
+      messages: [
+        {
+          id: 'u1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'món này thế nào' }],
+          metadata: {
+            filters: {},
+            image: { key: 'img-9', url: 'https://assets.example.com/img-9' },
+          },
+        },
+      ],
+      abortSignal: undefined,
+    } as never)
+
+    // Ghi chú hệ thống phải nằm trong messages gửi cho model — link + hướng dẫn readImage
+    // đứng ngay tại lượt upload, không nằm trong system prompt.
+    const call = vi.mocked(streamText).mock.calls[0]?.[0] as unknown as {
+      messages: Array<Record<string, unknown>>
+    }
+    const messagesJson = JSON.stringify(call.messages)
+    expect(messagesJson).toContain('Ghi chú hệ thống')
+    expect(messagesJson).toContain('https://assets.example.com/img-9')
+    expect(messagesJson).toContain('readImage')
   })
 })
