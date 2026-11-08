@@ -11,10 +11,10 @@ import { takeData } from '@/lib/apiAdapters'
 import { getRoleFromSession, refreshAuthSession } from '@/lib/auth'
 
 import AddressBookTab from '../components/account/AddressBookTab'
+import AvatarUploader from '../components/account/AvatarUploader'
 import MyShopsTab from '../components/account/MyShopsTab'
 import ChangePasswordForm from '../components/ChangePasswordForm'
 import ShopKycRegistrationModal from '../components/ShopKycRegistrationModal'
-import UserAvatar from '../components/UserAvatar'
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useSessionQuery } from '../hooks/useSession'
 
@@ -118,7 +118,7 @@ export default function Account() {
 
           {session !== undefined && session !== null && (
             <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white/70 p-4 dark:bg-white/10">
-              <UserAvatar name={userEmail || 'guest'} size={48} />
+              <AvatarUploader name={userEmail || 'guest'} avatarKey={profile?.avatarKey} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-zinc-800 dark:text-zinc-100">
                   {userEmail}

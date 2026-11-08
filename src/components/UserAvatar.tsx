@@ -1,7 +1,21 @@
 import Avatar from 'boring-avatars'
 
-export default function UserAvatar(props: { name: string; size?: number }) {
+export default function UserAvatar(props: { name: string; size?: number; src?: string }) {
   const size = props.size ?? 40
+  const src = props.src ?? ''
+
+  if (src !== '') {
+    return (
+      <span
+        className="inline-block shrink-0 overflow-hidden rounded-full"
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      >
+        <img src={src} alt="" className="h-full w-full object-cover" />
+      </span>
+    )
+  }
+
   return (
     <span
       className="inline-block shrink-0 overflow-hidden rounded-full"
