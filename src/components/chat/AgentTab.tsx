@@ -3,10 +3,27 @@ import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 
 import { useChat } from '@ai-sdk/react'
-import { MagnifyingGlass, PaperPlaneRight, Stop } from '@phosphor-icons/react'
+import {
+  CaretDown,
+  ChatCircleDots,
+  MagnifyingGlass,
+  PaperPlaneRight,
+  Plus,
+  Stop,
+  Trash,
+} from '@phosphor-icons/react'
 
 import Markdown from '@/components/Markdown'
+import {
+  useAiConversations,
+  useAiMessages,
+  useCreateAiConversation,
+  useDeleteAiConversation,
+  useSaveAiMessage,
+} from '@/hooks/useAiHistory'
+import { useSessionQuery } from '@/hooks/useSession'
 import { readAgentConfig } from '@/lib/ai/agent'
+import { deserializeAgentMessage, serializeAgentMessage } from '@/lib/ai/agentHistory'
 import { createAgentTransport } from '@/lib/ai/chatTransport'
 import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
@@ -31,6 +48,10 @@ export interface AgentTabProps {
   config?: AgentConfig
   /** Inject cho test; bỏ trống thì dựng transport chạy agent trong browser. */
   transport?: ChatTransport<AgentUIMessage>
+  /** ID cuộc trò chuyện AI đang chọn (dùng cho trang /messages). */
+  activeConversationId?: string | null
+  /** Callback khi đổi cuộc trò chuyện. */
+  onSelectConversation?: (id: string | null) => void
 }
 
 type SearchToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-searchProducts' }>
@@ -186,6 +207,32 @@ export default function AgentTab(props: AgentTabProps) {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
 
+  const sessionQuery = useSessionQuery()
+  const isLoggedIn = sessionQuery.data?.user !== undefined
+
+  const conversationsQuery = useAiConversations(isLoggedIn)
+  const conversations = conversationsQuery.data ?? []
+
+  const [internalConvId, setInternalConvId] = useState<string | null>(null)
+  const activeConvId =
+    props.activeConversationId !== undefined ? props.activeConversationId : internalConvId
+
+  function handleSetActiveConvId(id: string | null) {
+    if (props.onSelectConversation) {
+      props.onSelectConversation(id)
+    } else {
+      setInternalConvId(id)
+    }
+  }
+
+  const [showConvDropdown, setShowConvDropdown] = useState(false)
+
+  const messagesQuery = useAiMessages(activeConvId, isLoggedIn)
+  const createConvMutation = useCreateAiConversation()
+  const deleteConvMutation = useDeleteAiConversation()
+  const saveMsgMutation = useSaveAiMessage()
+  const savedMsgIdsRef = useRef<Set<string>>(new Set())
+
   // Cấu hình chốt một lần: ưu tiên prop inject (test), không thì đọc env.
   const config = useMemo(
     function () {
@@ -221,6 +268,60 @@ export default function AgentTab(props: AgentTabProps) {
   const chat = useChat<AgentUIMessage>({ transport: agentTransport })
   const busy = chat.status === 'submitted' || chat.status === 'streaming'
 
+  const chatRef = useRef(chat)
+  useEffect(() => {
+    chatRef.current = chat
+  })
+
+  const saveMsgRef = useRef(saveMsgMutation.mutate)
+  useEffect(() => {
+    saveMsgRef.current = saveMsgMutation.mutate
+  })
+
+  // Hydrate messages khi load cuộc trò chuyện cũ
+  useEffect(
+    function () {
+      if (messagesQuery.data !== undefined && messagesQuery.data.length > 0) {
+        const hydrated = messagesQuery.data.map(deserializeAgentMessage)
+        savedMsgIdsRef.current.clear()
+        for (const m of hydrated) {
+          savedMsgIdsRef.current.add(m.id)
+        }
+        chatRef.current.setMessages(hydrated)
+      } else if (activeConvId === null) {
+        savedMsgIdsRef.current.clear()
+      }
+    },
+    [messagesQuery.data, activeConvId],
+  )
+
+  // Lưu tin nhắn assistant khi hoàn thành streaming
+  useEffect(
+    function () {
+      if (!isLoggedIn || activeConvId === null) {
+        return
+      }
+      if (chat.status === 'ready' && chat.messages.length > 0) {
+        const lastMsg = chat.messages[chat.messages.length - 1]
+        if (
+          lastMsg !== undefined &&
+          lastMsg.role === 'assistant' &&
+          !savedMsgIdsRef.current.has(lastMsg.id)
+        ) {
+          savedMsgIdsRef.current.add(lastMsg.id)
+          const serialized = serializeAgentMessage(lastMsg)
+          saveMsgRef.current({
+            conversationId: activeConvId,
+            role: serialized.role,
+            content: serialized.content,
+            metadata: serialized.metadata,
+          })
+        }
+      }
+    },
+    [chat.status, chat.messages, activeConvId, isLoggedIn],
+  )
+
   const scrollRef = useRef<HTMLDivElement | null>(null)
   useEffect(
     function () {
@@ -232,8 +333,7 @@ export default function AgentTab(props: AgentTabProps) {
     [chat.messages],
   )
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handleSendAction() {
     const text = input.trim()
     if (text === '') {
       return
@@ -245,6 +345,32 @@ export default function AgentTab(props: AgentTabProps) {
     }
     void chat.sendMessage({ text, metadata })
     setInput('')
+
+    if (isLoggedIn) {
+      let targetConvId = activeConvId
+      if (targetConvId === null) {
+        try {
+          const newConv = await createConvMutation.mutateAsync(text.slice(0, 40))
+          targetConvId = newConv.id
+          handleSetActiveConvId(targetConvId)
+        } catch (e) {
+          console.error('Lỗi tạo hội thoại AI:', e)
+        }
+      }
+      if (targetConvId !== null) {
+        saveMsgMutation.mutate({
+          conversationId: targetConvId,
+          role: 'user',
+          content: text,
+          metadata: JSON.stringify({ parts: [{ type: 'text', text }] }),
+        })
+      }
+    }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    void handleSendAction()
   }
 
   function applyFilters(patch: Partial<SearchFilters>) {
@@ -311,8 +437,107 @@ export default function AgentTab(props: AgentTabProps) {
     )
   }
 
+  const currentConversation = conversations.find(function (c) {
+    return c.id === activeConvId
+  })
+
   return (
     <>
+      {isLoggedIn && (
+        <div className="relative border-b border-zinc-100 bg-zinc-50/70 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/5">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={function () {
+                setShowConvDropdown(!showConvDropdown)
+              }}
+              className="flex min-w-0 items-center gap-1.5 font-semibold text-zinc-700 hover:text-sky-600 dark:text-zinc-200"
+            >
+              <ChatCircleDots size={14} className="shrink-0 text-sky-600" />
+              <span className="max-w-[180px] truncate">
+                {currentConversation ? currentConversation.title : 'Cuộc trò chuyện mới'}
+              </span>
+              <CaretDown size={12} className="shrink-0 text-zinc-400" />
+            </button>
+
+            <button
+              type="button"
+              onClick={function () {
+                handleSetActiveConvId(null)
+                chat.setMessages([])
+                setShowConvDropdown(false)
+              }}
+              className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-white px-2.5 py-1 text-[11px] font-bold text-sky-700 shadow-xs hover:bg-sky-50 dark:border-white/10 dark:bg-white/10 dark:text-sky-300"
+            >
+              <Plus size={12} weight="bold" />
+              <span>Đoạn chat mới</span>
+            </button>
+          </div>
+
+          {showConvDropdown && (
+            <div className="absolute top-full right-0 left-0 z-20 max-h-60 overflow-y-auto border-b border-zinc-200 bg-white p-2 shadow-lg dark:border-white/10 dark:bg-zinc-900">
+              <p className="px-2 py-1 text-[10px] font-bold text-zinc-400 uppercase">
+                Lịch sử tư vấn AI ({conversations.length})
+              </p>
+              {conversations.length === 0 && (
+                <p className="px-2 py-2 text-xs text-zinc-500">
+                  Chưa có lịch sử cuộc trò chuyện nào.
+                </p>
+              )}
+              {conversations.map(function (c) {
+                const isSelected = c.id === activeConvId
+                let itemClass =
+                  'flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition hover:bg-zinc-100 dark:hover:bg-white/5'
+                if (isSelected) {
+                  itemClass =
+                    'flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition bg-sky-50 font-bold text-sky-700 dark:bg-white/10 dark:text-sky-300'
+                }
+                return (
+                  <div key={c.id} className={itemClass}>
+                    <button
+                      type="button"
+                      onClick={function () {
+                        handleSetActiveConvId(c.id)
+                        setShowConvDropdown(false)
+                      }}
+                      className="min-w-0 flex-1 truncate text-left"
+                    >
+                      {c.title}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={function (e) {
+                        e.stopPropagation()
+                        deleteConvMutation.mutate(c.id)
+                        if (activeConvId === c.id) {
+                          handleSetActiveConvId(null)
+                          chat.setMessages([])
+                        }
+                      }}
+                      title="Xóa đoạn chat này"
+                      aria-label={'Xóa cuộc trò chuyện ' + c.title}
+                      className="rounded-lg p-1 text-zinc-400 hover:text-red-500 dark:hover:text-red-400"
+                    >
+                      <Trash size={13} />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Guest Notice */}
+      {!isLoggedIn && (
+        <div className="mx-4 mt-2 flex items-center justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-white/10 dark:bg-amber-950/30 dark:text-amber-200">
+          <span>Đăng nhập để lưu lại lịch sử tư vấn AI.</span>
+          <Link to="/login" className="shrink-0 font-bold underline">
+            Đăng nhập
+          </Link>
+        </div>
+      )}
+
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
         {chat.messages.length === 0 && (

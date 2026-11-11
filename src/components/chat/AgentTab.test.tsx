@@ -1,5 +1,6 @@
 import { MemoryRouter, useLocation } from 'react-router'
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 // @vitest-environment happy-dom
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -73,11 +74,16 @@ function renderTab(props: {
   transport?: ChatTransport<AgentUIMessage>
   route?: string
 }) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  })
   return render(
-    <MemoryRouter initialEntries={[props.route ?? '/']}>
-      <LocationProbe />
-      <AgentTab config={props.config} transport={props.transport} />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[props.route ?? '/']}>
+        <LocationProbe />
+        <AgentTab config={props.config} transport={props.transport} />
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 
@@ -534,5 +540,11 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
 
     expect(await screen.findByText('Đã tra cứu sản phẩm: Áo Sơ Mi Lụa')).toBeTruthy()
+  })
+
+  it('khách vãng lai (guest) thấy banner nhắc đăng nhập để lưu lịch sử AI', function () {
+    renderTab({ config: configFixture() })
+    expect(screen.getByText('Đăng nhập để lưu lại lịch sử tư vấn AI.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Đăng nhập' })).toBeTruthy()
   })
 })
