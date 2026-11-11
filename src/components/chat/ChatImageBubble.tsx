@@ -35,12 +35,12 @@ export default function ChatImageBubble({ imageKey, alt = 'Ảnh đính kèm' }:
       </button>
 
       {modalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs"
-        >
-          <div className="relative max-h-[90vh] max-w-[90vw]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs">
+          <dialog
+            open
+            aria-modal="true"
+            className="relative m-0 max-h-[90vh] max-w-[90vw] border-0 bg-transparent p-0"
+          >
             <button
               type="button"
               onClick={() => setModalOpen(false)}
@@ -59,7 +59,7 @@ export default function ChatImageBubble({ imageKey, alt = 'Ảnh đính kèm' }:
                 }
               }}
             />
-          </div>
+          </dialog>
         </div>
       )}
     </>

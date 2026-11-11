@@ -67,15 +67,20 @@ export function deserializeAgentMessage(res: BackendAiMessageResponse): AgentUIM
     parts = [{ type: 'text', text: res.content ?? '' }]
   }
 
-  const role =
-    res.role === 'assistant' || res.role === 'system' || res.role === 'user'
-      ? res.role
-      : 'assistant'
+  let role: AgentUIMessage['role'] = 'assistant'
+  if (res.role === 'assistant' || res.role === 'system' || res.role === 'user') {
+    role = res.role
+  }
+
+  let createdAt = new Date()
+  if (res.sentAt) {
+    createdAt = new Date(res.sentAt)
+  }
 
   return {
     id: res.id,
     role,
     parts,
-    createdAt: res.sentAt ? new Date(res.sentAt) : new Date(),
+    createdAt,
   } as AgentUIMessage
 }

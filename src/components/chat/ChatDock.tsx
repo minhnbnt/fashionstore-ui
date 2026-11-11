@@ -119,7 +119,20 @@ export function ChatDockThread({ conversation, onBack }: ThreadProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const location = useLocation()
   const isProductPage = location.pathname.startsWith('/product/')
-  const currentProductSlug = isProductPage ? location.pathname.replace('/product/', '').trim() : ''
+  let currentProductSlug = ''
+  if (isProductPage) {
+    currentProductSlug = location.pathname.replace('/product/', '').trim()
+  }
+  const viewedProductQuery = useDetail1(currentProductSlug, {
+    query: { enabled: currentProductSlug !== '' },
+  })
+  let canSendViewedProduct = false
+  if (currentProductSlug !== '' && viewedProductQuery.data !== undefined) {
+    const viewedProduct = takeData(viewedProductQuery.data)
+    if (viewedProduct.shopId !== undefined && viewedProduct.shopId === conversation.shopId) {
+      canSendViewedProduct = true
+    }
+  }
 
   // Realtime: tin nhắn mới + read receipt của shop đẩy thẳng vào cache
   useChatMessagesRealtime(conversationId, 'BUYER')
@@ -244,7 +257,15 @@ export function ChatDockThread({ conversation, onBack }: ThreadProps) {
       </div>
 
       <div className="border-t border-zinc-100 p-3 dark:border-white/10">
-        {currentProductSlug !== '' && (
+        {sendMutation.isError && (
+          <p className="mb-2 rounded-xl bg-rose-50 px-2.5 py-1.5 text-[11px] font-medium text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">
+            {apiErrorText(
+              sendMutation.error,
+              'Không gửi được tin nhắn. Chỉ có thể gửi sản phẩm của cửa hàng này.',
+            )}
+          </p>
+        )}
+        {canSendViewedProduct && (
           <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50 px-2.5 py-1.5 dark:border-white/10 dark:bg-white/5">
             <span className="truncate text-xs text-sky-800 dark:text-sky-300">
               Gửi sản phẩm đang xem
@@ -450,7 +471,11 @@ function ChatDockBody(props: ChatDockProps) {
   const [selectedConvId, setSelectedConvId] = useState('')
   const [startError, setStartError] = useState('')
 
-  const activeTab: ChatTab = chosenTab ?? (isLoggedIn ? 'messages' : 'agent')
+  let defaultTab: ChatTab = 'agent'
+  if (isLoggedIn) {
+    defaultTab = 'messages'
+  }
+  const activeTab: ChatTab = chosenTab ?? defaultTab
 
   const productId = isProductPath(location.pathname)
   const productQuery = useDetail1(productId, {

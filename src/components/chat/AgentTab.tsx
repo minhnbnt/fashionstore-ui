@@ -180,8 +180,10 @@ export default function AgentTab(props: AgentTabProps) {
   const conversations = conversationsQuery.data ?? []
 
   const [internalConvId, setInternalConvId] = useState<string | null>(null)
-  const activeConvId =
-    props.activeConversationId !== undefined ? props.activeConversationId : internalConvId
+  let activeConvId = internalConvId
+  if (props.activeConversationId !== undefined) {
+    activeConvId = props.activeConversationId
+  }
 
   function handleSetActiveConvId(id: string | null) {
     if (props.onSelectConversation) {

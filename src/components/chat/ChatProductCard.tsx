@@ -41,13 +41,20 @@ export default function ChatProductCard(props: ChatProductCardProps) {
     const firstImage = data.images?.[0]
     const s3Key = firstImage?.s3Key ?? undefined
 
+    let minPrice: number | undefined
+    let maxPrice: number | undefined
+    if (prices.length > 0) {
+      minPrice = Math.min(...prices)
+      maxPrice = Math.max(...prices)
+    }
+
     product = {
       id: data.id,
       name: data.name,
       slug: data.slug,
       defaultImageKey: s3Key,
-      minPrice: prices.length > 0 ? Math.min(...prices) : undefined,
-      maxPrice: prices.length > 0 ? Math.max(...prices) : undefined,
+      minPrice,
+      maxPrice,
     }
   }
 

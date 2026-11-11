@@ -7,6 +7,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { WebSocketContext } from '@/hooks/useWebSocket'
+import { ApiError } from '@/lib/api/apiFetch'
 
 import ChatDock from './ChatDock'
 
@@ -14,9 +15,10 @@ import type { ChatConversationResponse } from '@generated/model/chatConversation
 import type { ChatMessageResponse } from '@generated/model/chatMessageResponse'
 import type { Client } from '@stomp/stompjs'
 
-const { customFetchMock, uploadImageMock } = vi.hoisted(() => ({
+const { customFetchMock, uploadImageMock, useDetail1Mock } = vi.hoisted(() => ({
   customFetchMock: vi.fn<(url: string, options?: RequestInit) => Promise<unknown>>(),
   uploadImageMock: vi.fn().mockResolvedValue('chat/uploaded-key.jpg'),
+  useDetail1Mock: vi.fn(),
 }))
 
 vi.mock('@/lib/api/apiFetch', async function (importOriginal) {
@@ -43,19 +45,7 @@ vi.mock('motion/react', () => ({
 }))
 
 vi.mock('@generated/endpoints/products/products', () => ({
-  useDetail1: vi.fn().mockReturnValue({
-    data: {
-      status: 200,
-      data: {
-        id: 'prod-1',
-        name: 'Áo Sơ Mi Nam',
-        slug: 'ao-so-mi',
-        images: [{ s3Key: 'products/ao.jpg' }],
-        variants: [{ price: 200000 }],
-      },
-    },
-    isPending: false,
-  }),
+  useDetail1: (id: string, opts?: { query?: { enabled?: boolean } }) => useDetail1Mock(id, opts),
 }))
 
 function conversationFixture(): ChatConversationResponse {
@@ -119,6 +109,45 @@ describe('ChatDock Media & Product Link Enhancements', () => {
     fakeClient = new FakeStompClient()
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    })
+
+    useDetail1Mock.mockImplementation(function (
+      id: string,
+      opts?: { query?: { enabled?: boolean } },
+    ) {
+      if (opts?.query?.enabled === false) {
+        return { data: undefined, isPending: false }
+      }
+      if (id === 'other-shop-prod') {
+        return {
+          isPending: false,
+          data: {
+            status: 200,
+            data: {
+              id: 'other-shop-prod',
+              shopId: 'shop-other',
+              name: 'Sản phẩm shop khác',
+              slug: 'other-shop-prod',
+              images: [{ s3Key: 'products/other.jpg' }],
+              variants: [{ price: 450000 }],
+            },
+          },
+        }
+      }
+      return {
+        isPending: false,
+        data: {
+          status: 200,
+          data: {
+            id: 'prod-1',
+            shopId: 'shop-1',
+            name: 'Áo Sơ Mi Nam',
+            slug: 'ao-so-mi',
+            images: [{ s3Key: 'products/ao.jpg' }],
+            variants: [{ price: 200000 }],
+          },
+        },
+      }
     })
 
     customFetchMock.mockImplementation(async function (url, options) {
@@ -294,5 +323,94 @@ describe('ChatDock Media & Product Link Enhancements', () => {
     expect(screen.getByText('Bạn xem mẫu này nhé:')).toBeTruthy()
     expect(screen.queryByText(/\/product\/22222222-0000-0000-0001-000000000001/)).toBeNull()
     expect(screen.queryByText(/\/product\/ao-so-mi/)).toBeNull()
+  })
+
+  it('không hiện nút Gửi sản phẩm đang xem khi sản phẩm thuộc shop khác, và hiện khi cùng shop', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/product/other-shop-prod']}>
+          <WebSocketContext.Provider value={fakeClient as unknown as Client}>
+            <ChatDock />
+          </WebSocketContext.Provider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Mở khung chat' }))
+    await waitFor(() => {
+      expect(screen.getByText('Áo Trắng Store')).toBeTruthy()
+    })
+    await user.click(screen.getByText('Áo Trắng Store'))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Gửi tin nhắn' })).toBeTruthy()
+    })
+    expect(screen.queryByText('Gửi sản phẩm đang xem')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Gửi ngay' })).toBeNull()
+
+    cleanup()
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/product/ao-so-mi']}>
+          <WebSocketContext.Provider value={fakeClient as unknown as Client}>
+            <ChatDock />
+          </WebSocketContext.Provider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Mở khung chat' }))
+    await waitFor(() => {
+      expect(screen.getByText('Áo Trắng Store')).toBeTruthy()
+    })
+    await user.click(screen.getByText('Áo Trắng Store'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Gửi sản phẩm đang xem')).toBeTruthy()
+    })
+    expect(screen.getByRole('button', { name: 'Gửi ngay' })).toBeTruthy()
+  })
+
+  it('hiển thị thông báo lỗi khi gửi link sản phẩm shop khác bị backend từ chối', async () => {
+    const user = userEvent.setup()
+    customFetchMock.mockImplementation(async function (url, options) {
+      if (typeof url === 'string' && url.includes('/api/conversations/mine')) {
+        return envelope([conversationFixture()])
+      }
+      if (typeof url === 'string' && url.includes('/api/conversations/conv-1/messages')) {
+        if (options?.method === 'POST') {
+          throw new ApiError(400, 'Product does not belong to this shop')
+        }
+        return envelope(messagesFixture())
+      }
+      return envelope([])
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <WebSocketContext.Provider value={fakeClient as unknown as Client}>
+            <ChatDock />
+          </WebSocketContext.Provider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Mở khung chat' }))
+    await waitFor(() => {
+      expect(screen.getByText('Áo Trắng Store')).toBeTruthy()
+    })
+    await user.click(screen.getByText('Áo Trắng Store'))
+
+    const input = await screen.findByPlaceholderText('Nhập tin nhắn cho shop...')
+    await user.type(input, '/product/other-shop-prod')
+    await user.click(screen.getByRole('button', { name: 'Gửi tin nhắn' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Product does not belong to this shop')).toBeTruthy()
+    })
   })
 })

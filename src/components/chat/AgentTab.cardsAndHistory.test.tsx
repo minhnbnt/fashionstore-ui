@@ -29,13 +29,17 @@ vi.mock('@generated/endpoints/products/products', () => ({
     if (opts?.query?.enabled === false) {
       return { data: undefined, isPending: false }
     }
+    let productName = 'Sản phẩm gợi ý'
+    if (id === 'p-999') {
+      productName = 'Áo Khoác Tweed'
+    }
     return {
       isPending: false,
       data: {
         status: 200,
         data: {
           id,
-          name: id === 'p-999' ? 'Áo Khoác Tweed' : 'Sản phẩm gợi ý',
+          name: productName,
           slug: id,
           images: [{ s3Key: 'products/tweed.jpg' }],
           variants: [{ price: 620000 }],
@@ -185,7 +189,10 @@ describe('AgentTab product detail cards & AI history persistence', () => {
       }
       if (url === '/api/ai/conversations/conv-new/messages' && method === 'POST') {
         expect(opts?.headers).toEqual({ 'Content-Type': 'application/json' })
-        const rawBody = typeof opts?.body === 'string' ? opts.body : '{}'
+        let rawBody = '{}'
+        if (typeof opts?.body === 'string') {
+          rawBody = opts.body
+        }
         const body = JSON.parse(rawBody) as { role: string; content: string }
         savedMessages.push({ role: body.role, content: body.content, headers: opts?.headers })
         const record = {
@@ -200,20 +207,21 @@ describe('AgentTab product detail cards & AI history persistence', () => {
       }
       if (url === '/api/ai/conversations/conv-new/messages' && method === 'GET') {
         // Mô phỏng query DB chỉ kịp thấy user message đầu tiên (nguyên nhân race bug cũ)
+        let snapshotData: Array<Record<string, unknown>> = [
+          {
+            id: 'db-only-user',
+            role: 'user',
+            content: 'Tìm váy hoa',
+            metadata: null,
+            sentAt: '2026-01-01T10:00:00Z',
+          },
+        ]
+        if (dbMessages.length > 0) {
+          snapshotData = [dbMessages[0]]
+        }
         return {
           status: 200,
-          data:
-            dbMessages.length > 0
-              ? [dbMessages[0]]
-              : [
-                  {
-                    id: 'db-only-user',
-                    role: 'user',
-                    content: 'Tìm váy hoa',
-                    metadata: null,
-                    sentAt: '2026-01-01T10:00:00Z',
-                  },
-                ],
+          data: snapshotData,
         }
       }
       return { status: 200, data: null }

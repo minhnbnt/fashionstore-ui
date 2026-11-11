@@ -104,14 +104,20 @@ vi.mock('@generated/endpoints/products/products', () => ({
     if (opts?.query?.enabled === false) {
       return { data: undefined, isPending: false }
     }
+    let name = 'Áo Sơ Mi Lụa Trắng'
+    let slug = 'ao-so-mi-lua-trang'
+    if (id === 'prod-2') {
+      name = 'Quần Tây Ống Suông'
+      slug = 'quan-tay-ong-suong'
+    }
     return {
       isPending: false,
       data: {
         status: 200,
         data: {
           id,
-          name: id === 'prod-2' ? 'Quần Tây Ống Suông' : 'Áo Sơ Mi Lụa Trắng',
-          slug: id === 'prod-2' ? 'quan-tay-ong-suong' : 'ao-so-mi-lua-trang',
+          name,
+          slug,
           images: [{ s3Key: 'products/sample.jpg' }],
           variants: [{ price: 350000 }],
         },

@@ -42,9 +42,11 @@ export default function Messages() {
     activeTab = 'ai'
   }
 
-  const [activeAiConvId, setActiveAiConvId] = useState<string | null>(
-    tabParam === 'ai' || tabParam === 'agent' ? idParam : null,
-  )
+  let initialAiConvId: string | null = null
+  if (tabParam === 'ai' || tabParam === 'agent') {
+    initialAiConvId = idParam
+  }
+  const [activeAiConvId, setActiveAiConvId] = useState<string | null>(initialAiConvId)
   const [shopSearch, setShopSearch] = useState('')
 
   // Queries
