@@ -12,8 +12,6 @@ import {
   X,
 } from '@phosphor-icons/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
-import { formatVnd } from '@/lib/format'
 import {
   canApprove,
   canBan,
@@ -25,7 +23,9 @@ import {
   statusBadgeClass,
   statusLabel,
   violationLabel,
-} from '@/lib/productModeration'
+} from '@/lib/admin/productModeration'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { formatVnd } from '@/lib/format'
 
 import type { AdminProductDetailResponse } from '@generated/model/adminProductDetailResponse'
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'

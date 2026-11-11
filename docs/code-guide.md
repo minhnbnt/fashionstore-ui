@@ -10,8 +10,8 @@
 
 ## Pattern
 
-- Component theo section: `Header`, `Hero`, `Sections.tsx` (LogoStrip/CategoryBento/ProductGrid/DealMarquee/Editorial/Testimonials/Footer), trang ở `src/pages/`.
-- Data thật qua adapter `src/lib/apiAdapters.ts` (`takeData` mở envelope `{data,status}`, `imageUrl` ghép S3 key, `priceInfo`, `apiErrorMessage` map lỗi theo endpoint × status). JSX không narrow union sinh ra.
+- Component theo section: `Header`, `Hero` + `Sections.tsx` (LogoStrip/CategoryBento/ProductGrid/DealMarquee/Editorial/Testimonials/Footer) ở `src/components/home/`, trang ở `src/pages/` (nhóm domain: `pages/admin|shop|checkout|account/`).
+- Data thật qua adapter `src/lib/api/apiAdapters.ts` (`takeData` mở envelope `{data,status}`, `imageUrl` ghép S3 key, `priceInfo`, `apiErrorMessage` map lỗi theo endpoint × status). JSX không narrow union sinh ra.
 - Ảnh lỗi tải thì `onError` rớt về placeholder, không để ô gãy.
 - Mock còn lại đánh dấu `// TODO(mock)` (review demo, ảnh danh mục) — grep là ra hết.
 - State liên tục (scroll/chuột) cấm `useState`, dùng `useMotionValue`. Cấm `window.addEventListener('scroll')`.

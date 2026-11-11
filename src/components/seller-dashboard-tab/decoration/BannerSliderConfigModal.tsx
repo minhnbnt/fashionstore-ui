@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { ArrowDown, ArrowUp, Plus, Trash } from '@phosphor-icons/react'
 
-import ImageUploadField from '@/components/admin/ImageUploadField'
+import ImageUploadField from '@/components/admin/fields/ImageUploadField'
 import Modal from '@/components/Modal'
 
 import type { BannerSlideItem, DecorationBlock } from '@/types/seller'

@@ -3,15 +3,14 @@ import { Link, useParams } from 'react-router'
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useDetail1 } from '@generated/endpoints/products/products'
 
-import { apiErrorMessage, takeData } from '@/lib/apiAdapters'
-import { ApiError } from '@/lib/apiFetch'
+import { apiErrorMessage, takeData } from '@/lib/api/apiAdapters'
+import { ApiError } from '@/lib/api/apiFetch'
 
 import PdpShopCard from '../components/pdp/PdpShopCard'
 import ProductGallery from '../components/pdp/ProductGallery'
 import ProductInfo from '../components/pdp/ProductInfo'
 import ProductTabs from '../components/pdp/ProductTabs'
 import RelatedProducts from '../components/pdp/RelatedProducts'
-import ReportProductButton from '../components/pdp/ReportProductButton'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 
@@ -103,15 +102,16 @@ export default function ProductDetail() {
         <span className="font-bold text-zinc-900 dark:text-zinc-100">{product.name}</span>
       </nav>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <ProductGallery images={product.images ?? []} name={product.name ?? ''} />
+        <ProductGallery
+          images={product.images ?? []}
+          videoKey={product.videoKey ?? null}
+          name={product.name ?? ''}
+        />
         <ProductInfo product={product} />
       </div>
       {product.shopId !== undefined && product.shopId !== null && product.shopId !== '' && (
         <PdpShopCard shopId={product.shopId} />
       )}
-      <div className="mt-4 flex justify-end">
-        <ReportProductButton productId={productId} />
-      </div>
       <ProductTabs product={product} />
       <div className="mt-10">
         <RelatedProducts category={category} currentId={productId} />

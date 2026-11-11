@@ -22,7 +22,6 @@ import {
   FloppyDisk,
   Broadcast,
   Image as ImageIcon,
-  Lightning,
   SquaresFour,
   VideoCamera,
   Gear,
@@ -32,13 +31,14 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
-import { takeData, PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
-import { reorderBlocks } from '@/lib/decoration'
-import { decorationBlocks, decorationDraftJson } from '@/lib/sellerAdapters'
-import { useSellerPermissions } from '@/lib/sellerPermissions'
+import { takeData, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { reorderBlocks } from '@/lib/seller/decoration'
+import { decorationBlocks, decorationDraftJson } from '@/lib/seller/sellerAdapters'
+import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 
 import BannerSliderConfigModal from './decoration/BannerSliderConfigModal'
 import CollectionConfigModal from './decoration/CollectionConfigModal'
+import VideoConfigModal from './decoration/VideoConfigModal'
 
 import type { DecorationBlock } from '@/types/seller'
 
@@ -70,6 +70,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
   const [editingBlock, setEditingBlock] = useState<DecorationBlock | null>(null)
   const [isSliderModalOpen, setIsSliderModalOpen] = useState(false)
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false)
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
 
   const decorationQuery = useGetDecoration(shopId, { query: { enabled: shopId !== '' } })
 
@@ -199,6 +200,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
     setEditingBlock(null)
     setIsSliderModalOpen(false)
     setIsCollectionModalOpen(false)
+    setIsVideoModalOpen(false)
     setSaveSuccessMsg(`Đã cập nhật cấu hình module ${updated.title}!`)
   }
 
@@ -357,9 +359,6 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                         {(block.type === 'BANNER_SLIDER' || block.type === 'BANNER') && (
                           <ImageIcon size={14} className="text-blue-500" />
                         )}
-                        {block.type === 'FLASH_SALE' && (
-                          <Lightning size={14} className="text-amber-500" />
-                        )}
                         {(block.type === 'PRODUCT_COLLECTION' || block.type === 'COLLECTION') && (
                           <SquaresFour size={14} className="text-emerald-500" />
                         )}
@@ -385,7 +384,8 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                       {(block.type === 'BANNER_SLIDER' ||
                         block.type === 'BANNER' ||
                         block.type === 'PRODUCT_COLLECTION' ||
-                        block.type === 'COLLECTION') && (
+                        block.type === 'COLLECTION' ||
+                        block.type === 'VIDEO') && (
                         <button
                           type="button"
                           title="Cấu hình chi tiết module"
@@ -393,6 +393,8 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                             setEditingBlock(block)
                             if (block.type === 'BANNER_SLIDER' || block.type === 'BANNER') {
                               setIsSliderModalOpen(true)
+                            } else if (block.type === 'VIDEO') {
+                              setIsVideoModalOpen(true)
                             } else {
                               setIsCollectionModalOpen(true)
                             }
@@ -613,39 +615,6 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                     )
                   }
 
-                  if (b.type === 'FLASH_SALE') {
-                    return (
-                      <div
-                        key={b.id}
-                        className="rounded border border-red-100 bg-white p-2.5 shadow-sm dark:bg-white/10"
-                      >
-                        <div className="mb-2 flex items-center justify-between">
-                          <div className="flex items-center gap-1 text-xs font-bold text-red-600">
-                            <Lightning size={14} weight="fill" />
-                            <span>FLASH SALE</span>
-                          </div>
-                          <span className="rounded bg-black px-1.5 py-0.5 font-mono text-[9px] font-bold text-white">
-                            02 : 14 : 58
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          <div className="rounded bg-zinc-50 p-1 text-center dark:bg-white/5">
-                            <div className="mb-1 h-12 rounded bg-zinc-200 dark:bg-white/10" />
-                            <span className="text-[10px] font-bold text-red-600">189k</span>
-                          </div>
-                          <div className="rounded bg-zinc-50 p-1 text-center dark:bg-white/5">
-                            <div className="mb-1 h-12 rounded bg-zinc-200 dark:bg-white/10" />
-                            <span className="text-[10px] font-bold text-red-600">349k</span>
-                          </div>
-                          <div className="rounded bg-zinc-50 p-1 text-center dark:bg-white/5">
-                            <div className="mb-1 h-12 rounded bg-zinc-200 dark:bg-white/10" />
-                            <span className="text-[10px] font-bold text-red-600">450k</span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-
                   if (b.type === 'COLLECTION') {
                     return (
                       <div key={b.id} className="rounded bg-white p-2.5 shadow-sm dark:bg-white/10">
@@ -674,13 +643,21 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   }
 
                   if (b.type === 'VIDEO') {
+                    const hasVideo = b.videoKey !== undefined && b.videoKey !== ''
                     return (
                       <div
                         key={b.id}
-                        className="flex items-center justify-center gap-2 rounded bg-zinc-900 p-3 text-xs text-white"
+                        className={
+                          hasVideo
+                            ? 'flex items-center justify-center gap-2 rounded bg-zinc-900 p-3 text-xs text-white'
+                            : 'flex items-center justify-center gap-2 rounded border border-dashed border-zinc-300 bg-zinc-50 p-3 text-xs text-zinc-400 dark:border-white/15 dark:bg-white/5'
+                        }
                       >
                         <VideoCamera size={16} />
-                        <span>{b.title} (Live Feed)</span>
+                        <span>
+                          {b.title}
+                          {hasVideo ? '' : ' — chưa có video'}
+                        </span>
                       </div>
                     )
                   }
@@ -756,7 +733,6 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                 </option>
                 <option value="CATEGORY_GRID">Danh mục nổi bật của gian hàng</option>
                 <option value="BANNER">Banner đơn tĩnh</option>
-                <option value="FLASH_SALE">Đồng hồ Flash Sale & Sản phẩm hot</option>
                 <option value="COLLECTION">Danh mục sản phẩm cơ bản</option>
                 <option value="VIDEO">Video trải nghiệm / Livestream preview</option>
               </select>
@@ -819,6 +795,19 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
           isOpen={isCollectionModalOpen}
           onClose={() => {
             setIsCollectionModalOpen(false)
+            setEditingBlock(null)
+          }}
+          onSave={handleSaveConfig}
+        />
+      )}
+
+      {/* Video Config Modal */}
+      {isVideoModalOpen && editingBlock && (
+        <VideoConfigModal
+          block={editingBlock}
+          isOpen={isVideoModalOpen}
+          onClose={() => {
+            setIsVideoModalOpen(false)
             setEditingBlock(null)
           }}
           onSave={handleSaveConfig}

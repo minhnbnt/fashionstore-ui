@@ -3,7 +3,7 @@ import { renderToString } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vite-plus/test'
 
 import { SellerDecorationTab } from './SellerDecorationTab'
 
@@ -40,7 +40,7 @@ vi.mock('@generated/endpoints/seller-decoration/seller-decoration', () => ({
   useDiscardDraft: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }))
 
-vi.mock('@/lib/sellerPermissions', () => ({
+vi.mock('@/lib/seller/sellerPermissions', () => ({
   useSellerPermissions: vi.fn(() => ({
     can: () => true,
     isOwner: true,

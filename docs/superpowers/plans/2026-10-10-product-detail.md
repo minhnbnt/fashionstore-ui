@@ -50,6 +50,7 @@
 
 ```ts
 import { describe, expect, it } from 'vitest'
+
 import { PRODUCTS, getProductById, getRelated } from './products'
 
 describe('getProductById', () => {
@@ -225,7 +226,9 @@ Chưa có test unit cho UI; tạo checklist thủ công trong step này: render 
 
 ```tsx
 import { useState } from 'react'
+
 import { Heart } from '@phosphor-icons/react'
+
 import type { Product } from '../../data/products'
 
 export default function ProductGallery(props: { product: Product }) {
@@ -325,7 +328,9 @@ Toast tạm: bấm Thêm giỏ / Mua ngay hiện `Đã thêm ... vào giỏ`, t�
 
 ```tsx
 import { useState } from 'react'
+
 import { Minus, Plus, ShoppingBag, Star } from '@phosphor-icons/react'
+
 import { formatVnd, type Product } from '../../data/products'
 
 export default function ProductInfo(props: { product: Product }) {
@@ -496,7 +501,9 @@ git commit -m "feat: them product info + toast pdp"
 
 ```tsx
 import { useState } from 'react'
+
 import { Star } from '@phosphor-icons/react'
+
 import type { Product } from '../../data/products'
 
 type Tab = 'mo-ta' | 'thong-so' | 'danh-gia'
@@ -602,6 +609,7 @@ git commit -m "feat: them tabs mo ta danh gia pdp"
 
 ```tsx
 import { Link } from 'react-router'
+
 import { formatVnd, getRelated, type Product } from '../../data/products'
 
 export default function RelatedProducts(props: { product: Product }) {
@@ -674,6 +682,7 @@ git commit -m "feat: them related products pdp"
 
 ```tsx
 import { Link, useParams } from 'react-router'
+
 import ProductGallery from '../components/pdp/ProductGallery'
 import ProductInfo from '../components/pdp/ProductInfo'
 import ProductTabs from '../components/pdp/ProductTabs'

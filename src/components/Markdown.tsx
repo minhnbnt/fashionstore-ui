@@ -2,7 +2,7 @@ import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import { Link } from 'react-router'
 
-import { isInternalLink } from '@/lib/siteContent'
+import { isInternalLink } from '@/lib/content/siteContent'
 
 // react-markdown không render HTML thô và tự lọc URL nguy hiểm (javascript:...),
 // nên nội dung admin soạn không thành XSS.
@@ -22,9 +22,15 @@ const COMPONENTS: Components = {
   },
 }
 
-export default function Markdown({ source }: { source: string }) {
+export default function Markdown({ source, className }: { source: string; className?: string }) {
+  const classes = [
+    'prose prose-zinc dark:prose-invert prose-a:font-semibold prose-a:text-indigo-600 prose-a:underline-offset-2 dark:prose-a:text-indigo-300 max-w-none',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
   return (
-    <article className="prose prose-zinc dark:prose-invert prose-a:font-semibold prose-a:text-indigo-600 prose-a:underline-offset-2 dark:prose-a:text-indigo-300 max-w-none">
+    <article className={classes}>
       <ReactMarkdown components={COMPONENTS}>{source}</ReactMarkdown>
     </article>
   )
