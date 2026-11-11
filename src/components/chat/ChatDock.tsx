@@ -11,17 +11,28 @@ import {
   useStartConversation,
 } from '@generated/endpoints/chat/chat'
 import { useDetail1 } from '@generated/endpoints/products/products'
-import { ArrowLeft, ChatCircleDots, PaperPlaneRight, Sparkle, X } from '@phosphor-icons/react'
+import {
+  ArrowLeft,
+  ChatCircleDots,
+  Image as ImageIcon,
+  PaperPlaneRight,
+  Sparkle,
+  X,
+} from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'motion/react'
 
 import UserAvatar from '@/components/UserAvatar'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
 import { useSessionQuery } from '@/hooks/useSession'
-import { apiErrorText, takeData } from '@/lib/api/apiAdapters'
+import { apiErrorText, imageUrl, takeData } from '@/lib/api/apiAdapters'
+import { uploadImage } from '@/lib/api/uploadImage'
 import { formatDateTime } from '@/lib/format'
 
 import { bubbleClass, messageRowClass } from './bubble'
+import ChatImageBubble from './ChatImageBubble'
+import ChatProductCard from './ChatProductCard'
+import { extractProductSlugs } from './messageParser'
 
 import type { AgentConfig, AgentUIMessage } from '@/lib/ai/agent'
 import type { ChatConversationResponse } from '@generated/model/chatConversationResponse'
@@ -102,6 +113,12 @@ function ChatDockThread({ conversation, onBack }: ThreadProps) {
   const queryClient = useQueryClient()
 
   const [messageInput, setMessageInput] = useState('')
+  const [pendingImageKey, setPendingImageKey] = useState<string | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const location = useLocation()
+  const isProductPage = location.pathname.startsWith('/product/')
+  const currentProductSlug = isProductPage ? location.pathname.replace('/product/', '').trim() : ''
 
   // Realtime: tin nhắn mới + read receipt của shop đẩy thẳng vào cache
   useChatMessagesRealtime(conversationId, 'BUYER')
@@ -132,15 +149,42 @@ function ChatDockThread({ conversation, onBack }: ThreadProps) {
     [messages.length],
   )
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsUploadingImage(true)
+    void uploadImage(file)
+      .then(function (key) {
+        setPendingImageKey(key)
+      })
+      .catch(function (err) {
+        console.error('Lỗi tải ảnh:', err)
+      })
+      .finally(function () {
+        setIsUploadingImage(false)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+      })
+  }
+
   function handleSend() {
-    if (messageInput.trim() === '') {
+    const trimmed = messageInput.trim()
+    if (trimmed === '' && !pendingImageKey) {
       return
     }
     if (conversationId === '') {
       return
     }
-    sendMutation.mutate({ id: conversationId, data: { content: messageInput } })
+    sendMutation.mutate({
+      id: conversationId,
+      data: {
+        content: trimmed,
+        imageKey: pendingImageKey ?? undefined,
+      },
+    })
     setMessageInput('')
+    setPendingImageKey(null)
   }
 
   return (
@@ -170,9 +214,22 @@ function ChatDockThread({ conversation, onBack }: ThreadProps) {
           if (isMine && msg.isRead) {
             readLabel = 'Đã xem · '
           }
+          const slugs = extractProductSlugs(msg.content)
           return (
             <div key={msg.id} className={messageRowClass(isMine)}>
-              <div className={bubbleClass(isMine)}>{msg.content}</div>
+              {msg.imageKey && (
+                <div className="mb-1.5">
+                  <ChatImageBubble imageKey={msg.imageKey} />
+                </div>
+              )}
+              {msg.content && <div className={bubbleClass(isMine)}>{msg.content}</div>}
+              {slugs.length > 0 && (
+                <div className="mt-1.5 max-w-[280px] space-y-1.5">
+                  {slugs.map(function (slug) {
+                    return <ChatProductCard key={slug} slug={slug} />
+                  })}
+                </div>
+              )}
               <span className="mt-1 text-[9px] text-zinc-400">
                 {readLabel}
                 {formatDateTime(msg.sentAt)}
@@ -183,7 +240,64 @@ function ChatDockThread({ conversation, onBack }: ThreadProps) {
       </div>
 
       <div className="border-t border-zinc-100 p-3 dark:border-white/10">
+        {currentProductSlug !== '' && (
+          <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50 px-2.5 py-1.5 dark:border-white/10 dark:bg-white/5">
+            <span className="truncate text-xs text-sky-800 dark:text-sky-300">
+              Gửi sản phẩm đang xem
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                sendMutation.mutate({
+                  id: conversationId,
+                  data: { content: '/product/' + currentProductSlug },
+                })
+              }}
+              className="shrink-0 rounded-lg bg-sky-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-sky-700"
+            >
+              Gửi ngay
+            </button>
+          </div>
+        )}
+
+        {pendingImageKey && (
+          <div className="mb-2 flex w-fit items-center gap-2 rounded-xl bg-zinc-100 p-1.5 dark:bg-white/10">
+            <img
+              src={imageUrl(pendingImageKey)}
+              alt="Ảnh đính kèm chuẩn bị gửi"
+              className="h-12 w-12 rounded-lg object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => setPendingImageKey(null)}
+              aria-label="Xóa ảnh đính kèm"
+              className="rounded-full p-1 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/20"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {isUploadingImage && <div className="mb-2 text-xs text-zinc-400">Đang tải ảnh lên…</div>}
+
         <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            aria-label="Chọn file ảnh"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingImage}
+            aria-label="Đính kèm hình ảnh"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
+          >
+            <ImageIcon size={18} />
+          </button>
           <input
             type="text"
             value={messageInput}

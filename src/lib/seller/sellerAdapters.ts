@@ -468,6 +468,7 @@ export function chatMessageItem(message: ChatMessageResponse): ChatMessageItem {
     id: safeId(message.id),
     senderType,
     content: safeText(message.content),
+    imageKey: message.imageKey ?? null,
     sentAt: formatDateTime(message.sentAt),
   }
 }
