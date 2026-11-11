@@ -22,17 +22,20 @@ Người dùng mua sắm và chủ cửa hàng thời trang nét cần một h�
 
 1. **Lịch sử AI trên Backend DB:**
    - Tạo 2 bảng `ai_conversation` và `ai_message` qua Flyway `V33__ai_chat_history.sql`.
-   - REST API cho người dùng đã đăng nhập: lấy danh sách cuộc trò chuyện, tạo cuộc trò chuyện mới, lấy chi tiết tin nhắn của một cuộc trò chuyện, lưu tin nhắn user và AI (kèm metadata bộ lọc/sản phẩm).
-   - Trên UI: Hiển thị danh sách các đoạn chat cũ, nút "Cuộc trò chuyện mới", đồng bộ trạng thái khi reload.
+   - REST API cho người dùng đã đăng nhập: lấy danh sách cuộc trò chuyện, tạo cuộc trò chuyện mới, xóa cuộc trò chuyện, lấy chi tiết tin nhắn của một cuộc trò chuyện, lưu tin nhắn user và AI (kèm metadata mảng `parts` của AI SDK).
+   - Vòng đời tạo cuộc trò chuyện AI: Lazy creation (tạo khi gửi tin nhắn đầu tiên, lấy 40 ký tự đầu làm title) để tránh sinh hội thoại rác.
+   - Trên UI: Hiển thị danh sách các đoạn chat cũ bên thanh bên, nút "+ Đoạn chat mới", tự động khôi phục thẻ sản phẩm khi chọn lại đoạn chat cũ.
 2. **Trang nhắn tin `/messages`:**
-   - Tuyến đường `/messages` (yêu cầu đăng nhập hoặc hỗ trợ tab AI cho khách).
+   - Tuyến đường `/messages` (bọc `RequireAuth` hoặc phân nhánh guest).
    - Layout 2 cột: Cột trái chuyển đổi giữa "Tin nhắn Shop" và "Trợ lý nét AI"; Cột phải là không gian trò chuyện lớn, responsive mobile 1 cột mượt mà.
    - Thêm icon Tin nhắn trên Header với badge số tin chưa đọc.
 3. **Nút chat nhanh góc phải (`ChatDock`):**
    - Giữ nguyên trải nghiệm tiện lợi, thêm icon `ArrowsOut` / `ArrowSquareOut` dẫn sang `/messages`.
 4. **Gửi ảnh & link sản phẩm:**
-   - Nút chọn ảnh $\rightarrow$ upload qua presigned URL S3/MinIO (`uploadImage`) $\rightarrow$ gửi `imageKey` $\rightarrow$ render ảnh trong bubble chat (click để xem full ảnh).
-   - Tự động nhận diện link sản phẩm nội bộ để render thẻ xem trước sản phẩm (Product Card).
+   - Hỗ trợ gửi ảnh cho cả Khách hàng và Người bán (`SellerChatTab`).
+   - Cập nhật validation backend: cho phép tin nhắn chỉ có ảnh (nếu có `imageKey`, `content` có thể để trống).
+   - Component `ChatImageBubble`: render ảnh từ `imageUrl(imageKey)` kèm modal phóng to ảnh khi click.
+   - Component `ChatProductCard`: tự động nhận diện URL `/product/:id` trong tin nhắn, load chi tiết qua React Query cache và render thẻ sản phẩm đẹp mắt.
    - Nút "Gửi sản phẩm đang xem cho shop" khi mở chat từ trang chi tiết sản phẩm (`/product/:id`).
 
 ### Ngoài phạm vi (Non-Goals)
@@ -79,7 +82,7 @@ CREATE TABLE IF NOT EXISTS ai_message (
     conversation_id UUID NOT NULL REFERENCES ai_conversation(id) ON DELETE CASCADE,
     role VARCHAR(32) NOT NULL, -- 'user', 'assistant', 'system'
     content TEXT NOT NULL,
-    metadata JSONB, -- lưu filters, product context, tool results
+    metadata JSONB, -- lưu mảng parts của AgentUIMessage (bao gồm tool calls & kết quả sản phẩm)
     sent_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_ai_message_conversation ON ai_message (conversation_id, sent_at ASC);
@@ -91,9 +94,11 @@ CREATE INDEX IF NOT EXISTS idx_ai_message_conversation ON ai_message (conversati
 - Repository: `AiConversationRepository.java`, `AiMessageRepository.java`.
 - DTOs:
   - `AiConversationResponse(UUID id, String title, Instant createdAt, Instant updatedAt)`
-  - `AiMessageResponse(UUID id, UUID conversationId, String role, String content, String metadata, Instant sentAt)`
+  - `AiMessageResponse(UUID id, UUID conversationId, String role, String content, @Nullable String metadata, Instant sentAt)`
   - `CreateAiConversationRequest(String title)`
-  - `SaveAiMessageRequest(String role, String content, String metadata)`
+  - `SaveAiMessageRequest(String role, String content, @Nullable String metadata)`
+- Cập nhật `SendMessageRequest.java`:
+  - Cho phép tin nhắn chỉ có ảnh bằng cách bỏ `@NotBlank` trên `content`, bổ sung validation: `hasContentOrImage()` yêu cầu ít nhất `content` hoặc `imageKey` có giá trị.
 
 #### C. Controller & Service (`AiChatController.java`, `AiChatService.java`)
 
@@ -109,26 +114,26 @@ CREATE INDEX IF NOT EXISTS idx_ai_message_conversation ON ai_message (conversati
 
 #### A. Trang Mới: `src/pages/Messages.tsx` & Router
 
-- Đăng ký route `/messages` trong `src/App.tsx`, có bọc kiểm tra xác thực hoặc hỗ trợ chuyển đổi sang tab AI nếu chưa đăng nhập.
+- Đăng ký route `/messages` trong `src/App.tsx`.
 - Xuất khẩu qua barrel `src/pages/index.ts`.
 - Giao diện 2 cột:
-  - **Cột trái (`w-80` hoặc `w-96` desktop, full màn hình trên mobile):**
+  - **Cột trái (`w-80` hoặc `w-96` desktop, full màn hình trên mobile khi chưa chọn hội thoại):**
     - Thanh điều hướng chọn chế độ: **"Người bán (Shop)"** hoặc **"Trợ lý nét AI"**.
     - Khi ở chế độ Shop: Tìm kiếm hội thoại shop, danh sách shop kèm avatar, tin nhắn gần nhất, thời gian và badge tin chưa đọc.
-    - Khi ở chế độ AI: Danh sách các phiên chat AI đã lưu, nút bấm "+ Đoạn chat mới", nút xóa đoạn chat.
+    - Khi ở chế độ AI: Danh sách các phiên chat AI đã lưu từ backend, nút bấm "+ Đoạn chat mới", nút xóa đoạn chat.
   - **Cột phải:**
     - Nếu chọn Shop: Cửa sổ chat shop đầy đủ với header thông tin shop, luồng tin nhắn bong bóng hỗ trợ xem ảnh, gửi ảnh (icon máy ảnh/kẹp ghim) và thẻ sản phẩm.
-    - Nếu chọn AI: Giao diện AI chat toàn màn hình tương tác với Gemini qua OpenAI-compatible endpoint, tự động lưu lịch sử vào backend khi người dùng gửi và nhận phản hồi.
+    - Nếu chọn AI: Giao diện AI chat toàn màn hình tương tác với Gemini qua OpenAI-compatible endpoint, tự động tải và khôi phục mảng `parts` từ `metadata` để render thẻ sản phẩm cũ, và tự động lưu lượt chat mới vào backend.
 
 #### B. Component Nâng Cấp: Gửi Ảnh & Thẻ Sản Phẩm
 
 - **Component xem trước ảnh (`ChatImageBubble.tsx`):**
   - Render ảnh từ `imageUrl(msg.imageKey)` trong bong bóng tin nhắn.
-  - Bấm vào ảnh mở modal phóng to ảnh toàn màn hình.
+  - Bấm vào ảnh mở modal phóng to ảnh toàn màn hình. Dùng chung cho cả `ChatDockThread`, `Messages.tsx` và `SellerChatTab.tsx`.
 - **Component thẻ sản phẩm (`ChatProductCard.tsx`):**
-  - Phân tích nội dung tin nhắn hoặc prop sản phẩm: nếu phát hiện link dạng `/product/:id` hoặc người dùng chọn gửi sản phẩm $\rightarrow$ hiển thị thẻ sản phẩm gồm: ảnh thumbnail 48x60, tên sản phẩm, giá bán theo `formatVnd`, nút bấm xem sản phẩm.
+  - Phân tích nội dung tin nhắn: nếu phát hiện link dạng `/product/:id` $\rightarrow$ gọi `useDetail1(productId)` từ cache Orval và render thẻ sản phẩm gồm: ảnh thumbnail 48x60, tên sản phẩm, giá bán theo `formatVnd`, nút bấm xem chi tiết sản phẩm.
 - **Nút "Gửi sản phẩm đang xem":**
-  - Khi người dùng từ trang PDP bấm mở chat, hiển thị thanh banner nhỏ trên ô nhập: _"Khách đang xem: [Tên sản phẩm] - [Nút: Gửi cho Shop]"_. Bấm nút sẽ tự động gửi kèm link và thông tin sản phẩm vào tin nhắn.
+  - Khi người dùng từ trang PDP bấm mở chat, hiển thị thanh banner nhỏ trên ô nhập: _"Khách đang xem: [Tên sản phẩm] - [Nút: Gửi cho Shop]"_. Bấm nút sẽ tự động gửi link `/product/:id` kèm tên sản phẩm.
 - **Nút upload ảnh:**
   - Icon hình ảnh bên cạnh ô input chat. Khi chọn ảnh, gọi hàm `uploadImage(file)` có sẵn $\rightarrow$ nhận `imageKey` $\rightarrow$ gọi `sendMessage` kèm `imageKey`.
 
@@ -139,17 +144,12 @@ CREATE INDEX IF NOT EXISTS idx_ai_message_conversation ON ai_message (conversati
 
 ---
 
-## 5. Quy Tắc Kỹ Thuật (Conventions)
+## 5. Các Quyết Định Kỹ Thuật Của Builder (Builder Calls)
 
-- **Frontend:**
-  - Tuyệt đối cấm toán tử ba ngôi `? :` trong JSX (sử dụng `if/return` sớm hoặc toán tử `&&`).
-  - Sử dụng `@phosphor-icons/react` cho toàn bộ icon.
-  - Sử dụng Tailwind v4, dark mode đầy đủ cặp màu, kính mờ glassy `backdrop-blur`.
-  - Format tiền tệ qua `formatVnd`, ngày giờ qua `formatDateTime`.
-- **Backend:**
-  - Java 21, Spring Data JDBC, Flyway migration tuần tự.
-  - Mô hình DTO dùng Java record, OpenAPI annotation `@Schema`, `@Operation`.
-  - Giới hạn dòng code tối đa 120 ký tự, exception ném ra bằng tiếng Anh.
+1. **Hydration tin nhắn AI:** `ai_message.metadata` lưu JSON string của mảng `AgentUIMessage.parts`. Khi load lại lịch sử, frontend map trực tiếp `metadata` thành `parts` để giữ nguyên toàn bộ các khối sản phẩm (`ShowProductsBlock`, `ProductDetailToolBlock`) mà không bị mất dữ liệu.
+2. **Lazy creation phiên AI:** Khi bấm "+ Đoạn chat mới", frontend chưa gọi API ngay. Chỉ khi người dùng gửi câu hỏi đầu tiên, hệ thống mới gọi `POST /api/ai/conversations` với tiêu đề là 40 ký tự đầu của prompt, rồi lưu tin nhắn.
+3. **Validation Backend cho ảnh:** Bỏ `@NotBlank` trên `SendMessageRequest.content`, thay bằng validation `hasContentOrImage()` để hỗ trợ tin nhắn chỉ có ảnh.
+4. **Áp dụng đồng bộ cho Kênh người bán:** Component `ChatImageBubble` và `ChatProductCard` được chia sẻ dùng chung cho cả Người mua (`Messages.tsx`, `ChatDock`) và Người bán (`SellerChatTab`).
 
 ---
 
