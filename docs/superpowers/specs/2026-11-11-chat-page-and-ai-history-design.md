@@ -26,9 +26,10 @@ Người dùng mua sắm và chủ cửa hàng thời trang nét cần một h�
    - Vòng đời tạo cuộc trò chuyện AI: Lazy creation (tạo khi gửi tin nhắn đầu tiên, lấy 40 ký tự đầu làm title) để tránh sinh hội thoại rác.
    - Trên UI: Hiển thị danh sách các đoạn chat cũ bên thanh bên, nút "+ Đoạn chat mới", tự động khôi phục thẻ sản phẩm khi chọn lại đoạn chat cũ.
 2. **Trang nhắn tin `/messages`:**
-   - Tuyến đường `/messages` (bọc `RequireAuth` hoặc phân nhánh guest).
+   - Tuyến đường `/messages` mở cho cả khách vãng lai và thành viên đã đăng nhập (không bọc `RequireAuth`).
+   - Đối với khách chưa đăng nhập (Guest): Mặc định mở tab "Trợ lý nét AI", hỗ trợ chat AI trực tiếp (không lưu DB) kèm banner nhắc đăng nhập để lưu lịch sử; tab "Người bán (Shop)" hiển thị màn hình yêu cầu đăng nhập.
    - Layout 2 cột: Cột trái chuyển đổi giữa "Tin nhắn Shop" và "Trợ lý nét AI"; Cột phải là không gian trò chuyện lớn, responsive mobile 1 cột mượt mà.
-   - Thêm icon Tin nhắn trên Header với badge số tin chưa đọc.
+   - Thêm icon Tin nhắn trên Header với badge số tin chưa đọc (đối với người dùng đã đăng nhập).
 3. **Nút chat nhanh góc phải (`ChatDock`):**
    - Giữ nguyên trải nghiệm tiện lợi, thêm icon `ArrowsOut` / `ArrowSquareOut` dẫn sang `/messages`.
 4. **Gửi ảnh & link sản phẩm:**
@@ -114,16 +115,20 @@ CREATE INDEX IF NOT EXISTS idx_ai_message_conversation ON ai_message (conversati
 
 #### A. Trang Mới: `src/pages/Messages.tsx` & Router
 
-- Đăng ký route `/messages` trong `src/App.tsx`.
+- Đăng ký route `/messages` trong `src/App.tsx` (không bọc `RequireAuth`).
 - Xuất khẩu qua barrel `src/pages/index.ts`.
 - Giao diện 2 cột:
   - **Cột trái (`w-80` hoặc `w-96` desktop, full màn hình trên mobile khi chưa chọn hội thoại):**
-    - Thanh điều hướng chọn chế độ: **"Người bán (Shop)"** hoặc **"Trợ lý nét AI"**.
-    - Khi ở chế độ Shop: Tìm kiếm hội thoại shop, danh sách shop kèm avatar, tin nhắn gần nhất, thời gian và badge tin chưa đọc.
-    - Khi ở chế độ AI: Danh sách các phiên chat AI đã lưu từ backend, nút bấm "+ Đoạn chat mới", nút xóa đoạn chat.
+    - Thanh điều hướng chọn chế độ: **"Người bán (Shop)"** hoặc **"Trợ lý nét AI"** (khách chưa đăng nhập mặc định chọn tab AI).
+    - Khi ở chế độ Shop:
+      - Đã đăng nhập: Tìm kiếm hội thoại shop, danh sách shop kèm avatar, tin nhắn gần nhất, thời gian và badge tin chưa đọc.
+      - Chưa đăng nhập: Hiển thị thông báo yêu cầu đăng nhập kèm nút dẫn đến `/login`.
+    - Khi ở chế độ AI:
+      - Đã đăng nhập: Danh sách các phiên chat AI đã lưu từ backend, nút bấm "+ Đoạn chat mới", nút xóa đoạn chat.
+      - Chưa đăng nhập: Danh sách trống kèm lời nhắc đăng nhập để lưu lịch sử hội thoại.
   - **Cột phải:**
     - Nếu chọn Shop: Cửa sổ chat shop đầy đủ với header thông tin shop, luồng tin nhắn bong bóng hỗ trợ xem ảnh, gửi ảnh (icon máy ảnh/kẹp ghim) và thẻ sản phẩm.
-    - Nếu chọn AI: Giao diện AI chat toàn màn hình tương tác với Gemini qua OpenAI-compatible endpoint, tự động tải và khôi phục mảng `parts` từ `metadata` để render thẻ sản phẩm cũ, và tự động lưu lượt chat mới vào backend.
+    - Nếu chọn AI: Giao diện AI chat toàn màn hình tương tác với Gemini qua OpenAI-compatible endpoint. Nếu đã đăng nhập: tự động tải và khôi phục mảng `parts` từ `metadata` để render thẻ sản phẩm cũ, và tự động lưu lượt chat mới vào backend; Nếu là khách: trò chuyện trực tiếp và hiện banner nhắc đăng nhập.
 
 #### B. Component Nâng Cấp: Gửi Ảnh & Thẻ Sản Phẩm
 
