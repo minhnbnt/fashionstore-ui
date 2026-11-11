@@ -152,6 +152,7 @@ describe('buildSystemPrompt', () => {
     const prompt = buildSystemPrompt(filtersFixture())
 
     expect(prompt).toContain('showProducts')
+    expect(prompt).toContain('3 sản phẩm')
   })
 
   it('bộ lọc trống thì báo không có bộ lọc, không crash', function () {
@@ -341,6 +342,25 @@ describe('createAgentTools', () => {
 
     expect(batchProductSummariesMock).toHaveBeenCalledWith({ ids: ['p1', 'p2'] })
     expect(output).toEqual({ items: [summary1, summary2] })
+  })
+
+  it('showProducts loại bỏ id trùng trước khi gọi API batch', async function () {
+    const summary1 = { id: 'p1', name: 'Áo polo', minPrice: 250000 }
+    const summary2 = { id: 'p2', name: 'Váy hoa', minPrice: 450000 }
+    const summary3 = { id: 'p3', name: 'Quần tây', minPrice: 390000 }
+    batchProductSummariesMock.mockResolvedValue({
+      status: 200,
+      data: [summary1, summary2, summary3],
+    })
+
+    const tools = createAgentTools()
+    const output = await tools.showProducts.execute?.(
+      { productIds: ['p1', 'p2', 'p1', 'p3', 'p2'] },
+      executeOptions(),
+    )
+
+    expect(batchProductSummariesMock).toHaveBeenCalledWith({ ids: ['p1', 'p2', 'p3'] })
+    expect(output).toEqual({ items: [summary1, summary2, summary3] })
   })
 
   it('showProducts chặn quá 8 id và mảng rỗng', function () {

@@ -38,4 +38,15 @@ describe('ChatImageBubble', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull()
   })
+
+  it('nhấn phím Escape đóng modal phóng to ảnh', async () => {
+    const user = userEvent.setup()
+    render(<ChatImageBubble imageKey="chat/test-image.jpg" alt="Ảnh đính kèm" />)
+
+    await user.click(screen.getByRole('button', { name: 'Xem ảnh lớn: Ảnh đính kèm' }))
+    expect(screen.getByRole('dialog')).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
 })

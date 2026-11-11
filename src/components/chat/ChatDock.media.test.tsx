@@ -413,4 +413,92 @@ describe('ChatDock Media & Product Link Enhancements', () => {
       expect(screen.getByText('Product does not belong to this shop')).toBeTruthy()
     })
   })
+
+  it('cho khách mở modal lấy toàn bộ sản phẩm nhiều trang của shop, lọc và gửi link sản phẩm vào chat', async () => {
+    const user = userEvent.setup()
+    let sentBody = ''
+    const pageZeroItems = Array.from({ length: 50 }, function (_, idx) {
+      const n = idx + 1
+      return {
+        id: 'prod-' + String(n),
+        name: 'Áo Mẫu ' + String(n),
+        slug: 'ao-mau-' + String(n),
+        images: [{ s3Key: 'products/ao-' + String(n) + '.jpg' }],
+        variants: [{ price: 250000 }],
+      }
+    })
+    const pageOneItems = [
+      {
+        id: 'prod-51',
+        name: 'Quần Tây Công Sở',
+        slug: 'quan-tay-cong-so',
+        images: [{ s3Key: 'products/quan-51.jpg' }],
+        variants: [{ price: 420000 }],
+      },
+      {
+        id: 'prod-52',
+        name: 'Áo Khoác Linen Kem',
+        slug: 'ao-khoac-linen-kem',
+        images: [{ s3Key: 'products/linen-52.jpg' }],
+        variants: [{ price: 590000 }],
+      },
+    ]
+
+    customFetchMock.mockImplementation(async function (url, options) {
+      if (typeof url === 'string' && url.includes('/api/conversations/mine')) {
+        return envelope([conversationFixture()])
+      }
+      if (typeof url === 'string' && url.includes('/api/conversations/conv-1/messages')) {
+        if (options?.method === 'POST') {
+          if (typeof options.body === 'string') {
+            sentBody = options.body
+          }
+          return { status: 201, data: { id: 'm-new', content: 'sent' }, headers: new Headers() }
+        }
+        return envelope(messagesFixture())
+      }
+      if (typeof url === 'string' && url.includes('/api/shops/shop-1/products')) {
+        if (url.includes('page=1')) {
+          return envelope({ items: pageOneItems, total: 52, page: 1, size: 50 })
+        }
+        return envelope({ items: pageZeroItems, total: 52, page: 0, size: 50 })
+      }
+      return envelope([])
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <WebSocketContext.Provider value={fakeClient as unknown as Client}>
+            <ChatDock />
+          </WebSocketContext.Provider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Mở khung chat' }))
+    await waitFor(() => {
+      expect(screen.getByText('Áo Trắng Store')).toBeTruthy()
+    })
+    await user.click(screen.getByText('Áo Trắng Store'))
+
+    const pickerBtn = await screen.findByRole('button', { name: 'Gửi sản phẩm' })
+    await user.click(pickerBtn)
+
+    expect(await screen.findByText('Chọn sản phẩm của shop')).toBeTruthy()
+    expect(await screen.findByText('Áo Khoác Linen Kem')).toBeTruthy()
+
+    const searchInput = screen.getByPlaceholderText('Tìm sản phẩm của shop...')
+    await user.type(searchInput, 'Linen Kem')
+
+    const sendButtons = await screen.findAllByRole('button', { name: 'Gửi vào chat' })
+    expect(sendButtons.length).toBe(1)
+
+    await user.click(sendButtons[0])
+
+    await waitFor(() => {
+      expect(sentBody).toContain('/product/prod-52')
+    })
+    expect(screen.queryByText('Chọn sản phẩm của shop')).toBeNull()
+  })
 })

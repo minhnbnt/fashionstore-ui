@@ -59,10 +59,10 @@ export function buildSystemPrompt(filters: SearchFilters, product?: AgentProduct
     'Luôn trả lời bằng tiếng Việt, ngắn gọn, thân thiện. Giá sản phẩm tính bằng VND.',
     'Nhiệm vụ: giúp khách tìm sản phẩm trong cửa hàng.',
     '- Trước khi gợi ý sản phẩm, phải gọi tool searchProducts với bộ lọc phù hợp, không được bịa sản phẩm.',
-    '- searchProducts chỉ để tra dữ liệu, khách không thấy gì; muốn hiện sản phẩm cho khách xem thì BẮT BUỘC gọi tool showProducts với danh sách id lấy từ kết quả searchProducts (tối đa 8 id, chọn những sản phẩm phù hợp nhất), không được bịa id. Khi đó giao diện sẽ hiển thị card xem chi tiết sản phẩm cho khách.',
-    '- Không tự viết đường dẫn /product/... dưới dạng link thô trong câu trả lời khi đã dùng showProducts.',
+    '- searchProducts chỉ để tra dữ liệu, khách không thấy gì; muốn hiện sản phẩm cho khách xem thì BẮT BUỘC gọi tool showProducts với danh sách id (UUID) lấy từ kết quả searchProducts — ưu tiên chọn 3 sản phẩm phù hợp nhất nếu tìm thấy từ 3 trở lên (nếu ít hơn 3 thì chọn tất cả kết quả phù hợp, tối đa 8 id), không được bịa id và không thay id bằng slug. Khi đó giao diện sẽ hiển thị card xem chi tiết sản phẩm cho khách.',
+    '- Không tự viết đường dẫn /product/... dưới dạng link thô hay link markdown [tên](/product/...) trong câu trả lời; hãy dùng tool showProducts để hiển thị card sản phẩm.',
     '- Chưa biết slug danh mục thì gọi tool listCategories trước.',
-    '- Mỗi lần tìm tối đa 8 sản phẩm. Nếu không có kết quả, gợi ý khách nới bớt bộ lọc.',
+    '- Mỗi lần tìm tối đa 8 ứng viên; khi gợi ý sản phẩm cho khách nên trả về 3 sản phẩm (nếu đủ). Nếu không có kết quả, gợi ý khách nới bớt bộ lọc.',
     '',
     'Bộ lọc khách đang đặt trên trang tìm kiếm:',
   ]

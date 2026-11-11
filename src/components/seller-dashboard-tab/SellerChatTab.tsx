@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import {
   getMessagesQueryKey,
@@ -22,8 +22,17 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import {
+  bubbleClass,
+  CHAT_CANVAS_CLASS,
+  CHAT_INPUT_CLASS,
+  CHAT_SEARCH_PILL_CLASS,
+  CHAT_SEND_BUTTON_CLASS,
+  messageRowClass,
+} from '@/components/chat/bubble'
 import ChatImageBubble from '@/components/chat/ChatImageBubble'
 import ChatProductCard from '@/components/chat/ChatProductCard'
+import ChatProductPickerModal from '@/components/chat/ChatProductPickerModal'
 import {
   extractProductSlugs,
   formatChatPreview,
@@ -32,6 +41,7 @@ import {
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
+import { usePinToBottom } from '@/hooks/usePinToBottom'
 import { imageUrl, takeData } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
 import { chatConversationItem, chatMessageItem } from '@/lib/seller/sellerAdapters'
@@ -47,23 +57,9 @@ interface Props {
 
 function conversationRowClass(active: boolean): string {
   if (active) {
-    return 'bg-indigo-50/70 dark:bg-indigo-900/30'
+    return 'bg-indigo-50/90 ring-1 ring-indigo-200/80 dark:bg-white/10 dark:ring-white/15'
   }
-  return 'hover:bg-zinc-50 dark:hover:bg-white/10'
-}
-
-function messageRowClass(isMine: boolean): string {
-  if (isMine) {
-    return 'flex flex-col items-end'
-  }
-  return 'flex flex-col items-start'
-}
-
-function messageBubbleClass(isMine: boolean): string {
-  if (isMine) {
-    return 'max-w-[70%] rounded-2xl rounded-tr-xs bg-indigo-600 p-3 text-xs leading-relaxed text-white'
-  }
-  return 'max-w-[70%] rounded-2xl rounded-tl-xs bg-zinc-100 p-3 text-xs leading-relaxed text-zinc-900 dark:bg-white/10 dark:text-zinc-100'
+  return 'hover:bg-[#f6f9ff] dark:hover:bg-white/5'
 }
 
 export default function SellerChatTab({ shopId, autoReplyText }: Props) {
@@ -75,7 +71,6 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
   const [searchTerm, setSearchTerm] = useState('')
   const [showAutoReplyModal, setShowAutoReplyModal] = useState(false)
   const [showProductPickerModal, setShowProductPickerModal] = useState(false)
-  const [productSearchQuery, setProductSearchQuery] = useState('')
   const [tempAutoReply, setTempAutoReply] = useState(autoReplyText)
   const [notification, setNotification] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -146,19 +141,26 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
     return chatConversationItem(c, buyerNameByBuyerId)
   })
 
-  const messagesContainerRef = useRef<HTMLDivElement | null>(null)
-
   let messages: ChatMessageItem[] = []
   if (messagesQuery.data !== undefined) {
     messages = takeData(messagesQuery.data).map(chatMessageItem)
   }
 
-  useEffect(() => {
-    const container = messagesContainerRef.current
-    if (container !== null) {
-      container.scrollTop = container.scrollHeight
-    }
-  }, [activeConvId, messages.length])
+  let messagesContentKey = ''
+  if (messages.length > 0) {
+    const lastMsg = messages[messages.length - 1]
+    messagesContentKey = String(messages.length) + ':' + String(lastMsg.id)
+  }
+
+  const {
+    scrollRef: messagesContainerRef,
+    pinNow,
+    handleScroll,
+    handleLoadCapture,
+  } = usePinToBottom({
+    resetKey: activeConvId,
+    contentKey: messagesContentKey,
+  })
 
   function handleSelectConversation(id: string) {
     setSelectedConvId(id)
@@ -201,13 +203,6 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
   if (shopProductsQuery.data !== undefined) {
     shopProducts = takeData(shopProductsQuery.data)
   }
-  const filteredShopProducts = shopProducts.filter(function (p) {
-    const q = productSearchQuery.trim().toLowerCase()
-    if (q === '') {
-      return true
-    }
-    return (p.name ?? '').toLowerCase().includes(q)
-  })
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -239,12 +234,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
     handleSendMessage(activeConvId, trimmed, pendingImageKey)
     setMessageInput('')
     setPendingImageKey(null)
-    setTimeout(() => {
-      const container = messagesContainerRef.current
-      if (container !== null) {
-        container.scrollTop = container.scrollHeight
-      }
-    }, 50)
+    pinNow()
   }
 
   function handleSaveAutoReplyConfirm() {
@@ -257,7 +247,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
     <div className="space-y-6">
       {/* Toast */}
       {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-full border border-zinc-200/80 bg-[#17203a] px-4 py-2.5 text-sm font-bold text-white shadow-xl dark:border-white/15 dark:bg-white dark:text-[#17203a]">
           <CheckCircle size={18} weight="bold" className="text-emerald-400" />
           {notification}
         </div>
@@ -266,10 +256,10 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-xl font-black text-zinc-900 dark:text-white">
+          <h2 className="text-xl font-black text-[#17203a] dark:text-white">
             Tin nhắn Trực tuyến & CSKH
           </h2>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
             Trao đổi trực tiếp với khách hàng và thiết lập tin nhắn phản hồi tự động
           </p>
         </div>
@@ -279,24 +269,20 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
             setTempAutoReply(autoReplyText)
             setShowAutoReplyModal(true)
           }}
-          className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
+          className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-bold text-[#17203a] shadow-2xs transition hover:border-blue-600 hover:text-blue-700 active:scale-[0.98] dark:border-white/15 dark:bg-white/10 dark:text-slate-100"
         >
-          <Robot size={16} weight="bold" className="text-indigo-600" />
+          <Robot size={16} weight="bold" className="text-indigo-600 dark:text-sky-300" />
           Cài đặt Tin nhắn Tự động (Auto-reply)
         </button>
       </div>
 
       {/* Cửa sổ Chat 2 cột */}
-      <div className="grid h-[calc(100vh-210px)] max-h-[750px] min-h-[520px] grid-cols-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/80 shadow-sm md:grid-cols-3 dark:border-white/10 dark:bg-[#11182a]">
+      <div className="glass grid h-[calc(100vh-210px)] max-h-[750px] min-h-[520px] grid-cols-1 overflow-hidden rounded-3xl bg-white/88 shadow-xl md:grid-cols-3 dark:bg-[#11182a]/92">
         {/* Cột trái: Danh sách hội thoại */}
-        <div className="flex h-full min-h-0 flex-col border-r border-zinc-100 md:col-span-1 dark:border-white/10">
-          <div className="shrink-0 border-b border-zinc-100 p-3.5 dark:border-white/10">
-            <div className="relative">
-              <MagnifyingGlass
-                size={15}
-                weight="bold"
-                className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400"
-              />
+        <div className="flex h-full min-h-0 flex-col border-r border-zinc-200/70 bg-white/60 md:col-span-1 dark:border-white/10 dark:bg-white/[0.02]">
+          <div className="shrink-0 border-b border-zinc-200/70 p-3 dark:border-white/10">
+            <div className={CHAT_SEARCH_PILL_CLASS}>
+              <MagnifyingGlass size={14} weight="bold" className="shrink-0 text-zinc-400" />
               <input
                 type="text"
                 value={searchTerm}
@@ -304,12 +290,12 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                   setSearchTerm(e.target.value)
                 }}
                 placeholder="Tìm khách hàng..."
-                className="w-full rounded-full border border-zinc-300 bg-zinc-50 py-1.5 pr-3 pl-8 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="w-full bg-transparent outline-none placeholder:text-zinc-400 dark:text-white"
               />
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 divide-y divide-zinc-100 overflow-y-auto dark:divide-white/10">
+          <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain p-2.5">
             {filteredConversations.map(function (conv) {
               const isCurrent = conv.id === activeConvId
               return (
@@ -319,22 +305,24 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                   onClick={function () {
                     handleSelectConversation(conv.id)
                   }}
-                  className={`flex w-full items-start gap-3 p-3.5 text-left transition ${conversationRowClass(isCurrent)}`}
+                  className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${conversationRowClass(isCurrent)}`}
                 >
-                  <UserAvatar name={conv.buyerName} size={40} />
+                  <UserAvatar name={conv.buyerName} size={42} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="truncate text-xs font-bold text-zinc-900 dark:text-white">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-[13px] font-bold text-[#17203a] dark:text-white">
                         {conv.buyerName}
                       </p>
-                      <span className="text-[10px] text-zinc-400">{conv.lastMessageAt}</span>
+                      <span className="shrink-0 text-[11px] text-zinc-400 tabular-nums">
+                        {conv.lastMessageAt}
+                      </span>
                     </div>
-                    <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                    <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
                       {formatChatPreview(conv.lastMessage)}
                     </p>
                   </div>
                   {conv.unreadCount > 0 && (
-                    <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-indigo-700 px-1 text-[9px] font-bold text-white">
+                    <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-bold text-white">
                       {conv.unreadCount}
                     </span>
                   )}
@@ -349,14 +337,14 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
           {selectedConv !== undefined && (
             <>
               {/* Header khung chat */}
-              <div className="flex shrink-0 items-center justify-between border-b border-zinc-100 p-3.5 dark:border-white/10">
-                <div className="flex items-center gap-2.5">
-                  <UserAvatar name={selectedConv.buyerName} size={32} />
+              <div className="flex shrink-0 items-center justify-between border-b border-zinc-200/70 bg-white/85 px-5 py-3.5 backdrop-blur-xs dark:border-white/10 dark:bg-[#11182a]/85">
+                <div className="flex items-center gap-3">
+                  <UserAvatar name={selectedConv.buyerName} size={38} />
                   <div>
-                    <p className="text-xs font-bold text-zinc-900 dark:text-white">
+                    <p className="text-sm font-bold text-[#17203a] dark:text-white">
                       {selectedConv.buyerName}
                     </p>
-                    <p className="flex items-center gap-1 text-[10px] text-emerald-600">
+                    <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       Trực tuyến
                     </p>
@@ -368,7 +356,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                   onClick={function () {
                     handleSelectConversation(selectedConv.id)
                   }}
-                  className="rounded-xl border border-zinc-200 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-400"
+                  className="rounded-full border border-zinc-300 bg-white px-3.5 py-1.5 text-[11px] font-bold text-[#17203a] transition hover:border-blue-600 hover:text-blue-700 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:text-slate-200"
                 >
                   Đánh dấu đã đọc
                 </button>
@@ -377,7 +365,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
               {/* Vùng tin nhắn dạng bong bóng */}
               <div
                 ref={messagesContainerRef}
-                className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4"
+                onScroll={handleScroll}
+                onLoadCapture={handleLoadCapture}
+                className={`min-h-0 flex-1 space-y-3.5 overflow-y-auto overscroll-contain p-5 ${CHAT_CANVAS_CLASS}`}
               >
                 {messages.map(function (msg) {
                   const isMe = msg.senderType === 'SELLER'
@@ -391,35 +381,37 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                         </div>
                       )}
                       {displayContent !== '' && (
-                        <div className={messageBubbleClass(isMe)}>{displayContent}</div>
+                        <div className={bubbleClass(isMe, 'page')}>{displayContent}</div>
                       )}
                       {slugs.length > 0 && (
-                        <div className="mt-1.5 max-w-[280px] space-y-1.5">
+                        <div className="mt-1.5 w-full max-w-[340px] space-y-2">
                           {slugs.map(function (slug) {
                             return <ChatProductCard key={slug} slug={slug} />
                           })}
                         </div>
                       )}
-                      <span className="mt-1 text-[9px] text-zinc-400">{msg.sentAt}</span>
+                      <span className="mt-1 text-[11px] text-zinc-400 tabular-nums">
+                        {msg.sentAt}
+                      </span>
                     </div>
                   )
                 })}
               </div>
 
               {/* Ô nhập tin nhắn */}
-              <div className="shrink-0 border-t border-zinc-100 bg-white/50 p-3 backdrop-blur-xs dark:border-white/10 dark:bg-white/5">
+              <div className="shrink-0 border-t border-zinc-200/70 bg-white/85 px-4 py-3 backdrop-blur-xs dark:border-white/10 dark:bg-[#11182a]/85">
                 {pendingImageKey && (
-                  <div className="mb-2 flex w-fit items-center gap-2 rounded-xl bg-zinc-100 p-1.5 dark:bg-white/10">
+                  <div className="mb-2.5 flex w-fit items-center gap-2 rounded-2xl border border-zinc-200/80 bg-[#f6f9ff] p-1.5 dark:border-white/10 dark:bg-white/10">
                     <img
                       src={imageUrl(pendingImageKey)}
                       alt="Ảnh đính kèm chuẩn bị gửi"
-                      className="h-12 w-12 rounded-lg object-cover"
+                      className="h-14 w-14 rounded-xl object-cover"
                     />
                     <button
                       type="button"
                       onClick={() => setPendingImageKey(null)}
                       aria-label="Xóa ảnh đính kèm"
-                      className="rounded-full p-1 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/20"
+                      className="rounded-full p-1 text-zinc-500 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/20"
                     >
                       <X size={14} />
                     </button>
@@ -427,7 +419,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                 )}
 
                 {isUploadingImage && (
-                  <div className="mb-2 text-xs text-zinc-400">Đang tải ảnh lên…</div>
+                  <div className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">
+                    Đang tải ảnh lên…
+                  </div>
                 )}
 
                 <div className="flex items-center gap-2">
@@ -444,18 +438,17 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploadingImage}
                     aria-label="Đính kèm hình ảnh"
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-blue-600 hover:text-blue-700 active:scale-95 disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:border-sky-400"
                   >
                     <ImageIcon size={18} />
                   </button>
                   <button
                     type="button"
                     onClick={function () {
-                      setProductSearchQuery('')
                       setShowProductPickerModal(true)
                     }}
                     aria-label="Gửi sản phẩm"
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-blue-600 hover:text-blue-700 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:border-sky-400"
                   >
                     <ShoppingBagOpen size={18} />
                   </button>
@@ -471,15 +464,16 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                       }
                     }}
                     placeholder="Nhập tin nhắn trả lời khách hàng (Enter để gửi)..."
-                    className="flex-1 rounded-full border border-zinc-300 bg-zinc-50 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                    className={CHAT_INPUT_CLASS}
                   />
                   <button
                     type="button"
                     onClick={handleSend}
+                    disabled={isUploadingImage || (messageInput.trim() === '' && !pendingImageKey)}
                     aria-label="Gửi tin nhắn"
-                    className="btn-primary flex h-9 w-9 items-center justify-center rounded-2xl"
+                    className={CHAT_SEND_BUTTON_CLASS}
                   >
-                    <PaperPlaneRight size={16} weight="bold" />
+                    <PaperPlaneRight size={18} weight="fill" />
                   </button>
                 </div>
               </div>
@@ -487,7 +481,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
           )}
 
           {selectedConv === undefined && (
-            <div className="flex flex-1 items-center justify-center text-xs text-zinc-400">
+            <div
+              className={`flex flex-1 items-center justify-center text-xs text-zinc-500 dark:text-zinc-400 ${CHAT_CANVAS_CLASS}`}
+            >
               Chọn một khách hàng ở cột trái để bắt đầu trò chuyện.
             </div>
           )}
@@ -503,7 +499,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
           }}
           widthClass="max-w-md"
         >
-          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+          <p className="mt-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
             Tin nhắn này sẽ tự động được gửi ngay lập tức khi khách hàng mở cuộc hội thoại đầu tiên
             hoặc nhắn tin ngoài giờ làm việc.
           </p>
@@ -523,7 +519,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                 setTempAutoReply(e.target.value)
               }}
               placeholder="VD: Cảm ơn bạn đã ghé thăm FashionHub! Chúng tôi sẽ phản hồi trong ít phút..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white/90 p-3 text-xs text-[#17203a] outline-none placeholder:text-zinc-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
 
@@ -533,14 +529,14 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
               onClick={function () {
                 setShowAutoReplyModal(false)
               }}
-              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+              className="rounded-full border border-zinc-300 bg-white px-5 py-2 text-xs font-bold text-[#17203a] transition hover:bg-zinc-50 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
             >
               Hủy
             </button>
             <button
               type="button"
               onClick={handleSaveAutoReplyConfirm}
-              className="btn-primary rounded-2xl px-5 py-2 text-xs font-bold"
+              className="btn-primary rounded-full px-5 py-2 text-xs font-bold active:scale-95"
             >
               Lưu cấu hình
             </button>
@@ -550,55 +546,22 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
 
       {/* Modal Chọn sản phẩm gửi cho khách */}
       {showProductPickerModal && (
-        <Modal
+        <ChatProductPickerModal
           title="Chọn sản phẩm gửi cho khách"
+          products={shopProducts}
+          isPending={shopProductsQuery.isPending}
+          isError={shopProductsQuery.isError}
           onClose={function () {
             setShowProductPickerModal(false)
           }}
-          widthClass="max-w-lg"
-        >
-          <div className="mt-3">
-            <div className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/10">
-              <MagnifyingGlass size={14} className="text-zinc-400" />
-              <input
-                type="text"
-                value={productSearchQuery}
-                onChange={function (e) {
-                  setProductSearchQuery(e.target.value)
-                }}
-                placeholder="Tìm sản phẩm của shop..."
-                className="w-full bg-transparent outline-none dark:text-white"
-              />
-            </div>
-
-            <div className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
-              {shopProductsQuery.isPending && (
-                <p className="py-6 text-center text-xs text-zinc-400">
-                  Đang tải danh sách sản phẩm...
-                </p>
-              )}
-              {!shopProductsQuery.isPending && filteredShopProducts.length === 0 && (
-                <p className="py-6 text-center text-xs text-zinc-400">
-                  Không tìm thấy sản phẩm phù hợp.
-                </p>
-              )}
-              {filteredShopProducts.map(function (prod) {
-                return (
-                  <ChatProductCard
-                    key={prod.id ?? prod.slug}
-                    product={prod}
-                    onSendProduct={function (selected) {
-                      if (activeConvId !== '') {
-                        handleSendMessage(activeConvId, '/product/' + selected.id)
-                        setShowProductPickerModal(false)
-                      }
-                    }}
-                  />
-                )
-              })}
-            </div>
-          </div>
-        </Modal>
+          onSelectProduct={function (selected) {
+            if (activeConvId !== '') {
+              handleSendMessage(activeConvId, '/product/' + selected.id)
+              setShowProductPickerModal(false)
+              pinNow()
+            }
+          }}
+        />
       )}
     </div>
   )

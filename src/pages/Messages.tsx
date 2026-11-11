@@ -13,6 +13,7 @@ import {
 } from '@phosphor-icons/react'
 
 import AgentTab from '@/components/chat/AgentTab'
+import { CHAT_CANVAS_CLASS, CHAT_SEARCH_PILL_CLASS } from '@/components/chat/bubble'
 import { ChatDockThread } from '@/components/chat/ChatDock'
 import { formatChatPreview } from '@/components/chat/messageParser'
 import UserAvatar from '@/components/UserAvatar'
@@ -140,29 +141,29 @@ export default function Messages() {
     (activeTab === 'ai' && activeAiConvId !== null)
 
   let leftColumnClass =
-    'flex w-full flex-col border-r border-zinc-100 shrink-0 md:w-80 lg:w-96 dark:border-white/10'
+    'flex w-full shrink-0 flex-col border-r border-zinc-200/70 bg-white/60 md:w-80 lg:w-96 dark:border-white/10 dark:bg-white/[0.02]'
   if (hideLeftOnMobile) {
     leftColumnClass =
-      'hidden w-full flex-col border-r border-zinc-100 shrink-0 md:flex md:w-80 lg:w-96 dark:border-white/10'
+      'hidden w-full shrink-0 flex-col border-r border-zinc-200/70 bg-white/60 md:flex md:w-80 lg:w-96 dark:border-white/10 dark:bg-white/[0.02]'
   }
 
-  let rightColumnClass = 'flex flex-1 flex-col min-w-0 h-full overflow-hidden'
+  let rightColumnClass = 'flex h-full min-w-0 flex-1 flex-col overflow-hidden'
   if (!hideLeftOnMobile) {
-    rightColumnClass = 'hidden flex-1 flex-col min-w-0 h-full overflow-hidden md:flex'
+    rightColumnClass = 'hidden h-full min-w-0 flex-1 flex-col overflow-hidden md:flex'
   }
 
   let shopTabButtonClass =
-    'flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+    'flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-semibold text-zinc-600 transition hover:text-[#17203a] dark:text-zinc-300 dark:hover:text-white'
   if (activeTab === 'shop') {
     shopTabButtonClass =
-      'flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-bold transition rounded-xl bg-white text-indigo-700 shadow-xs dark:bg-white/10 dark:text-white'
+      'btn-primary flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold shadow-xs'
   }
 
   let aiTabButtonClass =
-    'flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+    'flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-semibold text-zinc-600 transition hover:text-[#17203a] dark:text-zinc-300 dark:hover:text-white'
   if (activeTab === 'ai') {
     aiTabButtonClass =
-      'flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-bold transition rounded-xl bg-white text-sky-600 shadow-xs dark:bg-white/10 dark:text-white'
+      'btn-primary flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold shadow-xs'
   }
 
   let emptyShopTitle = 'Đăng nhập để xem và gửi tin nhắn cho các shop'
@@ -171,13 +172,13 @@ export default function Messages() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-5rem)] max-w-[1400px] flex-col px-4 pt-20 pb-4 md:pt-24 md:pb-6">
-      <div className="flex flex-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/95 shadow-xl backdrop-blur dark:border-white/10 dark:bg-[#11182a]">
+    <div className="mx-auto flex h-[100dvh] max-w-[1400px] flex-col px-4 pt-20 pb-4 md:pt-24 md:pb-6">
+      <div className="glass flex flex-1 overflow-hidden rounded-3xl bg-white/88 shadow-xl dark:bg-[#11182a]/92">
         {/* Left Column */}
         <div className={leftColumnClass}>
           {/* Top Switcher */}
-          <div className="border-b border-zinc-100 p-3 dark:border-white/10">
-            <div className="flex rounded-2xl bg-zinc-100/80 p-1 dark:bg-white/5">
+          <div className="border-b border-zinc-200/70 p-3.5 dark:border-white/10">
+            <div className="flex rounded-full bg-zinc-100/90 p-1 dark:bg-white/5">
               <button
                 type="button"
                 onClick={function () {
@@ -207,17 +208,17 @@ export default function Messages() {
               {!isLoggedIn && (
                 <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
                   <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-white/10 dark:text-sky-300">
-                    <Storefront size={32} />
+                    <Storefront size={30} weight="duotone" />
                   </div>
-                  <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+                  <h3 className="text-sm font-bold text-[#17203a] dark:text-white">
                     Đăng nhập để nhắn tin với người bán
                   </h3>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                     Đăng nhập để tiếp tục trò chuyện và nhận hỗ trợ từ các shop.
                   </p>
                   <Link
                     to="/login"
-                    className="btn-primary mt-4 rounded-full px-5 py-2 text-xs font-semibold"
+                    className="btn-primary mt-4 rounded-full px-5 py-2 text-xs font-bold active:scale-95"
                   >
                     Đăng nhập ngay
                   </Link>
@@ -226,9 +227,9 @@ export default function Messages() {
 
               {isLoggedIn && (
                 <>
-                  <div className="border-b border-zinc-100 p-3 dark:border-white/10">
-                    <div className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50/80 px-3 py-1.5 text-xs dark:border-white/10 dark:bg-white/5">
-                      <MagnifyingGlass size={14} className="text-zinc-400" />
+                  <div className="border-b border-zinc-200/70 p-3 dark:border-white/10">
+                    <div className={CHAT_SEARCH_PILL_CLASS}>
+                      <MagnifyingGlass size={14} weight="bold" className="shrink-0 text-zinc-400" />
                       <input
                         type="text"
                         value={shopSearch}
@@ -241,7 +242,7 @@ export default function Messages() {
                     </div>
                   </div>
 
-                  <div className="flex-1 space-y-1 overflow-y-auto p-2">
+                  <div className="flex-1 space-y-1.5 overflow-y-auto overscroll-contain p-2.5">
                     {filteredShopConvs.length === 0 && (
                       <div className="py-12 text-center text-xs text-zinc-400">
                         Chưa có cuộc trò chuyện nào với người bán.
@@ -251,10 +252,10 @@ export default function Messages() {
                       const convId = c.id ?? ''
                       const isSelected = convId === idParam
                       let itemClass =
-                        'flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition hover:bg-zinc-100/70 dark:hover:bg-white/5'
+                        'flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-[#f6f9ff] dark:hover:bg-white/5'
                       if (isSelected) {
                         itemClass =
-                          'flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition bg-indigo-50/80 dark:bg-white/10'
+                          'flex w-full items-center gap-3 rounded-2xl bg-indigo-50/90 p-3 text-left ring-1 ring-indigo-200/80 transition dark:bg-white/10 dark:ring-white/15'
                       }
 
                       let unreadText = ''
@@ -276,24 +277,24 @@ export default function Messages() {
                           }}
                           className={itemClass}
                         >
-                          <UserAvatar name={c.shopName ?? 'Shop'} size={40} />
+                          <UserAvatar name={c.shopName ?? 'Shop'} size={42} />
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className="truncate text-xs font-bold text-zinc-900 dark:text-white">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate text-[13px] font-bold text-[#17203a] dark:text-white">
                                 {c.shopName ?? 'Shop'}
                               </span>
                               {c.lastMessageAt && (
-                                <span className="text-[10px] text-zinc-400">
+                                <span className="shrink-0 text-[11px] text-zinc-400 tabular-nums">
                                   {formatDateTime(c.lastMessageAt)}
                                 </span>
                               )}
                             </div>
-                            <div className="mt-0.5 flex items-center justify-between gap-1">
-                              <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+                            <div className="mt-0.5 flex items-center justify-between gap-2">
+                              <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                                 {formatChatPreview(c.lastMessageText) || 'Bắt đầu cuộc trò chuyện'}
                               </p>
                               {unreadText !== '' && (
-                                <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white">
+                                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
                                   {unreadText}
                                 </span>
                               )}
@@ -312,14 +313,14 @@ export default function Messages() {
           {activeTab === 'ai' && (
             <div className="flex flex-1 flex-col overflow-hidden">
               {!isLoggedIn && (
-                <div className="m-3 rounded-2xl border border-sky-100 bg-sky-50/80 p-3 text-xs dark:border-white/10 dark:bg-white/5">
-                  <p className="font-bold text-sky-900 dark:text-sky-200">Chế độ khách</p>
-                  <p className="mt-1 text-zinc-600 dark:text-zinc-300">
+                <div className="m-3 rounded-2xl border border-sky-200/80 bg-sky-50/90 p-3.5 text-xs dark:border-white/15 dark:bg-white/5">
+                  <p className="font-bold text-[#17203a] dark:text-sky-200">Chế độ khách</p>
+                  <p className="mt-1 leading-relaxed text-zinc-600 dark:text-zinc-300">
                     Đăng nhập để lưu lại toàn bộ lịch sử tư vấn AI và mở lại trên mọi thiết bị.
                   </p>
                   <Link
                     to="/login"
-                    className="mt-2.5 inline-flex items-center gap-1 font-bold text-sky-700 hover:underline dark:text-sky-300"
+                    className="mt-2.5 inline-flex items-center gap-1.5 font-bold text-indigo-700 hover:underline dark:text-sky-300"
                   >
                     <SignIn size={14} weight="bold" />
                     <span>Đăng nhập ngay</span>
@@ -327,13 +328,13 @@ export default function Messages() {
                 </div>
               )}
 
-              <div className="border-b border-zinc-100 p-3 dark:border-white/10">
+              <div className="border-b border-zinc-200/70 p-3 dark:border-white/10">
                 <button
                   type="button"
                   onClick={function () {
                     handleSelectAiConv(null)
                   }}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-sky-50/60 py-2.5 text-xs font-bold text-sky-700 transition hover:bg-sky-100 dark:border-white/10 dark:bg-white/10 dark:text-sky-300"
+                  className="btn-primary flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold active:scale-[0.98]"
                 >
                   <Plus size={14} weight="bold" />
                   <span>Đoạn chat mới</span>
@@ -341,7 +342,7 @@ export default function Messages() {
               </div>
 
               {isLoggedIn && (
-                <div className="flex-1 space-y-1 overflow-y-auto p-2">
+                <div className="flex-1 space-y-1.5 overflow-y-auto overscroll-contain p-2.5">
                   {aiConversations.length === 0 && (
                     <div className="py-12 text-center text-xs text-zinc-400">
                       Chưa có đoạn chat nào. Bắt đầu ngay!
@@ -350,10 +351,10 @@ export default function Messages() {
                   {aiConversations.map(function (c) {
                     const isSelected = c.id === activeAiConvId
                     let itemClass =
-                      'group flex w-full items-center justify-between rounded-2xl p-2.5 text-left transition hover:bg-zinc-100/70 dark:hover:bg-white/5'
+                      'group flex w-full items-center justify-between gap-2 rounded-2xl p-3 text-left transition hover:bg-[#f6f9ff] dark:hover:bg-white/5'
                     if (isSelected) {
                       itemClass =
-                        'group flex w-full items-center justify-between rounded-2xl p-2.5 text-left transition bg-sky-50/80 dark:bg-white/10'
+                        'group flex w-full items-center justify-between gap-2 rounded-2xl bg-sky-50/90 p-3 text-left ring-1 ring-sky-200/80 transition dark:bg-white/10 dark:ring-white/15'
                     }
 
                     return (
@@ -365,10 +366,10 @@ export default function Messages() {
                           }}
                           className="min-w-0 flex-1 text-left"
                         >
-                          <p className="truncate text-xs font-bold text-zinc-900 dark:text-white">
+                          <p className="truncate text-[13px] font-bold text-[#17203a] dark:text-white">
                             {c.title}
                           </p>
-                          <p className="mt-0.5 text-[10px] text-zinc-400">
+                          <p className="mt-0.5 text-[11px] text-zinc-400 tabular-nums">
                             {formatDateTime(c.createdAt)}
                           </p>
                         </button>
@@ -378,7 +379,7 @@ export default function Messages() {
                             handleDeleteAiConv(e, c.id)
                           }}
                           aria-label="Xóa đoạn chat"
-                          className="rounded-full p-1 text-zinc-400 hover:bg-zinc-200 hover:text-red-600 dark:hover:bg-white/20 dark:hover:text-red-400"
+                          className="rounded-full p-1.5 text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-white/10 dark:hover:text-rose-400"
                         >
                           <Trash size={14} />
                         </button>
@@ -396,17 +397,24 @@ export default function Messages() {
           {activeTab === 'shop' && (
             <>
               {selectedShopConv && (
-                <ChatDockThread conversation={selectedShopConv} onBack={handleBackFromShopThread} />
+                <ChatDockThread
+                  key={selectedShopConv.id}
+                  conversation={selectedShopConv}
+                  onBack={handleBackFromShopThread}
+                  variant="page"
+                />
               )}
               {!selectedShopConv && (
-                <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-zinc-100 text-zinc-400 dark:bg-white/5 dark:text-zinc-500">
-                    <ChatCircleDots size={36} />
+                <div
+                  className={`flex flex-1 flex-col items-center justify-center p-8 text-center ${CHAT_CANVAS_CLASS}`}
+                >
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl border border-zinc-200/80 bg-white text-indigo-600 shadow-sm dark:border-white/10 dark:bg-[#11182a] dark:text-sky-300">
+                    <ChatCircleDots size={34} weight="duotone" />
                   </div>
-                  <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-200">
+                  <h3 className="text-base font-bold text-[#17203a] dark:text-white">
                     {emptyShopTitle}
                   </h3>
-                  <p className="mt-1 max-w-xs text-xs text-zinc-400">
+                  <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                     Mọi thắc mắc về kích cỡ, chất liệu hoặc vận chuyển sẽ được người bán phản hồi
                     sớm nhất.
                   </p>
@@ -420,6 +428,7 @@ export default function Messages() {
               <AgentTab
                 activeConversationId={activeAiConvId}
                 onSelectConversation={handleSelectAiConv}
+                variant="page"
               />
             </div>
           )}
