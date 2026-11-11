@@ -18,7 +18,11 @@ export default function ChatDockGate() {
     return null
   }
   const isSellerDashboard = location.pathname === '/shop' || location.pathname.startsWith('/shop/')
-  if (isSellerDashboard || location.pathname.startsWith('/admin')) {
+  if (
+    isSellerDashboard ||
+    location.pathname.startsWith('/admin') ||
+    location.pathname === '/messages'
+  ) {
     return null
   }
 

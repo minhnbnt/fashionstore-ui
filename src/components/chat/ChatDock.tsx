@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation } from 'react-router'
+import { Link, useLocation } from 'react-router'
 
 import {
   getMessagesQueryKey,
@@ -13,6 +13,7 @@ import {
 import { useDetail1 } from '@generated/endpoints/products/products'
 import {
   ArrowLeft,
+  ArrowsOut,
   ChatCircleDots,
   Image as ImageIcon,
   PaperPlaneRight,
@@ -100,12 +101,12 @@ function shopCtaLabel(
   return `Chat với ${shopNameFromProduct}`
 }
 
-interface ThreadProps {
+export interface ThreadProps {
   conversation: ChatConversationResponse
-  onBack: () => void
+  onBack?: () => void
 }
 
-function ChatDockThread({ conversation, onBack }: ThreadProps) {
+export function ChatDockThread({ conversation, onBack }: ThreadProps) {
   const conversationId = conversation.id ?? ''
   const messagesQuery = useMessages(conversationId, {
     query: { enabled: conversationId !== '' },
@@ -190,14 +191,16 @@ function ChatDockThread({ conversation, onBack }: ThreadProps) {
   return (
     <>
       <div className="flex items-center gap-2.5 border-b border-zinc-100 p-3 dark:border-white/10">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Quay lại danh sách hội thoại"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
-        >
-          <ArrowLeft size={16} weight="bold" />
-        </button>
+        {onBack !== undefined && (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Quay lại danh sách hội thoại"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
+          >
+            <ArrowLeft size={16} weight="bold" />
+          </button>
+        )}
         <UserAvatar name={conversation.shopName ?? 'Shop'} size={32} />
         <div className="min-w-0">
           <p className="truncate text-xs font-bold text-zinc-900 dark:text-white">
@@ -583,6 +586,15 @@ function ChatDockBody(props: ChatDockProps) {
 
   const showThread = selectedConv !== undefined
 
+  let expandHref = '/messages'
+  if (activeTab === 'agent') {
+    expandHref = '/messages?tab=ai'
+  } else if (selectedConvId !== '') {
+    expandHref = '/messages?tab=shop&id=' + encodeURIComponent(selectedConvId)
+  } else {
+    expandHref = '/messages?tab=shop'
+  }
+
   return (
     <>
       <button
@@ -603,8 +615,8 @@ function ChatDockBody(props: ChatDockProps) {
 
       {open && (
         <ChatPanel className="fixed inset-x-3 bottom-[88px] z-50 flex h-[min(68dvh,540px)] flex-col overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/95 shadow-2xl backdrop-blur md:inset-x-auto md:right-6 md:w-[560px] dark:border-white/10 dark:bg-[#11182a]">
-          {/* Header: 2 tab (nút toggle nổi bên dưới đã là nút đóng khi panel mở) */}
-          <div className="flex items-center border-b border-zinc-100 px-3 py-2.5 dark:border-white/10">
+          {/* Header: 2 tab + expand button */}
+          <div className="flex items-center justify-between border-b border-zinc-100 px-3 py-2.5 dark:border-white/10">
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -629,6 +641,17 @@ function ChatDockBody(props: ChatDockProps) {
                 </button>
               )}
             </div>
+
+            <Link
+              to={expandHref}
+              onClick={function () {
+                setOpen(false)
+              }}
+              aria-label="Mở trang tin nhắn toàn màn hình"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              <ArrowsOut size={15} weight="bold" />
+            </Link>
           </div>
 
           {activeTab === 'agent' && (

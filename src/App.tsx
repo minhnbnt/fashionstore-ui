@@ -27,6 +27,7 @@ import {
   Home,
   InvitationAccept,
   Login,
+  Messages,
   OrderDetail,
   Orders,
   ProductDetail,
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/shops/:slug" element={<ShopStorefront />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/messages" element={<Messages />} />
           <Route path="/pages/:slug" element={<StaticPage />} />
           <Route path="/faq" element={<Faq />} />
           <Route path="/login" element={<Login />} />

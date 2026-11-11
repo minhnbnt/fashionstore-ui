@@ -2,8 +2,10 @@ import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
+import { useMyConversations } from '@generated/endpoints/chat/chat'
 import { useMine } from '@generated/endpoints/shops/shops'
 import {
+  ChatCircleDots,
   Heart,
   MagnifyingGlass,
   Receipt,
@@ -139,6 +141,25 @@ export default function Header() {
     sellerChannelPath = '/shop'
   }
 
+  const convQuery = useMyConversations({
+    query: {
+      enabled: isLoggedIn,
+    },
+  })
+  let totalUnread = 0
+  if (convQuery.data !== undefined) {
+    const convList = takeData(convQuery.data)
+    if (Array.isArray(convList)) {
+      totalUnread = convList.reduce(function (sum, conv) {
+        return sum + (conv.unreadCount ?? 0)
+      }, 0)
+    }
+  }
+  let unreadBadgeText = String(totalUnread)
+  if (totalUnread > 99) {
+    unreadBadgeText = '99+'
+  }
+
   return (
     <header className="fixed inset-x-0 top-0 z-50">
       <div className="mx-auto max-w-[1400px] px-4">
@@ -183,6 +204,25 @@ export default function Header() {
             >
               <Storefront size={14} weight="bold" />
               <span>Kênh Người Bán</span>
+            </Link>
+
+            {/* Messages Link */}
+            <Link
+              to="/messages"
+              id="header-messages-link"
+              aria-label="Tin nhắn"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10"
+            >
+              <ChatCircleDots size={20} />
+              {isLoggedIn && totalUnread > 0 && (
+                <span
+                  id="header-messages-badge"
+                  data-testid="header-messages-badge"
+                  className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-extrabold text-white shadow"
+                >
+                  {unreadBadgeText}
+                </span>
+              )}
             </Link>
 
             {/* Notification Bell */}
