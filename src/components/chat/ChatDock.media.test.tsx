@@ -220,4 +220,79 @@ describe('ChatDock Media & Product Link Enhancements', () => {
       )
     })
   })
+
+  it('ẩn link /product/... thô và chỉ hiện card chi tiết sản phẩm cùng preview [Sản phẩm]', async () => {
+    const user = userEvent.setup()
+    const prevImpl = customFetchMock.getMockImplementation()
+    customFetchMock.mockImplementation(async function (url: string, opts?: RequestInit) {
+      const res = (await prevImpl?.(url, opts)) as { status: number; data: unknown } | undefined
+      const method = opts?.method ?? 'GET'
+      if (
+        url.includes('/api/conversations') &&
+        !url.includes('/messages') &&
+        method === 'GET' &&
+        res !== undefined &&
+        Array.isArray(res.data)
+      ) {
+        const list = res.data as Array<Record<string, unknown>>
+        if (list[0]) {
+          list[0] = {
+            ...list[0],
+            lastMessageText: '/product/22222222-0000-0000-0001-000000000001',
+          }
+        }
+        return res
+      }
+      if (
+        url.includes('/api/conversations/conv-1/messages') &&
+        method === 'GET' &&
+        res !== undefined
+      ) {
+        return {
+          ...res,
+          data: [
+            {
+              id: 'msg-standalone',
+              senderType: 'BUYER',
+              content: '/product/22222222-0000-0000-0001-000000000001',
+              sentAt: '2026-01-01T10:00:00Z',
+            },
+            {
+              id: 'msg-mixed',
+              senderType: 'SELLER',
+              content: 'Bạn xem mẫu này nhé: /product/ao-so-mi',
+              sentAt: '2026-01-01T10:01:00Z',
+            },
+          ],
+        }
+      }
+      return res
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <WebSocketContext.Provider value={fakeClient as unknown as Client}>
+            <ChatDock />
+          </WebSocketContext.Provider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Mở khung chat' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('[Sản phẩm]')).toBeTruthy()
+    })
+    expect(screen.queryByText(/\/product\/22222222/)).toBeNull()
+
+    await user.click(screen.getByText('Áo Trắng Store'))
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('chat-product-card').length).toBe(2)
+    })
+    expect(screen.getByText('Bạn xem mẫu này nhé:')).toBeTruthy()
+    expect(screen.queryByText(/\/product\/22222222-0000-0000-0001-000000000001/)).toBeNull()
+    expect(screen.queryByText(/\/product\/ao-so-mi/)).toBeNull()
+  })
 })

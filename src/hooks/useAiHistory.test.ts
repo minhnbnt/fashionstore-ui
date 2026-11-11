@@ -68,6 +68,7 @@ describe('useAiHistory hooks', () => {
       '/api/ai/conversations',
       expect.objectContaining({
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'Cuộc trò chuyện mới' }),
       }),
     )
@@ -126,6 +127,7 @@ describe('useAiHistory hooks', () => {
       '/api/ai/conversations/c-1/messages',
       expect.objectContaining({
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           role: 'user',
           content: 'Tìm áo',

@@ -14,6 +14,7 @@ import {
 
 import AgentTab from '@/components/chat/AgentTab'
 import { ChatDockThread } from '@/components/chat/ChatDock'
+import { formatChatPreview } from '@/components/chat/messageParser'
 import UserAvatar from '@/components/UserAvatar'
 import { useAiConversations, useDeleteAiConversation } from '@/hooks/useAiHistory'
 import { useSessionQuery } from '@/hooks/useSession'
@@ -162,6 +163,11 @@ export default function Messages() {
       'flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-bold transition rounded-xl bg-white text-sky-600 shadow-xs dark:bg-white/10 dark:text-white'
   }
 
+  let emptyShopTitle = 'Đăng nhập để xem và gửi tin nhắn cho các shop'
+  if (isLoggedIn) {
+    emptyShopTitle = 'Chọn một cuộc trò chuyện để bắt đầu nhắn tin'
+  }
+
   return (
     <div className="mx-auto flex h-[calc(100dvh-5rem)] max-w-[1400px] flex-col px-4 pt-20 pb-4 md:pt-24 md:pb-6">
       <div className="flex flex-1 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/95 shadow-xl backdrop-blur dark:border-white/10 dark:bg-[#11182a]">
@@ -249,6 +255,14 @@ export default function Messages() {
                           'flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition bg-indigo-50/80 dark:bg-white/10'
                       }
 
+                      let unreadText = ''
+                      if (c.unreadCount !== undefined && c.unreadCount > 0) {
+                        unreadText = String(c.unreadCount)
+                        if (c.unreadCount > 99) {
+                          unreadText = '99+'
+                        }
+                      }
+
                       return (
                         <button
                           key={convId}
@@ -274,11 +288,11 @@ export default function Messages() {
                             </div>
                             <div className="mt-0.5 flex items-center justify-between gap-1">
                               <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
-                                {c.lastMessageText ?? 'Bắt đầu cuộc trò chuyện'}
+                                {formatChatPreview(c.lastMessageText) || 'Bắt đầu cuộc trò chuyện'}
                               </p>
-                              {c.unreadCount !== undefined && c.unreadCount > 0 && (
+                              {unreadText !== '' && (
                                 <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white">
-                                  {c.unreadCount > 99 ? '99+' : c.unreadCount}
+                                  {unreadText}
                                 </span>
                               )}
                             </div>
@@ -388,9 +402,7 @@ export default function Messages() {
                     <ChatCircleDots size={36} />
                   </div>
                   <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-200">
-                    {isLoggedIn
-                      ? 'Chọn một cuộc trò chuyện để bắt đầu nhắn tin'
-                      : 'Đăng nhập để xem và gửi tin nhắn cho các shop'}
+                    {emptyShopTitle}
                   </h3>
                   <p className="mt-1 max-w-xs text-xs text-zinc-400">
                     Mọi thắc mắc về kích cỡ, chất liệu hoặc vận chuyển sẽ được người bán phản hồi
@@ -405,7 +417,7 @@ export default function Messages() {
             <div className="flex h-full flex-1 flex-col overflow-hidden">
               <AgentTab
                 activeConversationId={activeAiConvId}
-                onSelectConversation={setActiveAiConvId}
+                onSelectConversation={handleSelectAiConv}
               />
             </div>
           )}

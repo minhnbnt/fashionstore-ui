@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 
@@ -25,11 +25,11 @@ import { useSessionQuery } from '@/hooks/useSession'
 import { readAgentConfig } from '@/lib/ai/agent'
 import { deserializeAgentMessage, serializeAgentMessage } from '@/lib/ai/agentHistory'
 import { createAgentTransport } from '@/lib/ai/chatTransport'
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
-import { formatVnd } from '@/lib/format'
 import { EMPTY_FILTERS, parseFilters, toQueryString, withFilter } from '@/lib/searchFilters'
 
 import { bubbleClass, messageRowClass } from './bubble'
+import ChatProductCard from './ChatProductCard'
+import { extractProductSlugs, stripProductLinks } from './messageParser'
 
 import type {
   AgentConfig,
@@ -40,7 +40,6 @@ import type {
   ShowToolOutput,
 } from '@/lib/ai/agent'
 import type { SearchFilters } from '@/types/search'
-import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 import type { ToolUIPart, ChatTransport } from 'ai'
 
 export interface AgentTabProps {
@@ -68,39 +67,6 @@ function StatusPill(props: { text: string }) {
   )
 }
 
-/** Hàng sản phẩm gọn trong khung chat, dẫn tới trang chi tiết sản phẩm. */
-function AgentProductRow(props: { item: ProductSummaryResponse }) {
-  const item = props.item
-  return (
-    <Link
-      to={'/product/' + (item.id ?? '')}
-      className="flex items-center gap-2.5 rounded-2xl border border-sky-100 bg-white/80 p-2 transition hover:border-sky-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/30"
-    >
-      <img
-        src={imageUrl(item.defaultImageKey)}
-        alt={item.name ?? ''}
-        loading="lazy"
-        width={48}
-        height={60}
-        onError={function (e) {
-          if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
-            e.currentTarget.src = PLACEHOLDER_IMAGE
-          }
-        }}
-        className="h-[60px] w-12 shrink-0 rounded-xl object-cover"
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-bold text-zinc-900 dark:text-white">
-          {item.name}
-        </span>
-        <span className="mt-0.5 block text-xs font-extrabold text-sky-700 dark:text-sky-300">
-          {formatVnd(item.minPrice)}
-        </span>
-      </span>
-    </Link>
-  )
-}
-
 /** Kết quả tool searchProducts: chỉ pill trạng thái/tổng số — agent có thể tìm lại
  *  nhiều lần mà không đổ card vào chat; card do tool showProducts phụ trách. */
 function SearchToolBlock(props: { part: SearchToolPart }) {
@@ -118,7 +84,7 @@ function SearchToolBlock(props: { part: SearchToolPart }) {
   return null
 }
 
-/** Kết quả tool showProducts: danh sách card sản phẩm + nút áp dụng bộ lọc
+/** Kết quả tool showProducts: danh sách card xem chi tiết sản phẩm + nút áp dụng bộ lọc
  *  lấy từ tool searchProducts gần nhất trong cùng tin nhắn (nếu có). */
 function ShowProductsBlock(props: {
   part: ShowToolPart
@@ -141,7 +107,7 @@ function ShowProductsBlock(props: {
       <div className="w-full rounded-2xl bg-zinc-100 p-3 dark:bg-white/10">
         <div className="flex flex-col gap-2">
           {output.items.map(function (item) {
-            return <AgentProductRow key={item.id} item={item} />
+            return <ChatProductCard key={item.id} product={item} />
           })}
         </div>
         {props.appliedParams !== undefined && (
@@ -232,6 +198,10 @@ export default function AgentTab(props: AgentTabProps) {
   const deleteConvMutation = useDeleteAiConversation()
   const saveMsgMutation = useSaveAiMessage()
   const savedMsgIdsRef = useRef<Set<string>>(new Set())
+  const prevConvIdRef = useRef<string | null>(activeConvId)
+  const hydratedConvIdRef = useRef<string | null>(null)
+  const liveConvIdsRef = useRef<Set<string>>(new Set())
+  const pendingUserSaveRef = useRef<Promise<unknown>>(Promise.resolve())
 
   // Cấu hình chốt một lần: ưu tiên prop inject (test), không thì đọc env.
   const config = useMemo(
@@ -273,29 +243,52 @@ export default function AgentTab(props: AgentTabProps) {
     chatRef.current = chat
   })
 
-  const saveMsgRef = useRef(saveMsgMutation.mutate)
+  const saveMsgAsyncRef = useRef(saveMsgMutation.mutateAsync)
   useEffect(() => {
-    saveMsgRef.current = saveMsgMutation.mutate
+    saveMsgAsyncRef.current = saveMsgMutation.mutateAsync
   })
 
-  // Hydrate messages khi load cuộc trò chuyện cũ
+  // Đồng bộ trạng thái khi chuyển đổi cuộc trò chuyện hoặc bấm "Đoạn chat mới"
   useEffect(
     function () {
-      if (messagesQuery.data !== undefined && messagesQuery.data.length > 0) {
-        const hydrated = messagesQuery.data.map(deserializeAgentMessage)
-        savedMsgIdsRef.current.clear()
-        for (const m of hydrated) {
-          savedMsgIdsRef.current.add(m.id)
-        }
-        chatRef.current.setMessages(hydrated)
-      } else if (activeConvId === null) {
-        savedMsgIdsRef.current.clear()
+      if (activeConvId === prevConvIdRef.current) {
+        return
       }
+      if (activeConvId !== null && liveConvIdsRef.current.has(activeConvId)) {
+        prevConvIdRef.current = activeConvId
+        return
+      }
+      prevConvIdRef.current = activeConvId
+      hydratedConvIdRef.current = null
+      liveConvIdsRef.current.clear()
+      savedMsgIdsRef.current.clear()
+      void chatRef.current.stop()
+      chatRef.current.setMessages([])
+    },
+    [activeConvId],
+  )
+
+  // Hydrate messages khi load cuộc trò chuyện cũ từ DB (không ghi đè phiên chat đang live)
+  useEffect(
+    function () {
+      if (activeConvId === null || messagesQuery.data === undefined) {
+        return
+      }
+      if (liveConvIdsRef.current.has(activeConvId) || hydratedConvIdRef.current === activeConvId) {
+        return
+      }
+      const hydrated = messagesQuery.data.map(deserializeAgentMessage)
+      savedMsgIdsRef.current.clear()
+      for (const m of hydrated) {
+        savedMsgIdsRef.current.add(m.id)
+      }
+      hydratedConvIdRef.current = activeConvId
+      chatRef.current.setMessages(hydrated)
     },
     [messagesQuery.data, activeConvId],
   )
 
-  // Lưu tin nhắn assistant khi hoàn thành streaming
+  // Lưu tin nhắn assistant khi hoàn thành streaming, nối tuần tự sau user message
   useEffect(
     function () {
       if (!isLoggedIn || activeConvId === null) {
@@ -309,13 +302,23 @@ export default function AgentTab(props: AgentTabProps) {
           !savedMsgIdsRef.current.has(lastMsg.id)
         ) {
           savedMsgIdsRef.current.add(lastMsg.id)
+          const targetConvId = activeConvId
           const serialized = serializeAgentMessage(lastMsg)
-          saveMsgRef.current({
-            conversationId: activeConvId,
-            role: serialized.role,
-            content: serialized.content,
-            metadata: serialized.metadata,
-          })
+          pendingUserSaveRef.current = pendingUserSaveRef.current
+            .catch(function () {
+              // ignore previous error
+            })
+            .then(async function () {
+              await saveMsgAsyncRef.current({
+                conversationId: targetConvId,
+                role: serialized.role,
+                content: serialized.content,
+                metadata: serialized.metadata,
+              })
+            })
+            .catch(function (e) {
+              console.error('Lỗi lưu phản hồi AI:', e)
+            })
         }
       }
     },
@@ -333,7 +336,7 @@ export default function AgentTab(props: AgentTabProps) {
     [chat.messages],
   )
 
-  async function handleSendAction() {
+  function handleSendAction() {
     const text = input.trim()
     if (text === '') {
       return
@@ -347,30 +350,36 @@ export default function AgentTab(props: AgentTabProps) {
     setInput('')
 
     if (isLoggedIn) {
-      let targetConvId = activeConvId
-      if (targetConvId === null) {
-        try {
-          const newConv = await createConvMutation.mutateAsync(text.slice(0, 40))
-          targetConvId = newConv.id
-          handleSetActiveConvId(targetConvId)
-        } catch (e) {
-          console.error('Lỗi tạo hội thoại AI:', e)
-        }
-      }
-      if (targetConvId !== null) {
-        saveMsgMutation.mutate({
-          conversationId: targetConvId,
-          role: 'user',
-          content: text,
-          metadata: JSON.stringify({ parts: [{ type: 'text', text }] }),
+      const currentConvId = activeConvId
+      pendingUserSaveRef.current = pendingUserSaveRef.current
+        .catch(function () {
+          // ignore previous error
         })
-      }
+        .then(async function () {
+          let targetConvId = currentConvId
+          if (targetConvId === null) {
+            const newConv = await createConvMutation.mutateAsync(text.slice(0, 40))
+            targetConvId = newConv.id
+            liveConvIdsRef.current.add(targetConvId)
+            hydratedConvIdRef.current = targetConvId
+            handleSetActiveConvId(targetConvId)
+          }
+          await saveMsgAsyncRef.current({
+            conversationId: targetConvId,
+            role: 'user',
+            content: text,
+            metadata: JSON.stringify({ parts: [{ type: 'text', text }] }),
+          })
+        })
+        .catch(function (e) {
+          console.error('Lỗi lưu tin nhắn AI:', e)
+        })
     }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    void handleSendAction()
+    handleSendAction()
   }
 
   function applyFilters(patch: Partial<SearchFilters>) {
@@ -388,16 +397,38 @@ export default function AgentTab(props: AgentTabProps) {
               if (part.text === '') {
                 return null
               }
+              const slugs = extractProductSlugs(part.text)
+              const displayText = stripProductLinks(part.text)
+              if (displayText === '' && slugs.length === 0) {
+                return null
+              }
               return (
-                <p key={key} className={bubbleClass(true)}>
-                  {part.text}
-                </p>
+                <div key={key} className="flex flex-col items-end gap-1.5">
+                  {displayText !== '' && <p className={bubbleClass(true)}>{displayText}</p>}
+                  {slugs.length > 0 && (
+                    <div className="max-w-[280px] space-y-1.5">
+                      {slugs.map(function (s) {
+                        return <ChatProductCard key={s} slug={s} />
+                      })}
+                    </div>
+                  )}
+                </div>
               )
             }
             return null
           })}
         </div>
       )
+    }
+    const shownIds = new Set<string>()
+    for (const part of message.parts) {
+      if (part.type === 'tool-showProducts' && part.state === 'output-available') {
+        for (const item of part.output.items) {
+          if (item.id !== undefined && item.id !== '') {
+            shownIds.add(item.id)
+          }
+        }
+      }
     }
     // appliedParams của tool searchProducts gần nhất trong cùng tin nhắn,
     // để khối showProducts có dữ liệu cho nút "Lọc trên trang" mà không cần model truyền lại.
@@ -410,7 +441,30 @@ export default function AgentTab(props: AgentTabProps) {
             if (part.text === '') {
               return null
             }
-            return <Markdown key={key} source={part.text} className="prose-sm" />
+            const extractedSlugs = extractProductSlugs(part.text)
+            const unshownSlugs: string[] = []
+            for (const s of extractedSlugs) {
+              if (!shownIds.has(s)) {
+                shownIds.add(s)
+                unshownSlugs.push(s)
+              }
+            }
+            const displayText = stripProductLinks(part.text)
+            if (displayText === '' && unshownSlugs.length === 0) {
+              return null
+            }
+            return (
+              <Fragment key={key}>
+                {displayText !== '' && <Markdown source={displayText} className="prose-sm" />}
+                {unshownSlugs.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    {unshownSlugs.map(function (s) {
+                      return <ChatProductCard key={s} slug={s} />
+                    })}
+                  </div>
+                )}
+              </Fragment>
+            )
           }
           if (part.type === 'tool-searchProducts') {
             if (part.state === 'output-available') {
@@ -440,6 +494,10 @@ export default function AgentTab(props: AgentTabProps) {
   const currentConversation = conversations.find(function (c) {
     return c.id === activeConvId
   })
+  let convHeaderTitle = 'Cuộc trò chuyện mới'
+  if (currentConversation !== undefined) {
+    convHeaderTitle = currentConversation.title
+  }
 
   return (
     <>
@@ -454,9 +512,7 @@ export default function AgentTab(props: AgentTabProps) {
               className="flex min-w-0 items-center gap-1.5 font-semibold text-zinc-700 hover:text-sky-600 dark:text-zinc-200"
             >
               <ChatCircleDots size={14} className="shrink-0 text-sky-600" />
-              <span className="max-w-[180px] truncate">
-                {currentConversation ? currentConversation.title : 'Cuộc trò chuyện mới'}
-              </span>
+              <span className="max-w-[180px] truncate">{convHeaderTitle}</span>
               <CaretDown size={12} className="shrink-0 text-zinc-400" />
             </button>
 

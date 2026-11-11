@@ -10,9 +10,9 @@ export interface ChatProductItem {
   id?: string
   name?: string
   slug?: string
-  defaultImageKey?: string
-  minPrice?: number
-  maxPrice?: number
+  defaultImageKey?: string | null
+  minPrice?: number | null
+  maxPrice?: number | null
 }
 
 export interface ChatProductCardProps {
@@ -63,7 +63,7 @@ export default function ChatProductCard(props: ChatProductCardProps) {
     return null
   }
 
-  const productLink = '/product/' + (product.slug || product.id || '')
+  const productLink = '/product/' + (product.id || product.slug || '')
   let priceText = ''
   if (product.minPrice !== undefined && product.minPrice !== null) {
     if (
@@ -80,12 +80,12 @@ export default function ChatProductCard(props: ChatProductCardProps) {
   return (
     <div
       data-testid="chat-product-card"
-      className="flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50/50 p-2.5 transition hover:border-sky-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20"
+      className="flex w-full items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50/50 p-2.5 transition hover:border-sky-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20"
     >
-      <Link to={productLink} className="shrink-0">
+      <Link to={productLink} tabIndex={-1} aria-hidden="true" className="shrink-0">
         <img
           src={imageUrl(product.defaultImageKey)}
-          alt={product.name ?? 'Sản phẩm'}
+          alt=""
           loading="lazy"
           width={56}
           height={70}

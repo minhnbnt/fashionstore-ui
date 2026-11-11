@@ -38,7 +38,7 @@ describe('ChatProductCard', () => {
     expect(screen.getByText('Áo Polo Nam Cổ Bẻ')).toBeTruthy()
     expect(screen.getByText('250.000 ₫ - 300.000 ₫')).toBeTruthy()
     const link = screen.getByRole('link', { name: 'Xem chi tiết' }) as HTMLAnchorElement
-    expect(link.getAttribute('href')).toBe('/product/ao-polo-nam')
+    expect(link.getAttribute('href')).toBe('/product/prod-123')
   })
 
   it('gọi onSendProduct khi bấm nút Gửi vào chat', async () => {

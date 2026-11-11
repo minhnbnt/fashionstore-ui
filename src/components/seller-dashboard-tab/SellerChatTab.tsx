@@ -9,6 +9,7 @@ import {
   useSellerConversations,
 } from '@generated/endpoints/chat/chat'
 import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
+import { useListProducts } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
 import { getMineQueryKey, useUpdateProfile } from '@generated/endpoints/shops/shops'
 import {
   PaperPlaneRight,
@@ -16,13 +17,18 @@ import {
   CheckCircle,
   Robot,
   Image as ImageIcon,
+  ShoppingBagOpen,
   X,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import ChatImageBubble from '@/components/chat/ChatImageBubble'
 import ChatProductCard from '@/components/chat/ChatProductCard'
-import { extractProductSlugs } from '@/components/chat/messageParser'
+import {
+  extractProductSlugs,
+  formatChatPreview,
+  stripProductLinks,
+} from '@/components/chat/messageParser'
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
@@ -32,6 +38,7 @@ import { chatConversationItem, chatMessageItem } from '@/lib/seller/sellerAdapte
 
 import type { ChatConversationItem, ChatMessageItem } from '@/types/seller'
 import type { ChatConversationResponse } from '@generated/model/chatConversationResponse'
+import type { SellerProductResponse } from '@generated/model/sellerProductResponse'
 
 interface Props {
   shopId: string
@@ -67,9 +74,17 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAutoReplyModal, setShowAutoReplyModal] = useState(false)
+  const [showProductPickerModal, setShowProductPickerModal] = useState(false)
+  const [productSearchQuery, setProductSearchQuery] = useState('')
   const [tempAutoReply, setTempAutoReply] = useState(autoReplyText)
   const [notification, setNotification] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const shopProductsQuery = useListProducts(
+    shopId,
+    { status: 'ACTIVE' },
+    { query: { enabled: shopId !== '' && showProductPickerModal } },
+  )
 
   const conversationsQuery = useSellerConversations(
     { shopId },
@@ -180,6 +195,18 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
       return c.buyerName.toLowerCase().includes(searchTerm.toLowerCase())
     }
     return true
+  })
+
+  let shopProducts: SellerProductResponse[] = []
+  if (shopProductsQuery.data !== undefined) {
+    shopProducts = takeData(shopProductsQuery.data)
+  }
+  const filteredShopProducts = shopProducts.filter(function (p) {
+    const q = productSearchQuery.trim().toLowerCase()
+    if (q === '') {
+      return true
+    }
+    return (p.name ?? '').toLowerCase().includes(q)
   })
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -302,7 +329,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                       </p>
                       <span className="text-[10px] text-zinc-400">{conv.lastMessageAt}</span>
                     </div>
-                    <p className="mt-0.5 truncate text-[11px] text-zinc-500">{conv.lastMessage}</p>
+                    <p className="mt-0.5 truncate text-[11px] text-zinc-500">
+                      {formatChatPreview(conv.lastMessage)}
+                    </p>
                   </div>
                   {conv.unreadCount > 0 && (
                     <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-indigo-700 px-1 text-[9px] font-bold text-white">
@@ -353,6 +382,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                 {messages.map(function (msg) {
                   const isMe = msg.senderType === 'SELLER'
                   const slugs = extractProductSlugs(msg.content)
+                  const displayContent = stripProductLinks(msg.content)
                   return (
                     <div key={msg.id} className={messageRowClass(isMe)}>
                       {msg.imageKey && (
@@ -360,7 +390,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                           <ChatImageBubble imageKey={msg.imageKey} />
                         </div>
                       )}
-                      {msg.content && <div className={messageBubbleClass(isMe)}>{msg.content}</div>}
+                      {displayContent !== '' && (
+                        <div className={messageBubbleClass(isMe)}>{displayContent}</div>
+                      )}
                       {slugs.length > 0 && (
                         <div className="mt-1.5 max-w-[280px] space-y-1.5">
                           {slugs.map(function (slug) {
@@ -415,6 +447,17 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                     className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
                   >
                     <ImageIcon size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={function () {
+                      setProductSearchQuery('')
+                      setShowProductPickerModal(true)
+                    }}
+                    aria-label="Gửi sản phẩm"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
+                  >
+                    <ShoppingBagOpen size={18} />
                   </button>
                   <input
                     type="text"
@@ -501,6 +544,59 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
             >
               Lưu cấu hình
             </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Chọn sản phẩm gửi cho khách */}
+      {showProductPickerModal && (
+        <Modal
+          title="Chọn sản phẩm gửi cho khách"
+          onClose={function () {
+            setShowProductPickerModal(false)
+          }}
+          widthClass="max-w-lg"
+        >
+          <div className="mt-3">
+            <div className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/10">
+              <MagnifyingGlass size={14} className="text-zinc-400" />
+              <input
+                type="text"
+                value={productSearchQuery}
+                onChange={function (e) {
+                  setProductSearchQuery(e.target.value)
+                }}
+                placeholder="Tìm sản phẩm của shop..."
+                className="w-full bg-transparent outline-none dark:text-white"
+              />
+            </div>
+
+            <div className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
+              {shopProductsQuery.isPending && (
+                <p className="py-6 text-center text-xs text-zinc-400">
+                  Đang tải danh sách sản phẩm...
+                </p>
+              )}
+              {!shopProductsQuery.isPending && filteredShopProducts.length === 0 && (
+                <p className="py-6 text-center text-xs text-zinc-400">
+                  Không tìm thấy sản phẩm phù hợp.
+                </p>
+              )}
+              {filteredShopProducts.map(function (prod) {
+                return (
+                  <ChatProductCard
+                    key={prod.id ?? prod.slug}
+                    product={prod}
+                    onSendProduct={function (selected) {
+                      if (activeConvId !== '') {
+                        handleSendMessage(activeConvId, '/product/' + selected.id)
+                        setShowProductPickerModal(false)
+                      }
+                    }}
+                  />
+                )
+              })}
+            </div>
           </div>
         </Modal>
       )}

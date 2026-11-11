@@ -33,7 +33,7 @@ import { formatDateTime } from '@/lib/format'
 import { bubbleClass, messageRowClass } from './bubble'
 import ChatImageBubble from './ChatImageBubble'
 import ChatProductCard from './ChatProductCard'
-import { extractProductSlugs } from './messageParser'
+import { extractProductSlugs, formatChatPreview, stripProductLinks } from './messageParser'
 
 import type { AgentConfig, AgentUIMessage } from '@/lib/ai/agent'
 import type { ChatConversationResponse } from '@generated/model/chatConversationResponse'
@@ -218,6 +218,7 @@ export function ChatDockThread({ conversation, onBack }: ThreadProps) {
             readLabel = 'Đã xem · '
           }
           const slugs = extractProductSlugs(msg.content)
+          const displayContent = stripProductLinks(msg.content)
           return (
             <div key={msg.id} className={messageRowClass(isMine)}>
               {msg.imageKey && (
@@ -225,9 +226,9 @@ export function ChatDockThread({ conversation, onBack }: ThreadProps) {
                   <ChatImageBubble imageKey={msg.imageKey} />
                 </div>
               )}
-              {msg.content && <div className={bubbleClass(isMine)}>{msg.content}</div>}
+              {displayContent !== '' && <div className={bubbleClass(isMine)}>{displayContent}</div>}
               {slugs.length > 0 && (
-                <div className="mt-1.5 max-w-[280px] space-y-1.5">
+                <div className="mt-1.5 w-full max-w-[280px] space-y-1.5">
                   {slugs.map(function (slug) {
                     return <ChatProductCard key={slug} slug={slug} />
                   })}
@@ -407,7 +408,7 @@ function ChatDockList({
                   </span>
                 </div>
                 <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-                  {conv.lastMessageText ?? ''}
+                  {formatChatPreview(conv.lastMessageText)}
                 </p>
               </div>
               {(conv.unreadCount ?? 0) > 0 && (

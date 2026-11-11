@@ -69,6 +69,7 @@ export function useCreateAiConversation() {
         '/api/ai/conversations',
         {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title }),
         },
       )
@@ -107,6 +108,7 @@ export function useSaveAiMessage() {
         '/api/ai/conversations/' + params.conversationId + '/messages',
         {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             role: params.role,
             content: params.content,
