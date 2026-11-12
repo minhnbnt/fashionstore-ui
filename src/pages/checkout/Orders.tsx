@@ -42,7 +42,13 @@ import ReviewModal from '@/components/order/ReviewModal'
 import ReviewProductPickerModal from '@/components/order/ReviewProductPickerModal'
 import StatePanel from '@/components/ui/StatePanel'
 import { useSessionQuery } from '@/hooks/useSession'
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  fallbackImageOnError,
+  hookErrorMessage,
+  imageUrl,
+  PLACEHOLDER_IMAGE,
+  takeData,
+} from '@/lib/api/apiAdapters'
 import { formatDateTime, formatVnd } from '@/lib/format'
 import {
   BUYER_ORDER_TABS,
@@ -191,9 +197,9 @@ function resolveReviewButtonState(
 
 function tabButtonClass(active: boolean): string {
   if (active) {
-    return 'shrink-0 rounded-full bg-zinc-900 px-4 py-2 text-xs font-bold text-white dark:bg-white dark:text-zinc-950'
+    return 'shrink-0 rounded-full bg-[#17203a] px-4 py-2 text-xs font-bold text-white shadow-sm dark:bg-white dark:text-[#0a0f1e]'
   }
-  return 'shrink-0 rounded-full border border-zinc-200 bg-white/80 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
+  return 'shrink-0 rounded-full border border-sky-100 bg-white/80 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
 }
 
 export default function Orders() {
@@ -497,7 +503,7 @@ export default function Orders() {
 
   if (sessionPending) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-[110px] pb-16">
+      <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
         <StatePanel title="Đang tải đơn hàng" description="Vui lòng đợi trong giây lát…" />
       </main>
     )
@@ -505,7 +511,7 @@ export default function Orders() {
 
   if (!isLoggedIn) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-[110px] pb-16">
+      <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
         <StatePanel
           title="Bạn chưa đăng nhập"
           description="Đăng nhập để theo dõi tiến trình và lịch sử đơn hàng của bạn."
@@ -515,7 +521,7 @@ export default function Orders() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[110px] pb-16">
+    <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-bold tracking-widest text-blue-600 uppercase dark:text-sky-400">
@@ -537,13 +543,13 @@ export default function Orders() {
             value={searchText}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Tìm theo mã đơn hoặc tên sản phẩm…"
-            className="w-full rounded-full border border-zinc-300 bg-white/90 py-2.5 pr-4 pl-9 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-600 dark:border-white/15 dark:bg-[#11182a] dark:text-white dark:placeholder:text-zinc-500"
+            className="w-full rounded-full border border-zinc-300 bg-white/80 py-2.5 pr-4 pl-9 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white dark:placeholder:text-zinc-500"
           />
         </div>
       </div>
 
       {/* 7 tabs dong bo 1-1 voi shop */}
-      <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+      <div className="mb-6 flex flex-wrap gap-2 pb-2">
         {BUYER_ORDER_TABS.map((tab) => (
           <button
             key={tab.key}
@@ -606,11 +612,8 @@ export default function Orders() {
           const reviewBtn = resolveReviewButtonState(order, reviewsByProductId)
 
           return (
-            <article
-              key={order.id ?? order.code}
-              className="space-y-4 rounded-3xl border border-zinc-200 bg-white/90 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-3 dark:border-white/10">
+            <article key={order.id ?? order.code} className="glass space-y-4 rounded-3xl p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 pb-3 dark:border-white/10">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1.5 text-sm font-extrabold text-zinc-900 dark:text-white">
                     <Storefront
@@ -666,7 +669,7 @@ export default function Orders() {
                 />
               )}
 
-              <div className="divide-y divide-zinc-100 dark:divide-white/5">
+              <div className="divide-y divide-sky-100 dark:divide-white/5">
                 {(order.items ?? []).map((item, idx) => {
                   let thumb = PLACEHOLDER_IMAGE
                   if (item.imageKey) {
@@ -681,7 +684,9 @@ export default function Orders() {
                       <img
                         src={thumb}
                         alt={item.productName ?? 'Sản phẩm'}
-                        className="h-14 w-14 shrink-0 rounded-2xl border border-zinc-200 object-cover dark:border-white/10"
+                        loading="lazy"
+                        onError={fallbackImageOnError}
+                        className="h-14 w-14 shrink-0 rounded-2xl border border-sky-100 object-cover dark:border-white/10"
                       />
                       <div className="min-w-0 flex-1">
                         {canVisitProduct && (
@@ -726,7 +731,7 @@ export default function Orders() {
                   </p>
                 )}
 
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-3 dark:border-white/10">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-sky-100 pt-3 dark:border-white/10">
                 <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
                   {Boolean(order.shippingCarrier) && Boolean(order.trackingCode) && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 font-medium text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
@@ -737,7 +742,7 @@ export default function Orders() {
                   {Boolean(order.paymentStatus) && (
                     <span>{paymentStatusLabel(order.paymentStatus)}</span>
                   )}
-                  <span className="text-sm font-extrabold text-zinc-900 dark:text-white">
+                  <span className="text-sm font-extrabold text-zinc-900 tabular-nums dark:text-white">
                     Tổng: {formatVnd(order.total ?? 0)}
                   </span>
                 </div>
@@ -800,7 +805,7 @@ export default function Orders() {
                       type="button"
                       disabled={reorderMutation.isPending}
                       onClick={() => void handleReorder(order)}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+                      className="btn-primary inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold disabled:opacity-50"
                     >
                       <ArrowCounterClockwise size={14} weight="bold" />
                       <span>Mua lại</span>

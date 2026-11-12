@@ -237,7 +237,7 @@ describe('NotificationBell', () => {
   })
 
   it('exposesRealtimeInvalidationPrefixTargetsForOrderAndReturnTypes', async () => {
-    const mod = await import('./NotificationBell')
+    const mod = await import('@/lib/content/notificationLinks')
     expect(mod.realtimeInvalidationKeys('ORDER_SHIPPED')).toEqual(
       expect.arrayContaining([['/api/orders/mine'], ['/api/seller/orders']]),
     )

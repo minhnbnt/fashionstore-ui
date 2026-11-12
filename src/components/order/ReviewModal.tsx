@@ -58,7 +58,7 @@ export default function ReviewModal(props: Props) {
         )}
 
         {isEditLocked && (
-          <div className="space-y-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm dark:border-white/10 dark:bg-white/5">
+          <div className="space-y-3 rounded-2xl border border-sky-100 bg-white/70 p-4 text-sm dark:border-white/10 dark:bg-white/5">
             <p className="font-semibold text-zinc-700 dark:text-zinc-200">
               Bạn đã sử dụng hết lượt chỉnh sửa cho đánh giá này.
             </p>
@@ -127,7 +127,7 @@ export default function ReviewModal(props: Props) {
               <button
                 type="submit"
                 disabled={props.isPending}
-                className="rounded-full bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+                className="btn-primary rounded-full px-5 py-2 text-xs font-bold disabled:opacity-50"
               >
                 {isEditing && 'Lưu chỉnh sửa'}
                 {!isEditing && 'Gửi đánh giá'}

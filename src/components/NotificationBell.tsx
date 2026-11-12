@@ -16,7 +16,10 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useSessionQuery } from '@/hooks/useSession'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { takeData } from '@/lib/api/apiAdapters'
-import { getTargetNotificationLink } from '@/lib/content/notificationLinks'
+import {
+  getTargetNotificationLink,
+  realtimeInvalidationKeys,
+} from '@/lib/content/notificationLinks'
 import { formatDateTime } from '@/lib/format'
 
 import type { GetUnreadNotificationCountParams, ListNotificationsParams } from '@generated/model'
@@ -35,29 +38,9 @@ export interface NotificationBellProps {
 
 function getNotificationClass(isRead: boolean): string {
   if (isRead) {
-    return 'w-full text-left p-3 rounded-xl transition hover:bg-zinc-100 dark:hover:bg-white/5 opacity-80'
+    return 'w-full text-left p-3 rounded-2xl transition hover:bg-zinc-100 dark:hover:bg-white/5 opacity-80'
   }
-  return 'w-full text-left p-3 rounded-xl transition bg-indigo-50/80 hover:bg-indigo-100/80 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50'
-}
-
-export function realtimeInvalidationKeys(notificationType: string | undefined): string[][] {
-  if (!notificationType) {
-    return []
-  }
-  const keys: string[][] = []
-  if (notificationType.startsWith('ORDER_')) {
-    keys.push(['/api/orders/mine'], ['/api/orders/'], ['/api/seller/orders'], ['/api/seller/shops'])
-  }
-  if (notificationType.startsWith('RETURN_')) {
-    keys.push(
-      ['/api/orders/mine'],
-      ['/api/orders/returns/mine'],
-      ['/api/seller/orders'],
-      ['/api/seller/returns'],
-      ['/api/seller/shops'],
-    )
-  }
-  return keys
+  return 'w-full text-left p-3 rounded-2xl transition bg-indigo-50/80 hover:bg-indigo-100/80 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50'
 }
 
 export default function NotificationBell(props: NotificationBellProps) {

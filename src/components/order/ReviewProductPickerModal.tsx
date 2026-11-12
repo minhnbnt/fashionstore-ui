@@ -1,4 +1,4 @@
-import { PLACEHOLDER_IMAGE, imageUrl } from '@/lib/api/apiAdapters'
+import { fallbackImageOnError, PLACEHOLDER_IMAGE, imageUrl } from '@/lib/api/apiAdapters'
 
 import Modal from '../Modal'
 
@@ -70,13 +70,15 @@ export default function ReviewProductPickerModal(props: Props) {
           return (
             <div
               key={item.id ?? productId ?? `${idx}`}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-3 dark:border-white/10 dark:bg-white/5"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <img
                   src={thumb}
                   alt={item.productName ?? 'Sản phẩm'}
-                  className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                  loading="lazy"
+                  onError={fallbackImageOnError}
+                  className="h-12 w-12 shrink-0 rounded-2xl border border-sky-100 object-cover dark:border-white/10"
                 />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold text-zinc-900 dark:text-white">

@@ -320,8 +320,10 @@ export default function SellerReturnsTab({ shopId }: Props) {
                                 key={`${ret.id}-vid-${idx}`}
                                 controls
                                 src={src}
-                                className="h-24 w-36 rounded-xl border border-zinc-200 bg-black object-cover shadow-sm dark:border-white/10"
-                              />
+                                className="h-24 w-36 rounded-2xl border border-zinc-200 bg-black object-cover shadow-sm dark:border-white/10"
+                              >
+                                <track kind="captions" />
+                              </video>
                             )
                           }
                           return (

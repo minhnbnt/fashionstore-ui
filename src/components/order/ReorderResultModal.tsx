@@ -30,7 +30,7 @@ function issueReasonLabel(reason: string | undefined): string {
 
 function IssueRow({ item, adjusted }: { item: ReorderItemIssue; adjusted: boolean }) {
   return (
-    <li className="rounded-2xl border border-zinc-200 bg-zinc-50/70 px-3.5 py-2.5 text-xs dark:border-white/10 dark:bg-white/5">
+    <li className="rounded-2xl border border-sky-100 bg-white/70 px-3.5 py-2.5 text-xs dark:border-white/10 dark:bg-white/5">
       <div className="flex items-center justify-between gap-2">
         <span className="font-bold text-zinc-900 dark:text-white">{item.productName}</span>
         <span className="font-semibold text-amber-600 dark:text-amber-300">
@@ -103,7 +103,7 @@ export default function ReorderResultModal(props: Props) {
           <button
             type="button"
             onClick={props.onGoToCart}
-            className="rounded-full bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700"
+            className="btn-primary rounded-full px-5 py-2 text-xs font-bold"
           >
             Đi tới giỏ hàng
           </button>

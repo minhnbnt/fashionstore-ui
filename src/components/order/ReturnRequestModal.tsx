@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { Trash, UploadSimple, VideoCamera } from '@phosphor-icons/react'
 
-import { imageUrl } from '@/lib/api/apiAdapters'
+import { fallbackImageOnError, imageUrl } from '@/lib/api/apiAdapters'
 import { uploadImage, uploadVideo } from '@/lib/api/uploadImage'
 
 import Modal from '../Modal'
@@ -99,10 +99,14 @@ export default function ReturnRequestModal(props: Props) {
     <Modal title={heading} onClose={props.onClose} widthClass="max-w-lg">
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div>
-          <label className="mb-1.5 block text-xs font-bold text-zinc-700 dark:text-zinc-200">
+          <label
+            htmlFor="return-reason-select"
+            className="mb-1.5 block text-xs font-bold text-zinc-700 dark:text-zinc-200"
+          >
             Lý do đổi trả
           </label>
           <select
+            id="return-reason-select"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             className="w-full rounded-full border border-zinc-300 bg-white/80 px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
@@ -116,10 +120,14 @@ export default function ReturnRequestModal(props: Props) {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-bold text-zinc-700 dark:text-zinc-200">
+          <label
+            htmlFor="return-description-input"
+            className="mb-1.5 block text-xs font-bold text-zinc-700 dark:text-zinc-200"
+          >
             Mô tả chi tiết
           </label>
           <textarea
+            id="return-description-input"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
@@ -150,13 +158,15 @@ export default function ReturnRequestModal(props: Props) {
               {mediaList.map((media) => (
                 <div
                   key={media.key}
-                  className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-white/15 dark:bg-white/5"
+                  className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-sky-100 bg-white/70 dark:border-white/15 dark:bg-white/5"
                 >
                   {media.isVideo && <VideoCamera size={24} className="text-sky-400" />}
                   {!media.isVideo && (
                     <img
                       src={imageUrl(media.key)}
                       alt="Bằng chứng"
+                      loading="lazy"
+                      onError={fallbackImageOnError}
                       className="h-full w-full object-cover"
                     />
                   )}
@@ -191,7 +201,7 @@ export default function ReturnRequestModal(props: Props) {
           <button
             type="submit"
             disabled={props.isPending || uploading}
-            className="rounded-full bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="btn-primary rounded-full px-5 py-2 text-xs font-bold disabled:opacity-50"
           >
             Gửi yêu cầu đổi trả
           </button>

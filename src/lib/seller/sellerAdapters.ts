@@ -280,7 +280,7 @@ export function returnItem(
     evidenceImages,
     status,
     resolution: safeText(request.resolution),
-    refundAmount: request.refundAmount,
+    refundAmount: request.refundAmount ?? undefined,
     sellerNote: safeText(request.sellerNote),
     createdAt: formatDateTime(request.createdAt),
   }

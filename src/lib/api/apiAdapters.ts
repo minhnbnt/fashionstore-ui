@@ -185,3 +185,10 @@ export function apiErrorText(err: unknown, fallback: string): string {
   }
   return fallback
 }
+
+/** Fallback ảnh mặc định khi URL ảnh sản phẩm / bằng chứng bị lỗi tải */
+export function fallbackImageOnError(event: { currentTarget: HTMLImageElement }): void {
+  if (event.currentTarget.src !== PLACEHOLDER_IMAGE) {
+    event.currentTarget.src = PLACEHOLDER_IMAGE
+  }
+}

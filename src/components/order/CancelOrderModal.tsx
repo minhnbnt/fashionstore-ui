@@ -22,7 +22,7 @@ function reasonChipClass(selected: boolean): string {
   if (selected) {
     return 'rounded-2xl border border-blue-600 bg-blue-50 px-3.5 py-2.5 text-left text-xs font-bold text-blue-700 dark:border-sky-400 dark:bg-blue-500/20 dark:text-sky-200'
   }
-  return 'rounded-2xl border border-zinc-200 bg-white/80 px-3.5 py-2.5 text-left text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-white/15 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
+  return 'rounded-2xl border border-zinc-300 bg-white/80 px-3.5 py-2.5 text-left text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-white/15 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
 }
 
 export default function CancelOrderModal(props: Props) {
@@ -76,10 +76,14 @@ export default function CancelOrderModal(props: Props) {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-bold text-zinc-700 dark:text-zinc-200">
+          <label
+            htmlFor="cancel-order-note"
+            className="mb-1.5 block text-xs font-bold text-zinc-700 dark:text-zinc-200"
+          >
             Ghi chú chi tiết
           </label>
           <textarea
+            id="cancel-order-note"
             value={note}
             onChange={(e) => {
               setNote(e.target.value)

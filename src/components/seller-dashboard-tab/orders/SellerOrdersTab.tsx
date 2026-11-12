@@ -845,7 +845,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                             onClick={function () {
                               handleShipOrder(order.id)
                             }}
-                            className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700"
+                            className="btn-primary flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-sm"
                           >
                             <Truck size={14} weight="bold" />
                             Giao cho ĐVVC
@@ -863,7 +863,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                                 setTrackingLocation('')
                                 setTrackingDescription('')
                               }}
-                              className="flex items-center gap-1.5 rounded-xl border border-indigo-300 bg-indigo-50 px-3.5 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-400/30 dark:bg-indigo-500/15 dark:text-indigo-200 dark:hover:bg-indigo-500/25"
+                              className="flex items-center gap-1.5 rounded-full border border-zinc-300 bg-white/80 px-3.5 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
                             >
                               <Truck size={14} weight="bold" />
                               Cập nhật hành trình
@@ -874,7 +874,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                                 handleDeliverOrder(order.id)
                                 showToast('Đã xác nhận giao thành công và thu tiền COD!')
                               }}
-                              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+                              className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
                             >
                               <CheckCircle size={14} weight="bold" />
                               Hoàn tất thu COD
@@ -1181,7 +1181,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 onChange={function (e) {
                   setCancelReason(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white p-2.5 text-xs outline-none focus:border-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
               >
                 <option value="Hết hàng trong kho">Hết hàng trong kho</option>
                 <option value="Sai thông tin giá / sản phẩm">Sai thông tin giá / sản phẩm</option>
@@ -1213,7 +1213,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 }}
                 rows={3}
                 placeholder="Nhập thông tin chi tiết giải thích cho người mua..."
-                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white p-2.5 text-xs outline-none focus:border-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white/80 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
               />
             </div>
 
@@ -1224,7 +1224,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                   setCancelTargetId(null)
                   setCancelNote('')
                 }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+                className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
               >
                 Đóng
               </button>
@@ -1232,7 +1232,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 type="button"
                 id="btn-confirm-cancel-order"
                 onClick={handleConfirmCancel}
-                className="rounded-2xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
+                className="rounded-full bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
               >
                 Xác nhận hủy & Hoàn kho
               </button>
@@ -1252,32 +1252,40 @@ export default function SellerOrdersTab({ shopId }: Props) {
         >
           <div className="mt-2 space-y-4 text-xs">
             <div>
-              <label className="block font-semibold text-zinc-700 dark:text-zinc-300">
+              <label
+                htmlFor="ship-carrier-input"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
+              >
                 Đơn vị vận chuyển
               </label>
               <input
+                id="ship-carrier-input"
                 type="text"
                 value={shipCarrier}
                 onChange={function (e) {
                   setShipCarrier(e.target.value)
                 }}
                 placeholder="GHN (mặc định nếu bỏ trống)"
-                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white px-3.5 py-2 text-xs outline-none focus:border-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-zinc-700 dark:text-zinc-300">
+              <label
+                htmlFor="ship-tracking-input"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
+              >
                 Mã vận đơn
               </label>
               <input
+                id="ship-tracking-input"
                 type="text"
                 value={shipTrackingCode}
                 onChange={function (e) {
                   setShipTrackingCode(e.target.value)
                 }}
                 placeholder="Tự sinh VN-... nếu bỏ trống"
-                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white px-3.5 py-2 text-xs outline-none focus:border-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
               />
             </div>
 
@@ -1287,7 +1295,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 onClick={function () {
                   setShipTargetOrderId(null)
                 }}
-                className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 dark:border-white/15 dark:text-zinc-200"
+                className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
               >
                 Đóng
               </button>
@@ -1295,7 +1303,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 type="button"
                 disabled={shipMutation.isPending}
                 onClick={handleConfirmShip}
-                className="rounded-full bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+                className="btn-primary rounded-full px-5 py-2 text-xs font-bold disabled:opacity-50"
               >
                 Xác nhận giao ĐVVC
               </button>
@@ -1315,7 +1323,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
         >
           <div className="mt-3 space-y-4 text-xs">
             {(can('ORDER_READ') || can('ORDER_PROCESS')) && trackingEvents.length > 0 && (
-              <div className="max-h-44 space-y-2 overflow-y-auto rounded-2xl border border-zinc-200 bg-zinc-50/70 p-3 dark:border-white/10 dark:bg-white/5">
+              <div className="max-h-44 space-y-2 overflow-y-auto rounded-2xl border border-sky-100 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
                 {trackingEvents.map(function (ev, idx) {
                   return (
                     <div key={ev.id ?? idx} className="flex items-start justify-between gap-2">
@@ -1336,15 +1344,19 @@ export default function SellerOrdersTab({ shopId }: Props) {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="block font-semibold text-zinc-700 dark:text-zinc-300">
+                <label
+                  htmlFor="tracking-status-select"
+                  className="block font-semibold text-zinc-700 dark:text-zinc-300"
+                >
                   Mốc hành trình
                 </label>
                 <select
+                  id="tracking-status-select"
                   value={trackingStatusCode}
                   onChange={function (e) {
                     setTrackingStatusCode(e.target.value)
                   }}
-                  className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white px-3.5 py-2 text-xs outline-none focus:border-indigo-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
+                  className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
                 >
                   <option value="IN_TRANSIT">Đang trung chuyển</option>
                   <option value="SORTING_FACILITY">Tại kho phân loại</option>
@@ -1353,48 +1365,60 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 </select>
               </div>
               <div>
-                <label className="block font-semibold text-zinc-700 dark:text-zinc-300">
+                <label
+                  htmlFor="tracking-location-input"
+                  className="block font-semibold text-zinc-700 dark:text-zinc-300"
+                >
                   Địa điểm / Kho
                 </label>
                 <input
+                  id="tracking-location-input"
                   type="text"
                   value={trackingLocation}
                   onChange={function (e) {
                     setTrackingLocation(e.target.value)
                   }}
                   placeholder="Kho Hà Nội"
-                  className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white px-3.5 py-2 text-xs outline-none focus:border-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                  className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-zinc-700 dark:text-zinc-300">
+              <label
+                htmlFor="tracking-title-input"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
+              >
                 Tiêu đề hiển thị *
               </label>
               <input
+                id="tracking-title-input"
                 type="text"
                 value={trackingTitle}
                 onChange={function (e) {
                   setTrackingTitle(e.target.value)
                 }}
                 placeholder="Đơn hàng đang trên đường giao đến bạn"
-                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white px-3.5 py-2 text-xs outline-none focus:border-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-zinc-700 dark:text-zinc-300">
+              <label
+                htmlFor="tracking-description-input"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
+              >
                 Mô tả chi tiết
               </label>
               <textarea
+                id="tracking-description-input"
                 rows={2}
                 value={trackingDescription}
                 onChange={function (e) {
                   setTrackingDescription(e.target.value)
                 }}
                 placeholder="Ghi chú thêm cho người mua..."
-                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white p-2.5 text-xs outline-none focus:border-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white/80 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
               />
             </div>
 
@@ -1404,7 +1428,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 onClick={function () {
                   setTrackingTargetOrder(null)
                 }}
-                className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 dark:border-white/15 dark:text-zinc-200"
+                className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
               >
                 Đóng
               </button>
@@ -1412,7 +1436,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 type="button"
                 disabled={addTrackingMutation.isPending || trackingTitle.trim() === ''}
                 onClick={handleSubmitTracking}
-                className="rounded-full bg-indigo-600 px-5 py-2 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="btn-primary rounded-full px-5 py-2 text-xs font-bold disabled:opacity-50"
               >
                 Lưu mốc hành trình
               </button>

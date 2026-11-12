@@ -44,7 +44,13 @@ import ReviewModal from '@/components/order/ReviewModal'
 import ReviewProductPickerModal from '@/components/order/ReviewProductPickerModal'
 import ShipmentTrackingCard from '@/components/order/ShipmentTrackingCard'
 import StatePanel from '@/components/ui/StatePanel'
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  fallbackImageOnError,
+  hookErrorMessage,
+  imageUrl,
+  PLACEHOLDER_IMAGE,
+  takeData,
+} from '@/lib/api/apiAdapters'
 import { formatDateTime, formatVnd } from '@/lib/format'
 import { actorLabel, cancelReasonLabel } from '@/lib/order/orderMonitoring'
 import {
@@ -362,8 +368,8 @@ export default function OrderDetail() {
           </div>
         )}
 
-        <section className="space-y-5 rounded-3xl border border-zinc-200 bg-white/90 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-zinc-200 pb-4 dark:border-white/10">
+        <section className="glass space-y-5 rounded-3xl p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-sky-100 pb-4 dark:border-white/10">
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="font-mono text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
@@ -442,7 +448,7 @@ export default function OrderDetail() {
                   type="button"
                   disabled={reorderMutation.isPending}
                   onClick={() => void handleReorder()}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="btn-primary inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold disabled:opacity-50"
                 >
                   <ArrowCounterClockwise size={15} weight="bold" />
                   <span>Mua lại</span>
@@ -499,11 +505,11 @@ export default function OrderDetail() {
         />
 
         <div className="grid gap-6 lg:grid-cols-3">
-          <section className="space-y-3 rounded-3xl border border-zinc-200 bg-white/90 p-5 lg:col-span-2 dark:border-white/10 dark:bg-[#11182a]">
+          <section className="glass space-y-3 rounded-3xl p-5 lg:col-span-2">
             <h2 className="text-base font-extrabold text-zinc-900 dark:text-white">
               Sản phẩm trong đơn ({order.items?.length ?? 0})
             </h2>
-            <div className="divide-y divide-zinc-100 dark:divide-white/5">
+            <div className="divide-y divide-sky-100 dark:divide-white/5">
               {(order.items ?? []).map((item, idx) => {
                 let thumb = PLACEHOLDER_IMAGE
                 if (item.imageKey) {
@@ -515,7 +521,9 @@ export default function OrderDetail() {
                     <img
                       src={thumb}
                       alt={item.productName ?? 'Sản phẩm'}
-                      className="h-16 w-16 shrink-0 rounded-2xl border border-zinc-200 object-cover dark:border-white/10"
+                      loading="lazy"
+                      onError={fallbackImageOnError}
+                      className="h-16 w-16 shrink-0 rounded-2xl border border-sky-100 object-cover dark:border-white/10"
                     />
                     <div className="min-w-0 flex-1">
                       {canVisit && (
@@ -547,7 +555,7 @@ export default function OrderDetail() {
             </div>
           </section>
 
-          <section className="space-y-4 rounded-3xl border border-zinc-200 bg-white/90 p-5 dark:border-white/10 dark:bg-[#11182a]">
+          <section className="glass space-y-4 rounded-3xl p-5">
             <div className="space-y-1.5">
               <h2 className="flex items-center gap-1.5 text-base font-extrabold text-zinc-900 dark:text-white">
                 <MapPin size={16} weight="bold" />
@@ -563,7 +571,7 @@ export default function OrderDetail() {
               )}
             </div>
 
-            <div className="space-y-2 border-t border-zinc-200 pt-4 text-sm dark:border-white/10">
+            <div className="space-y-2 border-t border-sky-100 pt-4 text-sm dark:border-white/10">
               <div className="flex justify-between text-zinc-600 dark:text-zinc-300">
                 <span>Tạm tính</span>
                 <span className="tabular-nums">{formatVnd(order.subtotal ?? 0)}</span>
@@ -572,7 +580,7 @@ export default function OrderDetail() {
                 <span>Phí vận chuyển</span>
                 <span className="tabular-nums">{formatVnd(order.shippingFee ?? 0)}</span>
               </div>
-              <div className="flex justify-between border-t border-zinc-200 pt-2 text-base font-extrabold text-zinc-900 dark:border-white/10 dark:text-white">
+              <div className="flex justify-between border-t border-sky-100 pt-2 text-base font-extrabold text-zinc-900 dark:border-white/10 dark:text-white">
                 <span>Tổng cộng</span>
                 <span className="tabular-nums">{formatVnd(order.total ?? 0)}</span>
               </div>
@@ -587,7 +595,7 @@ export default function OrderDetail() {
         </div>
 
         {orderReturns.length > 0 && (
-          <section className="space-y-3 rounded-3xl border border-zinc-200 bg-white/90 p-5 dark:border-white/10 dark:bg-[#11182a]">
+          <section className="glass space-y-3 rounded-3xl p-5">
             <h2 className="text-base font-extrabold text-zinc-900 dark:text-white">
               Lịch sử yêu cầu đổi trả ({orderReturns.length})
             </h2>
@@ -597,7 +605,7 @@ export default function OrderDetail() {
                 return (
                   <div
                     key={ret.id ?? ret.createdAt}
-                    className="space-y-2 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4 text-xs dark:border-white/10 dark:bg-white/5"
+                    className="space-y-2 rounded-2xl border border-sky-100 bg-white/70 p-4 text-xs dark:border-white/10 dark:bg-white/5"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-bold text-zinc-900 dark:text-white">
@@ -687,10 +695,10 @@ export default function OrderDetail() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[110px] pb-16">
+    <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
       <Link
         to="/account/orders"
-        className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-indigo-700 hover:underline dark:text-indigo-200"
+        className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:underline dark:text-sky-300"
       >
         <ArrowLeft size={16} weight="bold" />
         Quay lại danh sách đơn

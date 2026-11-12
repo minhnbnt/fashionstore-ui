@@ -106,7 +106,7 @@ function circleClass(step: StepDef): string {
   if (step.active) {
     return 'flex h-8 w-8 items-center justify-center rounded-full border-2 border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200'
   }
-  return 'flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-400 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-zinc-500'
+  return 'flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-400 dark:border-white/15 dark:bg-[#11182a] dark:text-zinc-500'
 }
 
 export default function OrderProgressStepper(props: Props) {
@@ -151,7 +151,7 @@ export default function OrderProgressStepper(props: Props) {
         <div className="relative flex items-start justify-between gap-2">
           <div className="absolute top-4 right-8 left-8 h-1 rounded-full bg-zinc-200 dark:bg-white/10">
             <div
-              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+              className="h-full rounded-full bg-emerald-500 transition-all duration-300 motion-reduce:transition-none"
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -192,7 +192,7 @@ export default function OrderProgressStepper(props: Props) {
       </div>
 
       {!props.compact && returnMeta !== null && (
-        <div className="flex items-center justify-between gap-2 rounded-2xl border border-zinc-200 bg-zinc-50/70 px-3.5 py-2 dark:border-white/10 dark:bg-white/5">
+        <div className="flex items-center justify-between gap-2 rounded-2xl border border-sky-100 bg-white/70 px-3.5 py-2 dark:border-white/10 dark:bg-white/5">
           <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
             Trạng thái đổi trả:
           </span>

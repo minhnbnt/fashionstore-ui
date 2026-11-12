@@ -45,7 +45,7 @@ export default function ShipmentTrackingCard(props: Props) {
   }
 
   return (
-    <div className="space-y-4 rounded-3xl border border-zinc-200 bg-white/80 p-5 dark:border-white/10 dark:bg-[#11182a]">
+    <div className="glass space-y-4 rounded-3xl p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Truck size={20} weight="bold" className="text-blue-600 dark:text-sky-300" />
@@ -64,7 +64,7 @@ export default function ShipmentTrackingCard(props: Props) {
             <button
               type="button"
               onClick={() => void handleCopy()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 px-3 py-1 font-mono font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 font-mono font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
             >
               <span>{props.trackingCode}</span>
               {copied && <Check size={14} weight="bold" className="text-emerald-500" />}
@@ -82,7 +82,7 @@ export default function ShipmentTrackingCard(props: Props) {
       )}
 
       {events.length > 0 && (
-        <div className="space-y-3 border-t border-zinc-200 pt-4 dark:border-white/10">
+        <div className="space-y-3 border-t border-sky-100 pt-4 dark:border-white/10">
           <p className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
             Lịch sử di chuyển gói hàng
           </p>
@@ -136,7 +136,7 @@ export default function ShipmentTrackingCard(props: Props) {
       )}
 
       {timeline.length > 0 && (
-        <div className="space-y-2 border-t border-zinc-200 pt-4 dark:border-white/10">
+        <div className="space-y-2 border-t border-sky-100 pt-4 dark:border-white/10">
           <p className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
             Mốc xử lý đơn hàng
           </p>
