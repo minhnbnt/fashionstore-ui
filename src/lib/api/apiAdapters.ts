@@ -167,6 +167,21 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     404: 'Đánh giá hoặc sản phẩm không còn hiển thị.',
     409: 'Bạn không thể tự nhấn hữu ích cho đánh giá của chính mình.',
   },
+  sellerReviewReply: {
+    400: 'Nội dung phản hồi chưa hợp lệ (tối đa 2000 ký tự).',
+    403: 'Bạn không có quyền phản hồi đánh giá này.',
+    404: 'Không tìm thấy đánh giá để phản hồi.',
+  },
+  sellerReplyTemplate: {
+    400: 'Tiêu đề hoặc nội dung mẫu phản hồi chưa hợp lệ.',
+    403: 'Bạn không có quyền quản lý mẫu phản hồi nhanh.',
+    404: 'Mẫu phản hồi nhanh không còn tồn tại.',
+    409: 'Tiêu đề mẫu đã tồn tại hoặc shop đã đạt tối đa 50 mẫu.',
+  },
+  sellerReviewTrend: {
+    400: 'Khoảng thời gian thống kê chưa hợp lệ.',
+    403: 'Bạn không có quyền xem thống kê đánh giá.',
+  },
 }
 
 export function apiErrorMessage(endpoint: string, status: number): string {

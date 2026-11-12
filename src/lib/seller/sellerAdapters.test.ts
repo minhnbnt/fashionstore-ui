@@ -10,6 +10,9 @@ import {
   productItem,
   returnItem,
   reviewItem,
+  reviewProductOptionItem,
+  reviewReplyTemplateItem,
+  reviewTrendPoints,
   roleItem,
   settlementItem,
   shopProfile,
@@ -207,6 +210,31 @@ describe('reviewItem va settlementItem', () => {
     expect(item.productName).toBe('Quần jeans')
     expect(item.isReported).toBe(true)
     expect(item.images).toEqual([])
+  })
+
+  it('uu tien productName tu response va map product option, template, trend points', () => {
+    const item = reviewItem({ id: 'rv2', productName: 'Áo sơ mi', stars: 5 }, 'Tên fallback')
+    expect(item.productName).toBe('Áo sơ mi')
+
+    const option = reviewProductOptionItem({ id: 'p1', name: 'Quần tây', reviewCount: 3 })
+    expect(option).toEqual({ id: 'p1', name: 'Quần tây', reviewCount: 3 })
+
+    const tpl = reviewReplyTemplateItem({
+      id: 't1',
+      title: 'Cảm ơn',
+      content: 'Cảm ơn bạn!',
+      updatedAt: '2026-10-20T10:00:00Z',
+    })
+    expect(tpl.title).toBe('Cảm ơn')
+    expect(tpl.content).toBe('Cảm ơn bạn!')
+
+    expect(
+      reviewTrendPoints({
+        period: 'day',
+        points: [{ label: '2026-10-20', reviewCount: 4, averageRating: 4.5 }],
+      }),
+    ).toEqual([{ label: '2026-10-20', reviewCount: 4, averageRating: 4.5 }])
+    expect(reviewTrendPoints(undefined)).toEqual([])
   })
 
   it('map settlement kem order code', () => {

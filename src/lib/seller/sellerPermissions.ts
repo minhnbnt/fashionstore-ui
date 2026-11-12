@@ -66,6 +66,9 @@ const PERMISSION_LABELS: Record<string, string> = {
   ACTIVATE_MEMBER: 'Kích hoạt nhân viên',
   DEACTIVATE_MEMBER: 'Vô hiệu hóa nhân viên',
   REVIEW_REPORT: 'Báo cáo đánh giá vi phạm',
+  REVIEW_TEMPLATE_CREATE: 'Tạo mẫu phản hồi nhanh',
+  REVIEW_TEMPLATE_UPDATE: 'Cập nhật mẫu phản hồi nhanh',
+  REVIEW_TEMPLATE_DELETE: 'Xóa mẫu phản hồi nhanh',
   PRODUCT_STATUS_BULK: 'Đổi trạng thái hàng loạt',
 }
 
@@ -87,6 +90,7 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
   CONVERSATION: 'Hội thoại',
   WITHDRAWAL: 'Yêu cầu rút tiền',
   REVIEW: 'Đánh giá',
+  REVIEW_TEMPLATE: 'Mẫu phản hồi',
 }
 
 export function formatTargetType(targetType: string | null | undefined): string {
@@ -109,6 +113,7 @@ const DANGER_ACTIONS = new Set([
   'REVOKE_INVITATION',
   'DELETE_ROLE',
   'DEACTIVATE_MEMBER',
+  'REVIEW_TEMPLATE_DELETE',
 ])
 
 const SUCCESS_ACTIONS = new Set([
@@ -119,6 +124,7 @@ const SUCCESS_ACTIONS = new Set([
   'ACTIVATE_MEMBER',
   'DECORATION_PUBLISH',
   'PRODUCT_IMPORT',
+  'REVIEW_TEMPLATE_CREATE',
 ])
 
 const INFO_ACTIONS = new Set([
@@ -133,6 +139,8 @@ const INFO_ACTIONS = new Set([
   'CHANGE_MEMBER_ROLE',
   'INVITE_STAFF',
   'ORDER_SHIP',
+  'REVIEW_REPLY',
+  'REVIEW_TEMPLATE_UPDATE',
 ])
 
 const WARNING_ACTIONS = new Set([

@@ -58,4 +58,23 @@ describe('LineChart', () => {
     expect(html).toContain('Kỳ trước')
     expect(html).toContain('stroke-dasharray="4 4"')
   })
+
+  it('cho phep tuy bien formatAxisValue va maxY ma khong gan mac dinh ky hieu VND', () => {
+    const html = renderToString(
+      createElement(LineChart, {
+        data: [
+          { label: '2026-10-19', value: 4.5 },
+          { label: '2026-10-20', value: 3.2 },
+        ],
+        maxY: 5,
+        formatAxisValue: (val) => `${val}★`,
+        formatValue: (val) => `${val.toFixed(2)}★`,
+      }),
+    )
+
+    expect(html).toContain('5★')
+    expect(html).toContain('2.5★')
+    expect(html).toContain('0★')
+    expect(html).not.toContain('₫')
+  })
 })

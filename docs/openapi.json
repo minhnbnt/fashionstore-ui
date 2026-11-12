@@ -35,11 +35,11 @@
       "name": "Shops - Catalog",
       "description": "Xem sản phẩm và danh mục công khai của shop (kèm tìm kiếm nội bộ)"
     },
+    { "name": "Seller - Reviews", "description": "Seller quản lý đánh giá của khách và phản hồi" },
     {
       "name": "Locations",
       "description": "Danh mục tỉnh/thành và xã/phường sau sáp nhập 2025. Công khai, không cần đăng nhập."
     },
-    { "name": "Seller - Reviews", "description": "Seller quản lý đánh giá của khách và phản hồi" },
     {
       "name": "Seller - Staff & Roles",
       "description": "Quản lý nhân viên gian hàng, phân quyền và lịch sử thao tác"
@@ -871,6 +871,144 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/seller/reviews/templates/{templateId}": {
+      "put": {
+        "tags": ["Seller - Reviews"],
+        "summary": "Cập nhật mẫu phản hồi nhanh",
+        "description": "Cập nhật tiêu đề và nội dung văn bản thuần của mẫu phản hồi nhanh.",
+        "operationId": "updateTemplate",
+        "parameters": [
+          {
+            "name": "templateId",
+            "in": "path",
+            "description": "Id mẫu",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SaveReviewReplyTemplateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Mẫu sau khi cập nhật",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } }
+            }
+          },
+          "400": {
+            "description": "Body không hợp lệ",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc thiếu quyền REVIEW_REPLY",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy mẫu",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Tiêu đề đã tồn tại trong shop",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "delete": {
+        "tags": ["Seller - Reviews"],
+        "summary": "Xóa mẫu phản hồi nhanh",
+        "description": "Xóa vĩnh viễn mẫu phản hồi nhanh của shop.",
+        "operationId": "deleteTemplate",
+        "parameters": [
+          {
+            "name": "templateId",
+            "in": "path",
+            "description": "Id mẫu",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Đã xóa mẫu" },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc thiếu quyền REVIEW_REPLY",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy mẫu",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -3602,6 +3740,165 @@
           },
           "409": {
             "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/seller/reviews/templates": {
+      "get": {
+        "tags": ["Seller - Reviews"],
+        "summary": "Danh sách mẫu phản hồi nhanh",
+        "description": "Trả toàn bộ mẫu phản hồi nhanh văn bản thuần của shop.",
+        "operationId": "listTemplates",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "description": "Id shop",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách mẫu phản hồi nhanh",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc thiếu quyền REVIEW_READ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      },
+      "post": {
+        "tags": ["Seller - Reviews"],
+        "summary": "Tạo mẫu phản hồi nhanh",
+        "description": "Lưu mẫu phản hồi nhanh văn bản thuần mới cho shop (tối đa 50 mẫu, tiêu đề không trùng).",
+        "operationId": "createTemplate",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "description": "Id shop",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SaveReviewReplyTemplateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Mẫu vừa tạo",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } }
+            }
+          },
+          "400": {
+            "description": "Body không hợp lệ",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc thiếu quyền REVIEW_REPLY",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Trùng tiêu đề hoặc đã đạt giới hạn 50 mẫu",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/ReviewReplyTemplateResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -11229,7 +11526,7 @@
       "get": {
         "tags": ["Seller - Reviews"],
         "summary": "Xem đánh giá của shop",
-        "description": "Có thể lọc các đánh giá chưa phản hồi (unreplied=true).",
+        "description": "Hỗ trợ lọc theo trạng thái chưa phản hồi (unreplied=true), số sao (1-5) và sản phẩm.",
         "operationId": "list_3",
         "parameters": [
           {
@@ -11245,6 +11542,20 @@
             "description": "Chỉ xem đánh giá chưa phản hồi",
             "required": false,
             "schema": { "type": "boolean", "default": false }
+          },
+          {
+            "name": "stars",
+            "in": "query",
+            "description": "Lọc theo số sao (1-5)",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "productId",
+            "in": "query",
+            "description": "Lọc theo id sản phẩm",
+            "required": false,
+            "schema": { "type": "string", "format": "uuid" }
           }
         ],
         "responses": {
@@ -11256,6 +11567,20 @@
                   "type": "array",
                   "items": { "$ref": "#/components/schemas/SellerReviewResponse" }
                 }
+              }
+            }
+          },
+          "400": {
+            "description": "Tham số lọc không hợp lệ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SellerReviewResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
             }
           },
@@ -11295,8 +11620,90 @@
               }
             }
           },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/seller/reviews/trend": {
+      "get": {
+        "tags": ["Seller - Reviews"],
+        "summary": "Xu hướng đánh giá của shop theo thời gian",
+        "description": "Tổng hợp số lượng đánh giá và điểm sao trung bình theo ngày (day), tuần (week), hoặc tháng (month).",
+        "operationId": "trend",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "description": "Id shop",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Chu kỳ gom nhóm: day, week, month",
+            "required": false,
+            "schema": { "type": "string", "default": "day" }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Từ ngày (YYYY-MM-DD, múi giờ Việt Nam)",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Đến ngày (YYYY-MM-DD, múi giờ Việt Nam)",
+            "required": false,
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chuỗi dữ liệu xu hướng đánh giá",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SellerReviewTrendResponse" } }
+            }
+          },
           "400": {
-            "description": "Invalid request data",
+            "description": "Chu kỳ hoặc khoảng ngày không hợp lệ",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SellerReviewTrendResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SellerReviewTrendResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc thiếu quyền REVIEW_READ",
+            "content": {
+              "*/*": { "schema": { "$ref": "#/components/schemas/SellerReviewTrendResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
@@ -11350,6 +11757,89 @@
             "description": "Không phải thành viên shop hoặc thiếu quyền REVIEW_READ",
             "content": {
               "*/*": { "schema": { "$ref": "#/components/schemas/ReviewSummaryResponse" } },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearerAuth": [] }]
+      }
+    },
+    "/api/seller/reviews/products": {
+      "get": {
+        "tags": ["Seller - Reviews"],
+        "summary": "Danh sách sản phẩm cho bộ lọc đánh giá",
+        "description": "Trả danh sách sản phẩm thuộc shop (bao gồm sản phẩm đã xóa nhưng từng có đánh giá) để CSKH/Chủ shop lọc đánh giá.",
+        "operationId": "products",
+        "parameters": [
+          {
+            "name": "shopId",
+            "in": "query",
+            "description": "Id shop",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách tùy chọn sản phẩm",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SellerReviewProductOptionResponse" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu hoặc sai JWT",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SellerReviewProductOptionResponse" }
+                }
+              },
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetail" }
+              }
+            }
+          },
+          "403": {
+            "description": "Không phải thành viên shop hoặc thiếu quyền REVIEW_READ",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SellerReviewProductOptionResponse" }
+                }
+              },
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetail" }
               }
@@ -16080,6 +16570,43 @@
           "updatedAt": { "type": "string", "format": "date-time" }
         }
       },
+      "SaveReviewReplyTemplateRequest": {
+        "type": "object",
+        "description": "Dữ liệu tạo hoặc cập nhật mẫu phản hồi nhanh",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Tiêu đề ngắn của mẫu (tối đa 100 ký tự)",
+            "example": "Cảm ơn đánh giá 5 sao",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "content": {
+            "type": "string",
+            "description": "Nội dung phản hồi văn bản thuần (tối đa 2000 ký tự)",
+            "example": "Cảm ơn bạn đã tin tưởng và ủng hộ shop!",
+            "maxLength": 2000,
+            "minLength": 0
+          }
+        },
+        "required": ["content", "title"]
+      },
+      "ReviewReplyTemplateResponse": {
+        "type": "object",
+        "description": "Mẫu phản hồi nhanh đánh giá của shop",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "description": "ID mẫu" },
+          "shopId": { "type": "string", "format": "uuid", "description": "ID shop" },
+          "title": { "type": "string", "description": "Tiêu đề ngắn" },
+          "content": { "type": "string", "description": "Nội dung văn bản thuần" },
+          "createdAt": { "type": "string", "format": "date-time", "description": "Thời điểm tạo" },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Thời điểm cập nhật gần nhất"
+          }
+        }
+      },
       "UpdateReviewRequest": {
         "type": "object",
         "properties": {
@@ -17258,6 +17785,7 @@
         "properties": {
           "id": { "type": "string", "format": "uuid", "description": "ID đánh giá" },
           "productId": { "type": "string", "format": "uuid", "description": "ID sản phẩm" },
+          "productName": { "type": "string", "description": "Tên sản phẩm" },
           "orderId": { "type": ["string", "null"], "format": "uuid", "description": "ID đơn hàng" },
           "buyerDisplayName": {
             "type": "string",
@@ -18309,7 +18837,8 @@
             "type": "string",
             "description": "Nội dung phản hồi của shop",
             "example": "Cảm ơn bạn đã tin tưởng ủng hộ shop!",
-            "minLength": 1
+            "maxLength": 2000,
+            "minLength": 0
           }
         },
         "required": ["reply"]
@@ -19312,6 +19841,45 @@
           "createdAt": { "type": "string", "format": "date-time" }
         }
       },
+      "SellerReviewTrendPoint": {
+        "type": "object",
+        "description": "Dữ liệu đánh giá tại một mốc thời gian",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Nhãn thời gian (YYYY-MM-DD, YYYY-Www, hoặc YYYY-MM)",
+            "example": "2026-11-12"
+          },
+          "reviewCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Số lượng đánh giá tại mốc này",
+            "example": 4
+          },
+          "averageRating": {
+            "type": "number",
+            "format": "double",
+            "description": "Điểm sao trung bình tại mốc này",
+            "example": 4.75
+          }
+        }
+      },
+      "SellerReviewTrendResponse": {
+        "type": "object",
+        "description": "Xu hướng đánh giá của shop theo chu kỳ thời gian",
+        "properties": {
+          "period": {
+            "type": "string",
+            "description": "Chu kỳ thống kê (day, week, month)",
+            "example": "day"
+          },
+          "points": {
+            "type": "array",
+            "description": "Danh sách các điểm dữ liệu theo mốc thời gian",
+            "items": { "$ref": "#/components/schemas/SellerReviewTrendPoint" }
+          }
+        }
+      },
       "ReviewSummaryResponse": {
         "type": "object",
         "properties": {
@@ -19354,6 +19922,19 @@
             "type": "integer",
             "format": "int64",
             "description": "Số đánh giá có kèm ảnh hoặc video"
+          }
+        }
+      },
+      "SellerReviewProductOptionResponse": {
+        "type": "object",
+        "description": "Tùy chọn sản phẩm trong bộ lọc đánh giá của shop",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "description": "ID sản phẩm" },
+          "name": { "type": "string", "description": "Tên sản phẩm" },
+          "reviewCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng số đánh giá của sản phẩm"
           }
         }
       },
