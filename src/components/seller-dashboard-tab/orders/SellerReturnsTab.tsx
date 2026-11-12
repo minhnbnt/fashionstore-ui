@@ -15,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { orderStatusMeta } from '@/lib/order/orderStatus'
 import { returnItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 import { sellerStatusMeta } from '@/lib/seller/sellerStatus'
@@ -41,6 +42,7 @@ export default function SellerReturnsTab({ shopId }: Props) {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const statusParam = searchParams.get('status')
+  const orderIdFilter = searchParams.get('orderId') ?? ''
   let activeTab: 'ALL' | 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' = 'ALL'
   if (
     statusParam === 'REQUESTED' ||
@@ -150,6 +152,9 @@ export default function SellerReturnsTab({ shopId }: Props) {
   }
 
   const filteredReturns = returns.filter(function (r) {
+    if (orderIdFilter !== '' && r.orderId !== orderIdFilter) {
+      return false
+    }
     if (activeTab !== 'ALL' && r.status !== activeTab) {
       return false
     }
@@ -178,6 +183,24 @@ export default function SellerReturnsTab({ shopId }: Props) {
 
       {/* Filter Tabs */}
       <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+        {orderIdFilter !== '' && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-indigo-200 bg-indigo-50/70 px-3.5 py-2 text-xs font-semibold text-indigo-800 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200">
+            <span>Đang lọc yêu cầu đổi trả của một đơn hàng cụ thể</span>
+            <button
+              type="button"
+              onClick={function () {
+                setSearchParams(function (prev) {
+                  const next = new URLSearchParams(prev)
+                  next.delete('orderId')
+                  return next
+                })
+              }}
+              className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-indigo-700 shadow-sm hover:bg-indigo-100 dark:bg-white/10 dark:text-white"
+            >
+              Xem tất cả
+            </button>
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-3 dark:border-white/10">
           {[
             { id: 'ALL', label: 'Tất cả' },
@@ -235,6 +258,13 @@ export default function SellerReturnsTab({ shopId }: Props) {
                     <span className="font-mono text-xs font-bold text-zinc-900 dark:text-white">
                       Mã đơn: {ret.orderCode}
                     </span>
+                    {ret.orderStatus !== '' && (
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${orderStatusMeta(ret.orderStatus).className}`}
+                      >
+                        {orderStatusMeta(ret.orderStatus).label}
+                      </span>
+                    )}
                     <span className="text-[11px] text-zinc-400">• Người mua: {ret.buyerName}</span>
                     <span className="text-[11px] text-zinc-400">• {ret.createdAt}</span>
                   </div>
@@ -277,18 +307,38 @@ export default function SellerReturnsTab({ shopId }: Props) {
                   </div>
 
                   <div className="flex flex-col items-start gap-2 sm:items-end">
-                    <span className="text-[11px] font-semibold text-zinc-500">Ảnh chứng từ:</span>
-                    {ret.evidenceImage !== '' && (
-                      <img
-                        src={ret.evidenceImage}
-                        alt="Chứng từ"
-                        onError={handleImageError}
-                        className="h-20 w-20 rounded-xl border border-zinc-200 object-cover shadow-sm dark:border-white/10"
-                      />
+                    <span className="text-[11px] font-semibold text-zinc-500">
+                      Chứng từ đổi trả:
+                    </span>
+                    {ret.evidenceImages.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {ret.evidenceImages.map(function (src, idx) {
+                          const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(src)
+                          if (isVideo) {
+                            return (
+                              <video
+                                key={`${ret.id}-vid-${idx}`}
+                                controls
+                                src={src}
+                                className="h-24 w-36 rounded-xl border border-zinc-200 bg-black object-cover shadow-sm dark:border-white/10"
+                              />
+                            )
+                          }
+                          return (
+                            <img
+                              key={`${ret.id}-img-${idx}`}
+                              src={src}
+                              alt={`Chứng từ ${idx + 1}`}
+                              onError={handleImageError}
+                              className="h-20 w-20 rounded-xl border border-zinc-200 object-cover shadow-sm dark:border-white/10"
+                            />
+                          )
+                        })}
+                      </div>
                     )}
-                    {ret.evidenceImage === '' && (
+                    {ret.evidenceImages.length === 0 && (
                       <div className="flex h-20 w-20 items-center justify-center rounded-xl border border-dashed border-zinc-200 text-[10px] text-zinc-400 dark:border-white/10">
-                        Không có ảnh
+                        Không có chứng từ
                       </div>
                     )}
                   </div>

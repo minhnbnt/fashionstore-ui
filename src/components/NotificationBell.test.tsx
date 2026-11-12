@@ -235,4 +235,14 @@ describe('NotificationBell', () => {
 
     expect(html).toContain('opacity-80')
   })
+
+  it('exposesRealtimeInvalidationPrefixTargetsForOrderAndReturnTypes', async () => {
+    const mod = await import('./NotificationBell')
+    expect(mod.realtimeInvalidationKeys('ORDER_SHIPPED')).toEqual(
+      expect.arrayContaining([['/api/orders/mine'], ['/api/seller/orders']]),
+    )
+    expect(mod.realtimeInvalidationKeys('RETURN_APPROVED')).toEqual(
+      expect.arrayContaining([['/api/orders/returns/mine'], ['/api/seller/returns']]),
+    )
+  })
 })

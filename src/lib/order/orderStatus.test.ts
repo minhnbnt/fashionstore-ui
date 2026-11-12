@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { canCancel, orderItemSummary, orderStatusMeta, paymentStatusLabel } from './orderStatus'
+import {
+  BUYER_ORDER_TABS,
+  canCancel,
+  canConfirmReceipt,
+  orderItemSummary,
+  orderStatusMeta,
+  paymentStatusLabel,
+  returnStatusMeta,
+} from './orderStatus'
 
 describe('orderStatusMeta', () => {
   it('PENDING cua don hang la Cho xac nhan, khong phai Cho duyet', () => {
@@ -10,7 +18,7 @@ describe('orderStatusMeta', () => {
   it('map nhan cac trang thai don hang', () => {
     expect(orderStatusMeta('CONFIRMED').label).toBe('Shop đang chuẩn bị hàng')
     expect(orderStatusMeta('SHIPPING').label).toBe('Đang giao')
-    expect(orderStatusMeta('DELIVERED').label).toBe('Đã giao')
+    expect(orderStatusMeta('DELIVERED').label).toBe('Hoàn thành')
     expect(orderStatusMeta('CANCELLED').label).toBe('Đã hủy')
   })
 
@@ -66,5 +74,39 @@ describe('paymentStatusLabel', () => {
 
   it('trang thai la thi hien nguyen van', () => {
     expect(paymentStatusLabel('REFUNDED')).toBe('REFUNDED')
+  })
+})
+
+describe('BUYER_ORDER_TABS', () => {
+  it('co du 7 tab dong bo 1-1 voi shop', () => {
+    expect(BUYER_ORDER_TABS.map((t) => [t.key, t.label])).toEqual([
+      ['ALL', 'Tất cả'],
+      ['PENDING', 'Chờ xác nhận'],
+      ['CONFIRMED', 'Đang chuẩn bị'],
+      ['SHIPPING', 'Đang giao'],
+      ['DELIVERED', 'Hoàn thành'],
+      ['CANCELLED', 'Đã hủy'],
+      ['RETURNS', 'Đổi trả'],
+    ])
+  })
+})
+
+describe('canConfirmReceipt va returnStatusMeta', () => {
+  it('chi cho xac nhan da nhan khi don DELIVERED, chua receivedAt va khong bi doi tra chan', () => {
+    expect(canConfirmReceipt('DELIVERED', null, null)).toBe(true)
+    expect(canConfirmReceipt('DELIVERED', undefined, 'REJECTED')).toBe(true)
+    expect(canConfirmReceipt('DELIVERED', '2026-10-20T00:00:00Z', null)).toBe(false)
+    expect(canConfirmReceipt('DELIVERED', null, 'REQUESTED')).toBe(false)
+    expect(canConfirmReceipt('DELIVERED', null, 'APPROVED')).toBe(false)
+    expect(canConfirmReceipt('DELIVERED', null, 'COMPLETED')).toBe(false)
+    expect(canConfirmReceipt('SHIPPING', null, null)).toBe(false)
+  })
+
+  it('map nhan trang thai doi tra dong bo', () => {
+    expect(returnStatusMeta('REQUESTED')?.label).toBe('Đang yêu cầu đổi trả')
+    expect(returnStatusMeta('APPROVED')?.label).toBe('Shop đã duyệt đổi trả')
+    expect(returnStatusMeta('COMPLETED')?.label).toBe('Đã hoàn tất đổi trả')
+    expect(returnStatusMeta('REJECTED')?.label).toBe('Yêu cầu đổi trả bị từ chối')
+    expect(returnStatusMeta(null)).toBeNull()
   })
 })

@@ -23,7 +23,7 @@ export function orderStatusMeta(status: string | null | undefined): StatusMeta {
   }
   if (status === 'DELIVERED') {
     return {
-      label: 'Đã giao',
+      label: 'Hoàn thành',
       className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200',
     }
   }
@@ -55,6 +55,81 @@ export function orderItemSummary(items: { productName?: string }[] | undefined):
 /** Backend chỉ cho buyer hủy khi đơn còn PENDING (OrderService.cancel). */
 export function canCancel(status: string | null | undefined): boolean {
   return status === 'PENDING'
+}
+
+export type BuyerOrderTabKey =
+  | 'ALL'
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'SHIPPING'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'RETURNS'
+
+export interface BuyerOrderTabDef {
+  key: BuyerOrderTabKey
+  label: string
+}
+
+export const BUYER_ORDER_TABS: readonly BuyerOrderTabDef[] = [
+  { key: 'ALL', label: 'Tất cả' },
+  { key: 'PENDING', label: 'Chờ xác nhận' },
+  { key: 'CONFIRMED', label: 'Đang chuẩn bị' },
+  { key: 'SHIPPING', label: 'Đang giao' },
+  { key: 'DELIVERED', label: 'Hoàn thành' },
+  { key: 'CANCELLED', label: 'Đã hủy' },
+  { key: 'RETURNS', label: 'Đổi trả' },
+]
+
+export function canConfirmReceipt(
+  status: string | null | undefined,
+  receivedAt: string | null | undefined,
+  returnStatus: string | null | undefined,
+): boolean {
+  if (status !== 'DELIVERED') {
+    return false
+  }
+  if (receivedAt !== null && receivedAt !== undefined && receivedAt !== '') {
+    return false
+  }
+  if (returnStatus === 'REQUESTED' || returnStatus === 'APPROVED' || returnStatus === 'COMPLETED') {
+    return false
+  }
+  return true
+}
+
+export function returnStatusMeta(status: string | null | undefined): StatusMeta | null {
+  if (!status) {
+    return null
+  }
+  if (status === 'REQUESTED') {
+    return {
+      label: 'Đang yêu cầu đổi trả',
+      className: 'bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200',
+    }
+  }
+  if (status === 'APPROVED') {
+    return {
+      label: 'Shop đã duyệt đổi trả',
+      className: 'bg-sky-100 text-sky-800 dark:bg-sky-400/15 dark:text-sky-200',
+    }
+  }
+  if (status === 'COMPLETED') {
+    return {
+      label: 'Đã hoàn tất đổi trả',
+      className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200',
+    }
+  }
+  if (status === 'REJECTED') {
+    return {
+      label: 'Yêu cầu đổi trả bị từ chối',
+      className: 'bg-red-100 text-red-700 dark:bg-red-400/15 dark:text-red-200',
+    }
+  }
+  return {
+    label: status,
+    className: 'bg-zinc-100 text-zinc-700 dark:bg-white/10 dark:text-zinc-200',
+  }
 }
 
 export function paymentStatusLabel(status: string | null | undefined): string {

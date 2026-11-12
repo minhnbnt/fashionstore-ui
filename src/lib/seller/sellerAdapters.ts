@@ -1,5 +1,6 @@
 import { PLACEHOLDER_IMAGE, imageUrl } from '../api/apiAdapters'
 import { formatDateTime } from '../format'
+import { cancelReasonLabel } from '../order/orderMonitoring'
 
 import type { DecorationBlock } from '@/types/seller'
 import type {
@@ -172,7 +173,7 @@ export function orderItem(order: OrderResponse): OrderItem {
 
   let cancelReason: string | undefined
   if (order.cancelReason) {
-    cancelReason = order.cancelReason
+    cancelReason = cancelReasonLabel(order.cancelReason, order.cancelledBy)
   }
 
   let cancelNote: string | undefined
@@ -201,6 +202,12 @@ export function orderItem(order: OrderResponse): OrderItem {
     buyerName: safeText(order.shippingName),
     buyerPhone: safeText(order.shippingPhone),
     shippingAddress: safeText(order.shippingAddress),
+    shippingCarrier: optionalText(order.shippingCarrier),
+    trackingCode: optionalText(order.trackingCode),
+    shippedAt: optionalText(order.shippedAt),
+    deliveredAt: optionalText(order.deliveredAt),
+    receivedAt: optionalText(order.receivedAt),
+    returnStatus: optionalText(order.returnStatus),
     paymentMethod,
     note,
     items,
@@ -216,9 +223,15 @@ export function orderItem(order: OrderResponse): OrderItem {
   }
 }
 
+function optionalText(value: string | null | undefined): string | undefined {
+  if (value === null || value === undefined || value === '') {
+    return undefined
+  }
+  return value
+}
+
 /**
- * Return API khong mang order code / ten buyer, dashboard truyen danh muc
- * order da load de resolve. evidenceImage lay anh dau tien neu co.
+ * Resolve order code, orderStatus, ten buyer va toan bo anh/video bang chung doi tra.
  */
 export function returnItem(
   request: ReturnRequestResponse,
@@ -229,7 +242,6 @@ export function returnItem(
     order = orderById.get(request.orderId)
   }
   const evidenceKeys = request.evidenceKeys ?? []
-  const firstKey = evidenceKeys[0]
 
   let status: ReturnItem['status'] = 'REQUESTED'
   if (
@@ -240,25 +252,32 @@ export function returnItem(
     status = request.status
   }
 
-  let orderCode = ''
+  let orderCode = safeText(request.orderCode)
+  let orderStatus = safeText(request.orderStatus)
   let buyerName = ''
   if (order !== undefined) {
-    orderCode = safeText(order.code)
+    if (orderCode === '') {
+      orderCode = safeText(order.code)
+    }
+    if (orderStatus === '') {
+      orderStatus = safeText(order.status)
+    }
     buyerName = safeText(order.shippingName)
   }
 
-  let evidenceImage = ''
-  if (firstKey !== undefined) {
-    evidenceImage = imageFromKey(firstKey)
-  }
+  const evidenceImages = evidenceKeys.map((key) => imageFromKey(key))
+  const evidenceImage = evidenceImages[0] ?? ''
 
   return {
     id: safeId(request.id),
+    orderId: safeId(request.orderId),
     orderCode,
+    orderStatus,
     buyerName,
     reason: safeText(request.reason),
     description: safeText(request.description),
     evidenceImage,
+    evidenceImages,
     status,
     resolution: safeText(request.resolution),
     refundAmount: request.refundAmount,

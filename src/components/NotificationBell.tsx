@@ -40,6 +40,26 @@ function getNotificationClass(isRead: boolean): string {
   return 'w-full text-left p-3 rounded-xl transition bg-indigo-50/80 hover:bg-indigo-100/80 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50'
 }
 
+export function realtimeInvalidationKeys(notificationType: string | undefined): string[][] {
+  if (!notificationType) {
+    return []
+  }
+  const keys: string[][] = []
+  if (notificationType.startsWith('ORDER_')) {
+    keys.push(['/api/orders/mine'], ['/api/orders/'], ['/api/seller/orders'], ['/api/seller/shops'])
+  }
+  if (notificationType.startsWith('RETURN_')) {
+    keys.push(
+      ['/api/orders/mine'],
+      ['/api/orders/returns/mine'],
+      ['/api/seller/orders'],
+      ['/api/seller/returns'],
+      ['/api/seller/shops'],
+    )
+  }
+  return keys
+}
+
 export default function NotificationBell(props: NotificationBellProps) {
   const categories = props?.categories
   const defaultOpen = props?.defaultOpen
@@ -121,9 +141,32 @@ export default function NotificationBell(props: NotificationBellProps) {
     },
   })
 
-  useWebSocket('/user/queue/notifications', function () {
+  useWebSocket('/user/queue/notifications', function (frame) {
     void queryClient.invalidateQueries({ queryKey: getListNotificationsQueryKey() })
     void queryClient.invalidateQueries({ queryKey: getGetUnreadNotificationCountQueryKey() })
+    let notificationType: string | undefined
+    if (frame?.body) {
+      try {
+        const payload = JSON.parse(frame.body) as { type?: string }
+        notificationType = payload.type
+      } catch {
+        notificationType = undefined
+      }
+    }
+    const keys = realtimeInvalidationKeys(notificationType)
+    if (keys.length === 0) {
+      return
+    }
+    const prefixes = keys.map((k) => k[0])
+    void queryClient.invalidateQueries({
+      predicate: (query) => {
+        const first = query.queryKey[0]
+        if (typeof first !== 'string') {
+          return false
+        }
+        return prefixes.some((prefix) => first.startsWith(prefix))
+      },
+    })
   })
 
   useEffect(() => {

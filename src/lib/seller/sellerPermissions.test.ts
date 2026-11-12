@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vite-plus/test'
 
 import {
+  canAddOrderTracking,
   canSeeTab,
+  canViewOrderTracking,
   formatTargetType,
   getAuditActionBadgeMeta,
   permissionLabel,
@@ -108,5 +110,22 @@ describe('getAuditActionBadgeMeta', () => {
     expect(getAuditActionBadgeMeta('ORDER_CONFIRM').badgeType).toBe('warning')
     expect(getAuditActionBadgeMeta('CHAT_REPLY').badgeType).toBe('neutral')
     expect(getAuditActionBadgeMeta('UNKNOWN_SOMETHING').badgeType).toBe('neutral')
+  })
+})
+
+describe('order tracking permissions', () => {
+  it('cho phep xem tracking khi la owner hoac co ORDER_READ / ORDER_PROCESS', () => {
+    expect(canViewOrderTracking([], true)).toBe(true)
+    expect(canViewOrderTracking(['ORDER_READ'], false)).toBe(true)
+    expect(canViewOrderTracking(['ORDER_PROCESS'], false)).toBe(true)
+    expect(canViewOrderTracking(['RETURN_PROCESS'], false)).toBe(false)
+  })
+
+  it('chi cho phep them tracking khi don SHIPPING va co ORDER_PROCESS hoac owner', () => {
+    expect(canAddOrderTracking('SHIPPING', [], true)).toBe(true)
+    expect(canAddOrderTracking('SHIPPING', ['ORDER_PROCESS'], false)).toBe(true)
+    expect(canAddOrderTracking('SHIPPING', ['ORDER_READ'], false)).toBe(false)
+    expect(canAddOrderTracking('CONFIRMED', ['ORDER_PROCESS'], false)).toBe(false)
+    expect(canAddOrderTracking('DELIVERED', [], true)).toBe(false)
   })
 })

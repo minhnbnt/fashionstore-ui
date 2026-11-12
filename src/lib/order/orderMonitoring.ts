@@ -154,16 +154,63 @@ export function cancelledByLabel(cancelledBy: string | null | undefined): string
   return actorLabel(cancelledBy)
 }
 
-/** Lý do admin là mã cố định; lý do shop tự nhập thì giữ nguyên. */
-export function cancelReasonLabel(reason: string | null | undefined): string {
+/** Lý do admin/buyer là mã cố định; lý do shop tự nhập thì giữ nguyên. */
+export function cancelReasonLabel(
+  reason: string | null | undefined,
+  cancelledBy?: string | null,
+): string {
   if (reason === null || reason === undefined) {
     return ''
+  }
+  if (reason === 'CHANGE_MIND') {
+    return 'Đổi ý'
+  }
+  if (reason === 'FOUND_CHEAPER') {
+    return 'Tìm được giá rẻ hơn'
+  }
+  if (reason === 'ORDERED_BY_MISTAKE') {
+    return 'Đặt nhầm'
+  }
+  if (reason === 'OTHER') {
+    if (cancelledBy === 'BUYER') {
+      return 'Khác'
+    }
+    return 'Lý do khác'
   }
   const option = CANCEL_REASON_OPTIONS.find((item) => item.type === reason)
   if (option === undefined) {
     return reason
   }
   return option.label
+}
+
+export function timelineTitle(
+  fromStatus: string | null | undefined,
+  toStatus: string | null | undefined,
+  actor?: string | null,
+): string {
+  if (fromStatus === null || fromStatus === undefined) {
+    return 'Tạo đơn hàng'
+  }
+  if (fromStatus === 'DELIVERED' && toStatus === 'DELIVERED') {
+    if (actor === 'SYSTEM') {
+      return 'Hệ thống tự động xác nhận hoàn thành sau 7 ngày'
+    }
+    return 'Người mua xác nhận đã nhận hàng'
+  }
+  if (toStatus === 'CONFIRMED') {
+    return 'Shop xác nhận đơn'
+  }
+  if (toStatus === 'SHIPPING') {
+    return 'Bàn giao cho đơn vị vận chuyển'
+  }
+  if (toStatus === 'DELIVERED') {
+    return 'Hoàn tất giao hàng'
+  }
+  if (toStatus === 'CANCELLED') {
+    return 'Hủy đơn'
+  }
+  return `${statusLabel(fromStatus)} → ${statusLabel(toStatus)}`
 }
 
 export function tabCount(
