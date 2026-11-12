@@ -1,38 +1,56 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
-import { useListProducts } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
 import {
   getList3QueryKey,
   getSummaryQueryKey as getSellerReviewSummaryQueryKey,
   useList3,
+  useListTemplates,
+  useProducts,
   useReply,
   useReport,
   useSummary as useSellerReviewSummary,
 } from '@generated/endpoints/seller-reviews/seller-reviews'
 import {
-  Star,
   ChatCircleDots,
-  Flag,
   CheckCircle,
+  Flag,
   PaperPlaneRight,
-  ThumbsUp,
   Play,
+  SlidersHorizontal,
+  Star,
+  ThumbsUp,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
-import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
-import { reviewItem } from '@/lib/seller/sellerAdapters'
+import { hookErrorMessage, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  reviewItem,
+  reviewProductOptionItem,
+  reviewReplyTemplateItem,
+} from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 
-import type { ReviewItem } from '@/types/seller'
+import ReviewReplyTemplateModal from './ReviewReplyTemplateModal'
+import ReviewTrendCard from './ReviewTrendCard'
+
+import type { ReviewItem, ReviewProductOption, ReviewReplyTemplateItem } from '@/types/seller'
+import type { List3Params } from '@generated/model/list3Params'
+import type { ReviewSummaryResponse } from '@generated/model/reviewSummaryResponse'
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
   const target = event.currentTarget
   if (target.src !== PLACEHOLDER_IMAGE) {
     target.src = PLACEHOLDER_IMAGE
   }
+}
+
+function filterPillClass(active: boolean): string {
+  if (active) {
+    return 'rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+  }
+  return 'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white'
 }
 
 interface Props {
@@ -42,11 +60,15 @@ interface Props {
 export default function SellerReviewsTab({ shopId }: Props) {
   const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
-  const [activeFilter, setActiveFilter] = useState<'ALL' | 'UNREPLIED' | '5_STAR' | 'LOW_STAR'>(
-    'ALL',
-  )
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const [onlyUnreplied, setOnlyUnreplied] = useState(false)
+  const [selectedStars, setSelectedStars] = useState<number | undefined>(undefined)
+  const [selectedProductId, setSelectedProductId] = useState('')
   const [replyTargetId, setReplyTargetId] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState('')
+  const [replyError, setReplyError] = useState<string | null>(null)
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
   const [reportTargetId, setReportTargetId] = useState<string | null>(null)
   const [reportReason, setReportReason] = useState(
     'Đánh giá sai sự thật / Cạnh tranh không lành mạnh',
@@ -57,10 +79,21 @@ export default function SellerReviewsTab({ shopId }: Props) {
     url: string
   } | null>(null)
 
-  const reviewsQuery = useList3({ shopId }, { query: { enabled: shopId !== '' } })
+  const listParams: List3Params = { shopId }
+  if (onlyUnreplied) {
+    listParams.unreplied = true
+  }
+  if (selectedStars !== undefined) {
+    listParams.stars = selectedStars
+  }
+  if (selectedProductId !== '') {
+    listParams.productId = selectedProductId
+  }
+
+  const reviewsQuery = useList3(listParams, { query: { enabled: shopId !== '' } })
   const summaryQuery = useSellerReviewSummary({ shopId }, { query: { enabled: shopId !== '' } })
-  // Tên sản phẩm hiển thị kèm từng đánh giá
-  const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopId !== '' } })
+  const productsQuery = useProducts({ shopId }, { query: { enabled: shopId !== '' } })
+  const templatesQuery = useListTemplates({ shopId }, { query: { enabled: shopId !== '' } })
 
   const replyMutation = useReply({
     mutation: {
@@ -79,66 +112,87 @@ export default function SellerReviewsTab({ shopId }: Props) {
     },
   })
 
+  let productOptions: ReviewProductOption[] = []
   const productNameById = new Map<string, string>()
-  if (productsQuery.data !== undefined) {
-    for (const p of takeData(productsQuery.data)) {
-      productNameById.set(p.id ?? '', p.name ?? '')
+  if (productsQuery.data !== undefined && productsQuery.data.status === 200) {
+    productOptions = takeData(productsQuery.data).map(reviewProductOptionItem)
+    for (const option of productOptions) {
+      productNameById.set(option.id, option.name)
     }
   }
 
+  let templates: ReviewReplyTemplateItem[] = []
+  if (templatesQuery.data !== undefined && templatesQuery.data.status === 200) {
+    templates = takeData(templatesQuery.data).map(reviewReplyTemplateItem)
+  }
+
   let reviews: ReviewItem[] = []
-  if (reviewsQuery.data !== undefined) {
+  if (reviewsQuery.data !== undefined && reviewsQuery.data.status === 200) {
     reviews = takeData(reviewsQuery.data).map(function (r) {
       return reviewItem(r, productNameById.get(r.productId ?? ''))
     })
   }
 
-  function handleReplyReview(reviewId: string, replyText: string) {
-    replyMutation.mutate({ id: reviewId, data: { reply: replyText } })
-  }
-
-  function handleReportReview(reviewId: string, reason: string) {
-    reportMutation.mutate({ id: reviewId, data: { reason } })
-  }
-
   function showToast(msg: string) {
+    if (toastTimerRef.current !== null) {
+      clearTimeout(toastTimerRef.current)
+    }
     setNotification(msg)
-    setTimeout(function () {
+    toastTimerRef.current = setTimeout(function () {
       setNotification(null)
     }, 3000)
   }
 
-  function handleSendReply(reviewId: string) {
+  function handleInsertTemplate(templateContent: string) {
+    setReplyError(null)
     if (replyContent.trim() === '') {
-      alert('Vui lòng nhập nội dung phản hồi.')
+      setReplyContent(templateContent)
       return
     }
-    handleReplyReview(reviewId, replyContent)
-    setReplyTargetId(null)
-    setReplyContent('')
-    showToast('Đã gửi phản hồi đánh giá của khách hàng!')
+    setReplyContent(`${replyContent}\n${templateContent}`)
+  }
+
+  function handleSendReply(reviewId: string) {
+    const trimmed = replyContent.trim()
+    if (trimmed === '') {
+      setReplyError('Vui lòng nhập nội dung phản hồi.')
+      return
+    }
+    if (trimmed.length > 2000) {
+      setReplyError('Nội dung phản hồi tối đa 2000 ký tự.')
+      return
+    }
+    setReplyError(null)
+    replyMutation.mutate(
+      { id: reviewId, data: { reply: trimmed } },
+      {
+        onSuccess: function () {
+          setReplyTargetId(null)
+          setReplyContent('')
+          setReplyError(null)
+          showToast('Đã gửi phản hồi đánh giá của khách hàng!')
+        },
+        onError: function (error) {
+          setReplyError(hookErrorMessage('sellerReviewReply', error))
+        },
+      },
+    )
   }
 
   function handleConfirmReport() {
-    if (reportTargetId !== null) {
-      handleReportReview(reportTargetId, reportReason)
-      setReportTargetId(null)
-      showToast('Đã gửi báo cáo đánh giá lên bộ phận kiểm duyệt của sàn!')
+    if (reportTargetId === null) {
+      return
     }
+    reportMutation.mutate(
+      { id: reportTargetId, data: { reason: reportReason } },
+      {
+        onSuccess: function () {
+          setReportTargetId(null)
+          showToast('Đã gửi báo cáo đánh giá lên bộ phận kiểm duyệt của sàn!')
+        },
+      },
+    )
   }
-
-  const filteredReviews = reviews.filter(function (r) {
-    if (activeFilter === 'UNREPLIED' && r.sellerReply !== undefined) {
-      return false
-    }
-    if (activeFilter === '5_STAR' && r.rating !== 5) {
-      return false
-    }
-    if (activeFilter === 'LOW_STAR' && r.rating > 3) {
-      return false
-    }
-    return true
-  })
 
   function renderStars(rating: number) {
     return (
@@ -161,6 +215,9 @@ export default function SellerReviewsTab({ shopId }: Props) {
     )
   }
 
+  const isAllSelected = !onlyUnreplied && selectedStars === undefined && selectedProductId === ''
+  const canReply = can('REVIEW_REPLY')
+
   return (
     <div className="space-y-6">
       {/* Toast */}
@@ -172,20 +229,33 @@ export default function SellerReviewsTab({ shopId }: Props) {
       )}
 
       {/* Header */}
-      <div>
-        <h2 className="text-xl font-black text-zinc-900 dark:text-white">
-          Xem & Phản hồi Đánh giá
-        </h2>
-        <p className="text-xs text-zinc-500">
-          Quản lý phản hồi đánh giá sản phẩm từ người mua và khiếu nại đánh giá xấu
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-black text-zinc-900 dark:text-white">
+            Xem & Phản hồi Đánh giá
+          </h2>
+          <p className="text-xs text-zinc-500">
+            Quản lý phản hồi đánh giá sản phẩm từ người mua và theo dõi chất lượng theo thời gian
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={function () {
+            setIsTemplateModalOpen(true)
+          }}
+          className="inline-flex items-center gap-2 self-start rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+        >
+          <SlidersHorizontal size={15} weight="bold" />
+          Quản lý mẫu ({templates.length})
+        </button>
       </div>
 
       {/* Thống kê đánh giá */}
       {(() => {
-        let summaryData: ReturnType<typeof takeData> | undefined
-        if (summaryQuery.data !== undefined) {
-          summaryData = takeData(summaryQuery.data)
+        let summaryData: ReviewSummaryResponse | undefined
+        if (summaryQuery.data !== undefined && summaryQuery.data.status === 200) {
+          summaryData = summaryQuery.data.data
         }
         const reviewCount = summaryData?.reviewCount ?? reviews.length
         let averageValue = 0
@@ -256,39 +326,77 @@ export default function SellerReviewsTab({ shopId }: Props) {
         )
       })()}
 
+      {/* Xu hướng đánh giá theo thời gian */}
+      <ReviewTrendCard shopId={shopId} />
+
       {/* Bộ lọc & Danh sách đánh giá */}
       <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-100 pb-3 dark:border-white/10">
-          {[
-            { id: 'ALL', label: 'Tất cả đánh giá' },
-            { id: 'UNREPLIED', label: 'Chưa phản hồi' },
-            { id: '5_STAR', label: '5 sao tuyệt vời' },
-            { id: 'LOW_STAR', label: '1 - 3 sao cần chú ý' },
-          ].map(function (tab) {
-            const isCurrent = activeFilter === tab.id
-            let tabClass =
-              'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-            if (isCurrent) {
-              tabClass =
-                'rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
-            }
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={function () {
-                  setActiveFilter(tab.id as 'ALL' | 'UNREPLIED' | '5_STAR' | 'LOW_STAR')
-                }}
-                className={tabClass}
-              >
-                {tab.label}
-              </button>
-            )
-          })}
+        <div className="flex flex-col gap-3 border-b border-zinc-100 pb-4 lg:flex-row lg:items-center lg:justify-between dark:border-white/10">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={function () {
+                setOnlyUnreplied(false)
+                setSelectedStars(undefined)
+                setSelectedProductId('')
+              }}
+              className={filterPillClass(isAllSelected)}
+            >
+              Tất cả
+            </button>
+            <button
+              type="button"
+              onClick={function () {
+                setOnlyUnreplied(!onlyUnreplied)
+              }}
+              className={filterPillClass(onlyUnreplied)}
+            >
+              Chưa phản hồi
+            </button>
+            {[5, 4, 3, 2, 1].map(function (star) {
+              const active = selectedStars === star
+              return (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={function () {
+                    if (active) {
+                      setSelectedStars(undefined)
+                      return
+                    }
+                    setSelectedStars(star)
+                  }}
+                  className={filterPillClass(active)}
+                >
+                  {star} sao
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              aria-label="Lọc theo sản phẩm"
+              value={selectedProductId}
+              onChange={function (e) {
+                setSelectedProductId(e.target.value)
+              }}
+              className="rounded-2xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+            >
+              <option value="">Tất cả sản phẩm ({productOptions.length})</option>
+              {productOptions.map(function (opt) {
+                return (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.name} ({opt.reviewCount})
+                  </option>
+                )
+              })}
+            </select>
+          </div>
         </div>
 
         <div className="mt-5 space-y-4">
-          {filteredReviews.map(function (rev) {
+          {reviews.map(function (rev) {
             const isReplying = replyTargetId === rev.id
             return (
               <div
@@ -326,7 +434,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                         Đang khiếu nại
                       </span>
                     )}
-                    {can('REVIEW_REPLY') && (
+                    {canReply && (
                       <button
                         type="button"
                         onClick={function () {
@@ -343,7 +451,10 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
                 <div className="mt-3 text-xs">
                   <div className="flex flex-wrap items-center gap-2 font-semibold text-zinc-500">
-                    <span>Sản phẩm: {rev.productName}</span>
+                    <span>Sản phẩm:</span>
+                    <span className="font-bold text-zinc-800 dark:text-zinc-100">
+                      {rev.productName}
+                    </span>
                     {rev.variantLabel !== undefined && (
                       <span className="rounded-full bg-zinc-200/70 px-2 py-0.5 text-[11px] text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
                         Phân loại: {rev.variantLabel}
@@ -420,7 +531,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                         <ChatCircleDots size={14} weight="bold" className="text-indigo-600" />
                         Phản hồi của Người bán:
                       </p>
-                      <p className="mt-1 leading-relaxed text-zinc-700 dark:text-zinc-300">
+                      <p className="mt-1 leading-relaxed whitespace-pre-line text-zinc-700 dark:text-zinc-300">
                         {rev.sellerReply}
                       </p>
                     </div>
@@ -428,46 +539,88 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
                   {/* Form trả lời */}
                   {isReplying && (
-                    <div className="mt-3 rounded-2xl border border-indigo-200 bg-white p-3 dark:border-indigo-900/40 dark:bg-white/10">
+                    <div className="mt-3 rounded-2xl border border-indigo-200 bg-white p-3.5 dark:border-indigo-900/40 dark:bg-white/10">
+                      {templates.length > 0 && (
+                        <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
+                          <span className="text-[11px] font-semibold text-zinc-500">
+                            Chèn mẫu nhanh:
+                          </span>
+                          {templates.map(function (tpl) {
+                            return (
+                              <button
+                                key={tpl.id}
+                                type="button"
+                                onClick={function () {
+                                  handleInsertTemplate(tpl.content)
+                                }}
+                                className="rounded-full border border-indigo-200 bg-indigo-50/70 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200 dark:hover:bg-indigo-500/25"
+                              >
+                                {tpl.title}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+
                       <textarea
-                        rows={2}
+                        rows={3}
+                        maxLength={2000}
                         value={replyContent}
                         onChange={function (e) {
                           setReplyContent(e.target.value)
+                          if (replyError !== null) {
+                            setReplyError(null)
+                          }
                         }}
-                        placeholder="Nhập câu trả lời cảm ơn hoặc giải đáp thắc mắc của bạn..."
-                        className="w-full bg-transparent text-xs outline-none"
+                        placeholder="Nhập nội dung phản hồi công khai dưới đánh giá..."
+                        className="w-full resize-none bg-transparent text-xs outline-none dark:text-white"
                       />
-                      <div className="mt-2 flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={function () {
-                            setReplyTargetId(null)
-                          }}
-                          className="rounded-xl px-3 py-1 text-[11px] font-bold text-zinc-500 hover:bg-zinc-100"
-                        >
-                          Hủy
-                        </button>
-                        <button
-                          type="button"
-                          onClick={function () {
-                            handleSendReply(rev.id)
-                          }}
-                          className="btn-primary flex items-center gap-1 rounded-xl px-3.5 py-1 text-[11px] font-bold"
-                        >
-                          <PaperPlaneRight size={12} weight="bold" />
-                          Gửi phản hồi
-                        </button>
+
+                      {replyError !== null && (
+                        <p className="mt-2 rounded-xl bg-red-50 px-3 py-1.5 text-[11px] font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
+                          {replyError}
+                        </p>
+                      )}
+
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-zinc-400">
+                          {replyContent.trim().length}/2000
+                        </span>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={function () {
+                              setReplyTargetId(null)
+                              setReplyContent('')
+                              setReplyError(null)
+                            }}
+                            className="rounded-xl px-3 py-1 text-[11px] font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
+                          >
+                            Hủy
+                          </button>
+                          <button
+                            type="button"
+                            disabled={replyMutation.isPending}
+                            onClick={function () {
+                              handleSendReply(rev.id)
+                            }}
+                            className="btn-primary flex items-center gap-1 rounded-xl px-3.5 py-1 text-[11px] font-bold disabled:opacity-50"
+                          >
+                            <PaperPlaneRight size={12} weight="bold" />
+                            Gửi phản hồi
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {rev.sellerReply === undefined && !isReplying && can('REVIEW_REPLY') && (
+                  {rev.sellerReply === undefined && !isReplying && canReply && (
                     <button
                       type="button"
                       onClick={function () {
                         setReplyTargetId(rev.id)
                         setReplyContent('')
+                        setReplyError(null)
                       }}
                       className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
                     >
@@ -480,13 +633,28 @@ export default function SellerReviewsTab({ shopId }: Props) {
             )
           })}
 
-          {filteredReviews.length === 0 && (
+          {reviews.length === 0 && (
             <div className="py-12 text-center text-zinc-400">
-              <p className="text-sm">Không có đánh giá nào trong danh mục này.</p>
+              <p className="text-sm">Không có đánh giá nào phù hợp bộ lọc hiện tại.</p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Modal quản lý mẫu phản hồi nhanh */}
+      {isTemplateModalOpen && (
+        <ReviewReplyTemplateModal
+          shopId={shopId}
+          templates={templates}
+          canManage={canReply}
+          onClose={function () {
+            setIsTemplateModalOpen(false)
+          }}
+          onChanged={function (msg) {
+            showToast(msg)
+          }}
+        />
+      )}
 
       {/* Modal Báo cáo vi phạm */}
       {reportTargetId !== null && (
