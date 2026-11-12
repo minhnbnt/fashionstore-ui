@@ -372,7 +372,7 @@ export default function ShopDashboard() {
         />
       )}
 
-      {isTabAllowed && activeTab === 'REVIEWS' && <SellerReviewsTab shopId={shopId} />}
+      {isTabAllowed && activeTab === 'REVIEWS' && <SellerReviewsTab key={shopId} shopId={shopId} />}
 
       {isTabAllowed && activeTab === 'CHAT' && (
         <SellerChatTab shopId={shopId} autoReplyText={autoReplyText} />

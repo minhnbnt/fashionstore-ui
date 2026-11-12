@@ -167,10 +167,15 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     404: 'Đánh giá hoặc sản phẩm không còn hiển thị.',
     409: 'Bạn không thể tự nhấn hữu ích cho đánh giá của chính mình.',
   },
+  sellerReviewList: {
+    400: 'Bộ lọc đánh giá chưa hợp lệ.',
+    403: 'Bạn không có quyền xem đánh giá của shop.',
+  },
   sellerReviewReply: {
     400: 'Nội dung phản hồi chưa hợp lệ (tối đa 2000 ký tự).',
     403: 'Bạn không có quyền phản hồi đánh giá này.',
     404: 'Không tìm thấy đánh giá để phản hồi.',
+    409: 'Đánh giá này đã được phản hồi trước đó.',
   },
   sellerReplyTemplate: {
     400: 'Tiêu đề hoặc nội dung mẫu phản hồi chưa hợp lệ.',

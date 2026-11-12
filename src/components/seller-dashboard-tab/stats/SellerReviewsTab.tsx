@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
   getList3QueryKey,
@@ -142,6 +142,14 @@ export default function SellerReviewsTab({ shopId }: Props) {
       setNotification(null)
     }, 3000)
   }
+
+  useEffect(function () {
+    return function () {
+      if (toastTimerRef.current !== null) {
+        clearTimeout(toastTimerRef.current)
+      }
+    }
+  }, [])
 
   function handleInsertTemplate(templateContent: string) {
     setReplyError(null)
@@ -633,7 +641,19 @@ export default function SellerReviewsTab({ shopId }: Props) {
             )
           })}
 
-          {reviews.length === 0 && (
+          {reviewsQuery.isLoading && (
+            <div className="py-12 text-center text-zinc-400">
+              <p className="text-sm">Đang tải danh sách đánh giá...</p>
+            </div>
+          )}
+
+          {!reviewsQuery.isLoading && reviewsQuery.isError && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+              {hookErrorMessage('sellerReviewList', reviewsQuery.error)}
+            </div>
+          )}
+
+          {!reviewsQuery.isLoading && !reviewsQuery.isError && reviews.length === 0 && (
             <div className="py-12 text-center text-zinc-400">
               <p className="text-sm">Không có đánh giá nào phù hợp bộ lọc hiện tại.</p>
             </div>

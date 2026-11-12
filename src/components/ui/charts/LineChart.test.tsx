@@ -77,4 +77,24 @@ describe('LineChart', () => {
     expect(html).toContain('0★')
     expect(html).not.toContain('₫')
   })
+
+  it('khong trung khoa hay nhan truc Y khi gia tri toi da bang 1 hoac 0', () => {
+    const htmlMaxOne = renderToString(
+      createElement(LineChart, {
+        data: [{ label: '2026-10-20', value: 1 }],
+        formatAxisValue: (val) => `${Math.round(val)}`,
+      }),
+    )
+    const tickMatchesOne = htmlMaxOne.match(/>1<\/text>/g) ?? []
+    expect(tickMatchesOne).toHaveLength(1)
+
+    const htmlZero = renderToString(
+      createElement(LineChart, {
+        data: [{ label: '2026-10-20', value: 0 }],
+        formatAxisValue: (val) => `${Math.round(val)}`,
+      }),
+    )
+    const tickMatchesZero = htmlZero.match(/>0<\/text>/g) ?? []
+    expect(tickMatchesZero).toHaveLength(1)
+  })
 })

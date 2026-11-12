@@ -69,9 +69,9 @@ export default function ReviewReplyTemplateModal({
 
   const deleteMutation = useDeleteTemplate({
     mutation: {
-      onSuccess: function () {
+      onSuccess: function (_data, variables) {
         void queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() })
-        if (editingId !== null) {
+        if (editingId !== null && editingId === variables.templateId) {
           setEditingId(null)
           setTitle('')
           setContent('')

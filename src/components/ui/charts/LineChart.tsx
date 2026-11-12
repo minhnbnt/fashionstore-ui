@@ -277,7 +277,12 @@ export function LineChart({
   if (maxY !== undefined) {
     midStep = Number((ceiling / 2).toFixed(1))
   }
-  const gridSteps = [ceiling, midStep, 0]
+  const gridSteps: number[] = []
+  for (const step of [ceiling, midStep, 0]) {
+    if (!gridSteps.includes(step)) {
+      gridSteps.push(step)
+    }
+  }
   const gradId = `line-grad-${strokeColor.replace('#', '')}`
 
   const hasHeader = currentLabel !== undefined || comparisonLabel !== undefined
