@@ -135,7 +135,7 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         <Star size={16} weight="fill" className="text-sky-400" />
         {p.averageRating !== null && p.averageRating !== undefined && (
           <span>
-            {p.averageRating} · {p.reviewCount ?? 0} đánh giá
+            {p.averageRating.toFixed(1)} · {p.reviewCount ?? 0} đánh giá
           </span>
         )}
         {(p.averageRating === null || p.averageRating === undefined) && (

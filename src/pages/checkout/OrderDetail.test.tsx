@@ -77,12 +77,13 @@ vi.mock('@generated/endpoints/buyer-returns/buyer-returns', () => ({
 
 vi.mock('@generated/endpoints/reviews/reviews', () => ({
   getMine1QueryKey: () => ['/api/reviews/mine'],
-  getListQueryKey: (productId: string) => [`/api/products/${productId}/reviews`],
+  getList1QueryKey: (productId: string) => [`/api/products/${productId}/reviews`],
+  getSummary2QueryKey: (productId: string) => [`/api/products/${productId}/reviews/summary`],
   useMine1: () => ({
     data: { status: 200, data: reviewsState.list },
     isLoading: false,
   }),
-  useCreate: () => ({ mutate: vi.fn(), isPending: false }),
+  useCreate1: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdate3: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 

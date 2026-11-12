@@ -3,11 +3,21 @@ import { useState } from 'react'
 import { useListProducts } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
 import {
   getList3QueryKey,
+  getSummaryQueryKey as getSellerReviewSummaryQueryKey,
   useList3,
   useReply,
   useReport,
+  useSummary as useSellerReviewSummary,
 } from '@generated/endpoints/seller-reviews/seller-reviews'
-import { Star, ChatCircleDots, Flag, CheckCircle, PaperPlaneRight } from '@phosphor-icons/react'
+import {
+  Star,
+  ChatCircleDots,
+  Flag,
+  CheckCircle,
+  PaperPlaneRight,
+  ThumbsUp,
+  Play,
+} from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
@@ -42,8 +52,13 @@ export default function SellerReviewsTab({ shopId }: Props) {
     'Đánh giá sai sự thật / Cạnh tranh không lành mạnh',
   )
   const [notification, setNotification] = useState<string | null>(null)
+  const [lightboxMedia, setLightboxMedia] = useState<{
+    type: 'image' | 'video'
+    url: string
+  } | null>(null)
 
   const reviewsQuery = useList3({ shopId }, { query: { enabled: shopId !== '' } })
+  const summaryQuery = useSellerReviewSummary({ shopId }, { query: { enabled: shopId !== '' } })
   // Tên sản phẩm hiển thị kèm từng đánh giá
   const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopId !== '' } })
 
@@ -51,6 +66,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList3QueryKey() })
+        void queryClient.invalidateQueries({ queryKey: getSellerReviewSummaryQueryKey() })
       },
     },
   })
@@ -58,6 +74,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList3QueryKey() })
+        void queryClient.invalidateQueries({ queryKey: getSellerReviewSummaryQueryKey() })
       },
     },
   })
@@ -165,48 +182,79 @@ export default function SellerReviewsTab({ shopId }: Props) {
       </div>
 
       {/* Thống kê đánh giá */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-          <span className="text-xs font-semibold text-zinc-500">Đánh giá trung bình</span>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400">4.9</span>
-            <span className="text-xs text-zinc-400">/ 5.0 sao</span>
-          </div>
-          <div className="mt-2 flex items-center gap-1 text-amber-400">
-            {[1, 2, 3, 4, 5].map(function (s) {
-              return <Star key={s} size={16} weight="fill" />
-            })}
-          </div>
-          <p className="mt-2 text-xs text-zinc-500">Dựa trên 1,248 lượt đánh giá</p>
-        </div>
+      {(() => {
+        let summaryData: ReturnType<typeof takeData> | undefined
+        if (summaryQuery.data !== undefined) {
+          summaryData = takeData(summaryQuery.data)
+        }
+        const reviewCount = summaryData?.reviewCount ?? reviews.length
+        let averageValue = 0
+        let averageDisplay = '0.0'
+        if (summaryData?.averageRating !== null && summaryData?.averageRating !== undefined) {
+          averageValue = summaryData.averageRating
+          averageDisplay = summaryData.averageRating.toFixed(1)
+        }
+        const starCounts = [
+          { stars: 5, count: summaryData?.fiveStarCount ?? 0, barClass: 'bg-amber-400' },
+          { stars: 4, count: summaryData?.fourStarCount ?? 0, barClass: 'bg-amber-400' },
+          { stars: 3, count: summaryData?.threeStarCount ?? 0, barClass: 'bg-sky-400' },
+          { stars: 2, count: summaryData?.twoStarCount ?? 0, barClass: 'bg-orange-400' },
+          { stars: 1, count: summaryData?.oneStarCount ?? 0, barClass: 'bg-red-400' },
+        ]
+        return (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+              <span className="text-xs font-semibold text-zinc-500">Đánh giá trung bình</span>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400">
+                  {averageDisplay}
+                </span>
+                <span className="text-xs text-zinc-400">/ 5.0 sao</span>
+              </div>
+              <div className="mt-2 flex items-center gap-1 text-amber-400">
+                {[1, 2, 3, 4, 5].map(function (s) {
+                  let weight: 'fill' | 'regular' = 'regular'
+                  if (s <= Math.round(averageValue)) {
+                    weight = 'fill'
+                  }
+                  return <Star key={s} size={16} weight={weight} />
+                })}
+              </div>
+              <p className="mt-2 text-xs text-zinc-500">Dựa trên {reviewCount} lượt đánh giá</p>
+            </div>
 
-        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm sm:col-span-2 dark:border-white/10 dark:bg-[#11182a]">
-          <span className="text-xs font-semibold text-zinc-500">Tỷ lệ hài lòng của khách hàng</span>
-          <div className="mt-4 space-y-2 text-xs">
-            <div className="flex items-center gap-3">
-              <span className="w-12 font-bold text-zinc-700 dark:text-zinc-300">5 sao</span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/10">
-                <div className="h-full rounded-full bg-amber-400" style={{ width: '92%' }} />
+            <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm sm:col-span-2 dark:border-white/10 dark:bg-[#11182a]">
+              <span className="text-xs font-semibold text-zinc-500">
+                Phân bố đánh giá theo mức sao
+              </span>
+              <div className="mt-4 space-y-2 text-xs">
+                {starCounts.map(function (row) {
+                  let pct = 0
+                  if (reviewCount > 0) {
+                    pct = Math.round((row.count / reviewCount) * 100)
+                  }
+                  return (
+                    <div key={row.stars} className="flex items-center gap-3">
+                      <span className="w-12 font-bold text-zinc-700 dark:text-zinc-300">
+                        {row.stars} sao
+                      </span>
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/10">
+                        <div
+                          className={`h-full rounded-full ${row.barClass}`}
+                          style={{ width: pct + '%' }}
+                        />
+                      </div>
+                      <span className="w-16 text-right font-medium text-zinc-500">
+                        {row.count} ({pct}%)
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
-              <span className="w-10 text-right font-medium text-zinc-500">92%</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="w-12 font-bold text-zinc-700 dark:text-zinc-300">4 sao</span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/10">
-                <div className="h-full rounded-full bg-amber-400" style={{ width: '6%' }} />
-              </div>
-              <span className="w-10 text-right font-medium text-zinc-500">6%</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="w-12 font-bold text-zinc-700 dark:text-zinc-300">1-3 sao</span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-white/10">
-                <div className="h-full rounded-full bg-red-400" style={{ width: '2%' }} />
-              </div>
-              <span className="w-10 text-right font-medium text-zinc-500">2%</span>
             </div>
           </div>
-        </div>
-      </div>
+        )
+      })()}
 
       {/* Bộ lọc & Danh sách đánh giá */}
       <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
@@ -251,9 +299,20 @@ export default function SellerReviewsTab({ shopId }: Props) {
                   <div className="flex items-center gap-3">
                     <UserAvatar name={rev.buyerName} size={36} />
                     <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-white">
-                        {rev.buyerName}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xs font-bold text-zinc-900 dark:text-white">
+                          {rev.buyerName}
+                        </p>
+                        {rev.anonymous && (
+                          <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                            Ẩn danh
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:bg-sky-500/20 dark:text-sky-200">
+                          <ThumbsUp size={10} weight="fill" />
+                          {rev.helpfulCount}
+                        </span>
+                      </div>
                       <div className="mt-0.5 flex items-center gap-2">
                         {renderStars(rev.rating)}
                         <span className="text-[11px] text-zinc-400">• {rev.createdAt}</span>
@@ -283,25 +342,74 @@ export default function SellerReviewsTab({ shopId }: Props) {
                 </div>
 
                 <div className="mt-3 text-xs">
-                  <p className="font-semibold text-zinc-500">Sản phẩm: {rev.productName}</p>
-                  <p className="mt-1 leading-relaxed text-zinc-800 dark:text-zinc-200">
+                  <div className="flex flex-wrap items-center gap-2 font-semibold text-zinc-500">
+                    <span>Sản phẩm: {rev.productName}</span>
+                    {rev.variantLabel !== undefined && (
+                      <span className="rounded-full bg-zinc-200/70 px-2 py-0.5 text-[11px] text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
+                        Phân loại: {rev.variantLabel}
+                      </span>
+                    )}
+                  </div>
+                  {rev.tags.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {rev.tags.map(function (tag) {
+                        return (
+                          <span
+                            key={tag}
+                            className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"
+                          >
+                            {tag}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )}
+                  <p className="mt-1.5 leading-relaxed text-zinc-800 dark:text-zinc-200">
                     {rev.comment}
                   </p>
 
-                  {/* Ảnh thực tế khách đăng */}
-                  {rev.images.length > 0 && (
-                    <div className="mt-2.5 flex items-center gap-2">
+                  {/* Ảnh & video thực tế khách đăng */}
+                  {(rev.images.length > 0 || rev.videoUrl !== undefined) && (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
                       {rev.images.map(function (img, idx) {
                         return (
-                          <img
+                          <button
                             key={idx}
-                            src={img}
-                            alt=""
-                            onError={handleImageError}
-                            className="h-16 w-16 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
-                          />
+                            type="button"
+                            onClick={function () {
+                              setLightboxMedia({ type: 'image', url: img })
+                            }}
+                            className="h-16 w-16 overflow-hidden rounded-xl border border-zinc-200 dark:border-white/10"
+                          >
+                            <img
+                              src={img}
+                              alt="Ảnh đánh giá khách hàng"
+                              onError={handleImageError}
+                              className="h-full w-full object-cover"
+                            />
+                          </button>
                         )
                       })}
+                      {rev.videoUrl !== undefined && (
+                        <button
+                          type="button"
+                          onClick={function () {
+                            if (rev.videoUrl !== undefined) {
+                              setLightboxMedia({ type: 'video', url: rev.videoUrl })
+                            }
+                          }}
+                          className="relative flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-900 text-white dark:border-white/10"
+                        >
+                          <video
+                            src={rev.videoUrl}
+                            className="h-full w-full object-cover opacity-70"
+                            muted
+                          />
+                          <span className="absolute flex h-6 w-6 items-center justify-center rounded-full bg-black/70">
+                            <Play size={12} weight="fill" />
+                          </span>
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -436,6 +544,35 @@ export default function SellerReviewsTab({ shopId }: Props) {
             >
               Gửi báo cáo
             </button>
+          </div>
+        </Modal>
+      )}
+      {/* Modal xem ảnh / video phóng to */}
+      {lightboxMedia !== null && (
+        <Modal
+          title="Media đánh giá của khách hàng"
+          onClose={function () {
+            setLightboxMedia(null)
+          }}
+          widthClass="max-w-2xl"
+        >
+          <div className="mt-4 overflow-hidden rounded-2xl bg-zinc-950">
+            {lightboxMedia.type === 'image' && (
+              <img
+                src={lightboxMedia.url}
+                alt="Ảnh đánh giá phóng to"
+                onError={handleImageError}
+                className="max-h-[70vh] w-full object-contain"
+              />
+            )}
+            {lightboxMedia.type === 'video' && (
+              <video
+                src={lightboxMedia.url}
+                controls
+                autoPlay
+                className="max-h-[70vh] w-full object-contain"
+              />
+            )}
           </div>
         </Modal>
       )}

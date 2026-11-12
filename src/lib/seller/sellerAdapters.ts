@@ -290,15 +290,26 @@ export function reviewItem(
   review: SellerReviewResponse,
   productName: string | undefined,
 ): ReviewItem {
+  const images = (review.imageKeys ?? []).map((key) => imageFromKey(key))
+  let videoUrl: string | undefined
+  if (review.videoKey) {
+    videoUrl = imageFromKey(review.videoKey)
+  }
+
   return {
     id: safeId(review.id),
     buyerName: safeText(review.buyerDisplayName),
     productName: safeText(productName),
+    variantLabel: optionalText(review.variantLabel),
     rating: review.stars ?? 0,
     comment: safeText(review.comment),
-    // API chua co anh dinh kem review
-    images: [],
-    sellerReply: safeText(review.sellerReply),
+    images,
+    videoUrl,
+    tags: review.tags ?? [],
+    helpfulCount: review.helpfulCount ?? 0,
+    anonymous: review.anonymous === true,
+    sellerReply: optionalText(review.sellerReply),
+    repliedAt: optionalText(review.repliedAt),
     isReported: review.isReported === true,
     createdAt: formatDateTime(review.createdAt),
   }

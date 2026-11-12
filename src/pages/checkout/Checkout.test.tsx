@@ -42,7 +42,7 @@ vi.mock('@/hooks/useSession', () => ({
 }))
 
 vi.mock('@generated/endpoints/addresses/addresses', () => ({
-  useList1: mockUseList1,
+  useList: mockUseList1,
 }))
 
 function addresses(): AddressResponse[] {

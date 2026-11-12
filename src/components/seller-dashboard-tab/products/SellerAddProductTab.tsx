@@ -2,7 +2,7 @@ import { useState, type ChangeEvent } from 'react'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { getListProductsQueryKey } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
-import { useCreate1 } from '@generated/endpoints/shop-products/shop-products'
+import { useCreate } from '@generated/endpoints/shop-products/shop-products'
 import { useMine } from '@generated/endpoints/shops/shops'
 import {
   ArrowLeft,
@@ -237,7 +237,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     currentShop !== undefined &&
     (currentShop.isTrusted === true || currentShop.kycStatus === 'VERIFIED')
 
-  const createProductMutation = useCreate1({
+  const createProductMutation = useCreate({
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })

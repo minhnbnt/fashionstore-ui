@@ -1,12 +1,19 @@
 // @vitest-environment happy-dom
+import { MemoryRouter } from 'react-router'
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import ProductTabs from './ProductTabs'
 
+vi.mock('@/hooks/useSession', () => ({
+  useSessionQuery: () => ({ data: null, isPending: false }),
+}))
+
 vi.mock('@generated/endpoints/reviews/reviews', () => ({
-  useList: () => ({
+  getList1QueryKey: (productId: string) => [`/api/products/${productId}/reviews`],
+  useList1: () => ({
     data: {
       status: 200,
       data: [
@@ -25,14 +32,23 @@ vi.mock('@generated/endpoints/reviews/reviews', () => ({
           productId: 'p1',
           buyerDisplayName: 'Lan Anh',
           stars: 4,
-          comment: 'Vải mát',
+          comment: 'Vải mát và rất dễ phối đồ.',
           edited: false,
           createdAt: '2026-10-18T08:00:00Z',
         },
       ],
     },
-    isLoading: false,
+    isPending: false,
+    isError: false,
+    error: null,
   }),
+  useSummary2: () => ({
+    data: undefined,
+    isPending: false,
+    isError: false,
+    error: null,
+  }),
+  useToggleHelpful: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
 afterEach(() => {
@@ -44,7 +60,9 @@ describe('ProductTabs edited review indicator', () => {
     const client = new QueryClient()
     render(
       <QueryClientProvider client={client}>
-        <ProductTabs product={{ id: 'p1', description: 'Mô tả' }} />
+        <MemoryRouter>
+          <ProductTabs product={{ id: 'p1', description: 'Mô tả' }} />
+        </MemoryRouter>
       </QueryClientProvider>,
     )
 

@@ -62,12 +62,13 @@ vi.mock('@generated/endpoints/buyer-returns/buyer-returns', () => ({
 
 vi.mock('@generated/endpoints/reviews/reviews', () => ({
   getMine1QueryKey: () => ['/api/reviews/mine'],
-  getListQueryKey: (productId: string) => [`/api/products/${productId}/reviews`],
+  getList1QueryKey: (productId: string) => [`/api/products/${productId}/reviews`],
+  getSummary2QueryKey: (productId: string) => [`/api/products/${productId}/reviews/summary`],
   useMine1: () => ({
     data: { status: 200, data: reviewsState.list },
     isLoading: false,
   }),
-  useCreate: () => ({ mutate: createReviewMutate, isPending: false }),
+  useCreate1: () => ({ mutate: createReviewMutate, isPending: false }),
   useUpdate3: () => ({ mutate: updateReviewMutate, isPending: false }),
 }))
 
@@ -252,6 +253,92 @@ describe('Orders page (1.4.5 + 1.4.6)', () => {
     const buyAgainButtons = screen.getAllByRole('button', { name: 'Mua lại' })
     await user.click(buyAgainButtons[0])
     expect(screen.getByText('cart-page-target')).toBeTruthy()
+  })
+
+  it('chi mo nut Danh gia cho don DELIVERED da xac nhan nhan hang va tach biet tung don', async () => {
+    const user = userEvent.setup()
+    ordersState.list = [
+      {
+        id: 'o-unconfirmed',
+        code: 'ORD-UNCONFIRMED',
+        shopId: 's1',
+        shopName: 'Shop Alpha',
+        status: 'DELIVERED',
+        total: 300000,
+        items: [
+          {
+            id: 'iu1',
+            productId: 'p-multi',
+            productName: 'Áo Hoodie',
+            variantLabel: 'M',
+            quantity: 1,
+            unitPrice: 300000,
+          },
+        ],
+        createdAt: '2026-10-18T08:00:00Z',
+        deliveredAt: '2026-10-19T08:00:00Z',
+        receivedAt: null,
+      },
+      {
+        id: 'o-done-1',
+        code: 'ORD-DONE-1',
+        shopId: 's1',
+        shopName: 'Shop Alpha',
+        status: 'DELIVERED',
+        total: 300000,
+        items: [
+          {
+            id: 'id1',
+            productId: 'p-multi',
+            productName: 'Áo Hoodie',
+            variantLabel: 'M',
+            quantity: 2,
+            unitPrice: 150000,
+          },
+        ],
+        createdAt: '2026-10-17T08:00:00Z',
+        deliveredAt: '2026-10-18T08:00:00Z',
+        receivedAt: '2026-10-19T08:00:00Z',
+      },
+      {
+        id: 'o-done-2',
+        code: 'ORD-DONE-2',
+        shopId: 's1',
+        shopName: 'Shop Alpha',
+        status: 'DELIVERED',
+        total: 300000,
+        items: [
+          {
+            id: 'id2',
+            productId: 'p-multi',
+            productName: 'Áo Hoodie',
+            variantLabel: 'L',
+            quantity: 1,
+            unitPrice: 300000,
+          },
+        ],
+        createdAt: '2026-10-16T08:00:00Z',
+        deliveredAt: '2026-10-17T08:00:00Z',
+        receivedAt: '2026-10-18T08:00:00Z',
+      },
+    ]
+    reviewsState.list = [
+      {
+        id: 'rev-o1',
+        orderId: 'o-done-1',
+        productId: 'p-multi',
+        stars: 5,
+        comment: 'Rất đẹp cho đơn thứ nhất nhé.',
+        edited: true,
+      },
+    ]
+
+    renderOrders('/account/orders?tab=DELIVERED')
+    // Đơn chưa nhận không có nút Đánh giá; ORD-DONE-1 đã khóa ("Đã đánh giá"); ORD-DONE-2 vẫn mở "Đánh giá"
+    expect(screen.getAllByRole('button', { name: 'Đã đánh giá' })).toHaveLength(1)
+    const reviewBtn = screen.getByRole('button', { name: 'Đánh giá' })
+    await user.click(reviewBtn)
+    expect(screen.getByText('Đánh giá Áo Hoodie')).toBeTruthy()
   })
 
   it('hien ReorderResultModal khi Mua lai co san pham bi bo qua', async () => {

@@ -16,9 +16,10 @@ import {
   useMine3,
 } from '@generated/endpoints/orders/orders'
 import {
-  getListQueryKey as getProductReviewsQueryKey,
+  getList1QueryKey as getProductReviewsQueryKey,
   getMine1QueryKey as getMyReviewsQueryKey,
-  useCreate as useCreateReview,
+  getSummary2QueryKey as getProductReviewSummaryQueryKey,
+  useCreate1 as useCreateReview,
   useMine1 as useMyReviews,
   useUpdate3 as useUpdateReview,
 } from '@generated/endpoints/reviews/reviews'
@@ -38,7 +39,7 @@ import CancelOrderModal from '@/components/order/CancelOrderModal'
 import OrderProgressStepper from '@/components/order/OrderProgressStepper'
 import ReorderResultModal from '@/components/order/ReorderResultModal'
 import ReturnRequestModal from '@/components/order/ReturnRequestModal'
-import ReviewModal from '@/components/order/ReviewModal'
+import ReviewModal, { type ReviewSubmitPayload } from '@/components/order/ReviewModal'
 import ReviewProductPickerModal from '@/components/order/ReviewProductPickerModal'
 import StatePanel from '@/components/ui/StatePanel'
 import { useSessionQuery } from '@/hooks/useSession'
@@ -59,8 +60,13 @@ import {
   paymentStatusLabel,
   returnStatusMeta,
 } from '@/lib/order/orderStatus'
+import {
+  buildOrderReviewLookup,
+  findOrderProductReview,
+  groupOrderReviewProducts,
+  resolveOrderReviewAction,
+} from '@/lib/review/reviewOrderHelpers'
 
-import type { OrderItemResponse } from '@generated/model/orderItemResponse'
 import type { OrderResponse } from '@generated/model/orderResponse'
 import type { ReorderResponse } from '@generated/model/reorderResponse'
 import type { ReturnRequestResponse } from '@generated/model/returnRequestResponse'
@@ -145,56 +151,6 @@ function orderMatchesTab(
   return order.status === tab
 }
 
-function distinctReviewableItems(items: OrderItemResponse[] | undefined): OrderItemResponse[] {
-  const seen = new Set<string>()
-  const result: OrderItemResponse[] = []
-  for (const item of items ?? []) {
-    if (!item.productId) {
-      continue
-    }
-    if (seen.has(item.productId)) {
-      continue
-    }
-    seen.add(item.productId)
-    result.push(item)
-  }
-  return result
-}
-
-function resolveReviewButtonState(
-  order: OrderResponse,
-  reviewsByProductId: Map<string, ReviewResponse>,
-): { visible: boolean; label: string; disabled: boolean } {
-  if (order.status !== 'DELIVERED') {
-    return { visible: false, label: '', disabled: true }
-  }
-  const items = distinctReviewableItems(order.items)
-  if (items.length === 0) {
-    return { visible: false, label: '', disabled: true }
-  }
-  let hasUnreviewed = false
-  let hasEditable = false
-  for (const item of items) {
-    const productId = item.productId
-    if (!productId) {
-      continue
-    }
-    const existing = reviewsByProductId.get(productId)
-    if (existing === undefined) {
-      hasUnreviewed = true
-    } else if (!existing.edited) {
-      hasEditable = true
-    }
-  }
-  if (hasUnreviewed) {
-    return { visible: true, label: 'Đánh giá', disabled: false }
-  }
-  if (hasEditable) {
-    return { visible: true, label: 'Sửa đánh giá (1 lần)', disabled: false }
-  }
-  return { visible: true, label: 'Đã đánh giá', disabled: true }
-}
-
 function tabButtonClass(active: boolean): string {
   if (active) {
     return 'shrink-0 rounded-full bg-[#17203a] px-4 py-2 text-xs font-bold text-white shadow-sm dark:bg-white dark:text-[#0a0f1e]'
@@ -216,8 +172,11 @@ export default function Orders() {
   const [returnTarget, setReturnTarget] = useState<OrderResponse | null>(null)
   const [pickerOrder, setPickerOrder] = useState<OrderResponse | null>(null)
   const [reviewContext, setReviewContext] = useState<{
+    orderId: string
     productId: string
     productName: string
+    variantLabel?: string
+    reviewerName?: string
     existing?: ReviewResponse
   } | null>(null)
   const [reorderResult, setReorderResult] = useState<ReorderResponse | null>(null)
@@ -258,15 +217,7 @@ export default function Orders() {
 
   const latestReturnByOrderId = useMemo(() => buildLatestReturnMap(returns), [returns])
 
-  const reviewsByProductId = useMemo(() => {
-    const map = new Map<string, ReviewResponse>()
-    for (const review of reviews) {
-      if (review.productId) {
-        map.set(review.productId, review)
-      }
-    }
-    return map
-  }, [reviews])
+  const reviewLookup = useMemo(() => buildOrderReviewLookup(reviews), [reviews])
 
   const combinedOrders = useMemo(() => {
     const existingIds = new Set<string>()
@@ -433,48 +384,53 @@ export default function Orders() {
   }
 
   function openReviewForOrder(order: OrderResponse) {
-    const items = distinctReviewableItems(order.items)
-    if (items.length === 0) {
+    if (!order.id) {
       return
     }
-    if (items.length === 1 && items[0].productId) {
-      const productId = items[0].productId
+    const grouped = groupOrderReviewProducts(order.items)
+    if (grouped.length === 0) {
+      return
+    }
+    if (grouped.length === 1 && grouped[0].item.productId) {
+      const productId = grouped[0].item.productId
+      setActionError(null)
       setReviewContext({
+        orderId: order.id,
         productId,
-        productName: items[0].productName ?? 'Sản phẩm',
-        existing: reviewsByProductId.get(productId),
+        productName: grouped[0].item.productName ?? 'Sản phẩm',
+        variantLabel: grouped[0].variantLabel,
+        reviewerName: order.shippingName ?? undefined,
+        existing: findOrderProductReview(order.id, productId, reviewLookup),
       })
       return
     }
+    setActionError(null)
     setPickerOrder(order)
   }
 
-  function handleSubmitReview(stars: number, comment: string) {
+  function handleSubmitReview(payload: ReviewSubmitPayload) {
     if (!reviewContext) {
       return
     }
-    const { productId, existing } = reviewContext
+    const { orderId, productId, existing } = reviewContext
     setActionError(null)
-    const cleanComment = comment || null
     const onSuccess = () => {
       setReviewContext(null)
       setActionSuccess('Đã lưu đánh giá của bạn.')
       void queryClient.invalidateQueries({ queryKey: getMyReviewsQueryKey() })
       void queryClient.invalidateQueries({ queryKey: getProductReviewsQueryKey(productId) })
+      void queryClient.invalidateQueries({ queryKey: getProductReviewSummaryQueryKey(productId) })
     }
     const onError = (err: unknown) => {
       setActionError(hookErrorMessage('review', err))
     }
 
-    if (existing !== undefined) {
-      updateReviewMutation.mutate(
-        { productId, data: { stars, comment: cleanComment } },
-        { onSuccess, onError },
-      )
+    if (existing !== undefined && existing.id) {
+      updateReviewMutation.mutate({ reviewId: existing.id, data: payload }, { onSuccess, onError })
       return
     }
     createReviewMutation.mutate(
-      { productId, data: { stars, comment: cleanComment } },
+      { productId, data: { orderId, ...payload } },
       { onSuccess, onError },
     )
   }
@@ -609,7 +565,7 @@ export default function Orders() {
           const canReturn =
             order.status === 'DELIVERED' && !order.receivedAt && !isBlockingReturn(retStatus)
           const canReorder = order.status === 'DELIVERED' || order.status === 'CANCELLED'
-          const reviewBtn = resolveReviewButtonState(order, reviewsByProductId)
+          const reviewBtn = resolveOrderReviewAction(order, reviewLookup)
 
           return (
             <article key={order.id ?? order.code} className="glass space-y-4 rounded-3xl p-5">
@@ -838,16 +794,22 @@ export default function Orders() {
 
       <ReviewProductPickerModal
         open={pickerOrder !== null}
+        orderId={pickerOrder?.id}
         orderCode={pickerOrder?.code}
         items={pickerOrder?.items ?? []}
-        reviewsByProductId={reviewsByProductId}
+        reviewLookup={reviewLookup}
         onClose={() => setPickerOrder(null)}
-        onSelectProduct={(item, existing) => {
+        onSelectProduct={(item, variantLabel, existing) => {
+          const orderId = pickerOrder?.id
+          const reviewerName = pickerOrder?.shippingName ?? undefined
           setPickerOrder(null)
-          if (item.productId) {
+          if (orderId && item.productId) {
             setReviewContext({
+              orderId,
               productId: item.productId,
               productName: item.productName ?? 'Sản phẩm',
+              variantLabel,
+              reviewerName,
               existing,
             })
           }
@@ -855,9 +817,13 @@ export default function Orders() {
       />
 
       <ReviewModal
-        key={reviewContext?.productId ?? 'review-modal'}
+        key={
+          (reviewContext?.orderId ?? 'none') + ':' + (reviewContext?.productId ?? 'review-modal')
+        }
         open={reviewContext !== null}
         productName={reviewContext?.productName ?? ''}
+        variantLabel={reviewContext?.variantLabel}
+        reviewerName={reviewContext?.reviewerName}
         existingReview={reviewContext?.existing}
         isPending={createReviewMutation.isPending || updateReviewMutation.isPending}
         error={actionError}

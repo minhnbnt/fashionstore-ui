@@ -1,4 +1,9 @@
 import { fallbackImageOnError, PLACEHOLDER_IMAGE, imageUrl } from '@/lib/api/apiAdapters'
+import {
+  findOrderProductReview,
+  groupOrderReviewProducts,
+  type OrderReviewLookup,
+} from '@/lib/review/reviewOrderHelpers'
 
 import Modal from '../Modal'
 
@@ -7,28 +12,16 @@ import type { ReviewResponse } from '@generated/model/reviewResponse'
 
 interface Props {
   open: boolean
+  orderId?: string
   orderCode?: string
   items: OrderItemResponse[]
-  reviewsByProductId: Map<string, ReviewResponse>
+  reviewLookup: OrderReviewLookup
   onClose: () => void
-  onSelectProduct: (item: OrderItemResponse, existing?: ReviewResponse) => void
-}
-
-function uniqueProducts(items: OrderItemResponse[]): OrderItemResponse[] {
-  const seen = new Set<string>()
-  const result: OrderItemResponse[] = []
-  for (const item of items) {
-    if (!item.productId) {
-      result.push(item)
-      continue
-    }
-    if (seen.has(item.productId)) {
-      continue
-    }
-    seen.add(item.productId)
-    result.push(item)
-  }
-  return result
+  onSelectProduct: (
+    item: OrderItemResponse,
+    variantLabel: string | undefined,
+    existing?: ReviewResponse,
+  ) => void
 }
 
 function actionLabel(existing: ReviewResponse | undefined): string {
@@ -46,7 +39,7 @@ export default function ReviewProductPickerModal(props: Props) {
     return null
   }
 
-  const products = uniqueProducts(props.items)
+  const products = groupOrderReviewProducts(props.items)
   let title = 'Chọn sản phẩm để đánh giá'
   if (props.orderCode) {
     title = `Đánh giá sản phẩm — ${props.orderCode}`
@@ -55,12 +48,10 @@ export default function ReviewProductPickerModal(props: Props) {
   return (
     <Modal title={title} onClose={props.onClose} widthClass="max-w-lg">
       <div className="mt-4 space-y-3">
-        {products.map((item, idx) => {
-          const productId = item.productId
-          let existing: ReviewResponse | undefined
-          if (productId) {
-            existing = props.reviewsByProductId.get(productId)
-          }
+        {products.map((entry, idx) => {
+          const item = entry.item
+          const productId = item.productId ?? undefined
+          const existing = findOrderProductReview(props.orderId, productId, props.reviewLookup)
           const isLocked = existing !== undefined && Boolean(existing.edited)
           let thumb = PLACEHOLDER_IMAGE
           if (item.imageKey) {
@@ -84,8 +75,8 @@ export default function ReviewProductPickerModal(props: Props) {
                   <p className="truncate text-sm font-bold text-zinc-900 dark:text-white">
                     {item.productName}
                   </p>
-                  {Boolean(item.variantLabel) && (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{item.variantLabel}</p>
+                  {Boolean(entry.variantLabel) && (
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{entry.variantLabel}</p>
                   )}
                 </div>
               </div>
@@ -95,7 +86,7 @@ export default function ReviewProductPickerModal(props: Props) {
                 <button
                   type="button"
                   disabled={isLocked}
-                  onClick={() => props.onSelectProduct(item, existing)}
+                  onClick={() => props.onSelectProduct(item, entry.variantLabel, existing)}
                   className="shrink-0 rounded-full border border-zinc-300 px-3.5 py-1.5 text-xs font-bold text-zinc-800 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:text-zinc-100 dark:hover:bg-white/10"
                 >
                   {actionLabel(existing)}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 
-import { useList1 } from '@generated/endpoints/addresses/addresses'
+import { useList } from '@generated/endpoints/addresses/addresses'
 import {
   ArrowLeft,
   ArrowRight,
@@ -57,7 +57,7 @@ export default function Checkout() {
     }, 3000)
   }
 
-  const addressesQuery = useList1({
+  const addressesQuery = useList({
     query: {
       enabled: cart.isLoggedIn,
     },
