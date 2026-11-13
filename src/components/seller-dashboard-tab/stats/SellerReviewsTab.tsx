@@ -12,6 +12,7 @@ import {
 } from '@generated/endpoints/seller-reviews/seller-reviews'
 import {
   ChatCircleDots,
+  CaretDown,
   CheckCircle,
   Flag,
   PaperPlaneRight,
@@ -26,6 +27,7 @@ import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
 import { hookErrorMessage, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import {
+  groupReviewsByProduct,
   reviewItem,
   reviewProductOptionItem,
   reviewReplyTemplateItem,
@@ -35,6 +37,7 @@ import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 import ReviewReplyTemplateModal from './ReviewReplyTemplateModal'
 import ReviewTrendCard from './ReviewTrendCard'
 
+import type { ReviewGroup } from '@/lib/seller/sellerAdapters'
 import type { ReviewItem, ReviewProductOption, ReviewReplyTemplateItem } from '@/types/seller'
 import type { List3Params } from '@generated/model/list3Params'
 import type { ReviewSummaryResponse } from '@generated/model/reviewSummaryResponse'
@@ -78,6 +81,20 @@ export default function SellerReviewsTab({ shopId }: Props) {
     type: 'image' | 'video'
     url: string
   } | null>(null)
+
+  const [openGroupIds, setOpenGroupIds] = useState<Set<string>>(new Set())
+
+  function toggleGroup(productId: string) {
+    setOpenGroupIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(productId)) {
+        next.delete(productId)
+      } else {
+        next.add(productId)
+      }
+      return next
+    })
+  }
 
   const listParams: List3Params = { shopId }
   if (onlyUnreplied) {
@@ -132,6 +149,8 @@ export default function SellerReviewsTab({ shopId }: Props) {
       return reviewItem(r, productNameById.get(r.productId ?? ''))
     })
   }
+
+  const groups: ReviewGroup[] = groupReviewsByProduct(reviews)
 
   function showToast(msg: string) {
     if (toastTimerRef.current !== null) {
@@ -403,240 +422,282 @@ export default function SellerReviewsTab({ shopId }: Props) {
           </div>
         </div>
 
-        <div className="mt-5 space-y-4">
-          {reviews.map(function (rev) {
-            const isReplying = replyTargetId === rev.id
+        <div className="mt-5 space-y-3">
+          {groups.map(function (group: ReviewGroup) {
+            const isOpen = openGroupIds.has(group.productId)
+            const unrepliedCount = group.reviews.filter((r) => r.sellerReply === undefined).length
             return (
               <div
-                key={rev.id}
-                className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-4 transition dark:border-white/10 dark:bg-white/5"
+                key={group.productId}
+                className="overflow-hidden rounded-2xl border border-zinc-100 dark:border-white/10"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <UserAvatar name={rev.buyerName} size={36} />
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-xs font-bold text-zinc-900 dark:text-white">
-                          {rev.buyerName}
-                        </p>
-                        {rev.anonymous && (
-                          <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
-                            Ẩn danh
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:bg-sky-500/20 dark:text-sky-200">
-                          <ThumbsUp size={10} weight="fill" />
-                          {rev.helpfulCount}
-                        </span>
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-2">
-                        {renderStars(rev.rating)}
-                        <span className="text-[11px] text-zinc-400">• {rev.createdAt}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {rev.isReported && (
-                      <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
-                        Đang khiếu nại
-                      </span>
-                    )}
-                    {canReply && (
-                      <button
-                        type="button"
-                        onClick={function () {
-                          setReportTargetId(rev.id)
-                        }}
-                        title="Báo cáo vi phạm"
-                        className="text-zinc-400 hover:text-red-500"
-                      >
-                        <Flag size={14} weight="bold" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-3 text-xs">
-                  <div className="flex flex-wrap items-center gap-2 font-semibold text-zinc-500">
-                    <span>Sản phẩm:</span>
-                    <span className="font-bold text-zinc-800 dark:text-zinc-100">
-                      {rev.productName}
+                {/* Group header — accordion toggle */}
+                <button
+                  type="button"
+                  onClick={function () {
+                    toggleGroup(group.productId)
+                  }}
+                  aria-expanded={isOpen}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-zinc-50 dark:hover:bg-white/5"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-bold text-zinc-900 dark:text-white">
+                      {group.productName}
                     </span>
-                    {rev.variantLabel !== undefined && (
-                      <span className="rounded-full bg-zinc-200/70 px-2 py-0.5 text-[11px] text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
-                        Phân loại: {rev.variantLabel}
+                    <span className="text-xs text-zinc-400">{group.reviews.length} đánh giá</span>
+                    {unrepliedCount > 0 && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+                        {unrepliedCount} chưa phản hồi
                       </span>
                     )}
                   </div>
-                  {rev.tags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {rev.tags.map(function (tag) {
-                        return (
-                          <span
-                            key={tag}
-                            className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"
-                          >
-                            {tag}
-                          </span>
-                        )
-                      })}
-                    </div>
-                  )}
-                  <p className="mt-1.5 leading-relaxed text-zinc-800 dark:text-zinc-200">
-                    {rev.comment}
-                  </p>
+                  <CaretDown
+                    size={14}
+                    weight="bold"
+                    className={`shrink-0 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
 
-                  {/* Ảnh & video thực tế khách đăng */}
-                  {(rev.images.length > 0 || rev.videoUrl !== undefined) && (
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                      {rev.images.map(function (img, idx) {
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={function () {
-                              setLightboxMedia({ type: 'image', url: img })
-                            }}
-                            className="h-16 w-16 overflow-hidden rounded-xl border border-zinc-200 dark:border-white/10"
-                          >
-                            <img
-                              src={img}
-                              alt="Ảnh đánh giá khách hàng"
-                              onError={handleImageError}
-                              className="h-full w-full object-cover"
-                            />
-                          </button>
-                        )
-                      })}
-                      {rev.videoUrl !== undefined && (
-                        <button
-                          type="button"
-                          onClick={function () {
-                            if (rev.videoUrl !== undefined) {
-                              setLightboxMedia({ type: 'video', url: rev.videoUrl })
-                            }
-                          }}
-                          className="relative flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-900 text-white dark:border-white/10"
-                        >
-                          <video
-                            src={rev.videoUrl}
-                            className="h-full w-full object-cover opacity-70"
-                            muted
-                          />
-                          <span className="absolute flex h-6 w-6 items-center justify-center rounded-full bg-black/70">
-                            <Play size={12} weight="fill" />
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  )}
+                {/* Review list — chỉ render khi open */}
+                {isOpen && (
+                  <div className="divide-y divide-zinc-100 border-t border-zinc-100 dark:divide-white/5 dark:border-white/10">
+                    {group.reviews.map(function (rev) {
+                      const isReplying = replyTargetId === rev.id
+                      return (
+                        <div key={rev.id} className="bg-zinc-50/50 p-4 dark:bg-white/5">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <UserAvatar name={rev.buyerName} size={36} />
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="text-xs font-bold text-zinc-900 dark:text-white">
+                                    {rev.buyerName}
+                                  </p>
+                                  {rev.anonymous && (
+                                    <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                                      Ẩn danh
+                                    </span>
+                                  )}
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:bg-sky-500/20 dark:text-sky-200">
+                                    <ThumbsUp size={10} weight="fill" />
+                                    {rev.helpfulCount}
+                                  </span>
+                                </div>
+                                <div className="mt-0.5 flex items-center gap-2">
+                                  {renderStars(rev.rating)}
+                                  <span className="text-[11px] text-zinc-400">
+                                    • {rev.createdAt}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
 
-                  {/* Phản hồi của shop */}
-                  {rev.sellerReply !== undefined && (
-                    <div className="mt-3 rounded-2xl bg-indigo-50/80 p-3 text-xs text-indigo-900 dark:bg-indigo-900/30 dark:text-indigo-200">
-                      <p className="flex items-center gap-1.5 font-bold">
-                        <ChatCircleDots size={14} weight="bold" className="text-indigo-600" />
-                        Phản hồi của Người bán:
-                      </p>
-                      <p className="mt-1 leading-relaxed whitespace-pre-line text-zinc-700 dark:text-zinc-300">
-                        {rev.sellerReply}
-                      </p>
-                    </div>
-                  )}
+                            <div className="flex items-center gap-2">
+                              {rev.isReported && (
+                                <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
+                                  Đang khiếu nại
+                                </span>
+                              )}
+                              {canReply && (
+                                <button
+                                  type="button"
+                                  onClick={function () {
+                                    setReportTargetId(rev.id)
+                                  }}
+                                  title="Báo cáo vi phạm"
+                                  className="text-zinc-400 hover:text-red-500"
+                                >
+                                  <Flag size={14} weight="bold" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
 
-                  {/* Form trả lời */}
-                  {isReplying && (
-                    <div className="mt-3 rounded-2xl border border-indigo-200 bg-white p-3.5 dark:border-indigo-900/40 dark:bg-white/10">
-                      {templates.length > 0 && (
-                        <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
-                          <span className="text-[11px] font-semibold text-zinc-500">
-                            Chèn mẫu nhanh:
-                          </span>
-                          {templates.map(function (tpl) {
-                            return (
+                          <div className="mt-3 text-xs">
+                            <div className="flex flex-wrap items-center gap-2 font-semibold text-zinc-500">
+                              {rev.variantLabel !== undefined && (
+                                <span className="rounded-full bg-zinc-200/70 px-2 py-0.5 text-[11px] text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
+                                  Phân loại: {rev.variantLabel}
+                                </span>
+                              )}
+                            </div>
+                            {rev.tags.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {rev.tags.map(function (tag) {
+                                  return (
+                                    <span
+                                      key={tag}
+                                      className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"
+                                    >
+                                      {tag}
+                                    </span>
+                                  )
+                                })}
+                              </div>
+                            )}
+                            <p className="mt-1.5 leading-relaxed text-zinc-800 dark:text-zinc-200">
+                              {rev.comment}
+                            </p>
+
+                            {/* Ảnh & video thực tế khách đăng */}
+                            {(rev.images.length > 0 || rev.videoUrl !== undefined) && (
+                              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                                {rev.images.map(function (img, idx) {
+                                  return (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={function () {
+                                        setLightboxMedia({ type: 'image', url: img })
+                                      }}
+                                      className="h-16 w-16 overflow-hidden rounded-xl border border-zinc-200 dark:border-white/10"
+                                    >
+                                      <img
+                                        src={img}
+                                        alt="Ảnh đánh giá khách hàng"
+                                        onError={handleImageError}
+                                        className="h-full w-full object-cover"
+                                      />
+                                    </button>
+                                  )
+                                })}
+                                {rev.videoUrl !== undefined && (
+                                  <button
+                                    type="button"
+                                    onClick={function () {
+                                      if (rev.videoUrl !== undefined) {
+                                        setLightboxMedia({ type: 'video', url: rev.videoUrl })
+                                      }
+                                    }}
+                                    className="relative flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-900 text-white dark:border-white/10"
+                                  >
+                                    <video
+                                      src={rev.videoUrl}
+                                      className="h-full w-full object-cover opacity-70"
+                                      muted
+                                    />
+                                    <span className="absolute flex h-6 w-6 items-center justify-center rounded-full bg-black/70">
+                                      <Play size={12} weight="fill" />
+                                    </span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Phản hồi của shop */}
+                            {rev.sellerReply !== undefined && (
+                              <div className="mt-3 rounded-2xl bg-indigo-50/80 p-3 text-xs text-indigo-900 dark:bg-indigo-900/30 dark:text-indigo-200">
+                                <p className="flex items-center gap-1.5 font-bold">
+                                  <ChatCircleDots
+                                    size={14}
+                                    weight="bold"
+                                    className="text-indigo-600"
+                                  />
+                                  Phản hồi của Người bán:
+                                </p>
+                                <p className="mt-1 leading-relaxed whitespace-pre-line text-zinc-700 dark:text-zinc-300">
+                                  {rev.sellerReply}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Form trả lời */}
+                            {isReplying && (
+                              <div className="mt-3 rounded-2xl border border-indigo-200 bg-white p-3.5 dark:border-indigo-900/40 dark:bg-white/10">
+                                {templates.length > 0 && (
+                                  <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
+                                    <span className="text-[11px] font-semibold text-zinc-500">
+                                      Chèn mẫu nhanh:
+                                    </span>
+                                    {templates.map(function (tpl) {
+                                      return (
+                                        <button
+                                          key={tpl.id}
+                                          type="button"
+                                          onClick={function () {
+                                            handleInsertTemplate(tpl.content)
+                                          }}
+                                          className="rounded-full border border-indigo-200 bg-indigo-50/70 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200 dark:hover:bg-indigo-500/25"
+                                        >
+                                          {tpl.title}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+
+                                <textarea
+                                  rows={3}
+                                  maxLength={2000}
+                                  value={replyContent}
+                                  onChange={function (e) {
+                                    setReplyContent(e.target.value)
+                                    if (replyError !== null) {
+                                      setReplyError(null)
+                                    }
+                                  }}
+                                  placeholder="Nhập nội dung phản hồi công khai dưới đánh giá..."
+                                  className="w-full resize-none bg-transparent text-xs outline-none dark:text-white"
+                                />
+
+                                {replyError !== null && (
+                                  <p className="mt-2 rounded-xl bg-red-50 px-3 py-1.5 text-[11px] font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
+                                    {replyError}
+                                  </p>
+                                )}
+
+                                <div className="mt-2 flex items-center justify-between gap-2">
+                                  <span className="text-[11px] text-zinc-400">
+                                    {replyContent.trim().length}/2000
+                                  </span>
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={function () {
+                                        setReplyTargetId(null)
+                                        setReplyContent('')
+                                        setReplyError(null)
+                                      }}
+                                      className="rounded-xl px-3 py-1 text-[11px] font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
+                                    >
+                                      Hủy
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={replyMutation.isPending}
+                                      onClick={function () {
+                                        handleSendReply(rev.id)
+                                      }}
+                                      className="btn-primary flex items-center gap-1 rounded-xl px-3.5 py-1 text-[11px] font-bold disabled:opacity-50"
+                                    >
+                                      <PaperPlaneRight size={12} weight="bold" />
+                                      Gửi phản hồi
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {rev.sellerReply === undefined && !isReplying && canReply && (
                               <button
-                                key={tpl.id}
                                 type="button"
                                 onClick={function () {
-                                  handleInsertTemplate(tpl.content)
+                                  setReplyTargetId(rev.id)
+                                  setReplyContent('')
+                                  setReplyError(null)
                                 }}
-                                className="rounded-full border border-indigo-200 bg-indigo-50/70 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200 dark:hover:bg-indigo-500/25"
+                                className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
                               >
-                                {tpl.title}
+                                <ChatCircleDots size={14} weight="bold" />
+                                Trả lời đánh giá này
                               </button>
-                            )
-                          })}
+                            )}
+                          </div>
                         </div>
-                      )}
-
-                      <textarea
-                        rows={3}
-                        maxLength={2000}
-                        value={replyContent}
-                        onChange={function (e) {
-                          setReplyContent(e.target.value)
-                          if (replyError !== null) {
-                            setReplyError(null)
-                          }
-                        }}
-                        placeholder="Nhập nội dung phản hồi công khai dưới đánh giá..."
-                        className="w-full resize-none bg-transparent text-xs outline-none dark:text-white"
-                      />
-
-                      {replyError !== null && (
-                        <p className="mt-2 rounded-xl bg-red-50 px-3 py-1.5 text-[11px] font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
-                          {replyError}
-                        </p>
-                      )}
-
-                      <div className="mt-2 flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-zinc-400">
-                          {replyContent.trim().length}/2000
-                        </span>
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={function () {
-                              setReplyTargetId(null)
-                              setReplyContent('')
-                              setReplyError(null)
-                            }}
-                            className="rounded-xl px-3 py-1 text-[11px] font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
-                          >
-                            Hủy
-                          </button>
-                          <button
-                            type="button"
-                            disabled={replyMutation.isPending}
-                            onClick={function () {
-                              handleSendReply(rev.id)
-                            }}
-                            className="btn-primary flex items-center gap-1 rounded-xl px-3.5 py-1 text-[11px] font-bold disabled:opacity-50"
-                          >
-                            <PaperPlaneRight size={12} weight="bold" />
-                            Gửi phản hồi
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {rev.sellerReply === undefined && !isReplying && canReply && (
-                    <button
-                      type="button"
-                      onClick={function () {
-                        setReplyTargetId(rev.id)
-                        setReplyContent('')
-                        setReplyError(null)
-                      }}
-                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
-                    >
-                      <ChatCircleDots size={14} weight="bold" />
-                      Trả lời đánh giá này
-                    </button>
-                  )}
-                </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )
           })}
@@ -653,7 +714,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
             </div>
           )}
 
-          {!reviewsQuery.isLoading && !reviewsQuery.isError && reviews.length === 0 && (
+          {!reviewsQuery.isLoading && !reviewsQuery.isError && groups.length === 0 && (
             <div className="py-12 text-center text-zinc-400">
               <p className="text-sm">Không có đánh giá nào phù hợp bộ lọc hiện tại.</p>
             </div>

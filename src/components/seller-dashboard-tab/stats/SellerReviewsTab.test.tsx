@@ -226,7 +226,12 @@ describe('SellerReviewsTab', () => {
 
     expect(screen.getByText('4.4')).toBeTruthy()
     expect(screen.getByText('Dựa trên 12 lượt đánh giá')).toBeTruthy()
+    // Tên sản phẩm hiển thị trên group header (luôn thấy)
     expect(screen.getByText('Áo Thun Oversize')).toBeTruthy()
+
+    // Expand group để thấy chi tiết review
+    fireEvent.click(screen.getByRole('button', { name: /Áo Thun Oversize/i }))
+
     expect(screen.getByText('Phân loại: L · Trắng')).toBeTruthy()
     expect(screen.getByText('Ẩn danh')).toBeTruthy()
     expect(screen.getByText('Chất lượng tốt')).toBeTruthy()
@@ -262,6 +267,9 @@ describe('SellerReviewsTab', () => {
   it('chèn mẫu khi ô trống hoặc nối xuống dòng khi đã có text và chỉ toast sau khi phản hồi thành công', () => {
     setupDefaultMocks()
     renderTab()
+
+    // Expand group trước (accordion collapsed by default)
+    fireEvent.click(screen.getByRole('button', { name: /Áo Thun Oversize/i }))
 
     fireEvent.click(screen.getByRole('button', { name: 'Trả lời đánh giá này' }))
 
@@ -349,5 +357,72 @@ describe('SellerReviewsTab', () => {
       { shopId: 'shop-1', period: 'week', from: '2026-10-25', to: '2026-10-20' },
       { query: { enabled: false } },
     )
+  })
+})
+
+describe('grouped-by-product view', () => {
+  it('hiển thị header nhóm sản phẩm với tên sản phẩm và số lượng đánh giá', () => {
+    setupDefaultMocks()
+    useList3Mock.mockReturnValue({
+      isLoading: false,
+      data: {
+        status: 200,
+        data: [
+          { ...baseReview, id: 'r1', productId: 'p1', productName: 'Áo Thun Oversize' },
+          { ...baseReview, id: 'r2', productId: 'p1', productName: 'Áo Thun Oversize' },
+          { ...baseReview, id: 'r3', productId: 'p2', productName: 'Quần Jeans' },
+        ],
+      },
+    })
+    renderTab()
+    expect(screen.getAllByText('Áo Thun Oversize').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('2 đánh giá')).toBeTruthy()
+    expect(screen.getByText('Quần Jeans')).toBeTruthy()
+    expect(screen.getByText('1 đánh giá')).toBeTruthy()
+  })
+
+  it('accordion toggle: mặc định collapsed, click header expand, click lại collapse', () => {
+    setupDefaultMocks()
+    useList3Mock.mockReturnValue({
+      isLoading: false,
+      data: {
+        status: 200,
+        data: [{ ...baseReview, id: 'r1', productId: 'p1', productName: 'Áo Thun Oversize' }],
+      },
+    })
+    renderTab()
+    // Mặc định collapsed — comment không thấy
+    expect(screen.queryByText('Áo mặc cực kỳ thoải mái và mát.')).toBeNull()
+    // Click header để expand
+    fireEvent.click(screen.getByRole('button', { name: /Áo Thun Oversize/i }))
+    expect(screen.getByText('Áo mặc cực kỳ thoải mái và mát.')).toBeTruthy()
+    // Click lại để collapse
+    fireEvent.click(screen.getByRole('button', { name: /Áo Thun Oversize/i }))
+    expect(screen.queryByText('Áo mặc cực kỳ thoải mái và mát.')).toBeNull()
+  })
+
+  it('mở nhiều nhóm độc lập nhau', () => {
+    setupDefaultMocks()
+    useList3Mock.mockReturnValue({
+      isLoading: false,
+      data: {
+        status: 200,
+        data: [
+          { ...baseReview, id: 'r1', productId: 'p1', productName: 'Áo Thun', comment: 'cmt-p1' },
+          {
+            ...baseReview,
+            id: 'r2',
+            productId: 'p2',
+            productName: 'Quần Jeans',
+            comment: 'cmt-p2',
+          },
+        ],
+      },
+    })
+    renderTab()
+    fireEvent.click(screen.getByRole('button', { name: /Áo Thun/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Quần Jeans/i }))
+    expect(screen.getByText('cmt-p1')).toBeTruthy()
+    expect(screen.getByText('cmt-p2')).toBeTruthy()
   })
 })
