@@ -435,12 +435,20 @@ export default function SellerReviewsTab({ shopId }: Props) {
                 key={group.productId}
                 className="overflow-hidden rounded-2xl border border-zinc-100 dark:border-white/10"
               >
-                {/* Group header — accordion toggle: Link + toggle button side-by-side, NO <a> inside <button> */}
-                <div className="flex w-full items-center justify-between gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-white/5">
+                {/* Group header — cả dòng click để toggle; Link stopPropagation để chỉ navigate */}
+                <div
+                  className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-white/5"
+                  onClick={function () {
+                    toggleGroup(group.productId)
+                  }}
+                >
                   <div className="flex flex-wrap items-center gap-2">
                     {group.productId !== '' ? (
                       <Link
                         to={`/product/${group.productId}`}
+                        onClick={function (e) {
+                          e.stopPropagation()
+                        }}
                         className="text-sm font-bold text-zinc-900 hover:underline dark:text-white"
                       >
                         {group.productName}
@@ -459,7 +467,8 @@ export default function SellerReviewsTab({ shopId }: Props) {
                   </div>
                   <button
                     type="button"
-                    onClick={function () {
+                    onClick={function (e) {
+                      e.stopPropagation()
                       toggleGroup(group.productId)
                     }}
                     aria-expanded={isOpen}
