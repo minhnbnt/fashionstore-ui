@@ -1,5 +1,6 @@
 import { MemoryRouter, useLocation } from 'react-router'
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 // @vitest-environment happy-dom
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -73,11 +74,16 @@ function renderTab(props: {
   transport?: ChatTransport<AgentUIMessage>
   route?: string
 }) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  })
   return render(
-    <MemoryRouter initialEntries={[props.route ?? '/']}>
-      <LocationProbe />
-      <AgentTab config={props.config} transport={props.transport} />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[props.route ?? '/']}>
+        <LocationProbe />
+        <AgentTab config={props.config} transport={props.transport} />
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 
@@ -534,5 +540,42 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
 
     expect(await screen.findByText('Đã tra cứu sản phẩm: Áo Sơ Mi Lụa')).toBeTruthy()
+  })
+
+  it('khách vãng lai (guest) thấy banner nhắc đăng nhập để lưu lịch sử AI', function () {
+    renderTab({ config: configFixture() })
+    expect(screen.getByText('Đăng nhập để lưu lại lịch sử tư vấn AI.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Đăng nhập' })).toBeTruthy()
+  })
+
+  it('click gợi ý hỏi nhanh sẽ gửi luôn câu hỏi cho trợ lý AI', async function () {
+    const user = userEvent.setup()
+    renderTab({
+      config: configFixture(),
+      transport: transportOf(TOOL_RESULT_CHUNKS),
+    })
+
+    const chip = screen.getByRole('button', { name: 'Váy hoa dự tiệc dưới 500k' })
+    await user.click(chip)
+
+    expect(await screen.findByText('Váy hoa dự tiệc dưới 500k')).toBeTruthy()
+    expect(await screen.findByText('Mình tìm được 1 sản phẩm nhé.')).toBeTruthy()
+  })
+
+  it('variant page ẩn nút Đoạn chat mới lặp lại và hiện header trang toàn màn hình', function () {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    })
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/messages?tab=ai']}>
+          <AgentTab config={configFixture()} variant="page" />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Đoạn chat mới' })).toBeNull()
+    expect(screen.queryByText('Đăng nhập để lưu lại lịch sử tư vấn AI.')).toBeNull()
+    expect(screen.getByText(/Trợ lý nét AI · Gợi ý phối đồ/)).toBeTruthy()
   })
 })

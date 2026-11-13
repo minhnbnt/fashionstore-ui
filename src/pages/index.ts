@@ -6,6 +6,7 @@ export const Search = lazy(() => import('./Search'))
 export const ProductDetail = lazy(() => import('./ProductDetail'))
 export const Faq = lazy(() => import('./Faq'))
 export const StaticPage = lazy(() => import('./StaticPage'))
+export const Messages = lazy(() => import('./Messages'))
 
 // Account
 export const Account = lazy(() => import('./account/Account'))

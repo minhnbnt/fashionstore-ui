@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import { getGetMyShopsQueryKey } from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
 import { useMe } from '@generated/endpoints/users/users'
-import { MapPin, ShieldWarning, SignOut, Storefront } from '@phosphor-icons/react'
+import { MapPin, Package, ShieldWarning, SignOut, Storefront } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -164,6 +164,19 @@ export default function Account() {
                 Quản lý
               </span>
             </button>
+
+            <Link
+              to="/account/orders"
+              className="flex w-full items-center justify-between rounded-2xl bg-white/70 p-3.5 text-left text-xs font-bold text-zinc-700 transition hover:bg-white dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+            >
+              <div className="flex items-center gap-2.5">
+                <Package size={18} className="text-blue-600 dark:text-sky-400" />
+                <span>Đơn hàng của tôi</span>
+              </div>
+              <span className="text-[11px] font-semibold text-blue-600 dark:text-sky-300">
+                Theo dõi
+              </span>
+            </Link>
           </div>
 
           <div className="mt-5 space-y-3 text-sm">

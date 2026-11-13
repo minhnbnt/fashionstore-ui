@@ -1,10 +1,10 @@
 import { useState } from 'react'
 
 import {
-  getList1QueryKey,
+  getListQueryKey,
   useChangeDefault,
   useDelete,
-  useList1,
+  useList,
 } from '@generated/endpoints/addresses/addresses'
 import {
   ArrowClockwise,
@@ -50,7 +50,7 @@ export default function AddressBookTab() {
   const [toastError, setToastError] = useState<string | null>(null)
 
   // Queries
-  const addressesQuery = useList1()
+  const addressesQuery = useList()
 
   let addresses: AddressResponse[] = []
   if (addressesQuery.data !== undefined) {
@@ -100,7 +100,7 @@ export default function AddressBookTab() {
     mutation: {
       onSuccess: function () {
         showToast('Đã xóa địa chỉ thành công.')
-        void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
+        void queryClient.invalidateQueries({ queryKey: getListQueryKey() })
       },
       onError: function () {
         showToastError('Không thể xóa địa chỉ. Vui lòng thử lại.')
@@ -112,7 +112,7 @@ export default function AddressBookTab() {
     mutation: {
       onSuccess: function () {
         showToast('Đã đặt làm địa chỉ mặc định.')
-        void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
+        void queryClient.invalidateQueries({ queryKey: getListQueryKey() })
       },
       onError: function () {
         showToastError('Không thể thay đổi địa chỉ mặc định.')

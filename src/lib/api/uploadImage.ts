@@ -72,7 +72,7 @@ export function checkVideoDuration(file: File, maxSeconds = 60): Promise<number>
   })
 }
 
-export async function uploadVideo(file: File): Promise<string> {
+export async function uploadVideo(file: File, maxSeconds = 60): Promise<string> {
   if (file.type.startsWith('video/') === false) {
     throw new Error('Chỉ nhận file video.')
   }
@@ -80,7 +80,7 @@ export async function uploadVideo(file: File): Promise<string> {
     throw new Error('Video tối đa 50 MB.')
   }
 
-  await checkVideoDuration(file, 60)
+  await checkVideoDuration(file, maxSeconds)
 
   const signed = takeData(await presign({ contentType: file.type }))
   if (signed.url === undefined || signed.key === undefined) {

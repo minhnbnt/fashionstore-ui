@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 import { X } from '@phosphor-icons/react'
 
@@ -76,7 +77,7 @@ export default function Modal(props: {
     }
   }, [])
 
-  return (
+  const content = (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-zinc-950/55 p-4 backdrop-blur-sm">
       <dialog
         ref={panelRef}
@@ -84,7 +85,7 @@ export default function Modal(props: {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`static max-h-[calc(100dvh-2rem)] w-full ${props.widthClass ?? 'max-w-lg'} overflow-y-auto rounded-3xl border border-white/30 bg-white p-6 shadow-2xl outline-none dark:border-white/10 dark:bg-[#11182a]`}
+        className={`static max-h-[calc(100dvh-2rem)] w-full ${props.widthClass ?? 'max-w-lg'} overflow-y-auto overscroll-contain rounded-3xl border border-white/30 bg-white p-6 shadow-2xl outline-none dark:border-white/10 dark:bg-[#11182a]`}
       >
         <div className="flex min-h-9 items-center justify-between">
           <h2 id={titleId} className="text-xl font-extrabold tracking-tight">
@@ -103,4 +104,9 @@ export default function Modal(props: {
       </dialog>
     </div>
   )
+
+  if (typeof document === 'undefined') {
+    return content
+  }
+  return createPortal(content, document.body)
 }

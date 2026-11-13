@@ -9,6 +9,9 @@ import {
   useDeliver,
   useList5,
   useShip,
+  useAddTracking,
+  useTracking,
+  getTrackingQueryKey,
   useTimeline,
 } from '@generated/endpoints/seller-orders/seller-orders'
 import { getInventoryQueryKey } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
@@ -31,12 +34,18 @@ import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { formatDateTime, formatVnd } from '@/lib/format'
+import { timelineTitle } from '@/lib/order/orderMonitoring'
 import { orderItem, returnItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 import { sellerStatusMeta } from '@/lib/seller/sellerStatus'
 
 import type { OrderItem, ReturnItem } from '@/types/seller'
-import type { BulkConfirmOrderResponse, List5Params, OrderResponse } from '@generated/model'
+import type {
+  BulkConfirmOrderResponse,
+  List5Params,
+  OrderResponse,
+  OrderTrackingEventResponse,
+} from '@generated/model'
 
 interface Props {
   shopId: string
@@ -110,6 +119,14 @@ export default function SellerOrdersTab({ shopId }: Props) {
   const [cancelReason, setCancelReason] = useState('Hết hàng trong kho')
   const [cancelNote, setCancelNote] = useState('')
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState<OrderItem | null>(null)
+  const [shipTargetOrderId, setShipTargetOrderId] = useState<string | null>(null)
+  const [shipCarrier, setShipCarrier] = useState('')
+  const [shipTrackingCode, setShipTrackingCode] = useState('')
+  const [trackingTargetOrder, setTrackingTargetOrder] = useState<OrderItem | null>(null)
+  const [trackingStatusCode, setTrackingStatusCode] = useState('IN_TRANSIT')
+  const [trackingTitle, setTrackingTitle] = useState('')
+  const [trackingLocation, setTrackingLocation] = useState('')
+  const [trackingDescription, setTrackingDescription] = useState('')
   const [bulkResult, setBulkResult] = useState<BulkConfirmOrderResponse | null>(null)
   const [notification, setNotification] = useState<string | null>(null)
 
@@ -141,9 +158,33 @@ export default function SellerOrdersTab({ shopId }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+        setShipTargetOrderId(null)
+        showToast('Đã bàn giao đơn hàng cho đơn vị vận chuyển!')
       },
     },
   })
+  const addTrackingMutation = useAddTracking({
+    mutation: {
+      onSuccess: function () {
+        if (trackingTargetOrder !== null) {
+          void queryClient.invalidateQueries({
+            queryKey: getTrackingQueryKey(trackingTargetOrder.id),
+          })
+        }
+        setTrackingTitle('')
+        setTrackingLocation('')
+        setTrackingDescription('')
+        showToast('Đã cập nhật mốc hành trình vận chuyển!')
+      },
+    },
+  })
+  const trackingEventsQuery = useTracking(trackingTargetOrder?.id ?? '', {
+    query: { enabled: trackingTargetOrder !== null && trackingTargetOrder.id !== '' },
+  })
+  let trackingEvents: OrderTrackingEventResponse[] = []
+  if (trackingEventsQuery.data !== undefined) {
+    trackingEvents = takeData(trackingEventsQuery.data)
+  }
   const deliverMutation = useDeliver({
     mutation: {
       onSuccess: function () {
@@ -197,7 +238,57 @@ export default function SellerOrdersTab({ shopId }: Props) {
   }
 
   function handleShipOrder(orderId: string) {
-    shipMutation.mutate({ id: orderId })
+    setShipTargetOrderId(orderId)
+    setShipCarrier('')
+    setShipTrackingCode('')
+  }
+
+  function handleConfirmShip() {
+    if (shipTargetOrderId === null) {
+      return
+    }
+    const carrier = shipCarrier.trim()
+    const code = shipTrackingCode.trim()
+    let carrierValue: string | null = null
+    if (carrier !== '') {
+      carrierValue = carrier
+    }
+    let codeValue: string | null = null
+    if (code !== '') {
+      codeValue = code
+    }
+    shipMutation.mutate({
+      id: shipTargetOrderId,
+      data: {
+        shippingCarrier: carrierValue,
+        trackingCode: codeValue,
+      },
+    })
+  }
+
+  function handleSubmitTracking() {
+    if (trackingTargetOrder === null || trackingTitle.trim() === '') {
+      return
+    }
+    const loc = trackingLocation.trim()
+    const desc = trackingDescription.trim()
+    let locationValue: string | null = null
+    if (loc !== '') {
+      locationValue = loc
+    }
+    let descriptionValue: string | null = null
+    if (desc !== '') {
+      descriptionValue = desc
+    }
+    addTrackingMutation.mutate({
+      id: trackingTargetOrder.id,
+      data: {
+        statusCode: trackingStatusCode,
+        title: trackingTitle.trim(),
+        location: locationValue,
+        description: descriptionValue,
+      },
+    })
   }
 
   function handleDeliverOrder(orderId: string) {
@@ -617,6 +708,15 @@ export default function SellerOrdersTab({ shopId }: Props) {
 
                       <span className="text-[11px] text-zinc-400">{order.createdAt}</span>
 
+                      {order.shippingCarrier !== undefined && order.trackingCode !== undefined && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-500/15 dark:text-sky-200">
+                          <Truck size={11} weight="bold" />
+                          <span>
+                            {order.shippingCarrier}: {order.trackingCode}
+                          </span>
+                        </span>
+                      )}
+
                       {/* SLA Countdown Badge cho PENDING */}
                       {isPending && (
                         <div className={slaBadgeClass}>
@@ -744,9 +844,8 @@ export default function SellerOrdersTab({ shopId }: Props) {
                             type="button"
                             onClick={function () {
                               handleShipOrder(order.id)
-                              showToast('Đã bàn giao đơn hàng cho đơn vị vận chuyển!')
                             }}
-                            className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700"
+                            className="btn-primary flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-sm"
                           >
                             <Truck size={14} weight="bold" />
                             Giao cho ĐVVC
@@ -754,17 +853,33 @@ export default function SellerOrdersTab({ shopId }: Props) {
                         )}
 
                         {order.status === 'SHIPPING' && can('ORDER_PROCESS') && (
-                          <button
-                            type="button"
-                            onClick={function () {
-                              handleDeliverOrder(order.id)
-                              showToast('Đã xác nhận giao thành công và thu tiền COD!')
-                            }}
-                            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
-                          >
-                            <CheckCircle size={14} weight="bold" />
-                            Hoàn tất thu COD
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={function () {
+                                setTrackingTargetOrder(order)
+                                setTrackingStatusCode('IN_TRANSIT')
+                                setTrackingTitle('')
+                                setTrackingLocation('')
+                                setTrackingDescription('')
+                              }}
+                              className="flex items-center gap-1.5 rounded-full border border-zinc-300 bg-white/80 px-3.5 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+                            >
+                              <Truck size={14} weight="bold" />
+                              Cập nhật hành trình
+                            </button>
+                            <button
+                              type="button"
+                              onClick={function () {
+                                handleDeliverOrder(order.id)
+                                showToast('Đã xác nhận giao thành công và thu tiền COD!')
+                              }}
+                              className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+                            >
+                              <CheckCircle size={14} weight="bold" />
+                              Hoàn tất thu COD
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -1004,7 +1119,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                         <div className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-zinc-900 dark:text-white">
-                            {entry.toStatus}
+                            {timelineTitle(entry.fromStatus, entry.toStatus, entry.actor)}
                           </span>
                           <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
                             {entry.actor}
@@ -1066,7 +1181,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 onChange={function (e) {
                   setCancelReason(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white p-2.5 text-xs outline-none focus:border-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
               >
                 <option value="Hết hàng trong kho">Hết hàng trong kho</option>
                 <option value="Sai thông tin giá / sản phẩm">Sai thông tin giá / sản phẩm</option>
@@ -1098,7 +1213,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 }}
                 rows={3}
                 placeholder="Nhập thông tin chi tiết giải thích cho người mua..."
-                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white p-2.5 text-xs outline-none focus:border-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white/80 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
               />
             </div>
 
@@ -1109,7 +1224,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                   setCancelTargetId(null)
                   setCancelNote('')
                 }}
-                className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+                className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
               >
                 Đóng
               </button>
@@ -1117,9 +1232,213 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 type="button"
                 id="btn-confirm-cancel-order"
                 onClick={handleConfirmCancel}
-                className="rounded-2xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
+                className="rounded-full bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
               >
                 Xác nhận hủy & Hoàn kho
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Bàn giao vận chuyển */}
+      {shipTargetOrderId !== null && (
+        <Modal
+          title="Bàn giao cho đơn vị vận chuyển"
+          onClose={function () {
+            setShipTargetOrderId(null)
+          }}
+          widthClass="max-w-md"
+        >
+          <div className="mt-2 space-y-4 text-xs">
+            <div>
+              <label
+                htmlFor="ship-carrier-input"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
+              >
+                Đơn vị vận chuyển
+              </label>
+              <input
+                id="ship-carrier-input"
+                type="text"
+                value={shipCarrier}
+                onChange={function (e) {
+                  setShipCarrier(e.target.value)
+                }}
+                placeholder="GHN (mặc định nếu bỏ trống)"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="ship-tracking-input"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
+              >
+                Mã vận đơn
+              </label>
+              <input
+                id="ship-tracking-input"
+                type="text"
+                value={shipTrackingCode}
+                onChange={function (e) {
+                  setShipTrackingCode(e.target.value)
+                }}
+                placeholder="Tự sinh VN-... nếu bỏ trống"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={function () {
+                  setShipTargetOrderId(null)
+                }}
+                className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                disabled={shipMutation.isPending}
+                onClick={handleConfirmShip}
+                className="btn-primary rounded-full px-5 py-2 text-xs font-bold disabled:opacity-50"
+              >
+                Xác nhận giao ĐVVC
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Cập nhật hành trình vận chuyển */}
+      {trackingTargetOrder !== null && (
+        <Modal
+          title={`Cập nhật hành trình — ${trackingTargetOrder.code}`}
+          onClose={function () {
+            setTrackingTargetOrder(null)
+          }}
+          widthClass="max-w-lg"
+        >
+          <div className="mt-3 space-y-4 text-xs">
+            {(can('ORDER_READ') || can('ORDER_PROCESS')) && trackingEvents.length > 0 && (
+              <div className="max-h-44 space-y-2 overflow-y-auto rounded-2xl border border-sky-100 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
+                {trackingEvents.map(function (ev, idx) {
+                  return (
+                    <div key={ev.id ?? idx} className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-zinc-900 dark:text-white">{ev.title}</p>
+                        {Boolean(ev.location) && (
+                          <p className="text-zinc-500 dark:text-zinc-400">{ev.location}</p>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-[10px] text-zinc-400">
+                        {formatDateTime(ev.eventTime)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="tracking-status-select"
+                  className="block font-semibold text-zinc-700 dark:text-zinc-300"
+                >
+                  Mốc hành trình
+                </label>
+                <select
+                  id="tracking-status-select"
+                  value={trackingStatusCode}
+                  onChange={function (e) {
+                    setTrackingStatusCode(e.target.value)
+                  }}
+                  className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
+                >
+                  <option value="IN_TRANSIT">Đang trung chuyển</option>
+                  <option value="SORTING_FACILITY">Tại kho phân loại</option>
+                  <option value="OUT_FOR_DELIVERY">Đang giao đến khách</option>
+                  <option value="CUSTOM">Mốc tùy chỉnh</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="tracking-location-input"
+                  className="block font-semibold text-zinc-700 dark:text-zinc-300"
+                >
+                  Địa điểm / Kho
+                </label>
+                <input
+                  id="tracking-location-input"
+                  type="text"
+                  value={trackingLocation}
+                  onChange={function (e) {
+                    setTrackingLocation(e.target.value)
+                  }}
+                  placeholder="Kho Hà Nội"
+                  className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="tracking-title-input"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
+              >
+                Tiêu đề hiển thị *
+              </label>
+              <input
+                id="tracking-title-input"
+                type="text"
+                value={trackingTitle}
+                onChange={function (e) {
+                  setTrackingTitle(e.target.value)
+                }}
+                placeholder="Đơn hàng đang trên đường giao đến bạn"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="tracking-description-input"
+                className="block font-semibold text-zinc-700 dark:text-zinc-300"
+              >
+                Mô tả chi tiết
+              </label>
+              <textarea
+                id="tracking-description-input"
+                rows={2}
+                value={trackingDescription}
+                onChange={function (e) {
+                  setTrackingDescription(e.target.value)
+                }}
+                placeholder="Ghi chú thêm cho người mua..."
+                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white/80 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={function () {
+                  setTrackingTargetOrder(null)
+                }}
+                className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                disabled={addTrackingMutation.isPending || trackingTitle.trim() === ''}
+                onClick={handleSubmitTracking}
+                className="btn-primary rounded-full px-5 py-2 text-xs font-bold disabled:opacity-50"
+              >
+                Lưu mốc hành trình
               </button>
             </div>
           </div>

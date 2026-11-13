@@ -17,6 +17,8 @@ export interface LineChartProps {
   color?: string
   comparisonColor?: string
   formatValue?: (val: number) => string
+  formatAxisValue?: (val: number) => string
+  maxY?: number
 }
 
 const PAD_LEFT = 65
@@ -105,6 +107,8 @@ export function LineChart({
   color,
   comparisonColor,
   formatValue,
+  formatAxisValue,
+  maxY,
 }: LineChartProps) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -185,6 +189,13 @@ export function LineChart({
     return formatVnd(val)
   }
 
+  function displayAxisValue(val: number): string {
+    if (formatAxisValue !== undefined) {
+      return formatAxisValue(val)
+    }
+    return formatCompactAxis(val)
+  }
+
   if (data.length === 0) {
     return (
       <div
@@ -210,7 +221,10 @@ export function LineChart({
     }
   }
 
-  const ceiling = niceCeiling(maxValue)
+  let ceiling = niceCeiling(maxValue)
+  if (maxY !== undefined && maxY > 0) {
+    ceiling = maxY
+  }
 
   const viewWidth = Math.max(300, dimensions.width)
   const viewHeight = Math.max(120, dimensions.height)
@@ -259,7 +273,16 @@ export function LineChart({
   }
   const compSmoothPathStr = createSmoothPath(compPoints)
 
-  const gridSteps = [ceiling, Math.round(ceiling / 2), 0]
+  let midStep = Math.round(ceiling / 2)
+  if (maxY !== undefined) {
+    midStep = Number((ceiling / 2).toFixed(1))
+  }
+  const gridSteps: number[] = []
+  for (const step of [ceiling, midStep, 0]) {
+    if (!gridSteps.includes(step)) {
+      gridSteps.push(step)
+    }
+  }
   const gradId = `line-grad-${strokeColor.replace('#', '')}`
 
   const hasHeader = currentLabel !== undefined || comparisonLabel !== undefined
@@ -389,7 +412,7 @@ export function LineChart({
                   textAnchor="end"
                   className="fill-zinc-400 text-[11px] font-medium tabular-nums dark:fill-zinc-500"
                 >
-                  {formatCompactAxis(val)}
+                  {displayAxisValue(val)}
                 </text>
               </g>
             )

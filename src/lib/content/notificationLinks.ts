@@ -42,3 +42,23 @@ export function getTargetNotificationLink(item: NotificationResponse): string | 
   }
   return link
 }
+
+export function realtimeInvalidationKeys(notificationType: string | undefined): string[][] {
+  if (!notificationType) {
+    return []
+  }
+  const keys: string[][] = []
+  if (notificationType.startsWith('ORDER_')) {
+    keys.push(['/api/orders/mine'], ['/api/orders/'], ['/api/seller/orders'], ['/api/seller/shops'])
+  }
+  if (notificationType.startsWith('RETURN_')) {
+    keys.push(
+      ['/api/orders/mine'],
+      ['/api/orders/returns/mine'],
+      ['/api/seller/orders'],
+      ['/api/seller/returns'],
+      ['/api/seller/shops'],
+    )
+  }
+  return keys
+}

@@ -7,6 +7,10 @@ import { describe, expect, it, vi } from 'vite-plus/test'
 
 import SellerOrdersTab from './SellerOrdersTab'
 
+const { sellerOrdersState } = vi.hoisted(() => ({
+  sellerOrdersState: { useShippingFixture: false },
+}))
+
 import type { OrderResponse } from '@generated/model/orderResponse'
 
 const mockOrders: OrderResponse[] = [
@@ -70,15 +74,48 @@ const mockOrders: OrderResponse[] = [
   },
 ]
 
+const shippingOrder: OrderResponse = {
+  id: 'order-3',
+  code: 'ORD-SHIP3',
+  shopId: 'shop-1',
+  buyerId: 'buyer-3',
+  status: 'SHIPPING',
+  paymentStatus: 'UNPAID',
+  paymentMethod: 'COD',
+  shippingCarrier: 'GHN',
+  trackingCode: 'VN-SHIP3',
+  subtotal: 200000,
+  shippingFee: 20000,
+  total: 220000,
+  shippingName: 'Le Van C',
+  shippingPhone: '0909888777',
+  shippingAddress: '789 Nguyen Hue, Hue',
+  createdAt: '2026-10-26T12:00:00Z',
+  items: [],
+}
+
+function activeOrderList(): OrderResponse[] {
+  if (sellerOrdersState.useShippingFixture) {
+    return [shippingOrder]
+  }
+  return mockOrders
+}
+
 vi.mock('@generated/endpoints/seller-orders/seller-orders', () => ({
   getList5QueryKey: vi.fn(() => ['list5']),
   useList5: vi.fn(() => ({
-    data: { status: 200, data: mockOrders },
+    data: {
+      status: 200,
+      data: activeOrderList(),
+    },
     isLoading: false,
   })),
   useConfirm: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useBulkConfirm: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useShip: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useAddTracking: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useTracking: vi.fn(() => ({ data: { status: 200, data: [] }, isLoading: false })),
+  getTrackingQueryKey: vi.fn((id: string) => [`/api/seller/orders/${id}/tracking`]),
   useDeliver: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useCancel: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useTimeline: vi.fn(() => ({ data: { status: 200, data: [] }, isLoading: false })),
@@ -174,5 +211,27 @@ describe('SellerOrdersTab', () => {
     expect(html).toContain('ORD-AAA111')
     // Sla countdown badge is rendered (either "Còn..." or "Đã quá hạn")
     expect(html).toMatch(/(Còn|Đã quá hạn)/)
+  })
+
+  it('rendersShippingTrackingCodeAndAddTrackingActionForShippingOrder', () => {
+    sellerOrdersState.useShippingFixture = true
+    const queryClient = new QueryClient()
+
+    const html = renderToString(
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(
+          MemoryRouter,
+          { initialEntries: ['/shop?tab=orders&orderId=order-3'] },
+          createElement(SellerOrdersTab, { shopId: 'shop-1' }),
+        ),
+      ),
+    )
+
+    sellerOrdersState.useShippingFixture = false
+    expect(html).toContain('Cập nhật hành trình')
+    expect(html).toContain('GHN')
+    expect(html).toContain('VN-SHIP3')
   })
 })

@@ -1,5 +1,6 @@
 import { PLACEHOLDER_IMAGE, imageUrl } from '../api/apiAdapters'
 import { formatDateTime } from '../format'
+import { cancelReasonLabel } from '../order/orderMonitoring'
 
 import type { DecorationBlock } from '@/types/seller'
 import type {
@@ -9,6 +10,9 @@ import type {
   ProductItem,
   ReturnItem,
   ReviewItem,
+  ReviewProductOption,
+  ReviewReplyTemplateItem,
+  ReviewTrendPoint,
   SettlementItem,
   ShopAuditItem,
   ShopMemberItem,
@@ -23,8 +27,11 @@ import type { DecorationResponse } from '@generated/model/decorationResponse'
 import type { InventoryItemResponse } from '@generated/model/inventoryItemResponse'
 import type { OrderResponse } from '@generated/model/orderResponse'
 import type { ReturnRequestResponse } from '@generated/model/returnRequestResponse'
+import type { ReviewReplyTemplateResponse } from '@generated/model/reviewReplyTemplateResponse'
 import type { SellerProductResponse } from '@generated/model/sellerProductResponse'
+import type { SellerReviewProductOptionResponse } from '@generated/model/sellerReviewProductOptionResponse'
 import type { SellerReviewResponse } from '@generated/model/sellerReviewResponse'
+import type { SellerReviewTrendResponse } from '@generated/model/sellerReviewTrendResponse'
 import type { SettlementResponse } from '@generated/model/settlementResponse'
 import type { ShopActivityResponse } from '@generated/model/shopActivityResponse'
 import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
@@ -172,7 +179,7 @@ export function orderItem(order: OrderResponse): OrderItem {
 
   let cancelReason: string | undefined
   if (order.cancelReason) {
-    cancelReason = order.cancelReason
+    cancelReason = cancelReasonLabel(order.cancelReason, order.cancelledBy)
   }
 
   let cancelNote: string | undefined
@@ -201,6 +208,12 @@ export function orderItem(order: OrderResponse): OrderItem {
     buyerName: safeText(order.shippingName),
     buyerPhone: safeText(order.shippingPhone),
     shippingAddress: safeText(order.shippingAddress),
+    shippingCarrier: optionalText(order.shippingCarrier),
+    trackingCode: optionalText(order.trackingCode),
+    shippedAt: optionalText(order.shippedAt),
+    deliveredAt: optionalText(order.deliveredAt),
+    receivedAt: optionalText(order.receivedAt),
+    returnStatus: optionalText(order.returnStatus),
     paymentMethod,
     note,
     items,
@@ -216,9 +229,15 @@ export function orderItem(order: OrderResponse): OrderItem {
   }
 }
 
+function optionalText(value: string | null | undefined): string | undefined {
+  if (value === null || value === undefined || value === '') {
+    return undefined
+  }
+  return value
+}
+
 /**
- * Return API khong mang order code / ten buyer, dashboard truyen danh muc
- * order da load de resolve. evidenceImage lay anh dau tien neu co.
+ * Resolve order code, orderStatus, ten buyer va toan bo anh/video bang chung doi tra.
  */
 export function returnItem(
   request: ReturnRequestResponse,
@@ -229,7 +248,6 @@ export function returnItem(
     order = orderById.get(request.orderId)
   }
   const evidenceKeys = request.evidenceKeys ?? []
-  const firstKey = evidenceKeys[0]
 
   let status: ReturnItem['status'] = 'REQUESTED'
   if (
@@ -240,49 +258,106 @@ export function returnItem(
     status = request.status
   }
 
-  let orderCode = ''
+  let orderCode = safeText(request.orderCode)
+  let orderStatus = safeText(request.orderStatus)
   let buyerName = ''
   if (order !== undefined) {
-    orderCode = safeText(order.code)
+    if (orderCode === '') {
+      orderCode = safeText(order.code)
+    }
+    if (orderStatus === '') {
+      orderStatus = safeText(order.status)
+    }
     buyerName = safeText(order.shippingName)
   }
 
-  let evidenceImage = ''
-  if (firstKey !== undefined) {
-    evidenceImage = imageFromKey(firstKey)
-  }
+  const evidenceImages = evidenceKeys.map((key) => imageFromKey(key))
+  const evidenceImage = evidenceImages[0] ?? ''
 
   return {
     id: safeId(request.id),
+    orderId: safeId(request.orderId),
     orderCode,
+    orderStatus,
     buyerName,
     reason: safeText(request.reason),
     description: safeText(request.description),
     evidenceImage,
+    evidenceImages,
     status,
     resolution: safeText(request.resolution),
-    refundAmount: request.refundAmount,
+    refundAmount: request.refundAmount ?? undefined,
     sellerNote: safeText(request.sellerNote),
     createdAt: formatDateTime(request.createdAt),
   }
 }
 
-export function reviewItem(
-  review: SellerReviewResponse,
-  productName: string | undefined,
-): ReviewItem {
+export function reviewItem(review: SellerReviewResponse, productName?: string): ReviewItem {
+  const images = (review.imageKeys ?? []).map((key) => imageFromKey(key))
+  let videoUrl: string | undefined
+  if (review.videoKey) {
+    videoUrl = imageFromKey(review.videoKey)
+  }
+
+  let resolvedProductName = safeText(review.productName)
+  if (resolvedProductName === '' && productName !== undefined) {
+    resolvedProductName = safeText(productName)
+  }
+
   return {
     id: safeId(review.id),
+    productId: safeId(review.productId),
+    buyerId:
+      review.buyerId !== null && review.buyerId !== undefined ? safeId(review.buyerId) : undefined,
     buyerName: safeText(review.buyerDisplayName),
-    productName: safeText(productName),
+    productName: resolvedProductName,
+    variantLabel: optionalText(review.variantLabel),
     rating: review.stars ?? 0,
     comment: safeText(review.comment),
-    // API chua co anh dinh kem review
-    images: [],
-    sellerReply: safeText(review.sellerReply),
+    images,
+    videoUrl,
+    tags: review.tags ?? [],
+    helpfulCount: review.helpfulCount ?? 0,
+    anonymous: review.anonymous === true,
+    sellerReply: optionalText(review.sellerReply),
+    repliedAt: optionalText(review.repliedAt),
     isReported: review.isReported === true,
     createdAt: formatDateTime(review.createdAt),
   }
+}
+
+export function reviewProductOptionItem(
+  option: SellerReviewProductOptionResponse,
+): ReviewProductOption {
+  return {
+    id: safeId(option.id),
+    name: safeText(option.name),
+    reviewCount: option.reviewCount ?? 0,
+  }
+}
+
+export function reviewReplyTemplateItem(
+  template: ReviewReplyTemplateResponse,
+): ReviewReplyTemplateItem {
+  return {
+    id: safeId(template.id),
+    title: safeText(template.title),
+    content: safeText(template.content),
+    updatedAt: formatDateTime(template.updatedAt),
+  }
+}
+
+export function reviewTrendPoints(
+  trend: SellerReviewTrendResponse | undefined,
+): ReviewTrendPoint[] {
+  if (trend === undefined || trend.points === undefined) {
+    return []
+  }
+  return trend.points.map((point) => ({
+    label: safeText(point.label),
+    reviewCount: point.reviewCount ?? 0,
+    averageRating: point.averageRating ?? 0,
+  }))
 }
 
 export function settlementItem(
@@ -468,6 +543,7 @@ export function chatMessageItem(message: ChatMessageResponse): ChatMessageItem {
     id: safeId(message.id),
     senderType,
     content: safeText(message.content),
+    imageKey: message.imageKey ?? null,
     sentAt: formatDateTime(message.sentAt),
   }
 }
@@ -638,4 +714,32 @@ export function shopProfile(shop: ShopResponse): ShopProfileData {
 
 export function inventoryItemName(inventory: InventoryItemResponse): string {
   return safeText(inventory.productName)
+}
+
+// ─── Review grouping ───────────────────────────────────────────────────────
+
+export interface ReviewGroup {
+  productId: string
+  productName: string
+  reviews: ReviewItem[]
+}
+
+export function groupReviewsByProduct(reviews: ReviewItem[]): ReviewGroup[] {
+  const map = new Map<string, ReviewGroup>()
+  for (const rev of reviews) {
+    const pid = rev.productId
+    if (!map.has(pid)) {
+      map.set(pid, {
+        productId: pid,
+        productName: rev.productName.trim() !== '' ? rev.productName : 'Sản phẩm không xác định',
+        reviews: [],
+      })
+    }
+    map.get(pid)!.reviews.push(rev)
+  }
+  return [...map.values()].sort((a, b) => {
+    const diff = b.reviews.length - a.reviews.length
+    if (diff !== 0) return diff
+    return a.productId.localeCompare(b.productId)
+  })
 }

@@ -4,6 +4,12 @@ export interface OrderItem {
   buyerName: string
   buyerPhone: string
   shippingAddress: string
+  shippingCarrier?: string
+  trackingCode?: string
+  shippedAt?: string
+  deliveredAt?: string
+  receivedAt?: string
+  returnStatus?: string
   paymentMethod?: string
   note?: string
   items: {
@@ -29,11 +35,14 @@ export interface OrderItem {
 
 export interface ReturnItem {
   id: string
+  orderId: string
   orderCode: string
+  orderStatus: string
   buyerName: string
   reason: string
   description: string
   evidenceImage: string
+  evidenceImages: string[]
   status: 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
   resolution?: string
   refundAmount?: number

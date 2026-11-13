@@ -5,11 +5,15 @@ import {
   chatConversationItem,
   decorationBlocks,
   decorationDraftJson,
+  groupReviewsByProduct,
   memberItem,
   orderItem,
   productItem,
   returnItem,
   reviewItem,
+  reviewProductOptionItem,
+  reviewReplyTemplateItem,
+  reviewTrendPoints,
   roleItem,
   settlementItem,
   shopProfile,
@@ -124,6 +128,33 @@ describe('orderItem', () => {
     expect(item.createdAt).toMatch(/\d{2}\/\d{2}\/\d{4}/)
   })
 
+  it('truyen shippingCarrier, trackingCode, returnStatus va cancelReason da dich', () => {
+    const order: OrderResponse = {
+      id: 'o2',
+      code: 'ORD-2',
+      status: 'CANCELLED',
+      shippingCarrier: 'GHN',
+      trackingCode: 'VN-ORD-2',
+      shippedAt: '2026-10-18T10:00:00Z',
+      deliveredAt: '2026-10-19T12:00:00Z',
+      receivedAt: '2026-10-20T09:00:00Z',
+      returnStatus: 'REQUESTED',
+      cancelReason: 'OTHER',
+      cancelledBy: 'BUYER',
+      cancelNote: 'Đặt nhầm size',
+      items: [],
+      createdAt: '2026-10-18T09:00:00Z',
+    }
+    const item = orderItem(order)
+    expect(item.shippingCarrier).toBe('GHN')
+    expect(item.trackingCode).toBe('VN-ORD-2')
+    expect(item.returnStatus).toBe('REQUESTED')
+    expect(item.cancelReason).toBe('Khác')
+    expect(item.shippedAt).toBe('2026-10-18T10:00:00Z')
+    expect(item.deliveredAt).toBe('2026-10-19T12:00:00Z')
+    expect(item.receivedAt).toBe('2026-10-20T09:00:00Z')
+  })
+
   it('status la khong thi ve PENDING', () => {
     const item = orderItem({ status: undefined })
     expect(item.status).toBe('PENDING')
@@ -131,25 +162,37 @@ describe('orderItem', () => {
 })
 
 describe('returnItem', () => {
-  it('resolve order code va buyer tu danh muc order', () => {
-    const orders = new Map([['o1', { code: 'ORD-9', shippingName: 'An' } as OrderResponse]])
+  it('resolve order code, orderStatus va toan bo evidenceKeys (anh + video)', () => {
+    const orders = new Map([
+      ['o1', { code: 'ORD-9', shippingName: 'An', status: 'DELIVERED' } as OrderResponse],
+    ])
     const request: ReturnRequestResponse = {
       id: 'r1',
       orderId: 'o1',
+      orderCode: 'ORD-9',
+      orderStatus: 'DELIVERED',
       reason: 'DAMAGED',
       description: 'Rách may',
-      evidenceKeys: ['demo/e1.jpg'],
+      evidenceKeys: ['demo/e1.jpg', 'returns/video-1.mp4'],
       status: 'REQUESTED',
     }
     const item = returnItem(request, orders)
     expect(item.orderCode).toBe('ORD-9')
+    expect(item.orderStatus).toBe('DELIVERED')
     expect(item.buyerName).toBe('An')
     expect(item.evidenceImage).toContain('demo/e1.jpg')
+    expect(item.evidenceImages).toHaveLength(2)
+    expect(item.evidenceImages[0]).toContain('demo/e1.jpg')
+    expect(item.evidenceImages[1]).toContain('returns/video-1.mp4')
   })
 
-  it('khong co order thi de rong', () => {
-    const item = returnItem({ orderId: 'missing' }, new Map())
-    expect(item.orderCode).toBe('')
+  it('khong co order trong map thi fallback sang request.orderCode va orderStatus', () => {
+    const item = returnItem(
+      { orderId: 'missing', orderCode: 'ORD-77', orderStatus: 'DELIVERED' },
+      new Map(),
+    )
+    expect(item.orderCode).toBe('ORD-77')
+    expect(item.orderStatus).toBe('DELIVERED')
     expect(item.buyerName).toBe('')
   })
 })
@@ -168,6 +211,31 @@ describe('reviewItem va settlementItem', () => {
     expect(item.productName).toBe('Quần jeans')
     expect(item.isReported).toBe(true)
     expect(item.images).toEqual([])
+  })
+
+  it('uu tien productName tu response va map product option, template, trend points', () => {
+    const item = reviewItem({ id: 'rv2', productName: 'Áo sơ mi', stars: 5 }, 'Tên fallback')
+    expect(item.productName).toBe('Áo sơ mi')
+
+    const option = reviewProductOptionItem({ id: 'p1', name: 'Quần tây', reviewCount: 3 })
+    expect(option).toEqual({ id: 'p1', name: 'Quần tây', reviewCount: 3 })
+
+    const tpl = reviewReplyTemplateItem({
+      id: 't1',
+      title: 'Cảm ơn',
+      content: 'Cảm ơn bạn!',
+      updatedAt: '2026-10-20T10:00:00Z',
+    })
+    expect(tpl.title).toBe('Cảm ơn')
+    expect(tpl.content).toBe('Cảm ơn bạn!')
+
+    expect(
+      reviewTrendPoints({
+        period: 'day',
+        points: [{ label: '2026-10-20', reviewCount: 4, averageRating: 4.5 }],
+      }),
+    ).toEqual([{ label: '2026-10-20', reviewCount: 4, averageRating: 4.5 }])
+    expect(reviewTrendPoints(undefined)).toEqual([])
   })
 
   it('map settlement kem order code', () => {
@@ -400,5 +468,63 @@ describe('shopProfile', () => {
     expect(profile.isVerified).toBe(true)
     expect(profile.city).toBe('')
     expect(profile.returnPolicy).toBe('Đổi trả miễn phí trong 7 ngày')
+  })
+})
+
+import type { ReviewItem } from '@/types/seller/reviews'
+
+describe('groupReviewsByProduct', () => {
+  function makeRev(productId: string, productName: string, id: string): ReviewItem {
+    return {
+      id,
+      productId,
+      productName,
+      buyerName: 'X',
+      rating: 5,
+      comment: '',
+      images: [],
+      tags: [],
+      helpfulCount: 0,
+      anonymous: false,
+      isReported: false,
+      createdAt: '2026-01-01',
+    }
+  }
+
+  it('gom đúng nhóm, sắp xếp theo reviewCount giảm dần, tie-break productId alpha', () => {
+    const revs = [
+      makeRev('p1', 'Áo Thun', 'r1'),
+      makeRev('p2', 'Quần Jeans', 'r2'),
+      makeRev('p1', 'Áo Thun', 'r3'),
+      makeRev('p3', 'Giày', 'r4'),
+      makeRev('p2', 'Quần Jeans', 'r5'),
+      makeRev('p2', 'Quần Jeans', 'r6'),
+    ]
+    const result = groupReviewsByProduct(revs)
+    expect(result).toHaveLength(3)
+    expect(result[0].productId).toBe('p2')
+    expect(result[0].reviews).toHaveLength(3)
+    expect(result[0].reviews.map((r) => r.id)).toEqual(expect.arrayContaining(['r2', 'r5', 'r6']))
+    expect(result[1].productId).toBe('p1')
+    expect(result[1].reviews).toHaveLength(2)
+    expect(result[2].productId).toBe('p3')
+    expect(result[2].reviews).toHaveLength(1)
+  })
+
+  it('productName rỗng → fallback "Sản phẩm không xác định"', () => {
+    const rev = makeRev('p1', '', 'r1')
+    const result = groupReviewsByProduct([rev])
+    expect(result[0].productName).toBe('Sản phẩm không xác định')
+  })
+
+  it('mảng rỗng → trả []', () => {
+    expect(groupReviewsByProduct([])).toEqual([])
+  })
+
+  it('tie-break: 2 nhóm cùng số lượng → sắp xếp productId alphabetical', () => {
+    const revs = [makeRev('p2', 'B', 'r1'), makeRev('p1', 'A', 'r2')]
+    const result = groupReviewsByProduct(revs)
+    expect(result[0].productId).toBe('p1')
+    expect(result[1].productId).toBe('p2')
   })
 })
