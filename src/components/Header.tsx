@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useMine } from '@generated/endpoints/shops/shops'
+import { useMe } from '@generated/endpoints/users/users'
 import {
   Heart,
   MagnifyingGlass,
@@ -15,7 +16,7 @@ import {
   UserCircle,
 } from '@phosphor-icons/react'
 
-import { takeData } from '@/lib/api/apiAdapters'
+import { imageUrl, takeData } from '@/lib/api/apiAdapters'
 
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useCart } from '../hooks/useCart'
@@ -103,6 +104,11 @@ export default function Header() {
   }
 
   const isLoggedIn = session !== null && session !== undefined
+  const meQuery = useMe({
+    query: {
+      enabled: isLoggedIn,
+    },
+  })
   const mineQuery = useMine({
     query: {
       enabled: isLoggedIn,
@@ -114,6 +120,14 @@ export default function Header() {
     const shopList = takeData(mineQuery.data)
     if (Array.isArray(shopList) && shopList.length > 0) {
       hasAnyShop = true
+    }
+  }
+
+  let avatarSrc: string | undefined
+  if (meQuery.data !== undefined) {
+    const me = takeData(meQuery.data)
+    if (me.avatarKey !== null && me.avatarKey !== undefined && me.avatarKey !== '') {
+      avatarSrc = imageUrl(me.avatarKey)
     }
   }
 
@@ -198,7 +212,7 @@ export default function Header() {
                 className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-indigo-100 dark:hover:bg-white/10"
               >
                 {isLoggedIn && session.user.email !== undefined && (
-                  <UserAvatar name={session.user.email} size={28} />
+                  <UserAvatar name={session.user.email} size={28} src={avatarSrc} />
                 )}
                 {(!isLoggedIn || session.user.email === undefined) && <User size={20} />}
               </button>
