@@ -7,12 +7,14 @@ import {
   buildSystemPrompt,
   createAgentTools,
   filtersFromMessages,
+  imageFromMessages,
   productFromMessages,
   readAgentConfig,
   searchProductsInputSchema,
   showProductsInputSchema,
   toFilterPatch,
   toSearchParams,
+  withImageNotes,
 } from './agent'
 
 import type { AgentUIMessage } from './agent'
@@ -207,6 +209,119 @@ describe('productFromMessages', () => {
   })
 })
 
+describe('imageFromMessages', () => {
+  it('lấy ảnh từ metadata của tin nhắn user gần nhất', function () {
+    const messages = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [],
+        metadata: { image: { key: 'img-cu', url: 'https://assets.example.com/img-cu' } },
+      },
+      { id: 'a1', role: 'assistant', parts: [] },
+      {
+        id: 'u2',
+        role: 'user',
+        parts: [],
+        metadata: { image: { key: 'img-moi', url: 'https://assets.example.com/img-moi' } },
+      },
+    ] as unknown as AgentUIMessage[]
+
+    expect(imageFromMessages(messages)).toEqual({
+      key: 'img-moi',
+      url: 'https://assets.example.com/img-moi',
+    })
+  })
+
+  it('không có metadata nào thì undefined', function () {
+    const messages = [
+      { id: 'u1', role: 'user', parts: [] },
+      { id: 'a1', role: 'assistant', parts: [] },
+    ] as unknown as AgentUIMessage[]
+
+    expect(imageFromMessages(messages)).toBeUndefined()
+  })
+})
+
+describe('withImageNotes', () => {
+  it('tin nhắn user có ảnh được chèn ghi chú hệ thống chứa link và hướng dẫn readImage', function () {
+    const messages = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'món này còn không' }],
+        metadata: { image: { key: 'img-1', url: 'https://assets.example.com/img-1' } },
+      },
+    ] as unknown as AgentUIMessage[]
+
+    const result = withImageNotes(messages)
+
+    // Ghi chú nằm ở đúng lượt upload, chứa link + hướng dẫn gọi tool, nhắc model chưa xem ảnh.
+    const notes = result[0]?.parts.filter(function (part) {
+      return part.type === 'text' && part.text.includes('Ghi chú hệ thống')
+    })
+    expect(notes).toHaveLength(1)
+    const note = notes?.[0]
+    if (note?.type === 'text') {
+      expect(note.text).toContain('https://assets.example.com/img-1')
+      expect(note.text).toContain('readImage')
+      expect(note.text).toContain('chưa xem được nội dung ảnh')
+    }
+    // Text gốc của người dùng vẫn nguyên.
+    expect(
+      result[0]?.parts.some(function (part) {
+        return part.type === 'text' && part.text === 'món này còn không'
+      }),
+    ).toBe(true)
+  })
+
+  it('không đụng vào message gốc (tạo bản sao, không mutate)', function () {
+    const parts = [{ type: 'text', text: 'xem giúp' }]
+    const messages = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts,
+        metadata: { image: { key: 'img-1', url: 'https://assets.example.com/img-1' } },
+      },
+    ] as unknown as AgentUIMessage[]
+
+    withImageNotes(messages)
+
+    expect(parts).toHaveLength(1)
+  })
+
+  it('message không có ảnh hoặc không phải user thì giữ nguyên', function () {
+    const messages = [
+      { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'chào' }] },
+      { id: 'a1', role: 'assistant', parts: [] },
+    ] as unknown as AgentUIMessage[]
+
+    const result = withImageNotes(messages)
+
+    expect(result[0]?.parts).toHaveLength(1)
+    expect(result[1]?.parts).toHaveLength(0)
+  })
+})
+
+describe('buildSystemPrompt — ảnh đính kèm', () => {
+  it('có ảnh thì prompt không nhúng link ảnh — link nằm ở ghi chú hệ thống trong lượt upload', function () {
+    const prompt = buildSystemPrompt(filtersFixture(), undefined, {
+      key: 'img-1',
+      url: 'https://assets.example.com/img-1',
+    })
+
+    expect(prompt).not.toContain('https://assets.example.com/img-1')
+    expect(prompt).not.toContain('đính kèm 1 ảnh')
+  })
+
+  it('không có ảnh thì không nhắc ảnh trong prompt', function () {
+    const prompt = buildSystemPrompt(filtersFixture())
+
+    expect(prompt).not.toContain('đính kèm')
+  })
+})
+
 describe('toFilterPatch', () => {
   it('chỉ giữ field có giá trị, bỏ limit và field rỗng', function () {
     const patch = toFilterPatch({
@@ -368,6 +483,7 @@ describe('createAgentTools', () => {
   })
 
   it('getProductDetail gọi API chi tiết với id và trả output rút gọn', async function () {
+    vi.stubEnv('VITE_ASSETS_URL', 'https://assets.example.com')
     detail1Mock.mockResolvedValue({
       status: 200,
       data: productDetailFixture(),
@@ -389,26 +505,139 @@ describe('createAgentTools', () => {
       sizeGuide: null,
       averageRating: 4.5,
       reviewCount: 12,
+      defaultImageKey: 'img-1',
+      defaultImageUrl: 'https://assets.example.com/img-1',
+      garmentKey: null,
+      garmentUrl: null,
+      tryOnEnabled: false,
       variants: [{ size: 'M', color: 'Hồng', price: 450000, stockQuantity: 3 }],
     })
   })
 
-  it('getProductDetail bỏ field vô ích với model (ảnh, video, garment)', async function () {
+  it('getProductDetail giữ key ảnh cho thử đồ nhưng bỏ video', async function () {
+    vi.stubEnv('VITE_ASSETS_URL', 'https://assets.example.com')
     detail1Mock.mockResolvedValue({
       status: 200,
       data: {
         ...productDetailFixture(),
-        images: [{ s3Key: 'img-1' }],
+        images: [
+          { s3Key: 'img-2', sortOrder: 1 },
+          { s3Key: 'img-1', sortOrder: 0 },
+        ],
         videoKey: 'video-1',
         garmentKey: 'garment-1',
+        tryOnEnabled: true,
       },
     })
 
     const tools = createAgentTools()
     const output = await tools.getProductDetail.execute?.({ productId: 'p-123' }, executeOptions())
 
-    expect(JSON.stringify(output)).not.toContain('img-1')
+    expect(JSON.stringify(output)).toContain('img-1')
+    expect(JSON.stringify(output)).toContain('garment-1')
+    expect(JSON.stringify(output)).toContain('https://assets.example.com/img-1')
+    expect(JSON.stringify(output)).toContain('https://assets.example.com/garment-1')
     expect(JSON.stringify(output)).not.toContain('video-1')
-    expect(JSON.stringify(output)).not.toContain('garment-1')
+  })
+
+  it('defaultImageKey lấy ảnh sortOrder nhỏ nhất, bỏ ảnh thiếu key; thiếu ảnh thì key và url null', async function () {
+    vi.stubEnv('VITE_ASSETS_URL', 'https://assets.example.com')
+    detail1Mock.mockResolvedValue({
+      status: 200,
+      data: {
+        ...productDetailFixture(),
+        images: [
+          { s3Key: '', sortOrder: 0 },
+          { s3Key: 'img-sau', sortOrder: 5 },
+          { s3Key: 'img-truoc', sortOrder: 2 },
+        ],
+      },
+    })
+
+    const tools = createAgentTools()
+    const output1 = await tools.getProductDetail.execute?.({ productId: 'p-123' }, executeOptions())
+    expect(output1).toMatchObject({
+      defaultImageKey: 'img-truoc',
+      defaultImageUrl: 'https://assets.example.com/img-truoc',
+    })
+
+    detail1Mock.mockResolvedValue({
+      status: 200,
+      data: { ...productDetailFixture(), images: [] },
+    })
+    const output2 = await tools.getProductDetail.execute?.({ productId: 'p-123' }, executeOptions())
+    expect(output2).toMatchObject({ defaultImageKey: null, defaultImageUrl: null })
+  })
+})
+
+describe('createAgentTools — thử đồ ảo', () => {
+  it('đăng ký tool tryOn và showImage có execute', function () {
+    const tools = createAgentTools()
+
+    expect(typeof tools.tryOn.execute).toBe('function')
+    expect(typeof tools.showImage.execute).toBe('function')
+  })
+})
+
+describe('buildSystemPrompt — thử đồ ảo', () => {
+  it('có ảnh đính kèm thì nhắc tool tryOn và showImage', function () {
+    const prompt = buildSystemPrompt(filtersFixture(), undefined, {
+      key: 'img-1',
+      url: 'https://assets.example.com/img-1',
+    })
+
+    expect(prompt).toContain('tryOn')
+    expect(prompt).toContain('showImage')
+    expect(prompt).toContain('garmentImageKey')
+    expect(prompt).toContain('defaultImageKey')
+    expect(prompt).toContain('garmentKey')
+  })
+
+  it('không có ảnh đính kèm thì không nhắc tryOn và showImage', function () {
+    const prompt = buildSystemPrompt(filtersFixture())
+
+    expect(prompt).not.toContain('tryOn')
+    expect(prompt).not.toContain('showImage')
+  })
+})
+
+describe('createAgentTools — đọc ảnh', () => {
+  it('đăng ký tool readImage có execute', function () {
+    const tools = createAgentTools()
+
+    expect(typeof tools.readImage.execute).toBe('function')
+  })
+})
+
+describe('buildSystemPrompt — đọc ảnh', () => {
+  it('luôn nhắc tool readImage, kể cả khi không có ảnh đính kèm', function () {
+    const prompt = buildSystemPrompt(filtersFixture())
+
+    expect(prompt).toContain('readImage')
+  })
+
+  it('có ảnh đính kèm cũng nhắc readImage', function () {
+    const prompt = buildSystemPrompt(filtersFixture(), undefined, {
+      key: 'img-1',
+      url: 'https://assets.example.com/img-1',
+    })
+
+    expect(prompt).toContain('readImage')
+  })
+})
+
+describe('createAgentTools — ngữ cảnh trang', () => {
+  it('đăng ký tool getPageContext có execute', function () {
+    const tools = createAgentTools()
+
+    expect(typeof tools.getPageContext.execute).toBe('function')
+  })
+})
+
+describe('buildSystemPrompt — ngữ cảnh trang', () => {
+  it('luôn nhắc tool getPageContext, kể cả khi đã biết sản phẩm đang xem', function () {
+    const prompt = buildSystemPrompt(filtersFixture(), { id: 'p-123' })
+
+    expect(prompt).toContain('getPageContext')
   })
 })

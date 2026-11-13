@@ -1,7 +1,7 @@
 import { MemoryRouter, useLocation } from 'react-router'
 
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
@@ -21,6 +21,13 @@ vi.mock('motion/react', () => ({
 vi.mock('@/lib/ai/agent', async function (importOriginal) {
   const actual = await importOriginal<typeof import('@/lib/ai/agent')>()
   return { ...actual, readAgentConfig: () => null }
+})
+
+// Upload ảnh phải mock: test không PUT file thật lên S3.
+const { uploadImageMock } = vi.hoisted(() => ({ uploadImageMock: vi.fn() }))
+vi.mock('@/lib/api/uploadImage', async function (importOriginal) {
+  const actual = await importOriginal<typeof import('@/lib/api/uploadImage')>()
+  return { ...actual, uploadImage: uploadImageMock }
 })
 
 function configFixture(): AgentConfig {
@@ -81,7 +88,10 @@ function renderTab(props: {
   )
 }
 
-afterEach(cleanup)
+afterEach(function () {
+  cleanup()
+  uploadImageMock.mockReset()
+})
 
 const TOOL_RESULT_CHUNKS: UIMessageChunk[] = [
   { type: 'start', messageId: 'a1' },
@@ -534,5 +544,414 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
 
     expect(await screen.findByText('Đã tra cứu sản phẩm: Áo Sơ Mi Lụa')).toBeTruthy()
+  })
+
+  // File ảnh giả đủ dùng cho upload flow — test không đọc nội dung file.
+  function imageFile(): File {
+    return new File(['anh-gia'], 'do-dep.png', { type: 'image/png' })
+  }
+
+  function sendButton(): HTMLButtonElement {
+    return screen.getByRole('button', { name: 'Gửi câu hỏi' }) as HTMLButtonElement
+  }
+
+  describe('đính kèm ảnh', () => {
+    it('chọn ảnh → upload lên S3, hiện preview, gửi kèm metadata.image và không nhúng ảnh vào context', async function () {
+      uploadImageMock.mockResolvedValue('chat-img-1')
+      const user = userEvent.setup()
+      const captured: { messages: AgentUIMessage[] } = { messages: [] }
+      renderTab({ config: configFixture(), transport: capturingTransport([], captured) })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+      await screen.findByAltText('Ảnh sẽ gửi kèm')
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'món này còn không')
+      // Upload xong thì nút gửi mở lại
+      await waitFor(function () {
+        expect(sendButton().disabled).toBe(false)
+      })
+      await user.click(sendButton())
+
+      await screen.findByText('món này còn không')
+      const last = captured.messages[captured.messages.length - 1]
+      expect(uploadImageMock).toHaveBeenCalledTimes(1)
+      expect(last?.metadata?.image?.key).toBe('chat-img-1')
+      expect(last?.metadata?.image?.url).toContain('chat-img-1')
+      // Ảnh không nhúng vào context (không file part) — agent chỉ nhận chỉ dẫn
+      // "khách vừa đính kèm ảnh, link…" trong system prompt, muốn xem thì gọi tool readImage.
+      const filePart = last?.parts.find(function (part) {
+        return part.type === 'file'
+      })
+      expect(filePart).toBeUndefined()
+    })
+
+    it('chưa chọn chữ nhưng có ảnh thì vẫn gửi được tin nhắn', async function () {
+      uploadImageMock.mockResolvedValue('chat-img-1')
+      const user = userEvent.setup()
+      const captured: { messages: AgentUIMessage[] } = { messages: [] }
+      renderTab({ config: configFixture(), transport: capturingTransport([], captured) })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+      await waitFor(function () {
+        expect(sendButton().disabled).toBe(false)
+      })
+      await user.click(sendButton())
+
+      await waitFor(function () {
+        expect(captured.messages[captured.messages.length - 1]?.metadata?.image?.key).toBe(
+          'chat-img-1',
+        )
+      })
+    })
+
+    it('đang upload thì khóa nút gửi, xong thì mở lại', async function () {
+      let resolveUpload: (key: string) => void = function () {}
+      uploadImageMock.mockReturnValue(
+        new Promise<string>(function (resolve) {
+          resolveUpload = resolve
+        }),
+      )
+      const user = userEvent.setup()
+      renderTab({ config: configFixture(), transport: transportOf([]) })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+      expect(sendButton().disabled).toBe(true)
+
+      resolveUpload('chat-img-1')
+      await waitFor(function () {
+        expect(sendButton().disabled).toBe(false)
+      })
+    })
+
+    it('file không phải ảnh thì báo lỗi và không upload', async function () {
+      renderTab({ config: configFixture(), transport: transportOf([]) })
+
+      // userEvent.upload tôn trọng accept="image/*" nên bắn change trực tiếp,
+      // mô phỏng khách ép chọn file lạ qua "All files"/drag-drop.
+      const input = screen.getByLabelText('Đính kèm ảnh') as HTMLInputElement
+      fireEvent.change(input, {
+        target: { files: [new File(['tailieu'], 'tai-lieu.pdf', { type: 'application/pdf' })] },
+      })
+
+      expect(await screen.findByText('Chỉ nhận file ảnh.')).toBeTruthy()
+      expect(uploadImageMock).not.toHaveBeenCalled()
+    })
+
+    it('ảnh quá 5MB thì báo lỗi và không upload', async function () {
+      const user = userEvent.setup()
+      renderTab({ config: configFixture(), transport: transportOf([]) })
+
+      await user.upload(
+        screen.getByLabelText('Đính kèm ảnh'),
+        new File([new ArrayBuffer(5 * 1024 * 1024 + 1)], 'to.png', { type: 'image/png' }),
+      )
+
+      expect(await screen.findByText('Ảnh tối đa 5 MB.')).toBeTruthy()
+      expect(uploadImageMock).not.toHaveBeenCalled()
+    })
+
+    it('upload thất bại thì hiện thông báo lỗi', async function () {
+      uploadImageMock.mockRejectedValue(new Error('Upload ảnh thất bại, thử lại sau.'))
+      const user = userEvent.setup()
+      renderTab({ config: configFixture(), transport: transportOf([]) })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+
+      expect(await screen.findByText('Không gửi được ảnh, thử ảnh khác nhé.')).toBeTruthy()
+    })
+
+    it('nút gỡ ảnh xóa preview khỏi khung soạn tin', async function () {
+      uploadImageMock.mockResolvedValue('chat-img-1')
+      const user = userEvent.setup()
+      renderTab({ config: configFixture(), transport: transportOf([]) })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+      await screen.findByAltText('Ảnh sẽ gửi kèm')
+      await user.click(screen.getByRole('button', { name: 'Gỡ ảnh' }))
+
+      expect(screen.queryByAltText('Ảnh sẽ gửi kèm')).toBeNull()
+    })
+
+    it('ảnh đã gửi hiện thumbnail trong tin nhắn user theo link S3 trong metadata', async function () {
+      uploadImageMock.mockResolvedValue('chat-img-1')
+      const user = userEvent.setup()
+      renderTab({ config: configFixture(), transport: transportOf([]) })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+      await waitFor(function () {
+        expect(sendButton().disabled).toBe(false)
+      })
+      await user.click(sendButton())
+
+      const img = (await screen.findByAltText('Ảnh bạn đã gửi')) as HTMLImageElement
+      expect(img.src).toContain('chat-img-1')
+    })
+  })
+
+  describe('thử đồ ảo', () => {
+    it('tool tryOn đang chạy thì hiện trạng thái đang thử đồ', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'tryOn',
+            input: {
+              personImageUrl: 'https://assets.example.com/person.jpg',
+              garmentImageKey: 'product-1',
+              category: 'tops',
+              garmentPhotoType: 'model',
+            },
+          },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Đang thử đồ, chờ chút nhé…')).toBeTruthy()
+    })
+
+    it('tool tryOn xong thì hiện pill đã tạo ảnh thử đồ', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'tryOn',
+            input: {
+              personImageUrl: 'https://assets.example.com/person.jpg',
+              garmentImageKey: 'product-1',
+              category: 'tops',
+              garmentPhotoType: 'model',
+            },
+          },
+          {
+            type: 'tool-output-available',
+            toolCallId: 'tc1',
+            output: {
+              image: { key: 'tryon-1', url: 'https://assets.example.com/tryon-1' },
+            },
+          },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Đã tạo ảnh thử đồ.')).toBeTruthy()
+    })
+
+    it('tool tryOn lỗi thì hiện trạng thái lỗi', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'tryOn',
+            input: {
+              personImageUrl: 'https://assets.example.com/person.jpg',
+              garmentImageKey: 'product-1',
+              category: 'tops',
+              garmentPhotoType: 'model',
+            },
+          },
+          { type: 'tool-output-error', toolCallId: 'tc1', errorText: 'GPU quota exceeded' },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Có lỗi khi tạo ảnh thử đồ.')).toBeTruthy()
+    })
+
+    it('tool showImage đang chạy thì hiện trạng thái đang tải ảnh', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'showImage',
+            input: { url: 'https://assets.example.com/tryon-1' },
+          },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Đang tải ảnh…')).toBeTruthy()
+    })
+
+    it('tool showImage xong thì hiện ảnh với link đúng và bo góc như bubble', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'showImage',
+            input: { url: 'https://assets.example.com/tryon-1' },
+          },
+          {
+            type: 'tool-output-available',
+            toolCallId: 'tc1',
+            output: { url: 'https://assets.example.com/tryon-1' },
+          },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      const img = (await screen.findByAltText('Ảnh trợ lý gửi')) as HTMLImageElement
+      expect(img.src).toBe('https://assets.example.com/tryon-1')
+      expect(img.className).toContain('rounded-2xl')
+    })
+
+    it('tool showImage lỗi thì hiện trạng thái lỗi', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'showImage',
+            input: { url: 'https://assets.example.com/tryon-1' },
+          },
+          { type: 'tool-output-error', toolCallId: 'tc1', errorText: 'lỗi lạ' },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử giúp mình')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Có lỗi khi hiển thị ảnh.')).toBeTruthy()
+    })
+  })
+
+  describe('đọc ảnh', () => {
+    it('tool readImage đang chạy thì hiện trạng thái đang xem ảnh', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'readImage',
+            input: { url: 'https://assets.example.com/anh.png' },
+          },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'ảnh này là gì')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Đang xem ảnh…')).toBeTruthy()
+    })
+
+    it('tool readImage lỗi thì hiện trạng thái lỗi', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'readImage',
+            input: { url: 'https://assets.example.com/anh.png' },
+          },
+          { type: 'tool-output-error', toolCallId: 'tc1', errorText: 'lỗi lạ' },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'ảnh này là gì')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      expect(await screen.findByText('Có lỗi khi đọc ảnh.')).toBeTruthy()
+    })
+
+    it('tool readImage xong thì không hiện gì cho khách — ảnh chỉ để agent xem', async function () {
+      const user = userEvent.setup()
+      renderTab({
+        config: configFixture(),
+        transport: transportOf([
+          { type: 'start', messageId: 'a1' },
+          { type: 'start-step' },
+          {
+            type: 'tool-input-available',
+            toolCallId: 'tc1',
+            toolName: 'readImage',
+            input: { url: 'https://assets.example.com/anh.png' },
+          },
+          {
+            type: 'tool-output-available',
+            toolCallId: 'tc1',
+            output: {
+              url: 'https://assets.example.com/anh.png',
+              mediaType: 'image/png',
+              data: 'YW5o',
+            },
+          },
+          { type: 'finish-step' },
+          { type: 'start-step' },
+          { type: 'text-start', id: 'tx1' },
+          { type: 'text-delta', id: 'tx1', delta: 'Mình đã xem ảnh rồi nhé.' },
+          { type: 'text-end', id: 'tx1' },
+          { type: 'finish-step' },
+          { type: 'finish' },
+        ]),
+      })
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'ảnh này là gì')
+      await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+      // Stream đã xử lý xong (text agent hiện), nhưng ảnh readImage không render cho khách.
+      expect(await screen.findByText('Mình đã xem ảnh rồi nhé.')).toBeTruthy()
+      expect(screen.queryByAltText('Ảnh trợ lý gửi')).toBeNull()
+    })
   })
 })

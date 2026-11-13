@@ -1,9 +1,13 @@
 import { EMPTY_FILTERS } from '@/lib/searchFilters'
 
+import { createGetPageContextTool } from './tools/getPageContext'
 import { createGetProductDetailTool } from './tools/getProductDetail'
 import { createListCategoriesTool } from './tools/listCategories'
+import { createReadImageTool } from './tools/readImage'
 import { createSearchProductsTool } from './tools/searchProducts'
+import { createShowImageTool } from './tools/showImage'
 import { createShowProductsTool } from './tools/showProducts'
+import { createTryOnTool } from './tools/tryOn'
 
 import type { SearchFilters } from '@/types/search'
 import type { InferUITool, UIDataTypes, UIMessage } from 'ai'
@@ -19,6 +23,14 @@ export type {
 } from './tools/getProductDetail'
 export { showProductsInputSchema } from './tools/showProducts'
 export type { ShowToolInput, ShowToolOutput } from './tools/showProducts'
+export { showImageInputSchema } from './tools/showImage'
+export type { ShowImageToolInput, ShowImageToolOutput } from './tools/showImage'
+export { tryOnInputSchema } from './tools/tryOn'
+export type { TryOnToolInput, TryOnToolOutput } from './tools/tryOn'
+export { readImageInputSchema } from './tools/readImage'
+export type { ReadImageToolInput, ReadImageToolOutput } from './tools/readImage'
+export { getPageContextInputSchema } from './tools/getPageContext'
+export type { PageContextOutput, PageName } from './tools/getPageContext'
 
 // TODO(oauth): token đang hard-code qua VITE_AI_API_KEY trong .env. Về sau chuyển sang
 // xác thực qua Supabase OAuth (đổi token ngắn hạn theo phiên đăng nhập) thay cho key tĩnh.
@@ -31,6 +43,12 @@ export interface AgentConfig {
 /** Snapshot sản phẩm khách đang xem ở trang chi tiết: chỉ cần id, chi tiết lấy qua tool. */
 export interface AgentProductContext {
   id: string
+}
+
+/** Ảnh khách đính kèm trong tin nhắn: key S3 (dành cho thay đổi sau) + url public cho model. */
+export interface AgentImageContext {
+  key: string
+  url: string
 }
 
 /** Đọc cấu hình LLM từ env; thiếu hoặc rỗng biến nào thì coi như chưa cấu hình. */
@@ -51,16 +69,22 @@ export function readAgentConfig(): AgentConfig | null {
   return { baseUrl, apiKey, model }
 }
 
-/** System prompt tiếng Việt, nhúng bộ lọc khách đang đặt trên trang tìm kiếm
- *  và id sản phẩm khách đang xem ở trang chi tiết (nếu có). */
-export function buildSystemPrompt(filters: SearchFilters, product?: AgentProductContext): string {
+/** System prompt tiếng Việt, nhúng bộ lọc khách đang đặt trên trang tìm kiếm,
+ *  id sản phẩm khách đang xem ở trang chi tiết (nếu có) và link ảnh khách đính kèm (nếu có). */
+export function buildSystemPrompt(
+  filters: SearchFilters,
+  product?: AgentProductContext,
+  image?: AgentImageContext,
+): string {
   const lines: string[] = [
     'Bạn là trợ lý mua sắm của cửa hàng thời trang "nét" — marketplace thời trang.',
     'Luôn trả lời bằng tiếng Việt, ngắn gọn, thân thiện. Giá sản phẩm tính bằng VND.',
     'Nhiệm vụ: giúp khách tìm sản phẩm trong cửa hàng.',
     '- Trước khi gợi ý sản phẩm, phải gọi tool searchProducts với bộ lọc phù hợp, không được bịa sản phẩm.',
     '- searchProducts chỉ để tra dữ liệu, khách không thấy gì; muốn hiện sản phẩm cho khách xem thì gọi tool showProducts với id lấy từ kết quả searchProducts (tối đa 8 id, chọn những sản phẩm phù hợp nhất), không được bịa id.',
+    '- Khi cần xem nội dung một ảnh (mô tả ảnh khách gửi, kiểm tra ảnh thử đồ ảo có giống sản phẩm không…), gọi tool readImage với link http(s) của ảnh; ảnh bạn xem khách không thấy.',
     '- Chưa biết slug danh mục thì gọi tool listCategories trước.',
+    '- Không rõ khách đang ở trang nào của cửa hàng thì gọi tool getPageContext để biết trang hiện tại (kèm id sản phẩm/đơn hàng nếu có) trước khi trả lời.',
     '- Mỗi lần tìm tối đa 8 sản phẩm. Nếu không có kết quả, gợi ý khách nới bớt bộ lọc.',
     '',
     'Bộ lọc khách đang đặt trên trang tìm kiếm:',
@@ -94,17 +118,31 @@ export function buildSystemPrompt(filters: SearchFilters, product?: AgentProduct
     )
   }
 
+  if (image !== undefined) {
+    lines.push('')
+    lines.push(
+      '- Khách muốn thử đồ thì gọi tool tryOn: personImageUrl là link ảnh khách đã đính kèm trong hội thoại (xem ghi chú hệ thống ở lượt khách gửi ảnh), garmentImageKey là key ảnh sản phẩm (ưu tiên garmentKey nếu sản phẩm có, không thì defaultImageKey — lấy từ getProductDetail nếu khách đang xem sản phẩm đó, hoặc từ kết quả searchProducts/showProducts), category và garmentPhotoType mô tả sản phẩm. tryOn chỉ tạo và lưu ảnh, khách không thấy gì.',
+    )
+    lines.push(
+      '- Muốn hiện ảnh cho khách (kết quả tryOn hoặc ảnh khác có link) thì gọi tool showImage với link ảnh, không được bịa link.',
+    )
+  }
+
   return lines.join('\n')
 }
 
-/** Bốn tool của agent: tìm sản phẩm, tra danh mục, xem chi tiết, hiện sản phẩm cho khách.
- *  Định nghĩa từng tool nằm ở `tools/` — mỗi tool một file. */
+/** Tám tool của agent: tìm sản phẩm, tra danh mục, xem chi tiết, hiện sản phẩm, thử đồ ảo,
+ *  hiện ảnh, đọc ảnh, xem trang hiện tại. Định nghĩa từng tool nằm ở `tools/` — mỗi tool một file. */
 export function createAgentTools() {
   return {
     searchProducts: createSearchProductsTool(),
     listCategories: createListCategoriesTool(),
     getProductDetail: createGetProductDetailTool(),
     showProducts: createShowProductsTool(),
+    tryOn: createTryOnTool(),
+    showImage: createShowImageTool(),
+    readImage: createReadImageTool(),
+    getPageContext: createGetPageContextTool(),
   }
 }
 
@@ -113,12 +151,18 @@ export type AgentTools = {
   listCategories: InferUITool<ReturnType<typeof createAgentTools>['listCategories']>
   getProductDetail: InferUITool<ReturnType<typeof createAgentTools>['getProductDetail']>
   showProducts: InferUITool<ReturnType<typeof createAgentTools>['showProducts']>
+  tryOn: InferUITool<ReturnType<typeof createAgentTools>['tryOn']>
+  showImage: InferUITool<ReturnType<typeof createAgentTools>['showImage']>
+  readImage: InferUITool<ReturnType<typeof createAgentTools>['readImage']>
+  getPageContext: InferUITool<ReturnType<typeof createAgentTools>['getPageContext']>
 }
 
-/** Mỗi tin nhắn user mang theo snapshot bộ lọc trang lúc gửi, kèm id sản phẩm đang xem (nếu ở PDP). */
+/** Mỗi tin nhắn user mang theo snapshot bộ lọc trang lúc gửi, kèm id sản phẩm đang xem (nếu ở PDP)
+ *  và ảnh khách đính kèm (nếu có). */
 export interface AgentMessageMetadata {
   filters: SearchFilters
   product?: AgentProductContext
+  image?: AgentImageContext
 }
 
 export type AgentUIMessage = UIMessage<AgentMessageMetadata, UIDataTypes, AgentTools>
@@ -151,4 +195,40 @@ export function productFromMessages(messages: AgentUIMessage[]): AgentProductCon
     }
   }
   return undefined
+}
+
+/** Ảnh đính kèm: snapshot trong tin nhắn user gần nhất, thiếu thì undefined. */
+export function imageFromMessages(messages: AgentUIMessage[]): AgentImageContext | undefined {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i]
+    if (message !== undefined && message.role === 'user' && message.metadata?.image !== undefined) {
+      return message.metadata.image
+    }
+  }
+  return undefined
+}
+
+/** Chèn ghi chú hệ thống vào đúng lượt user đã đính kèm ảnh (bản sao, không mutate input):
+ *  link ảnh + hướng dẫn gọi readImage đứng ngay tại lượt upload trong hội thoại, thay vì
+ *  nằm dai dẳng trong system prompt. Ảnh không bao giờ vào context trực tiếp — model muốn
+ *  xem nội dung thì tự gọi tool readImage với link trong ghi chú. */
+export function withImageNotes(messages: AgentUIMessage[]): AgentUIMessage[] {
+  return messages.map(function (message) {
+    if (message.role !== 'user' || message.metadata?.image === undefined) {
+      return message
+    }
+    return {
+      ...message,
+      parts: [
+        ...message.parts,
+        {
+          type: 'text' as const,
+          text:
+            '[Ghi chú hệ thống] Người dùng vừa đính kèm 1 ảnh (link: ' +
+            message.metadata.image.url +
+            '). Bạn chưa xem được nội dung ảnh; muốn xem thì gọi tool readImage với link đó.',
+        },
+      ],
+    }
+  })
 }
