@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { niceCeiling } from '@/lib/adminStats'
+import { niceCeiling } from '@/lib/admin/adminStats'
 import { formatVnd } from '@/lib/format'
 
 export interface LineChartPoint {

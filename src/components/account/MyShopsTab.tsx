@@ -20,7 +20,7 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { apiErrorText, takeData } from '@/lib/apiAdapters'
+import { apiErrorText, takeData } from '@/lib/api/apiAdapters'
 import { formatDateTime } from '@/lib/format'
 
 import type { SellerShopMembershipResponse } from '@generated/model/sellerShopMembershipResponse'

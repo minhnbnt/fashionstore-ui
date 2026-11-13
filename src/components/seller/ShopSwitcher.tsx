@@ -12,7 +12,7 @@ import {
   Storefront,
 } from '@phosphor-icons/react'
 
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 
 import type { SellerShopMembershipResponse } from '@generated/model/sellerShopMembershipResponse'
 

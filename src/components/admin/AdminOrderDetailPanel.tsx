@@ -10,7 +10,8 @@ import {
   XCircle,
 } from '@phosphor-icons/react'
 
-import { hookErrorMessage, takeData } from '@/lib/apiAdapters'
+import { formatDateTime } from '@/lib/admin/productModeration'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import {
   actorLabel,
@@ -20,8 +21,7 @@ import {
   cancelReasonLabel,
   statusBadgeClass,
   statusLabel,
-} from '@/lib/orderMonitoring'
-import { formatDateTime } from '@/lib/productModeration'
+} from '@/lib/order/orderMonitoring'
 
 import type { AdminOrderDetailResponse } from '@generated/model/adminOrderDetailResponse'
 import type { AdminOrderResponse } from '@generated/model/adminOrderResponse'

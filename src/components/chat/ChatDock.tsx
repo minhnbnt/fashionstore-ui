@@ -18,7 +18,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import UserAvatar from '@/components/UserAvatar'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
 import { useSessionQuery } from '@/hooks/useSession'
-import { apiErrorText, takeData } from '@/lib/apiAdapters'
+import { apiErrorText, takeData } from '@/lib/api/apiAdapters'
 import { formatDateTime } from '@/lib/format'
 
 import { bubbleClass, messageRowClass } from './bubble'

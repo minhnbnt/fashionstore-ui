@@ -13,7 +13,7 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import ImageUploadField from '@/components/admin/ImageUploadField'
+import ImageUploadField from '@/components/admin/fields/ImageUploadField'
 import LocationAddressSelector from '@/components/common/LocationAddressSelector'
 import RichTextEditor from '@/components/ui/RichTextEditor'
 import { splitFullAddress } from '@/lib/format'

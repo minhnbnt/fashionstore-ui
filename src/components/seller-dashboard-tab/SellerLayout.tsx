@@ -27,7 +27,7 @@ import NotificationBell from '@/components/NotificationBell'
 import ShopSwitcher from '@/components/seller/ShopSwitcher'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import UserAvatar from '@/components/UserAvatar'
-import { canSeeTab } from '@/lib/sellerPermissions'
+import { canSeeTab } from '@/lib/seller/sellerPermissions'
 
 import type { MenuGroup, SellerTabId } from '@/types/seller'
 

@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Bank, CaretDown, Check, MagnifyingGlass, X } from '@phosphor-icons/react'
 
-import { PLACEHOLDER_IMAGE } from '@/lib/apiAdapters'
-import { filterBanks } from '@/lib/bankSearch'
+import { PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { filterBanks } from '@/lib/shop/bankSearch'
 
 import type { BankResponse } from '@/types/bank'
 

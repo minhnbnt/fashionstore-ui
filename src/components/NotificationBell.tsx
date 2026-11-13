@@ -15,9 +15,9 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { useSessionQuery } from '@/hooks/useSession'
 import { useWebSocket } from '@/hooks/useWebSocket'
-import { takeData } from '@/lib/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
+import { getTargetNotificationLink } from '@/lib/content/notificationLinks'
 import { formatDateTime } from '@/lib/format'
-import { getTargetNotificationLink } from '@/lib/notificationLinks'
 
 import type { GetUnreadNotificationCountParams, ListNotificationsParams } from '@generated/model'
 import type { NotificationResponse } from '@generated/model/notificationResponse'

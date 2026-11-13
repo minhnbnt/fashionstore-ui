@@ -14,7 +14,7 @@ import {
   VideoCamera,
 } from '@phosphor-icons/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/apiAdapters'
+import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import type { DecorationBlock } from '@/types/seller'
