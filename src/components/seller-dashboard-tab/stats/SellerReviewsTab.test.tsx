@@ -107,6 +107,22 @@ vi.mock('@generated/endpoints/seller-reviews/seller-reviews', () => ({
   }),
 }))
 
+const baseReview = {
+  productId: 'p1',
+  productName: 'Áo Thun Oversize',
+  buyerDisplayName: 'K***g',
+  variantLabel: 'L · Trắng',
+  stars: 5,
+  comment: 'Áo mặc cực kỳ thoải mái và mát.',
+  imageKeys: ['reviews/khang-1.jpg'],
+  tags: ['Chất lượng tốt', 'Size đúng chuẩn'],
+  anonymous: true,
+  helpfulCount: 4,
+  sellerReply: null,
+  isReported: false,
+  createdAt: '2026-10-20T10:00:00Z',
+}
+
 function setupDefaultMocks() {
   canMock.mockImplementation(() => true)
   latestReplyOptions = undefined

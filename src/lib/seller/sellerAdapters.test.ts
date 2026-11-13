@@ -5,6 +5,7 @@ import {
   chatConversationItem,
   decorationBlocks,
   decorationDraftJson,
+  groupReviewsByProduct,
   memberItem,
   orderItem,
   productItem,
@@ -467,5 +468,63 @@ describe('shopProfile', () => {
     expect(profile.isVerified).toBe(true)
     expect(profile.city).toBe('')
     expect(profile.returnPolicy).toBe('Đổi trả miễn phí trong 7 ngày')
+  })
+})
+
+import type { ReviewItem } from '@/types/seller/reviews'
+
+describe('groupReviewsByProduct', () => {
+  function makeRev(productId: string, productName: string, id: string): ReviewItem {
+    return {
+      id,
+      productId,
+      productName,
+      buyerName: 'X',
+      rating: 5,
+      comment: '',
+      images: [],
+      tags: [],
+      helpfulCount: 0,
+      anonymous: false,
+      isReported: false,
+      createdAt: '2026-01-01',
+    }
+  }
+
+  it('gom đúng nhóm, sắp xếp theo reviewCount giảm dần, tie-break productId alpha', () => {
+    const revs = [
+      makeRev('p1', 'Áo Thun', 'r1'),
+      makeRev('p2', 'Quần Jeans', 'r2'),
+      makeRev('p1', 'Áo Thun', 'r3'),
+      makeRev('p3', 'Giày', 'r4'),
+      makeRev('p2', 'Quần Jeans', 'r5'),
+      makeRev('p2', 'Quần Jeans', 'r6'),
+    ]
+    const result = groupReviewsByProduct(revs)
+    expect(result).toHaveLength(3)
+    expect(result[0].productId).toBe('p2')
+    expect(result[0].reviews).toHaveLength(3)
+    expect(result[0].reviews.map((r) => r.id)).toEqual(expect.arrayContaining(['r2', 'r5', 'r6']))
+    expect(result[1].productId).toBe('p1')
+    expect(result[1].reviews).toHaveLength(2)
+    expect(result[2].productId).toBe('p3')
+    expect(result[2].reviews).toHaveLength(1)
+  })
+
+  it('productName rỗng → fallback "Sản phẩm không xác định"', () => {
+    const rev = makeRev('p1', '', 'r1')
+    const result = groupReviewsByProduct([rev])
+    expect(result[0].productName).toBe('Sản phẩm không xác định')
+  })
+
+  it('mảng rỗng → trả []', () => {
+    expect(groupReviewsByProduct([])).toEqual([])
+  })
+
+  it('tie-break: 2 nhóm cùng số lượng → sắp xếp productId alphabetical', () => {
+    const revs = [makeRev('p2', 'B', 'r1'), makeRev('p1', 'A', 'r2')]
+    const result = groupReviewsByProduct(revs)
+    expect(result[0].productId).toBe('p1')
+    expect(result[1].productId).toBe('p2')
   })
 })

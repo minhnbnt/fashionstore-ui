@@ -306,6 +306,7 @@ export function reviewItem(review: SellerReviewResponse, productName?: string): 
 
   return {
     id: safeId(review.id),
+    productId: safeId(review.productId),
     buyerName: safeText(review.buyerDisplayName),
     productName: resolvedProductName,
     variantLabel: optionalText(review.variantLabel),
@@ -711,4 +712,32 @@ export function shopProfile(shop: ShopResponse): ShopProfileData {
 
 export function inventoryItemName(inventory: InventoryItemResponse): string {
   return safeText(inventory.productName)
+}
+
+// ─── Review grouping ───────────────────────────────────────────────────────
+
+export interface ReviewGroup {
+  productId: string
+  productName: string
+  reviews: ReviewItem[]
+}
+
+export function groupReviewsByProduct(reviews: ReviewItem[]): ReviewGroup[] {
+  const map = new Map<string, ReviewGroup>()
+  for (const rev of reviews) {
+    const pid = rev.productId
+    if (!map.has(pid)) {
+      map.set(pid, {
+        productId: pid,
+        productName: rev.productName.trim() !== '' ? rev.productName : 'Sản phẩm không xác định',
+        reviews: [],
+      })
+    }
+    map.get(pid)!.reviews.push(rev)
+  }
+  return [...map.values()].sort((a, b) => {
+    const diff = b.reviews.length - a.reviews.length
+    if (diff !== 0) return diff
+    return a.productId.localeCompare(b.productId)
+  })
 }
