@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router'
 
+import { useOpenWithBuyer } from '@generated/endpoints/chat/chat'
 import {
   getList3QueryKey,
   getSummaryQueryKey as getSellerReviewSummaryQueryKey,
@@ -63,6 +65,8 @@ interface Props {
 export default function SellerReviewsTab({ shopId }: Props) {
   const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const openWithBuyerMutation = useOpenWithBuyer()
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [onlyUnreplied, setOnlyUnreplied] = useState(false)
@@ -431,19 +435,21 @@ export default function SellerReviewsTab({ shopId }: Props) {
                 key={group.productId}
                 className="overflow-hidden rounded-2xl border border-zinc-100 dark:border-white/10"
               >
-                {/* Group header — accordion toggle */}
-                <button
-                  type="button"
-                  onClick={function () {
-                    toggleGroup(group.productId)
-                  }}
-                  aria-expanded={isOpen}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-zinc-50 dark:hover:bg-white/5"
-                >
+                {/* Group header — accordion toggle: Link + toggle button side-by-side, NO <a> inside <button> */}
+                <div className="flex w-full items-center justify-between gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-white/5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-bold text-zinc-900 dark:text-white">
-                      {group.productName}
-                    </span>
+                    {group.productId !== '' ? (
+                      <Link
+                        to={`/product/${group.productId}`}
+                        className="text-sm font-bold text-zinc-900 hover:underline dark:text-white"
+                      >
+                        {group.productName}
+                      </Link>
+                    ) : (
+                      <span className="text-sm font-bold text-zinc-900 dark:text-white">
+                        {group.productName}
+                      </span>
+                    )}
                     <span className="text-xs text-zinc-400">{group.reviews.length} đánh giá</span>
                     {unrepliedCount > 0 && (
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
@@ -451,12 +457,22 @@ export default function SellerReviewsTab({ shopId }: Props) {
                       </span>
                     )}
                   </div>
-                  <CaretDown
-                    size={14}
-                    weight="bold"
-                    className={`shrink-0 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                  />
-                </button>
+                  <button
+                    type="button"
+                    onClick={function () {
+                      toggleGroup(group.productId)
+                    }}
+                    aria-expanded={isOpen}
+                    aria-label={group.productName}
+                    className="shrink-0 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  >
+                    <CaretDown
+                      size={14}
+                      weight="bold"
+                      className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                </div>
 
                 {/* Review list — chỉ render khi open */}
                 {isOpen && (
@@ -477,6 +493,31 @@ export default function SellerReviewsTab({ shopId }: Props) {
                                     <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
                                       Ẩn danh
                                     </span>
+                                  )}
+                                  {!rev.anonymous && rev.buyerId !== undefined && (
+                                    <button
+                                      type="button"
+                                      title="Nhắn tin hỗ trợ người mua"
+                                      onClick={function () {
+                                        openWithBuyerMutation.mutate(
+                                          { data: { shopId: shopId, buyerId: rev.buyerId! } },
+                                          {
+                                            onSuccess: function (result) {
+                                              if (result.status === 200) {
+                                                void navigate(
+                                                  `/messages?tab=shop&id=${result.data.id}`,
+                                                )
+                                              }
+                                            },
+                                          },
+                                        )
+                                      }}
+                                      disabled={openWithBuyerMutation.isPending}
+                                      className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2 py-0.5 text-[10px] font-semibold text-zinc-500 hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50 dark:border-white/10 dark:hover:border-indigo-500 dark:hover:text-indigo-300"
+                                    >
+                                      <ChatCircleDots size={11} weight="bold" />
+                                      Nhắn tin
+                                    </button>
                                   )}
                                   <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:bg-sky-500/20 dark:text-sky-200">
                                     <ThumbsUp size={10} weight="fill" />

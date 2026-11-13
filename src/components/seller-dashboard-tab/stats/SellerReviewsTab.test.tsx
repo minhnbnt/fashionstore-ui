@@ -1,3 +1,5 @@
+import { MemoryRouter } from 'react-router'
+
 // @vitest-environment happy-dom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
@@ -18,6 +20,7 @@ const {
   updateTemplateMutateMock,
   deleteTemplateMutateMock,
   reportMutateMock,
+  openWithBuyerMutateMock,
 } = vi.hoisted(() => ({
   canMock: vi.fn<(permission: string) => boolean>(() => true),
   useList3Mock: vi.fn(),
@@ -29,6 +32,7 @@ const {
   updateTemplateMutateMock: vi.fn(),
   deleteTemplateMutateMock: vi.fn(),
   reportMutateMock: vi.fn(),
+  openWithBuyerMutateMock: vi.fn(),
 }))
 
 let latestReplyOptions: { onSuccess?: () => void; onError?: (err: unknown) => void } | undefined
@@ -38,6 +42,24 @@ let latestCreateTemplateOptions:
 
 vi.mock('@/lib/seller/sellerPermissions', () => ({
   useSellerPermissions: () => ({ can: (perm: string) => canMock(perm) }),
+}))
+
+vi.mock('react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router')>()
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+  }
+})
+
+vi.mock('@generated/endpoints/chat/chat', () => ({
+  useOpenWithBuyer: () => ({
+    isPending: false,
+    mutate: (vars: unknown, callOpts?: { onSuccess?: (data: unknown) => void }) => {
+      openWithBuyerMutateMock(vars)
+      callOpts?.onSuccess?.({ status: 200, data: { id: 'conv-1' } })
+    },
+  }),
 }))
 
 vi.mock('@generated/endpoints/seller-reviews/seller-reviews', () => ({
@@ -204,9 +226,11 @@ function setupDefaultMocks() {
 function renderTab() {
   const client = new QueryClient()
   return render(
-    <QueryClientProvider client={client}>
-      <SellerReviewsTab shopId="shop-1" />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={client}>
+        <SellerReviewsTab shopId="shop-1" />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -424,5 +448,68 @@ describe('grouped-by-product view', () => {
     fireEvent.click(screen.getByRole('button', { name: /Quần Jeans/i }))
     expect(screen.getByText('cmt-p1')).toBeTruthy()
     expect(screen.getByText('cmt-p2')).toBeTruthy()
+  })
+})
+
+describe('clickable product & message buyer', () => {
+  it('tên sản phẩm trên header là link cùng tab (không có target=_blank) đến trang sản phẩm', () => {
+    setupDefaultMocks()
+    useList3Mock.mockReturnValue({
+      isLoading: false,
+      data: {
+        status: 200,
+        data: [{ ...baseReview, id: 'r1', productId: 'p1', productName: 'Áo Thun Oversize' }],
+      },
+    })
+    renderTab()
+    const link = screen.getByRole('link', { name: 'Áo Thun Oversize' })
+    expect(link).toBeTruthy()
+    expect((link as HTMLAnchorElement).href).toContain('/product/p1')
+    expect((link as HTMLAnchorElement).target).not.toBe('_blank')
+  })
+
+  it('review không ẩn danh hiển thị nút nhắn tin', () => {
+    setupDefaultMocks()
+    useList3Mock.mockReturnValue({
+      isLoading: false,
+      data: {
+        status: 200,
+        data: [
+          {
+            ...baseReview,
+            id: 'r1',
+            productId: 'p1',
+            productName: 'Áo Thun Oversize',
+            buyerId: 'buyer-uuid-1',
+            anonymous: false,
+          },
+        ],
+      },
+    })
+    renderTab()
+    fireEvent.click(screen.getByRole('button', { name: /Áo Thun Oversize/i }))
+    expect(screen.getByRole('button', { name: /Nhắn tin/i })).toBeTruthy()
+  })
+
+  it('review ẩn danh KHÔNG hiển thị nút nhắn tin', () => {
+    setupDefaultMocks()
+    useList3Mock.mockReturnValue({
+      isLoading: false,
+      data: {
+        status: 200,
+        data: [
+          {
+            ...baseReview,
+            id: 'r1',
+            productId: 'p1',
+            productName: 'Áo Thun Oversize',
+            anonymous: true,
+          },
+        ],
+      },
+    })
+    renderTab()
+    fireEvent.click(screen.getByRole('button', { name: /Áo Thun Oversize/i }))
+    expect(screen.queryByRole('button', { name: /Nhắn tin/i })).toBeNull()
   })
 })

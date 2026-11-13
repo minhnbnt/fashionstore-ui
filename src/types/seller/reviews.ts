@@ -1,6 +1,7 @@
 export interface ReviewItem {
   id: string
   productId: string
+  buyerId?: string
   buyerName: string
   productName: string
   variantLabel?: string

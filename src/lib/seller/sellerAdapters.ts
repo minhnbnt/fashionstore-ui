@@ -307,6 +307,8 @@ export function reviewItem(review: SellerReviewResponse, productName?: string): 
   return {
     id: safeId(review.id),
     productId: safeId(review.productId),
+    buyerId:
+      review.buyerId !== null && review.buyerId !== undefined ? safeId(review.buyerId) : undefined,
     buyerName: safeText(review.buyerDisplayName),
     productName: resolvedProductName,
     variantLabel: optionalText(review.variantLabel),
