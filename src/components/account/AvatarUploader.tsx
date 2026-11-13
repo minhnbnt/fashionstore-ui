@@ -4,10 +4,11 @@ import { createPortal } from 'react-dom'
 import { getMeQueryKey, useChangeAvatar } from '@generated/endpoints/users/users'
 import { useQueryClient } from '@tanstack/react-query'
 
-import Modal from '@/components/Modal'
-import UserAvatar from '@/components/UserAvatar'
-import { apiErrorText, imageUrl } from '@/lib/apiAdapters'
-import { uploadImage } from '@/lib/uploadImage'
+import { apiErrorText, imageUrl } from '@/lib/api/apiAdapters'
+import { uploadImage } from '@/lib/api/uploadImage'
+
+import Modal from '../Modal'
+import UserAvatar from '../UserAvatar'
 
 interface Props {
   name: string
@@ -48,8 +49,8 @@ export default function AvatarUploader({ name, avatarKey }: Props) {
       const key = await uploadImage(file)
       await changeAvatar.mutateAsync({ data: { avatarKey: key } })
       await queryClient.invalidateQueries({ queryKey: getMeQueryKey() })
-    } catch (problem) {
-      setError(apiErrorText(problem, 'Không đổi được ảnh đại diện, thử lại sau.'))
+    } catch (err: unknown) {
+      setError(apiErrorText(err, 'Không đổi được ảnh đại diện, thử lại sau.'))
     } finally {
       setUploading(false)
     }
