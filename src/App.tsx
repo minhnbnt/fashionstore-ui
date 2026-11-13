@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
 
 import ChatDockGate from './components/chat/ChatDockGate'
@@ -27,6 +27,7 @@ import {
   Home,
   InvitationAccept,
   Login,
+  Messages,
   OrderDetail,
   Orders,
   ProductDetail,
@@ -44,8 +45,13 @@ function PageLoading() {
 
 function ScrollToHash() {
   const location = useLocation()
+  const prevPathnameRef = useRef(location.pathname)
+
   useEffect(
     function () {
+      const pathnameChanged = prevPathnameRef.current !== location.pathname
+      prevPathnameRef.current = location.pathname
+
       if (location.hash !== '' && location.hash !== '#') {
         const id = location.hash.replace(/^#/, '')
         if (id !== '') {
@@ -54,11 +60,16 @@ function ScrollToHash() {
             const element = document.getElementById(decodedId)
             if (element !== null) {
               element.scrollIntoView()
+              return
             }
           } catch {
             // Ignore malformed URI or non-existent element
           }
         }
+      }
+
+      if (pathnameChanged) {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
       }
     },
     [location],
@@ -69,6 +80,7 @@ function ScrollToHash() {
 export default function App() {
   const location = useLocation()
   const isSellerDashboard = location.pathname === '/shop'
+  const isMessagesPage = location.pathname === '/messages'
 
   return (
     <div className="grain min-h-[100dvh]">
@@ -81,6 +93,7 @@ export default function App() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/shops/:slug" element={<ShopStorefront />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/messages" element={<Messages />} />
           <Route path="/pages/:slug" element={<StaticPage />} />
           <Route path="/faq" element={<Faq />} />
           <Route path="/login" element={<Login />} />
@@ -240,7 +253,7 @@ export default function App() {
           />
         </Routes>
       </Suspense>
-      {!isSellerDashboard && <Footer />}
+      {!isSellerDashboard && !isMessagesPage && <Footer />}
       {!isSellerDashboard && <ChatDockGate />}
     </div>
   )
