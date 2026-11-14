@@ -157,6 +157,16 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
     502: 'Calendarific đang lỗi hoặc đã hết lượt gọi trong tháng. Thử lại sau.',
     503: 'Server chưa cấu hình CALENDARIFIC_API_KEY.',
   },
+  review: {
+    400: 'Nội dung đánh giá chưa hợp lệ (nhận xét tối thiểu 10 ký tự, tối đa 5 ảnh và 1 video ≤ 30 giây).',
+    403: 'Chỉ đơn hàng đã giao và xác nhận nhận hàng mới được đánh giá.',
+    404: 'Không tìm thấy đơn hàng hoặc sản phẩm để đánh giá.',
+    409: 'Bạn đã đánh giá sản phẩm này cho đơn hàng này, hoặc đánh giá đã hết lượt chỉnh sửa.',
+  },
+  reviewHelpful: {
+    404: 'Đánh giá hoặc sản phẩm không còn hiển thị.',
+    409: 'Bạn không thể tự nhấn hữu ích cho đánh giá của chính mình.',
+  },
 }
 
 export function apiErrorMessage(endpoint: string, status: number): string {

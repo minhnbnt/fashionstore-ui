@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { getList1QueryKey, useAdd, useUpdate } from '@generated/endpoints/addresses/addresses'
+import { getListQueryKey, useAdd, useUpdate } from '@generated/endpoints/addresses/addresses'
 import { useListProvinces, useListWards } from '@generated/endpoints/locations/locations'
 import {
   ArrowClockwise,
@@ -224,7 +224,7 @@ export default function AddressFormModal(props: {
   const addAddressMutation = useAdd({
     mutation: {
       onSuccess: function (res) {
-        void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
+        void queryClient.invalidateQueries({ queryKey: getListQueryKey() })
         if (props.onSaved !== undefined) {
           props.onSaved(takeData(res))
         }
@@ -243,7 +243,7 @@ export default function AddressFormModal(props: {
   const updateAddressMutation = useUpdate({
     mutation: {
       onSuccess: function (res) {
-        void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
+        void queryClient.invalidateQueries({ queryKey: getListQueryKey() })
         if (props.onSaved !== undefined) {
           props.onSaved(takeData(res))
         }

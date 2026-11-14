@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 
 import {
-  getList1QueryKey,
+  getListQueryKey,
   useChangeDefault,
   useDelete,
-  useList1,
+  useList,
 } from '@generated/endpoints/addresses/addresses'
 import { ArrowLeft, MapPin, PencilSimple, Plus, Star, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -28,7 +28,7 @@ export default function Addresses() {
   }
 
   function invalidate() {
-    void queryClient.invalidateQueries({ queryKey: getList1QueryKey() })
+    void queryClient.invalidateQueries({ queryKey: getListQueryKey() })
   }
 
   const remove = useDelete({
@@ -45,7 +45,7 @@ export default function Addresses() {
     },
   })
 
-  const query = useList1()
+  const query = useList()
   let addresses: AddressResponse[] = []
   if (query.isSuccess) {
     addresses = takeData(query.data)

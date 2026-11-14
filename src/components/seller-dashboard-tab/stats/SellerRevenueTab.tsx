@@ -3,12 +3,12 @@ import { useState } from 'react'
 import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
 import {
   getListWithdrawalsQueryKey,
-  getSummaryQueryKey,
+  getSummary1QueryKey,
   useByDay,
   useListWithdrawals,
   useRequestWithdrawal,
   useSettlements,
-  useSummary,
+  useSummary1,
   useTopProducts,
 } from '@generated/endpoints/seller-revenue-finance/seller-revenue-finance'
 import { Wallet, Clock, Receipt, TrendUp, Bank, CheckCircle } from '@phosphor-icons/react'
@@ -51,7 +51,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
   // Danh mục đơn hàng để resolve mã đơn cho từng phiên quyết toán
   const ordersQuery = useList5({ shopId }, { query: { enabled: shopId !== '' } })
   const withdrawalsQuery = useListWithdrawals({ shopId }, { query: { enabled: shopId !== '' } })
-  const summaryQuery = useSummary({ shopId }, { query: { enabled: shopId !== '' } })
+  const summaryQuery = useSummary1({ shopId }, { query: { enabled: shopId !== '' } })
   const byDayQuery = useByDay({ shopId }, { query: { enabled: shopId !== '' } })
   const topProductsQuery = useTopProducts(
     { shopId, limit: 3 },
@@ -62,7 +62,7 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getListWithdrawalsQueryKey({ shopId }) })
-        void queryClient.invalidateQueries({ queryKey: getSummaryQueryKey({ shopId }) })
+        void queryClient.invalidateQueries({ queryKey: getSummary1QueryKey({ shopId }) })
       },
     },
   })
