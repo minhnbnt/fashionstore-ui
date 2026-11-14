@@ -33,7 +33,10 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
-import ProductMediaUploader from '@/components/seller/ProductMediaUploader'
+import ProductMediaUploader, {
+  type ProductMediaItem,
+  type ProductMediaValue,
+} from '@/components/seller/ProductMediaUploader'
 import RichTextEditor from '@/components/ui/RichTextEditor'
 import { takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
@@ -133,11 +136,11 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
   const [status, setStatus] = useState('ACTIVE')
   const [description, setDescription] = useState('')
 
-  // 2. Media
-  const [images, setImages] = useState<string[]>([])
-  const [videoKey, setVideoKey] = useState<string | null>(null)
+  // 2. Media — item = {uploadId, url}: ảnh cũ echo uploadId từ ImageResponse để giữ nguyên khi lưu
+  const [images, setImages] = useState<ProductMediaItem[]>([])
+  const [video, setVideo] = useState<ProductMediaValue | null>(null)
   const [tryOnEnabled, setTryOnEnabled] = useState(false)
-  const [garmentKey, setGarmentKey] = useState<string | null>(null)
+  const [garment, setGarment] = useState<ProductMediaValue | null>(null)
 
   // 3. Variants
   const [variants, setVariants] = useState<EditableVariantRow[]>([])
@@ -178,18 +181,26 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       setStatus(p.status ?? 'ACTIVE')
       setDescription(p.description ?? '')
 
-      const rawImages: string[] = []
+      const mediaItems: ProductMediaItem[] = []
       if (p.images !== undefined && p.images !== null) {
         for (const img of p.images) {
-          if (img.s3Key !== null && img.s3Key !== undefined && img.s3Key !== '') {
-            rawImages.push(img.s3Key)
+          if (img.url !== undefined && img.url !== '') {
+            mediaItems.push({ uploadId: img.uploadId ?? '', url: img.url })
           }
         }
       }
-      setImages(rawImages)
+      setImages(mediaItems)
 
-      setVideoKey(p.videoKey ?? null)
-      setGarmentKey(p.garmentKey ?? null)
+      let prefilledVideo: ProductMediaValue | null = null
+      if (p.videoUrl !== undefined && p.videoUrl !== null) {
+        prefilledVideo = { uploadId: p.videoUploadId ?? null, url: p.videoUrl }
+      }
+      setVideo(prefilledVideo)
+      let prefilledGarment: ProductMediaValue | null = null
+      if (p.garmentUrl !== undefined && p.garmentUrl !== null) {
+        prefilledGarment = { uploadId: p.garmentUploadId ?? null, url: p.garmentUrl }
+      }
+      setGarment(prefilledGarment)
       setTryOnEnabled(p.tryOnEnabled === true)
 
       setMaterial(p.material ?? '')
@@ -486,9 +497,9 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
 
     setIsSaving(true)
 
-    const mappedImages: ImageItemRequest[] = images.map(function (key, idx) {
+    const mappedImages: ImageItemRequest[] = images.map(function (item, idx) {
       return {
-        s3Key: key,
+        uploadId: item.uploadId,
         sortOrder: idx,
       }
     })
@@ -515,14 +526,24 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       requestStatus = status
     }
 
+    // Video/garment luôn gửi kèm ý định: echo id = giữ nguyên, id mới = đổi, null = xoá
+    let videoUploadId: string | null = null
+    if (video !== null) {
+      videoUploadId = video.uploadId
+    }
+    let garmentUploadId: string | null = null
+    if (garment !== null) {
+      garmentUploadId = garment.uploadId
+    }
+
     const requestData: UpdateProductRequest = {
       name: name.trim(),
       description: description.trim(),
       categoryId: categoryId,
       status: requestStatus,
       images: mappedImages,
-      videoKey: videoKey,
-      garmentKey: garmentKey,
+      videoUploadId,
+      garmentUploadId,
       tryOnEnabled: tryOnEnabled,
       material: material.trim(),
       origin: origin.trim(),
@@ -845,12 +866,12 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       <ProductMediaUploader
         images={images}
         onImagesChange={setImages}
-        videoKey={videoKey}
-        onVideoChange={setVideoKey}
+        video={video}
+        onVideoChange={setVideo}
         tryOnEnabled={tryOnEnabled}
         onTryOnToggle={setTryOnEnabled}
-        garmentKey={garmentKey}
-        onGarmentChange={setGarmentKey}
+        garment={garment}
+        onGarmentChange={setGarment}
       />
 
       {/* Section 3: Quản lý biến thể & Tồn kho */}

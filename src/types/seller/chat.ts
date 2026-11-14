@@ -2,7 +2,7 @@ export interface ChatMessageItem {
   id: string
   senderType: 'BUYER' | 'SELLER'
   content: string
-  imageKey?: string | null
+  imageUrl?: string | null
   sentAt: string
 }
 

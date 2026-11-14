@@ -24,6 +24,10 @@
       "description": "Quản lý trang tĩnh (giới thiệu, chính sách...): soạn Markdown, nháp/xuất bản. Cần role admin."
     },
     {
+      "name": "Uploads",
+      "description": "Xin URL upload ảnh/video trực tiếp lên S3"
+    },
+    {
       "name": "Admin - Banned Keywords",
       "description": "Từ khóa cấm để hệ thống tự gắn cờ sản phẩm. Cần role admin."
     },
@@ -78,10 +82,6 @@
     {
       "name": "Seller - Staff & Roles",
       "description": "Quản lý nhân viên gian hàng, phân quyền và lịch sử thao tác"
-    },
-    {
-      "name": "Uploads",
-      "description": "Xin URL upload ảnh trực tiếp lên S3"
     },
     {
       "name": "Admin - Holidays",
@@ -193,7 +193,7 @@
       "put": {
         "tags": ["Users"],
         "summary": "Đổi ảnh đại diện",
-        "description": "Nhận S3 key ảnh đã upload qua /api/uploads/presign. Gọi DELETE để xóa ảnh.",
+        "description": "Nhận uploadId của ảnh đã PUT lên S3 qua /api/uploads/presign. Gọi DELETE để xóa ảnh.",
         "operationId": "changeAvatar",
         "requestBody": {
           "content": {
@@ -217,7 +217,7 @@
             }
           },
           "400": {
-            "description": "avatarKey không phải key ảnh đã upload",
+            "description": "uploadId không tồn tại hoặc không phải ảnh hợp lệ",
             "content": {
               "*/*": {
                 "schema": {
@@ -313,16 +313,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -345,6 +335,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -513,16 +513,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -535,6 +525,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -610,16 +610,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -632,6 +622,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -732,8 +732,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -742,8 +742,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1057,8 +1057,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1067,8 +1067,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1474,16 +1474,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -1496,6 +1486,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1807,8 +1807,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1817,8 +1817,8 @@
               }
             }
           },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1882,16 +1882,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -1904,6 +1894,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2185,8 +2185,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2195,8 +2195,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2287,8 +2287,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2297,8 +2297,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2699,8 +2699,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2709,8 +2709,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2894,8 +2894,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2904,8 +2904,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3089,8 +3089,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3099,8 +3099,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3174,16 +3174,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -3196,6 +3186,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3345,16 +3345,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -3377,6 +3367,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3490,7 +3490,7 @@
       "post": {
         "tags": ["Uploads"],
         "summary": "Xin URL upload",
-        "description": "Nhận image/* hoặc video/*. Frontend PUT file lên url, rồi lấy key gắn vào product.",
+        "description": "Nhận image/* hoặc video/*. Tạo bản ghi upload ngay và trả uploadId + uploadUrl; frontend PUT file lên uploadUrl rồi gửi uploadId vào các request nghiệp vụ. purpose=kyc đặt key dưới prefix kyc/ (chặn đọc ẩn danh, xem qua presigned GET).",
         "operationId": "presign",
         "requestBody": {
           "content": {
@@ -3504,7 +3504,7 @@
         },
         "responses": {
           "200": {
-            "description": "Key và URL upload",
+            "description": "uploadId và URL upload",
             "content": {
               "*/*": {
                 "schema": {
@@ -3514,7 +3514,7 @@
             }
           },
           "400": {
-            "description": "Content-type không phải ảnh hoặc video",
+            "description": "Content-type không phải ảnh/video hoặc purpose không hợp lệ",
             "content": {
               "*/*": {
                 "schema": {
@@ -4250,16 +4250,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -4272,6 +4262,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4328,16 +4328,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -4350,6 +4340,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4434,16 +4434,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -4456,6 +4446,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4638,16 +4638,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -4660,6 +4650,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5089,16 +5089,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -5111,6 +5101,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5306,16 +5306,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -5328,6 +5318,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5547,8 +5547,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5557,8 +5557,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5864,8 +5864,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5874,8 +5874,8 @@
               }
             }
           },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6707,16 +6707,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -6729,6 +6719,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6831,8 +6831,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6841,8 +6841,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7043,8 +7043,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7053,8 +7053,8 @@
               }
             }
           },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7313,16 +7313,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -7345,6 +7335,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7400,16 +7400,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -7432,6 +7422,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7516,16 +7516,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -7538,6 +7528,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7720,16 +7720,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -7742,6 +7732,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7912,16 +7912,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -7934,6 +7924,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8234,16 +8234,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -8256,6 +8246,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8439,16 +8439,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -8461,6 +8451,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8631,16 +8631,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -8653,6 +8643,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8973,8 +8973,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8983,8 +8983,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -10676,8 +10676,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -10686,8 +10686,8 @@
               }
             }
           },
-          "403": {
-            "description": "Forbidden",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -10862,16 +10862,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -10884,6 +10874,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11020,16 +11020,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -11042,6 +11032,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11389,8 +11389,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11399,8 +11399,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12838,16 +12838,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -12870,6 +12860,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12932,16 +12932,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -12954,6 +12944,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13014,16 +13014,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -13046,6 +13036,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13153,8 +13153,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13163,8 +13163,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13210,16 +13210,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -13252,6 +13242,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13313,16 +13313,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -13345,6 +13335,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13393,16 +13393,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -13425,6 +13415,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13537,8 +13537,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13547,8 +13547,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14022,16 +14022,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -14044,6 +14034,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14128,16 +14128,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -14150,6 +14140,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14488,16 +14488,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -14510,6 +14500,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14712,16 +14712,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -14734,6 +14724,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14829,16 +14829,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -14851,6 +14841,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14926,16 +14926,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -14948,6 +14938,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15150,16 +15150,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -15172,6 +15162,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15247,16 +15247,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -15269,6 +15259,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15353,16 +15353,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -15375,6 +15365,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15563,16 +15563,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -15585,6 +15575,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15663,16 +15663,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -15685,6 +15675,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15760,16 +15760,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -15782,6 +15772,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15866,16 +15866,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -15888,6 +15878,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15982,16 +15982,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -16004,6 +15994,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16079,16 +16079,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -16101,6 +16091,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16207,16 +16207,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -16229,6 +16219,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16322,16 +16322,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -16344,6 +16334,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16438,16 +16438,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -16460,6 +16450,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16535,16 +16535,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -16557,6 +16547,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16652,16 +16652,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -16674,6 +16664,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16749,16 +16749,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -16771,6 +16761,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16855,16 +16855,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -16877,6 +16867,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16952,16 +16952,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -16984,6 +16974,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17073,8 +17073,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17083,8 +17083,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17191,16 +17191,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -17223,6 +17213,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17325,8 +17325,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17335,8 +17335,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17391,16 +17391,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -17423,6 +17413,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17517,16 +17517,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -17539,6 +17529,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17774,16 +17774,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -17816,6 +17806,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17865,16 +17865,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -17897,6 +17887,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17930,16 +17930,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -17972,6 +17962,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18003,16 +18003,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -18045,6 +18035,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18076,16 +18076,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -18118,6 +18108,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18173,16 +18173,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -18212,6 +18202,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -18232,16 +18232,6 @@
                   "items": {
                     "$ref": "#/components/schemas/ProvinceResponse"
                   }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -18278,6 +18268,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18339,16 +18339,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -18371,6 +18361,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18402,16 +18402,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -18444,6 +18434,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18475,16 +18475,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -18517,6 +18507,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18642,16 +18642,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -18684,6 +18674,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18739,16 +18739,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -18771,6 +18761,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18825,16 +18825,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -18857,6 +18847,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19025,16 +19025,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -19047,6 +19037,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19131,16 +19131,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -19153,6 +19143,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19237,16 +19237,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -19259,6 +19249,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19312,16 +19312,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -19344,6 +19334,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19397,16 +19397,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -19429,6 +19419,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19717,16 +19717,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -19739,6 +19729,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19792,16 +19792,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -19824,6 +19814,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19860,16 +19860,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -19902,6 +19892,16 @@
           },
           "401": {
             "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19955,16 +19955,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "404": {
             "description": "Resource not found",
             "content": {
@@ -19977,6 +19967,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20032,16 +20032,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "404": {
             "description": "Resource not found",
             "content": {
@@ -20054,6 +20044,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20292,8 +20292,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20302,8 +20302,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20367,16 +20367,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -20389,6 +20379,16 @@
           },
           "404": {
             "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20616,8 +20616,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20626,8 +20626,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20875,8 +20875,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -20885,8 +20885,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21167,8 +21167,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21177,8 +21177,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21618,16 +21618,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -21640,6 +21630,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21728,8 +21728,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21738,8 +21738,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -21978,16 +21978,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -22000,6 +21990,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22058,16 +22058,6 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
           "409": {
             "description": "Data or state conflict",
             "content": {
@@ -22080,6 +22070,16 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22148,8 +22148,8 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid request data",
+          "409": {
+            "description": "Data or state conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22158,8 +22158,8 @@
               }
             }
           },
-          "409": {
-            "description": "Data or state conflict",
+          "400": {
+            "description": "Invalid request data",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -22210,15 +22210,13 @@
       "ChangeAvatarRequest": {
         "type": "object",
         "properties": {
-          "avatarKey": {
+          "avatarUploadId": {
             "type": "string",
-            "description": "S3 key ảnh đã upload qua /api/uploads/presign",
-            "example": "3f1c1a6e-2b7d-4c1e-9f0a-8d2c4b6a1e33.png",
-            "minLength": 1,
-            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\.(png|jpe?g|webp|gif|avif)$"
+            "format": "uuid",
+            "description": "Id upload ảnh đã PUT lên S3 qua /api/uploads/presign"
           }
         },
-        "required": ["avatarKey"]
+        "required": ["avatarUploadId"]
       },
       "UserResponse": {
         "type": "object",
@@ -22236,9 +22234,9 @@
             "type": "string",
             "example": "An"
           },
-          "avatarKey": {
+          "avatarUrl": {
             "type": "string",
-            "description": "S3 key của avatar, null nếu chưa có. Frontend tự ghép với base URL S3."
+            "description": "URL avatar public path-style, null nếu chưa có. Không trả S3 key."
           },
           "role": {
             "type": "string",
@@ -22330,11 +22328,10 @@
       "ImageItemRequest": {
         "type": "object",
         "properties": {
-          "s3Key": {
+          "uploadId": {
             "type": "string",
-            "description": "S3 key đã upload qua presign",
-            "example": "abc123.jpg",
-            "minLength": 1
+            "format": "uuid",
+            "description": "Upload id đã presign và PUT file lên S3"
           },
           "variantId": {
             "type": ["string", "null"],
@@ -22348,7 +22345,7 @@
             "minimum": 0
           }
         },
-        "required": ["s3Key"]
+        "required": ["uploadId"]
       },
       "UpdateProductRequest": {
         "type": "object",
@@ -22395,13 +22392,15 @@
             "maxItems": 9,
             "minItems": 0
           },
-          "videoKey": {
+          "videoUploadId": {
             "type": ["string", "null"],
-            "description": "S3 key video giới thiệu sản phẩm (tối đa 60s), null = giữ nguyên"
+            "format": "uuid",
+            "description": "Upload id video giới thiệu sản phẩm (tối đa 60s). Id cũ = giữ nguyên (echo từ ProductResponse.videoUploadId), id mới = đổi, null = xoá video"
           },
-          "garmentKey": {
+          "garmentUploadId": {
             "type": ["string", "null"],
-            "description": "S3 key ảnh sản phẩm phẳng cho Virtual Try-On, null = giữ nguyên"
+            "format": "uuid",
+            "description": "Upload id ảnh sản phẩm phẳng cho Virtual Try-On. Id cũ = giữ nguyên (echo từ ProductResponse.garmentUploadId), id mới = đổi, null = xoá ảnh"
           },
           "tryOnEnabled": {
             "type": ["boolean", "null"],
@@ -22510,9 +22509,14 @@
             "type": ["string", "null"],
             "format": "uuid"
           },
-          "s3Key": {
+          "url": {
             "type": "string",
-            "description": "S3 key, frontend tự ghép base URL"
+            "description": "URL public của ảnh"
+          },
+          "uploadId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id bản ghi upload gốc — FE echo lại khi cập nhật bộ ảnh"
           },
           "sortOrder": {
             "type": "integer",
@@ -22574,11 +22578,23 @@
             "format": "int64",
             "description": "So luot danh gia"
           },
-          "videoKey": {
-            "type": ["string", "null"]
+          "videoUrl": {
+            "type": ["string", "null"],
+            "description": "URL public video giới thiệu"
           },
-          "garmentKey": {
-            "type": ["string", "null"]
+          "garmentUrl": {
+            "type": ["string", "null"],
+            "description": "URL public ảnh garment thử đồ ảo"
+          },
+          "videoUploadId": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "Id upload video — FE echo lại khi cập nhật để giữ nguyên, null = chưa có"
+          },
+          "garmentUploadId": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "Id upload garment — FE echo lại khi cập nhật để giữ nguyên, null = chưa có"
           },
           "tryOnEnabled": {
             "type": "boolean",
@@ -22666,13 +22682,15 @@
             "maxLength": 2000,
             "minLength": 0
           },
-          "logoKey": {
+          "logoUploadId": {
             "type": ["string", "null"],
-            "description": "null = giữ nguyên"
+            "format": "uuid",
+            "description": "Id upload logo. Id cũ = giữ nguyên (echo từ ShopResponse.logoUploadId), id mới = đổi, null = xoá logo"
           },
-          "bannerKey": {
+          "bannerUploadId": {
             "type": ["string", "null"],
-            "description": "null = giữ nguyên"
+            "format": "uuid",
+            "description": "Id upload banner. Id cũ = giữ nguyên (echo từ ShopResponse.bannerUploadId), id mới = đổi, null = xoá banner"
           }
         }
       },
@@ -22692,13 +22710,23 @@
           "description": {
             "type": "string"
           },
-          "logoKey": {
-            "type": ["string", "null"],
-            "description": "S3 key, frontend tự ghép base URL"
+          "logoUrl": {
+            "type": "string",
+            "description": "URL logo public path-style, null nếu chưa có. Không trả S3 key."
           },
-          "bannerKey": {
-            "type": ["string", "null"],
-            "description": "S3 key, frontend tự ghép base URL"
+          "logoUploadId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id upload logo — FE echo lại khi cập nhật để giữ nguyên, null = chưa có"
+          },
+          "bannerUrl": {
+            "type": "string",
+            "description": "URL ảnh bìa public path-style, null nếu chưa có. Không trả S3 key."
+          },
+          "bannerUploadId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id upload ảnh bìa — FE echo lại khi cập nhật để giữ nguyên, null = chưa có"
           },
           "status": {
             "type": "string",
@@ -22759,42 +22787,6 @@
           "workingHours": {
             "type": ["string", "null"],
             "description": "Giờ làm việc"
-          },
-          "legalName": {
-            "type": ["string", "null"],
-            "description": "Họ tên thật chủ shop theo CCCD"
-          },
-          "idNumber": {
-            "type": ["string", "null"],
-            "description": "Số CCCD"
-          },
-          "idIssuedDate": {
-            "type": ["string", "null"],
-            "description": "Ngày cấp CCCD"
-          },
-          "idIssuedPlace": {
-            "type": ["string", "null"],
-            "description": "Nơi cấp CCCD"
-          },
-          "taxCode": {
-            "type": ["string", "null"],
-            "description": "Mã số thuế"
-          },
-          "idFrontKey": {
-            "type": ["string", "null"],
-            "description": "S3 key ảnh mặt trước CCCD"
-          },
-          "idBackKey": {
-            "type": ["string", "null"],
-            "description": "S3 key ảnh mặt sau CCCD"
-          },
-          "idSelfieKey": {
-            "type": ["string", "null"],
-            "description": "S3 key ảnh selfie cầm CCCD"
-          },
-          "businessCertKey": {
-            "type": ["string", "null"],
-            "description": "S3 key giấy chứng nhận ĐKKD"
           },
           "kycStatus": {
             "type": "string",
@@ -22934,19 +22926,20 @@
             "maxLength": 2000,
             "minLength": 0
           },
-          "imageKeys": {
+          "imageUploadIds": {
             "type": ["array", "null"],
-            "description": "Danh sách S3 key ảnh đính kèm (tối đa 5 ảnh)",
+            "description": "Danh sách uploadId ảnh đính kèm (tối đa 5 ảnh, image/* trừ svg)",
             "items": {
               "type": "string",
-              "minLength": 1
+              "format": "uuid"
             },
             "maxItems": 5,
             "minItems": 0
           },
-          "videoKey": {
+          "videoUploadId": {
             "type": ["string", "null"],
-            "description": "S3 key video thực tế (tối đa 1 video <= 30 giây)"
+            "format": "uuid",
+            "description": "UploadId video (tối đa 1 video <= 30 giây, video/*)"
           },
           "tags": {
             "type": ["array", "null"],
@@ -22965,6 +22958,24 @@
           }
         },
         "required": ["comment"]
+      },
+      "ReviewMediaResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL public truy cập media"
+          },
+          "kind": {
+            "type": "string",
+            "description": "Loại media: IMAGE hoặc VIDEO"
+          },
+          "uploadId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id bản ghi upload gốc — FE echo lại khi sửa review"
+          }
+        }
       },
       "ReviewResponse": {
         "type": "object",
@@ -23001,16 +23012,12 @@
             "type": ["string", "null"],
             "description": "Nhận xét chi tiết"
           },
-          "imageKeys": {
+          "media": {
             "type": "array",
-            "description": "Danh sách S3 key ảnh đính kèm",
+            "description": "Media đính kèm (ảnh + video) dưới dạng URL public",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ReviewMediaResponse"
             }
-          },
-          "videoKey": {
-            "type": ["string", "null"],
-            "description": "S3 key video thực tế"
           },
           "tags": {
             "type": "array",
@@ -23103,13 +23110,13 @@
             "type": "string",
             "description": "Ten product hien tai"
           },
-          "imageKey": {
+          "imageUrl": {
             "type": ["string", "null"],
-            "description": "S3 key anh dai dien, null neu chua co"
+            "description": "URL public ảnh đại diện, null nếu chưa có"
           },
           "variantLabel": {
             "type": "string",
-            "description": "Nhan dang variant, vd 'M / Den'"
+            "description": "Nhận dạng variant, vd 'M / Den'"
           },
           "sku": {
             "type": "string",
@@ -23311,11 +23318,10 @@
             "maxLength": 500,
             "minLength": 0
           },
-          "imageKey": {
+          "imageUploadId": {
             "type": "string",
-            "description": "S3 key ảnh popup. Cần tiêu đề hoặc ảnh",
-            "maxLength": 255,
-            "minLength": 0
+            "format": "uuid",
+            "description": "Upload id ảnh popup (từ /api/uploads/presign). Cần tiêu đề hoặc ảnh"
           },
           "ctaLabel": {
             "type": "string",
@@ -23393,8 +23399,14 @@
           "body": {
             "type": "string"
           },
-          "imageKey": {
-            "type": "string"
+          "imageUrl": {
+            "type": "string",
+            "description": "URL public ảnh popup, null = popup chỉ có chữ"
+          },
+          "imageUploadId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id upload ảnh popup — FE echo lại khi cập nhật popup, null = popup chỉ có chữ"
           },
           "ctaLabel": {
             "type": "string"
@@ -23669,18 +23681,15 @@
             "maxLength": 120,
             "minLength": 0
           },
-          "imageKey": {
+          "imageUploadId": {
             "type": "string",
-            "description": "S3 key ảnh desktop (từ /api/uploads/presign)",
-            "example": "3f1c....webp",
-            "maxLength": 255,
-            "minLength": 0
+            "format": "uuid",
+            "description": "Upload id ảnh desktop (từ /api/uploads/presign)"
           },
-          "mobileImageKey": {
+          "mobileImageUploadId": {
             "type": "string",
-            "description": "S3 key ảnh mobile, bỏ trống thì dùng ảnh desktop",
-            "maxLength": 255,
-            "minLength": 0
+            "format": "uuid",
+            "description": "Upload id ảnh mobile, bỏ trống thì dùng ảnh desktop"
           },
           "linkUrl": {
             "type": "string",
@@ -23713,7 +23722,7 @@
             "description": "Ngừng hiển thị, bỏ trống = không hạn, phải sau startsAt"
           }
         },
-        "required": ["imageKey", "placement", "title"]
+        "required": ["imageUploadId", "placement", "title"]
       },
       "BannerResponse": {
         "type": "object",
@@ -23727,15 +23736,27 @@
             "enum": ["HOME_CAROUSEL", "HOME_STRIP"]
           },
           "title": {
-            "type": "string"
-          },
-          "imageKey": {
             "type": "string",
-            "description": "S3 key ảnh desktop"
+            "description": "Tên banner, dùng làm alt ảnh",
+            "example": "Sale thu đông -50%"
           },
-          "mobileImageKey": {
+          "imageUrl": {
             "type": "string",
-            "description": "S3 key ảnh mobile, null = dùng ảnh desktop"
+            "description": "URL public ảnh desktop"
+          },
+          "mobileImageUrl": {
+            "type": "string",
+            "description": "URL public ảnh mobile, null = dùng ảnh desktop"
+          },
+          "imageUploadId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id upload ảnh desktop — FE echo lại khi cập nhật banner"
+          },
+          "mobileImageUploadId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id upload ảnh mobile, null = không có ảnh mobile riêng"
           },
           "linkUrl": {
             "type": "string"
@@ -23807,10 +23828,6 @@
             "example": "An",
             "maxLength": 100,
             "minLength": 0
-          },
-          "avatarKey": {
-            "type": ["string", "null"],
-            "description": "S3 key của avatar, null nếu chưa có"
           }
         },
         "required": ["displayName", "email"]
@@ -23824,6 +23841,11 @@
             "example": "image/jpeg",
             "minLength": 1,
             "pattern": "^(image|video)/[a-zA-Z0-9.+-]+$"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "Mục đích upload: MEDIA (mặc định) hoặc KYC cho giấy tờ",
+            "enum": ["media", "kyc"]
           }
         },
         "required": ["contentType"]
@@ -23831,13 +23853,18 @@
       "PresignResponse": {
         "type": "object",
         "properties": {
-          "key": {
+          "uploadId": {
             "type": "string",
-            "description": "S3 key để gắn vào product sau khi upload"
+            "format": "uuid",
+            "description": "Id bản ghi upload — gửi vào các request nghiệp vụ thay cho key"
           },
-          "url": {
+          "uploadUrl": {
             "type": "string",
-            "description": "URL upload trực tiếp"
+            "description": "URL PUT file trực tiếp lên S3"
+          },
+          "publicUrl": {
+            "type": "string",
+            "description": "URL public của object sau khi PUT xong — dùng cho nội dung FE tự quản (decoration draft)"
           },
           "expiresAt": {
             "type": "string",
@@ -23867,15 +23894,15 @@
             "maxLength": 2000,
             "minLength": 0
           },
-          "logoKey": {
+          "logoUploadId": {
             "type": "string",
-            "description": "S3 key logo gian hàng",
-            "minLength": 1
+            "format": "uuid",
+            "description": "Id upload logo gian hàng (đã PUT lên S3 qua /api/uploads/presign)"
           },
-          "bannerKey": {
+          "bannerUploadId": {
             "type": "string",
-            "description": "S3 key ảnh bìa gian hàng",
-            "minLength": 1
+            "format": "uuid",
+            "description": "Id upload ảnh bìa gian hàng"
           },
           "phone": {
             "type": "string",
@@ -23926,24 +23953,25 @@
             "type": ["string", "null"],
             "description": "Mã số thuế cá nhân hoặc doanh nghiệp (nếu có)"
           },
-          "idFrontKey": {
+          "idFrontUploadId": {
             "type": "string",
-            "description": "S3 key ảnh mặt trước CCCD",
-            "minLength": 1
+            "format": "uuid",
+            "description": "Id upload ảnh mặt trước CCCD"
           },
-          "idBackKey": {
+          "idBackUploadId": {
             "type": "string",
-            "description": "S3 key ảnh mặt sau CCCD",
-            "minLength": 1
+            "format": "uuid",
+            "description": "Id upload ảnh mặt sau CCCD"
           },
-          "idSelfieKey": {
+          "idSelfieUploadId": {
             "type": "string",
-            "description": "S3 key ảnh chân dung cầm CCCD",
-            "minLength": 1
+            "format": "uuid",
+            "description": "Id upload ảnh chân dung cầm CCCD"
           },
-          "businessCertKey": {
+          "businessCertUploadId": {
             "type": ["string", "null"],
-            "description": "S3 key giấy chứng nhận ĐKKD (nếu có)"
+            "format": "uuid",
+            "description": "Id upload giấy chứng nhận ĐKKD (nếu có)"
           },
           "bankName": {
             "type": "string",
@@ -23972,16 +24000,16 @@
           "bankAccount",
           "bankHolder",
           "bankName",
-          "bannerKey",
+          "bannerUploadId",
           "description",
-          "idBackKey",
-          "idFrontKey",
+          "idBackUploadId",
+          "idFrontUploadId",
           "idIssuedDate",
           "idIssuedPlace",
           "idNumber",
-          "idSelfieKey",
+          "idSelfieUploadId",
           "legalName",
-          "logoKey",
+          "logoUploadId",
           "name",
           "phone",
           "slug"
@@ -24032,13 +24060,15 @@
             "maxItems": 9,
             "minItems": 3
           },
-          "videoKey": {
+          "videoUploadId": {
             "type": ["string", "null"],
-            "description": "S3 key video giới thiệu sản phẩm (tối đa 60s)"
+            "format": "uuid",
+            "description": "Upload id video giới thiệu sản phẩm (tối đa 60s)"
           },
-          "garmentKey": {
+          "garmentUploadId": {
             "type": ["string", "null"],
-            "description": "S3 key ảnh sản phẩm phẳng (nền trắng) cho Virtual Try-On"
+            "format": "uuid",
+            "description": "Upload id ảnh sản phẩm phẳng (nền trắng) cho Virtual Try-On"
           },
           "tryOnEnabled": {
             "type": ["boolean", "null"],
@@ -24143,9 +24173,10 @@
             "type": "boolean",
             "description": "Đúng 1 variant default mỗi product"
           },
-          "imageKey": {
+          "imageUploadId": {
             "type": ["string", "null"],
-            "description": "S3 key ảnh riêng cho màu/biến thể này"
+            "format": "uuid",
+            "description": "Upload id ảnh riêng cho màu/biến thể này"
           }
         },
         "required": ["color", "defaultVariant", "price", "size", "sku", "stockQuantity"]
@@ -24402,16 +24433,12 @@
           "comment": {
             "type": ["string", "null"]
           },
-          "imageKeys": {
+          "media": {
             "type": "array",
-            "description": "Danh sách S3 key ảnh thực tế",
+            "description": "Media đính kèm (ảnh + video) dưới dạng URL public",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ReviewMediaResponse"
             }
-          },
-          "videoKey": {
-            "type": ["string", "null"],
-            "description": "S3 key video thực tế"
           },
           "tags": {
             "type": "array",
@@ -24691,19 +24718,20 @@
             "maxLength": 2000,
             "minLength": 0
           },
-          "imageKeys": {
+          "imageUploadIds": {
             "type": ["array", "null"],
-            "description": "Danh sách S3 key ảnh đính kèm (tối đa 5 ảnh)",
+            "description": "Danh sách uploadId ảnh đính kèm (tối đa 5 ảnh, image/* trừ svg)",
             "items": {
               "type": "string",
-              "minLength": 1
+              "format": "uuid"
             },
             "maxItems": 5,
             "minItems": 0
           },
-          "videoKey": {
+          "videoUploadId": {
             "type": ["string", "null"],
-            "description": "S3 key video thực tế (tối đa 1 video <= 30 giây)"
+            "format": "uuid",
+            "description": "UploadId video (tối đa 1 video <= 30 giây, video/*)"
           },
           "tags": {
             "type": ["array", "null"],
@@ -24875,9 +24903,9 @@
             "format": "int64",
             "description": "Thành tiền"
           },
-          "imageKey": {
+          "imageUrl": {
             "type": ["string", "null"],
-            "description": "Storage key ảnh đại diện sản phẩm/biến thể"
+            "description": "URL public ảnh đại diện sản phẩm/biến thể"
           },
           "productAvailable": {
             "type": "boolean",
@@ -25047,7 +25075,7 @@
         "properties": {
           "reason": {
             "type": "string",
-            "description": "Lý do đổi trả (WRONG_ITEM, DAMAGED, NOT_AS_DESCRIBED, CHANGE_MIND)",
+            "description": "Lý do đổi/trả (WRONG_ITEM, DAMAGED, NOT_AS_DESCRIBED, CHANGE_MIND)",
             "example": "DAMAGED",
             "minLength": 1
           },
@@ -25055,15 +25083,25 @@
             "type": ["string", "null"],
             "description": "Mô tả chi tiết lỗi/vấn đề"
           },
-          "evidenceKeys": {
+          "evidenceUploadIds": {
             "type": ["array", "null"],
-            "description": "Mảng S3 keys ảnh hoặc video chứng minh",
+            "description": "Danh sách uploadId ảnh/video bằng chứng (image/* trừ svg, video/*)",
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         },
         "required": ["reason"]
+      },
+      "ReturnEvidenceResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL public truy cập file bằng chứng"
+          }
+        }
       },
       "ReturnRequestResponse": {
         "type": "object",
@@ -25104,11 +25142,11 @@
             "type": ["string", "null"],
             "description": "Mô tả chi tiết"
           },
-          "evidenceKeys": {
+          "evidence": {
             "type": "array",
-            "description": "Danh sách S3 key ảnh/video bằng chứng",
+            "description": "File bằng chứng dưới dạng URL public",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ReturnEvidenceResponse"
             }
           },
           "status": {
@@ -25195,9 +25233,10 @@
             "maxLength": 2000,
             "minLength": 0
           },
-          "imageKey": {
+          "imageUploadId": {
             "type": ["string", "null"],
-            "description": "S3 key ảnh đính kèm"
+            "format": "uuid",
+            "description": "Upload id ảnh đính kèm (từ /api/uploads/presign)"
           }
         }
       },
@@ -25222,8 +25261,9 @@
           "content": {
             "type": "string"
           },
-          "imageKey": {
-            "type": "string"
+          "imageUrl": {
+            "type": "string",
+            "description": "URL public ảnh đính kèm, null = tin nhắn chỉ có chữ"
           },
           "sentAt": {
             "type": "string",
@@ -25752,7 +25792,7 @@
             "format": "double",
             "description": "Giá trị: số tiền (VND) nếu mode FIXED, hoặc phần trăm (-90 đến 500) nếu mode PERCENT",
             "example": 199000,
-            "maximum": 1000000000.0,
+            "maximum": 1.0e9,
             "minimum": -90.0
           }
         },
@@ -25968,9 +26008,9 @@
             "format": "int64",
             "description": "Số biến thể"
           },
-          "imageKey": {
+          "imageUrl": {
             "type": ["string", "null"],
-            "description": "S3 key ảnh đầu tiên, frontend tự ghép base URL"
+            "description": "URL public ảnh đại diện"
           },
           "createdAt": {
             "type": "string",
@@ -26201,7 +26241,7 @@
             "format": "int64",
             "description": "Gia thap nhat hien tai, null khi khong con ban"
           },
-          "defaultImageKey": {
+          "defaultImageUrl": {
             "type": ["string", "null"],
             "description": "Anh bia hien tai, null khi khong con ban"
           },
@@ -26486,9 +26526,9 @@
             "description": "Tên sản phẩm",
             "example": "Áo Polo Nam Classic"
           },
-          "imageKey": {
+          "imageUrl": {
             "type": ["string", "null"],
-            "description": "S3 key của ảnh đại diện sản phẩm"
+            "description": "URL public của ảnh đại diện sản phẩm"
           },
           "totalSold": {
             "type": "integer",
@@ -26812,7 +26852,7 @@
             "type": "integer",
             "format": "int64"
           },
-          "defaultImageKey": {
+          "defaultImageUrl": {
             "type": "string"
           },
           "variants": {
@@ -27190,13 +27230,13 @@
             "description": "Slug gian hàng",
             "example": "net-boutique"
           },
-          "logoKey": {
+          "logoUrl": {
             "type": "string",
-            "description": "S3 key logo gian hàng"
+            "description": "URL logo gian hàng public path-style"
           },
-          "bannerKey": {
+          "bannerUrl": {
             "type": "string",
-            "description": "S3 key ảnh bìa gian hàng"
+            "description": "URL ảnh bìa gian hàng public path-style"
           },
           "shopStatus": {
             "type": "string",
@@ -27287,9 +27327,9 @@
             "format": "int64",
             "description": "Giá variant thấp nhất (VND), null nếu chưa có variant"
           },
-          "defaultImageKey": {
+          "defaultImageUrl": {
             "type": ["string", "null"],
-            "description": "S3 key ảnh đại diện, null nếu chưa có"
+            "description": "URL ảnh đại diện, null nếu chưa có"
           },
           "rank": {
             "type": ["number", "null"],
@@ -27373,8 +27413,9 @@
           "body": {
             "type": "string"
           },
-          "imageKey": {
-            "type": "string"
+          "imageUrl": {
+            "type": "string",
+            "description": "URL public ảnh popup, null = popup chỉ có chữ"
           },
           "ctaLabel": {
             "type": "string"
@@ -27502,12 +27543,13 @@
             "type": "string",
             "description": "Dùng làm alt ảnh"
           },
-          "imageKey": {
-            "type": "string"
-          },
-          "mobileImageKey": {
+          "imageUrl": {
             "type": "string",
-            "description": "null = dùng ảnh desktop"
+            "description": "URL public ảnh desktop"
+          },
+          "mobileImageUrl": {
+            "type": "string",
+            "description": "URL public ảnh mobile, null = dùng ảnh desktop"
           },
           "linkUrl": {
             "type": "string"
@@ -27744,9 +27786,9 @@
             "type": "string",
             "example": "An"
           },
-          "avatarKey": {
-            "type": ["string", "null"],
-            "description": "S3 key avatar"
+          "avatarUrl": {
+            "type": "string",
+            "description": "URL avatar public path-style, null nếu chưa có. Không trả S3 key."
           },
           "role": {
             "type": "string",
@@ -28005,13 +28047,13 @@
           "description": {
             "type": "string"
           },
-          "logoKey": {
+          "logoUrl": {
             "type": ["string", "null"],
-            "description": "S3 key, frontend tự ghép base URL"
+            "description": "URL logo public path-style, null nếu chưa có. Không trả S3 key."
           },
-          "bannerKey": {
+          "bannerUrl": {
             "type": ["string", "null"],
-            "description": "S3 key, frontend tự ghép base URL"
+            "description": "URL banner public path-style, null nếu chưa có. Không trả S3 key."
           },
           "status": {
             "type": "string",
@@ -28084,21 +28126,21 @@
             "type": ["string", "null"],
             "description": "Mã số thuế"
           },
-          "idFrontKey": {
+          "idFrontUrl": {
             "type": ["string", "null"],
-            "description": "S3 key ảnh mặt trước CCCD"
+            "description": "URL presigned GET ảnh mặt trước CCCD, TTL ~15 phút"
           },
-          "idBackKey": {
+          "idBackUrl": {
             "type": ["string", "null"],
-            "description": "S3 key ảnh mặt sau CCCD"
+            "description": "URL presigned GET ảnh mặt sau CCCD, TTL ~15 phút"
           },
-          "idSelfieKey": {
+          "idSelfieUrl": {
             "type": ["string", "null"],
-            "description": "S3 key ảnh selfie cầm CCCD"
+            "description": "URL presigned GET ảnh selfie cầm CCCD, TTL ~15 phút"
           },
-          "businessCertKey": {
+          "businessCertUrl": {
             "type": ["string", "null"],
-            "description": "S3 key giấy chứng nhận ĐKKD (nếu có)"
+            "description": "URL presigned GET giấy chứng nhận ĐKKD (nếu có), TTL ~15 phút"
           },
           "bankName": {
             "type": ["string", "null"],
@@ -28237,11 +28279,13 @@
               "$ref": "#/components/schemas/AdminProductReportResponse"
             }
           },
-          "videoKey": {
-            "type": ["string", "null"]
+          "videoUrl": {
+            "type": ["string", "null"],
+            "description": "URL public video giới thiệu"
           },
-          "garmentKey": {
-            "type": ["string", "null"]
+          "garmentUrl": {
+            "type": ["string", "null"],
+            "description": "URL public ảnh garment"
           },
           "tryOnEnabled": {
             "type": "boolean",

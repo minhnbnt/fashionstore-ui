@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { Camera, Star, VideoCamera, X } from '@phosphor-icons/react'
 
-import { imageUrl } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { uploadImage, uploadVideo } from '@/lib/api/uploadImage'
 import {
   MAX_REVIEW_COMMENT_LENGTH,
@@ -17,11 +17,17 @@ import Modal from '../Modal'
 
 import type { ReviewResponse } from '@generated/model/reviewResponse'
 
+/** Một media trong form review: uploadId để submit, previewUrl (object URL hoặc URL response) để xem trước. */
+interface ReviewMediaInput {
+  uploadId: string
+  previewUrl: string
+}
+
 export interface ReviewSubmitPayload {
   stars: number
   comment: string
-  imageKeys: string[]
-  videoKey: string | null
+  imageUploadIds: string[]
+  videoUploadId: string | null
   tags: string[]
   anonymous: boolean
 }
@@ -63,10 +69,21 @@ function starLabelText(stars: number): string {
 
 export default function ReviewModal(props: Props) {
   const existing = props.existingReview ?? null
+  // Media cũ echo uploadId từ response; media mới = object URL local + uploadId vừa presign
+  const existingMedia = existing?.media ?? []
+  const existingImages = existingMedia
+    .filter((m) => m.kind === 'IMAGE')
+    .map((m) => ({ uploadId: m.uploadId ?? '', previewUrl: urlOrPlaceholder(m.url) }))
+  let existingVideo: ReviewMediaInput | null = null
+  for (const m of existingMedia) {
+    if (m.kind === 'VIDEO' && existingVideo === null) {
+      existingVideo = { uploadId: m.uploadId ?? '', previewUrl: urlOrPlaceholder(m.url) }
+    }
+  }
   const [stars, setStars] = useState<number>(existing?.stars ?? 5)
   const [comment, setComment] = useState<string>(existing?.comment ?? '')
-  const [imageKeys, setImageKeys] = useState<string[]>(existing?.imageKeys ?? [])
-  const [videoKey, setVideoKey] = useState<string | null>(existing?.videoKey ?? null)
+  const [images, setImages] = useState<ReviewMediaInput[]>(existingImages)
+  const [video, setVideo] = useState<ReviewMediaInput | null>(existingVideo)
   const [tags, setTags] = useState<string[]>(existing?.tags ?? [])
   const [anonymous, setAnonymous] = useState<boolean>(existing?.anonymous ?? false)
   const [uploading, setUploading] = useState<boolean>(false)
@@ -100,7 +117,7 @@ export default function ReviewModal(props: Props) {
     uploadButtonLabel = 'Đang tải...'
   }
   let videoCount = 0
-  if (videoKey !== null) {
+  if (video !== null) {
     videoCount = 1
   }
 
@@ -113,39 +130,42 @@ export default function ReviewModal(props: Props) {
   }
 
   async function handleFilesChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const fileList = e.target.files
+    // Copy sang array TRƯỚC khi reset input: FileList là live view, gán value = ''
+    // sẽ dọn luôn danh sách file đang giữ tham chiếu.
+    const files = Array.from(e.target.files ?? [])
     e.target.value = ''
-    if (!fileList || fileList.length === 0) {
+    if (files.length === 0) {
       return
     }
 
     setUploadError(null)
     setUploading(true)
     try {
-      const nextImages = [...imageKeys]
-      let nextVideo = videoKey
+      const nextImages = [...images]
+      let nextVideo = video
 
-      for (const file of Array.from(fileList)) {
+      for (const file of files) {
         if (file.type.startsWith('image/')) {
           if (nextImages.length >= MAX_REVIEW_IMAGES) {
             setUploadError(`Tối đa ${MAX_REVIEW_IMAGES} ảnh cho mỗi đánh giá.`)
             continue
           }
-          const key = await uploadImage(file)
-          nextImages.push(key)
+          const uploadId = await uploadImage(file)
+          nextImages.push({ uploadId, previewUrl: URL.createObjectURL(file) })
         } else if (file.type.startsWith('video/')) {
           if (nextVideo !== null) {
             setUploadError('Mỗi đánh giá chỉ được đính kèm tối đa 1 video.')
             continue
           }
-          nextVideo = await uploadVideo(file, MAX_REVIEW_VIDEO_SECONDS)
+          const uploadId = await uploadVideo(file, MAX_REVIEW_VIDEO_SECONDS)
+          nextVideo = { uploadId, previewUrl: URL.createObjectURL(file) }
         } else {
           setUploadError('Chỉ hỗ trợ tải lên tệp ảnh hoặc video.')
         }
       }
 
-      setImageKeys(nextImages)
-      setVideoKey(nextVideo)
+      setImages(nextImages)
+      setVideo(nextVideo)
     } catch (err) {
       if (err instanceof Error) {
         setUploadError(err.message)
@@ -169,11 +189,15 @@ export default function ReviewModal(props: Props) {
       return
     }
     setValidationError(null)
+    let videoUploadId: string | null = null
+    if (video !== null) {
+      videoUploadId = video.uploadId
+    }
     props.onSubmit({
       stars,
       comment: trimmedComment,
-      imageKeys,
-      videoKey,
+      imageUploadIds: images.map((item) => item.uploadId),
+      videoUploadId,
       tags,
       anonymous,
     })
@@ -323,46 +347,44 @@ export default function ReviewModal(props: Props) {
                   />
                 </label>
                 <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {imageKeys.length}/{MAX_REVIEW_IMAGES} ảnh · {videoCount}/1 video (≤{' '}
+                  {images.length}/{MAX_REVIEW_IMAGES} ảnh · {videoCount}/1 video (≤{' '}
                   {MAX_REVIEW_VIDEO_SECONDS}s)
                 </span>
               </div>
 
-              {(imageKeys.length > 0 || videoKey !== null) && (
+              {(images.length > 0 || video !== null) && (
                 <div className="flex flex-wrap gap-2.5">
-                  {imageKeys.map((key) => (
+                  {images.map((item) => (
                     <div
-                      key={key}
+                      key={item.uploadId}
                       className="relative h-16 w-16 overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/15"
                     >
                       <img
-                        src={imageUrl(key)}
+                        src={item.previewUrl}
                         alt="Ảnh đánh giá"
                         className="h-full w-full object-cover"
                       />
                       <button
                         type="button"
                         aria-label="Xóa ảnh"
-                        onClick={() => setImageKeys(imageKeys.filter((k) => k !== key))}
+                        onClick={() =>
+                          setImages(images.filter((i) => i.uploadId !== item.uploadId))
+                        }
                         className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black"
                       >
                         <X size={11} weight="bold" />
                       </button>
                     </div>
                   ))}
-                  {videoKey !== null && (
+                  {video !== null && (
                     <div className="relative h-16 w-28 overflow-hidden rounded-2xl border border-zinc-200 bg-black dark:border-white/15">
-                      <video
-                        src={imageUrl(videoKey)}
-                        controls
-                        className="h-full w-full object-cover"
-                      >
+                      <video src={video.previewUrl} controls className="h-full w-full object-cover">
                         <track kind="captions" />
                       </video>
                       <button
                         type="button"
                         aria-label="Xóa video"
-                        onClick={() => setVideoKey(null)}
+                        onClick={() => setVideo(null)}
                         className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black"
                       >
                         <X size={11} weight="bold" />

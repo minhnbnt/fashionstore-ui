@@ -40,7 +40,7 @@ describe('productItem', () => {
       status: 'ACTIVE',
       totalStock: 20,
       minPrice: 391000,
-      defaultImageKey: 'demo/ao.jpg',
+      defaultImageUrl: 'demo/ao.jpg',
       variants: [
         {
           id: 'v1',
@@ -158,7 +158,7 @@ describe('orderItem', () => {
 })
 
 describe('returnItem', () => {
-  it('resolve order code, orderStatus va toan bo evidenceKeys (anh + video)', () => {
+  it('resolve order code, orderStatus va toan bo evidence (anh + video)', () => {
     const orders = new Map([
       ['o1', { code: 'ORD-9', shippingName: 'An', status: 'DELIVERED' } as OrderResponse],
     ])
@@ -169,7 +169,10 @@ describe('returnItem', () => {
       orderStatus: 'DELIVERED',
       reason: 'DAMAGED',
       description: 'Rách may',
-      evidenceKeys: ['demo/e1.jpg', 'returns/video-1.mp4'],
+      evidence: [
+        { url: 'https://s3.test/demo/e1.jpg' },
+        { url: 'https://s3.test/returns/video-1.mp4' },
+      ],
       status: 'REQUESTED',
     }
     const item = returnItem(request, orders)
@@ -367,7 +370,7 @@ describe('decoration adapter', () => {
       banners: [
         {
           id: 'slide-1',
-          imageKey: 'banners/slide1.jpg',
+          imageUrl: 'https://s3.test/banners/slide1.jpg',
           title: 'Khuyến mãi hè',
           linkUrl: '/search?category=he',
         },
@@ -389,18 +392,18 @@ describe('decoration adapter', () => {
     expect(parsed).toEqual(blocks)
   })
 
-  it('parse giu videoKey cua block VIDEO qua vong tron', () => {
+  it('parse giu videoUrl cua block VIDEO qua vong tron', () => {
     const withVideo: DecorationBlock[] = [
       {
         id: 'b-v',
         type: 'VIDEO',
         title: 'Video giới thiệu',
         enabled: true,
-        videoKey: 'decoration/shop-intro.mp4',
+        videoUrl: 'https://s3.test/decoration/shop-intro.mp4',
       },
     ]
     const parsed = decorationBlocks({ draft: decorationDraftJson(withVideo) })
-    expect(parsed[0]?.videoKey).toBe('decoration/shop-intro.mp4')
+    expect(parsed[0]?.videoUrl).toBe('https://s3.test/decoration/shop-intro.mp4')
   })
 
   it('JSON loi thi tra mang rong', () => {
@@ -423,19 +426,16 @@ describe('shopProfile', () => {
       returnPolicy: 'Đổi trả miễn phí trong 7 ngày',
       processingDays: 2,
       sellerType: 'BUSINESS',
-      taxCode: '0123',
+      kycStatus: 'VERIFIED',
       bankName: 'Vietcombank',
       bankAccount: '0011',
       bankHolder: 'DEMO OWNER',
       autoReplyText: 'Chào bạn',
       workingHours: '08:00-21:00',
-      legalName: 'Nguyễn Văn Demo',
     }
     const profile = shopProfile(shop)
     expect(profile.shopName).toBe('nét lab')
-    expect(profile.contactName).toBe('Nguyễn Văn Demo')
     expect(profile.businessType).toBe('BUSINESS')
-    expect(profile.taxOrIdNumber).toBe('0123')
     expect(profile.isVerified).toBe(true)
     expect(profile.city).toBe('')
     expect(profile.returnPolicy).toBe('Đổi trả miễn phí trong 7 ngày')

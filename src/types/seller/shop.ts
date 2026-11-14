@@ -10,7 +10,10 @@ export interface ShopAuditItem {
 
 export interface BannerSlideItem {
   id: string
-  imageKey: string
+  /** Id upload của ảnh — lưu vào draft để truy vết, không dùng để gọi API */
+  uploadId?: string
+  /** URL public của ảnh slide — lưu thẳng vào draft JSON (từ PresignResponse.publicUrl) */
+  imageUrl: string
   title?: string
   linkUrl?: string
 }
@@ -33,8 +36,10 @@ export interface DecorationBlock {
   collectionType?: 'NEW_ARRIVALS' | 'BEST_SELLER' | 'SALE_OFF' | 'CUSTOM'
   itemLimit?: number
   displayStyle?: 'GRID' | 'SLIDER'
-  /** S3 key của video (upload qua presign video/*) — block VIDEO dùng. */
-  videoKey?: string
+  /** Id upload của video — lưu vào draft để truy vết, không dùng để gọi API */
+  videoUploadId?: string
+  /** URL public của video (upload qua presign video/*) — block VIDEO dùng. */
+  videoUrl?: string
 }
 
 export interface ShopProfileData {
@@ -43,13 +48,11 @@ export interface ShopProfileData {
   bio: string
   logoUrl: string
   bannerUrl: string
-  contactName: string
   phone: string
   pickupAddress: string
   city: string
   daysToShip: number
   businessType: 'INDIVIDUAL' | 'BUSINESS'
-  taxOrIdNumber: string
   isVerified: boolean
   bankName: string
   bankAccount: string

@@ -18,7 +18,7 @@ describe('AvatarUploader', () => {
     const user = userEvent.setup()
     const { container } = render(
       <QueryClientProvider client={new QueryClient()}>
-        <AvatarUploader name="a@t.local" avatarKey="key.png" />
+        <AvatarUploader name="a@t.local" avatarUrl="https://s3.test/avatar.png" />
       </QueryClientProvider>,
     )
 

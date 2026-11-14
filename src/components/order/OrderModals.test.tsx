@@ -160,8 +160,8 @@ describe('ReviewModal & ReviewProductPickerModal', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       stars: 5,
       comment: 'Vải rất dày dặn, đường may tỉ mỉ và mặc mát.',
-      imageKeys: [],
-      videoKey: 'returns/vid-1.mp4',
+      imageUploadIds: [],
+      videoUploadId: 'returns/vid-1.mp4',
       tags: ['Chất lượng tốt', 'Size đúng chuẩn'],
       anonymous: true,
     })
@@ -339,7 +339,7 @@ describe('ReorderResultModal & ReturnRequestModal', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       reason: 'DAMAGED',
       description: 'Áo rách tay',
-      evidenceKeys: ['returns/img-1.jpg', 'returns/vid-1.mp4'],
+      evidenceUploadIds: ['returns/img-1.jpg', 'returns/vid-1.mp4'],
     })
   })
 })

@@ -178,7 +178,7 @@ describe('productAnalyticsItems', () => {
       {
         productId: 'p1',
         productName: 'Áo Thun Basic',
-        imageKey: 'img/ao.jpg',
+        imageUrl: 'https://s3.test/img/ao.jpg',
         totalSold: 50,
         totalRevenue: 5000000,
         viewCount: 200,

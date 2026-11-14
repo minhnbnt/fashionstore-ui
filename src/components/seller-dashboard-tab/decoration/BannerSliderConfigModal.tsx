@@ -33,7 +33,7 @@ export default function BannerSliderConfigModal({
     }
     const newSlide: BannerSlideItem = {
       id: `slide-${Date.now()}`,
-      imageKey: '',
+      imageUrl: '',
       title: '',
       linkUrl: '',
     }
@@ -189,8 +189,13 @@ export default function BannerSliderConfigModal({
                     label="Tải ảnh banner lên"
                     hint="Tỉ lệ 3:1 (1200x400px), định dạng JPG, PNG, WEBP."
                     aspectClass="aspect-[3/1] max-w-full"
-                    value={slide.imageKey}
-                    onChange={(key) => handleUpdateSlide(slide.id, { imageKey: key })}
+                    value={slide.imageUrl}
+                    onChange={(uploadId, previewUrl) => {
+                      handleUpdateSlide(slide.id, {
+                        uploadId: uploadId ?? undefined,
+                        imageUrl: previewUrl,
+                      })
+                    }}
                   />
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

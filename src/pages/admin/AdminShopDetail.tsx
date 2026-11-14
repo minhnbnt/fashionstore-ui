@@ -38,7 +38,7 @@ import ReasonDialog from '@/components/admin/dialogs/ReasonDialog'
 import StatePanel from '@/components/ui/StatePanel'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { adminErrorMessage, formatDateTime } from '@/lib/admin/admin'
-import { PLACEHOLDER_IMAGE, imageUrl, takeData } from '@/lib/api/apiAdapters'
+import { PLACEHOLDER_IMAGE, urlOrPlaceholder, takeData } from '@/lib/api/apiAdapters'
 
 import type { ConfirmAction, ReasonAction } from '@/types/admin'
 import type { AdminShopDetailResponse } from '@generated/model/adminShopDetailResponse'
@@ -285,10 +285,10 @@ export default function AdminShopDetail() {
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
             <div className="space-y-5">
               <section className="rounded-3xl border border-zinc-200 bg-white/65 p-5 dark:border-white/10 dark:bg-white/5">
-                {shop.bannerKey && (
+                {shop.bannerUrl && (
                   <div className="mb-4 overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/10">
                     <img
-                      src={imageUrl(shop.bannerKey)}
+                      src={urlOrPlaceholder(shop.bannerUrl)}
                       alt={shop.name ?? 'Ảnh bìa shop'}
                       onError={function (e) {
                         if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
@@ -302,9 +302,9 @@ export default function AdminShopDetail() {
 
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    {shop.logoKey && (
+                    {shop.logoUrl && (
                       <img
-                        src={imageUrl(shop.logoKey)}
+                        src={urlOrPlaceholder(shop.logoUrl)}
                         alt={shop.name ?? 'Logo shop'}
                         onError={function (e) {
                           if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
@@ -314,7 +314,7 @@ export default function AdminShopDetail() {
                         className="h-12 w-12 rounded-2xl border border-zinc-200 object-cover dark:border-white/10"
                       />
                     )}
-                    {!shop.logoKey && (
+                    {!shop.logoUrl && (
                       <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200">
                         <Storefront size={25} weight="bold" />
                       </span>
@@ -475,10 +475,10 @@ export default function AdminShopDetail() {
                       <p className="mb-2 text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
                         Mặt trước CCCD
                       </p>
-                      {shop.idFrontKey && (
+                      {shop.idFrontUrl && (
                         <div className="group relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-black/5">
                           <img
-                            src={imageUrl(shop.idFrontKey)}
+                            src={urlOrPlaceholder(shop.idFrontUrl)}
                             alt="Mặt trước CCCD"
                             onError={function (e) {
                               if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
@@ -492,7 +492,7 @@ export default function AdminShopDetail() {
                             onClick={function () {
                               setPreviewModal({
                                 title: 'Mặt trước CCCD — ' + (shop.legalName ?? ''),
-                                url: imageUrl(shop.idFrontKey),
+                                url: urlOrPlaceholder(shop.idFrontUrl),
                               })
                             }}
                             className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition duration-200 group-hover:opacity-100"
@@ -504,7 +504,7 @@ export default function AdminShopDetail() {
                           </button>
                         </div>
                       )}
-                      {!shop.idFrontKey && (
+                      {!shop.idFrontUrl && (
                         <p className="py-6 text-center text-xs text-zinc-400">Chưa tải ảnh</p>
                       )}
                     </div>
@@ -513,10 +513,10 @@ export default function AdminShopDetail() {
                       <p className="mb-2 text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
                         Mặt sau CCCD
                       </p>
-                      {shop.idBackKey && (
+                      {shop.idBackUrl && (
                         <div className="group relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-black/5">
                           <img
-                            src={imageUrl(shop.idBackKey)}
+                            src={urlOrPlaceholder(shop.idBackUrl)}
                             alt="Mặt sau CCCD"
                             onError={function (e) {
                               if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
@@ -530,7 +530,7 @@ export default function AdminShopDetail() {
                             onClick={function () {
                               setPreviewModal({
                                 title: 'Mặt sau CCCD — ' + (shop.legalName ?? ''),
-                                url: imageUrl(shop.idBackKey),
+                                url: urlOrPlaceholder(shop.idBackUrl),
                               })
                             }}
                             className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition duration-200 group-hover:opacity-100"
@@ -542,7 +542,7 @@ export default function AdminShopDetail() {
                           </button>
                         </div>
                       )}
-                      {!shop.idBackKey && (
+                      {!shop.idBackUrl && (
                         <p className="py-6 text-center text-xs text-zinc-400">Chưa tải ảnh</p>
                       )}
                     </div>
@@ -551,10 +551,10 @@ export default function AdminShopDetail() {
                       <p className="mb-2 text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
                         Ảnh selfie cầm CCCD
                       </p>
-                      {shop.idSelfieKey && (
+                      {shop.idSelfieUrl && (
                         <div className="group relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-black/5">
                           <img
-                            src={imageUrl(shop.idSelfieKey)}
+                            src={urlOrPlaceholder(shop.idSelfieUrl)}
                             alt="Selfie cầm CCCD"
                             onError={function (e) {
                               if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
@@ -568,7 +568,7 @@ export default function AdminShopDetail() {
                             onClick={function () {
                               setPreviewModal({
                                 title: 'Selfie cầm CCCD — ' + (shop.legalName ?? ''),
-                                url: imageUrl(shop.idSelfieKey),
+                                url: urlOrPlaceholder(shop.idSelfieUrl),
                               })
                             }}
                             className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition duration-200 group-hover:opacity-100"
@@ -580,19 +580,19 @@ export default function AdminShopDetail() {
                           </button>
                         </div>
                       )}
-                      {!shop.idSelfieKey && (
+                      {!shop.idSelfieUrl && (
                         <p className="py-6 text-center text-xs text-zinc-400">Chưa tải ảnh</p>
                       )}
                     </div>
 
-                    {shop.businessCertKey && (
+                    {shop.businessCertUrl && (
                       <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-2 sm:col-span-2 lg:col-span-3 dark:border-white/10 dark:bg-white/5">
                         <p className="mb-2 text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
                           Giấy phép kinh doanh (Tùy chọn)
                         </p>
                         <div className="group relative aspect-[16/9] max-h-60 w-full overflow-hidden rounded-xl bg-black/5">
                           <img
-                            src={imageUrl(shop.businessCertKey)}
+                            src={urlOrPlaceholder(shop.businessCertUrl)}
                             alt="Giấy phép kinh doanh"
                             onError={function (e) {
                               if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
@@ -606,7 +606,7 @@ export default function AdminShopDetail() {
                             onClick={function () {
                               setPreviewModal({
                                 title: 'Giấy phép kinh doanh — ' + (shop.name ?? ''),
-                                url: imageUrl(shop.businessCertKey),
+                                url: urlOrPlaceholder(shop.businessCertUrl),
                               })
                             }}
                             className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition duration-200 group-hover:opacity-100"

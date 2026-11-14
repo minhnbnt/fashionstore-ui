@@ -11,9 +11,9 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 function toSummaryFromDetail(product: ProductResponse): ProductSummaryResponse {
   const pricing = priceInfo(product)
-  let defaultImageKey: string | null = null
+  let defaultImageUrl: string | null = null
   if (product.images !== undefined && product.images.length > 0) {
-    defaultImageKey = product.images[0]?.s3Key ?? null
+    defaultImageUrl = product.images[0]?.url ?? null
   }
   return {
     id: product.id,
@@ -21,7 +21,7 @@ function toSummaryFromDetail(product: ProductResponse): ProductSummaryResponse {
     name: product.name,
     slug: product.slug,
     minPrice: pricing.minPrice ?? undefined,
-    defaultImageKey,
+    defaultImageUrl,
     rank: null,
   }
 }

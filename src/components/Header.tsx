@@ -18,7 +18,7 @@ import {
   UserCircle,
 } from '@phosphor-icons/react'
 
-import { imageUrl, takeData } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder, takeData } from '@/lib/api/apiAdapters'
 
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useCart } from '../hooks/useCart'
@@ -128,8 +128,8 @@ export default function Header() {
   let avatarSrc: string | undefined
   if (meQuery.data !== undefined) {
     const me = takeData(meQuery.data)
-    if (me.avatarKey !== null && me.avatarKey !== undefined && me.avatarKey !== '') {
-      avatarSrc = imageUrl(me.avatarKey)
+    if (me.avatarUrl !== null && me.avatarUrl !== undefined && me.avatarUrl !== '') {
+      avatarSrc = urlOrPlaceholder(me.avatarUrl)
     }
   }
 

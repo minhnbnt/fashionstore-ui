@@ -4,7 +4,7 @@ export interface ChatProductItem {
   id?: string
   name?: string
   slug?: string
-  defaultImageKey?: string | null
+  defaultImageUrl?: string | null
   minPrice?: number | null
   maxPrice?: number | null
 }
@@ -20,7 +20,7 @@ export function productResponseToChatItem(data: ProductResponse): ChatProductIte
     })
 
   const firstImage = data.images?.[0]
-  const s3Key = firstImage?.s3Key ?? undefined
+  const firstImageUrl = firstImage?.url ?? undefined
 
   let minPrice: number | undefined
   let maxPrice: number | undefined
@@ -33,7 +33,7 @@ export function productResponseToChatItem(data: ProductResponse): ChatProductIte
     id: data.id,
     name: data.name,
     slug: data.slug,
-    defaultImageKey: s3Key,
+    defaultImageUrl: firstImageUrl,
     minPrice,
     maxPrice,
   }

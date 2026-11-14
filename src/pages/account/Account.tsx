@@ -118,7 +118,7 @@ export default function Account() {
 
           {session !== undefined && session !== null && (
             <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white/70 p-4 dark:bg-white/10">
-              <AvatarUploader name={userEmail || 'guest'} avatarKey={profile?.avatarKey} />
+              <AvatarUploader name={userEmail || 'guest'} avatarUrl={profile?.avatarUrl} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-zinc-800 dark:text-zinc-100">
                   {userEmail}

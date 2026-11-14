@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { Trash, UploadSimple, VideoCamera } from '@phosphor-icons/react'
 
-import { fallbackImageOnError, imageUrl } from '@/lib/api/apiAdapters'
+import { fallbackImageOnError } from '@/lib/api/apiAdapters'
 import { uploadImage, uploadVideo } from '@/lib/api/uploadImage'
 
 import Modal from '../Modal'
@@ -13,7 +13,7 @@ interface Props {
   isPending?: boolean
   error?: string | null
   onClose: () => void
-  onSubmit: (payload: { reason: string; description: string; evidenceKeys: string[] }) => void
+  onSubmit: (payload: { reason: string; description: string; evidenceUploadIds: string[] }) => void
 }
 
 const RETURN_REASONS = [
@@ -25,7 +25,9 @@ const RETURN_REASONS = [
 ] as const
 
 interface UploadedMedia {
-  key: string
+  uploadId: string
+  /** Object URL local để xem trước khi gửi */
+  previewUrl: string
   isVideo: boolean
 }
 
@@ -57,13 +59,13 @@ export default function ReturnRequestModal(props: Props) {
     try {
       for (const file of files) {
         const isVideo = file.type.startsWith('video/')
-        let key = ''
+        let uploadId = ''
         if (isVideo) {
-          key = await uploadVideo(file)
+          uploadId = await uploadVideo(file)
         } else {
-          key = await uploadImage(file)
+          uploadId = await uploadImage(file)
         }
-        next.push({ key, isVideo })
+        next.push({ uploadId, previewUrl: URL.createObjectURL(file), isVideo })
       }
       setMediaList((prev) => [...prev, ...next])
     } catch (err) {
@@ -77,8 +79,8 @@ export default function ReturnRequestModal(props: Props) {
     }
   }
 
-  function removeMedia(key: string) {
-    setMediaList((prev) => prev.filter((item) => item.key !== key))
+  function removeMedia(uploadId: string) {
+    setMediaList((prev) => prev.filter((item) => item.uploadId !== uploadId))
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -89,7 +91,7 @@ export default function ReturnRequestModal(props: Props) {
     props.onSubmit({
       reason,
       description: description.trim(),
-      evidenceKeys: mediaList.map((m) => m.key),
+      evidenceUploadIds: mediaList.map((m) => m.uploadId),
     })
   }
 
@@ -157,13 +159,13 @@ export default function ReturnRequestModal(props: Props) {
             <div className="flex flex-wrap gap-2">
               {mediaList.map((media) => (
                 <div
-                  key={media.key}
+                  key={media.uploadId}
                   className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-sky-100 bg-white/70 dark:border-white/15 dark:bg-white/5"
                 >
                   {media.isVideo && <VideoCamera size={24} className="text-sky-400" />}
                   {!media.isVideo && (
                     <img
-                      src={imageUrl(media.key)}
+                      src={media.previewUrl}
                       alt="Bằng chứng"
                       loading="lazy"
                       onError={fallbackImageOnError}
@@ -173,7 +175,7 @@ export default function ReturnRequestModal(props: Props) {
                   <button
                     type="button"
                     aria-label="Xóa tệp"
-                    onClick={() => removeMedia(media.key)}
+                    onClick={() => removeMedia(media.uploadId)}
                     className="absolute top-1 right-1 rounded-full bg-black/70 p-1 text-white"
                   >
                     <Trash size={12} />

@@ -55,7 +55,7 @@ export interface OrderStatusSummaryData {
 export interface ProductAnalyticsItem {
   productId: string
   productName: string
-  imageKey: string | null
+  imageUrl: string | null
   totalSold: number
   totalRevenue: number
   viewCount: number

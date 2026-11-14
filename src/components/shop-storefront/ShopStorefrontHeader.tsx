@@ -14,7 +14,7 @@ import {
 } from '@phosphor-icons/react'
 
 import UserAvatar from '@/components/UserAvatar'
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
 
@@ -50,8 +50,8 @@ export default function ShopStorefrontHeader({
 }: ShopStorefrontHeaderProps) {
   const [localSearch, setLocalSearch] = useState<string | null>(null)
   // Logo có key nhưng object 404 / load lỗi thì dùng avatar generated thay vì placeholder.
-  // Lưu key của logo đã lỗi: đổi shop (logoKey khác) thì tự coi như chưa lỗi, không cần effect.
-  const [failedLogoKey, setFailedLogoKey] = useState<string | null>(null)
+  // Lưu key của logo đã lỗi: đổi shop (logoUrl khác) thì tự coi như chưa lỗi, không cần effect.
+  const [failedLogoUrl, setFailedLogoKey] = useState<string | null>(null)
 
   let searchInput = searchQuery ?? ''
   if (localSearch !== null) {
@@ -72,16 +72,16 @@ export default function ShopStorefrontHeader({
       onSearch('')
     }
   }
-  const hasLogo = shop.logoKey !== null && shop.logoKey !== undefined && shop.logoKey !== ''
-  const logoFailed = hasLogo && failedLogoKey !== null && failedLogoKey === shop.logoKey
+  const hasLogo = shop.logoUrl !== null && shop.logoUrl !== undefined && shop.logoUrl !== ''
+  const logoFailed = hasLogo && failedLogoUrl !== null && failedLogoUrl === shop.logoUrl
   let logoSrc = PLACEHOLDER_IMAGE
   if (hasLogo) {
-    logoSrc = imageUrl(shop.logoKey)
+    logoSrc = urlOrPlaceholder(shop.logoUrl)
   }
 
   let bannerSrc = 'https://picsum.photos/seed/netshopbanner/1600/500'
-  if (shop.bannerKey !== null && shop.bannerKey !== undefined && shop.bannerKey !== '') {
-    bannerSrc = imageUrl(shop.bannerKey)
+  if (shop.bannerUrl !== null && shop.bannerUrl !== undefined && shop.bannerUrl !== '') {
+    bannerSrc = urlOrPlaceholder(shop.bannerUrl)
   }
 
   let ratingDisplay = '5.0'
@@ -146,7 +146,7 @@ export default function ShopStorefrontHeader({
                   src={logoSrc}
                   alt={shop.name}
                   onError={function () {
-                    setFailedLogoKey(shop.logoKey ?? null)
+                    setFailedLogoKey(shop.logoUrl ?? null)
                   }}
                   className="h-full w-full object-cover"
                 />

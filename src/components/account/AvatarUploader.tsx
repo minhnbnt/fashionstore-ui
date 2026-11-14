@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import { getMeQueryKey, useChangeAvatar } from '@generated/endpoints/users/users'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { apiErrorText, imageUrl } from '@/lib/api/apiAdapters'
+import { apiErrorText, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
 
 import Modal from '../Modal'
@@ -12,11 +12,11 @@ import UserAvatar from '../UserAvatar'
 
 interface Props {
   name: string
-  avatarKey: string | null | undefined
+  avatarUrl: string | null | undefined
 }
 
-/** Bấm avatar → modal xem ảnh; nút trong modal chọn ảnh → presign → PUT S3 → lưu key. */
-export default function AvatarUploader({ name, avatarKey }: Props) {
+/** Bấm avatar → modal xem ảnh; nút trong modal chọn ảnh → presign → PUT S3 → đổi avatar. */
+export default function AvatarUploader({ name, avatarUrl }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
   const changeAvatar = useChangeAvatar()
@@ -25,8 +25,8 @@ export default function AvatarUploader({ name, avatarKey }: Props) {
   const [error, setError] = useState<string | null>(null)
 
   let src: string | undefined
-  if (avatarKey !== null && avatarKey !== undefined && avatarKey !== '') {
-    src = imageUrl(avatarKey)
+  if (avatarUrl !== null && avatarUrl !== undefined && avatarUrl !== '') {
+    src = urlOrPlaceholder(avatarUrl)
   }
 
   let actionLabel = 'Thêm ảnh đại diện'
@@ -46,8 +46,8 @@ export default function AvatarUploader({ name, avatarKey }: Props) {
     setError(null)
     setUploading(true)
     try {
-      const key = await uploadImage(file)
-      await changeAvatar.mutateAsync({ data: { avatarKey: key } })
+      const uploadId = await uploadImage(file)
+      await changeAvatar.mutateAsync({ data: { avatarUploadId: uploadId } })
       await queryClient.invalidateQueries({ queryKey: getMeQueryKey() })
     } catch (err: unknown) {
       setError(apiErrorText(err, 'Không đổi được ảnh đại diện, thử lại sau.'))

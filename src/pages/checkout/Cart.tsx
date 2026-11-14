@@ -12,7 +12,7 @@ import {
   TrendUp,
 } from '@phosphor-icons/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { hookErrorMessage, urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import { classifyPriceChange, groupCartByShop, stockState } from '@/lib/shop/cartView'
 
@@ -301,7 +301,7 @@ export default function Cart() {
                                 className="block h-full w-full"
                               >
                                 <img
-                                  src={imageUrl(item.imageKey)}
+                                  src={urlOrPlaceholder(item.imageUrl)}
                                   alt={item.productName ?? 'Sản phẩm'}
                                   loading="lazy"
                                   className="h-full w-full object-cover"
@@ -315,7 +315,7 @@ export default function Cart() {
                             )}
                             {item.productId === undefined && (
                               <img
-                                src={imageUrl(item.imageKey)}
+                                src={urlOrPlaceholder(item.imageUrl)}
                                 alt={item.productName ?? 'Sản phẩm'}
                                 loading="lazy"
                                 className="h-full w-full object-cover"

@@ -82,7 +82,7 @@ vi.mock('@generated/endpoints/seller-products-inventory/seller-products-inventor
             status: 'ACTIVE',
             minPrice: 350000,
             maxPrice: 390000,
-            defaultImageKey: 'products/ao-lua.jpg',
+            defaultImageUrl: 'products/ao-lua.jpg',
           },
           {
             id: 'prod-2',
@@ -91,7 +91,7 @@ vi.mock('@generated/endpoints/seller-products-inventory/seller-products-inventor
             status: 'ACTIVE',
             minPrice: 450000,
             maxPrice: 450000,
-            defaultImageKey: 'products/quan-tay.jpg',
+            defaultImageUrl: 'products/quan-tay.jpg',
           },
         ],
       },

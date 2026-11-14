@@ -5,7 +5,7 @@ import { useListBanners } from '@generated/endpoints/site-content/site-content'
 import { CaretLeft, CaretRight, Pause, Play } from '@phosphor-icons/react'
 import { useReducedMotion } from 'motion/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { isInternalLink } from '@/lib/content/siteContent'
 
 import type { PublicBannerResponse } from '@generated/model/publicBannerResponse'
@@ -60,16 +60,18 @@ function BannerPicture({
   className: string
   eager: boolean
 }) {
-  const mobileKey = banner.mobileImageKey ?? ''
+  const mobileUrl = banner.mobileImageUrl ?? ''
   let loading: 'eager' | 'lazy' = 'lazy'
   if (eager) {
     loading = 'eager'
   }
   return (
     <picture>
-      {mobileKey !== '' && <source media="(max-width: 767px)" srcSet={imageUrl(mobileKey)} />}
+      {mobileUrl !== '' && (
+        <source media="(max-width: 767px)" srcSet={urlOrPlaceholder(mobileUrl)} />
+      )}
       <img
-        src={imageUrl(banner.imageKey)}
+        src={urlOrPlaceholder(banner.imageUrl)}
         alt={banner.title ?? ''}
         width={width}
         height={height}

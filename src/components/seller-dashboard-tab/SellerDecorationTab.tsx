@@ -643,7 +643,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   }
 
                   if (b.type === 'VIDEO') {
-                    const hasVideo = b.videoKey !== undefined && b.videoKey !== ''
+                    const hasVideo = b.videoUrl !== undefined && b.videoUrl !== ''
                     return (
                       <div
                         key={b.id}

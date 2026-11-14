@@ -24,7 +24,7 @@ describe('ChatProductCard', () => {
       id: 'prod-123',
       name: 'Áo Polo Nam Cổ Bẻ',
       slug: 'ao-polo-nam',
-      defaultImageKey: 'products/polo.jpg',
+      defaultImageUrl: 'products/polo.jpg',
       minPrice: 250000,
       maxPrice: 300000,
     }

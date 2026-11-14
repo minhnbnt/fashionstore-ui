@@ -15,7 +15,12 @@ import {
   Sparkle,
 } from '@phosphor-icons/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  hookErrorMessage,
+  urlOrPlaceholder,
+  PLACEHOLDER_IMAGE,
+  takeData,
+} from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import type { PageResponseProductResponse } from '@generated/model/pageResponseProductResponse'
@@ -48,8 +53,8 @@ function getProductDisplayInfo(p: ProductResponse) {
   let imageSrc = PLACEHOLDER_IMAGE
   if (p.images !== undefined && p.images.length > 0) {
     const firstImg = p.images[0]
-    if (firstImg?.s3Key !== undefined && firstImg.s3Key !== '') {
-      imageSrc = imageUrl(firstImg.s3Key)
+    if (firstImg?.url !== undefined && firstImg.url !== '') {
+      imageSrc = urlOrPlaceholder(firstImg.url)
     }
   }
 
