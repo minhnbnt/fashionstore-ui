@@ -26,6 +26,7 @@ import BankSearchSelector from '../seller/BankSearchSelector'
 
 import type { BankResponse } from '@/types/bank'
 import type { Step } from '@/types/seller'
+import type { PresignRequestPurpose } from '@generated/model/presignRequestPurpose'
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
   const target = event.currentTarget
@@ -217,6 +218,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
     onKey: (key: string) => void,
     onPreview: (url: string | null) => void,
     onBusy: (busy: boolean) => void,
+    purpose?: PresignRequestPurpose,
   ) {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -236,7 +238,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
     reader.readAsDataURL(file)
 
     try {
-      const key = await uploadImage(file)
+      const key = await uploadImage(file, purpose)
       onKey(key)
     } catch (err: unknown) {
       let msg = 'Tải ảnh thất bại, vui lòng thử lại.'
@@ -828,6 +830,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                         setIdFrontUploadId,
                         setIdFrontPreview,
                         setIdFrontUploading,
+                        'kyc',
                       )
                     }}
                     className="hidden"
@@ -870,7 +873,13 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     accept="image/*"
                     disabled={idBackUploading}
                     onChange={(e) => {
-                      void handleUpload(e, setIdBackUploadId, setIdBackPreview, setIdBackUploading)
+                      void handleUpload(
+                        e,
+                        setIdBackUploadId,
+                        setIdBackPreview,
+                        setIdBackUploading,
+                        'kyc',
+                      )
                     }}
                     className="hidden"
                   />
@@ -917,6 +926,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                         setIdSelfieUploadId,
                         setIdSelfiePreview,
                         setIdSelfieUploading,
+                        'kyc',
                       )
                     }}
                     className="hidden"
@@ -970,6 +980,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                       setBusinessCertUploadId,
                       setBusinessCertPreview,
                       setBusinessCertUploading,
+                      'kyc',
                     )
                   }}
                   className="hidden"

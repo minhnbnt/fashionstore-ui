@@ -130,9 +130,11 @@ export default function ReviewModal(props: Props) {
   }
 
   async function handleFilesChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const fileList = e.target.files
+    // Copy sang array TRƯỚC khi reset input: FileList là live view, gán value = ''
+    // sẽ dọn luôn danh sách file đang giữ tham chiếu.
+    const files = Array.from(e.target.files ?? [])
     e.target.value = ''
-    if (!fileList || fileList.length === 0) {
+    if (files.length === 0) {
       return
     }
 
@@ -142,7 +144,7 @@ export default function ReviewModal(props: Props) {
       const nextImages = [...images]
       let nextVideo = video
 
-      for (const file of Array.from(fileList)) {
+      for (const file of files) {
         if (file.type.startsWith('image/')) {
           if (nextImages.length >= MAX_REVIEW_IMAGES) {
             setUploadError(`Tối đa ${MAX_REVIEW_IMAGES} ảnh cho mỗi đánh giá.`)
