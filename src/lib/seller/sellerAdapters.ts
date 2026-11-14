@@ -1,4 +1,4 @@
-import { PLACEHOLDER_IMAGE, imageUrl } from '../api/apiAdapters'
+import { urlOrPlaceholder } from '../api/apiAdapters'
 import { formatDateTime } from '../format'
 import { cancelReasonLabel } from '../order/orderMonitoring'
 
@@ -47,13 +47,6 @@ function safeText(text: string | null | undefined): string {
     return ''
   }
   return text
-}
-
-function imageFromKey(key: string | null | undefined): string {
-  if (key === null || key === undefined || key === '') {
-    return PLACEHOLDER_IMAGE
-  }
-  return imageUrl(key)
 }
 
 /** "M / Trắng" -> ["M", "Trắng"], tách theo variant label do backend sinh */
@@ -107,7 +100,7 @@ export function productItem(
     status,
     violationType: product.violationType,
     statusReason: product.statusReason,
-    image: imageFromKey(product.defaultImageKey),
+    image: urlOrPlaceholder(product.defaultImageUrl),
     createdAt: product.createdAt,
     variants,
   }
@@ -241,7 +234,7 @@ export function returnItem(
   if (request.orderId !== undefined) {
     order = orderById.get(request.orderId)
   }
-  const evidenceKeys = request.evidenceKeys ?? []
+  const evidenceMedia = request.evidence ?? []
 
   let status: ReturnItem['status'] = 'REQUESTED'
   if (
@@ -265,7 +258,7 @@ export function returnItem(
     buyerName = safeText(order.shippingName)
   }
 
-  const evidenceImages = evidenceKeys.map((key) => imageFromKey(key))
+  const evidenceImages = evidenceMedia.map((item) => urlOrPlaceholder(item.url))
   const evidenceImage = evidenceImages[0] ?? ''
 
   return {
@@ -290,10 +283,15 @@ export function reviewItem(
   review: SellerReviewResponse,
   productName: string | undefined,
 ): ReviewItem {
-  const images = (review.imageKeys ?? []).map((key) => imageFromKey(key))
+  const media = review.media ?? []
+  const images = media
+    .filter((item) => item.kind === 'IMAGE')
+    .map((item) => urlOrPlaceholder(item.url))
   let videoUrl: string | undefined
-  if (review.videoKey) {
-    videoUrl = imageFromKey(review.videoKey)
+  for (const item of media) {
+    if (item.kind === 'VIDEO') {
+      videoUrl = urlOrPlaceholder(item.url)
+    }
   }
 
   return {
@@ -498,7 +496,7 @@ export function chatMessageItem(message: ChatMessageResponse): ChatMessageItem {
     id: safeId(message.id),
     senderType,
     content: safeText(message.content),
-    imageKey: message.imageKey ?? null,
+    imageUrl: message.imageUrl ?? null,
     sentAt: formatDateTime(message.sentAt),
   }
 }
@@ -548,9 +546,9 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
             if (typeof bRec['id'] === 'string') {
               bannerId = bRec['id']
             }
-            let imageKey = ''
-            if (typeof bRec['imageKey'] === 'string') {
-              imageKey = bRec['imageKey']
+            let imageUrl = ''
+            if (typeof bRec['imageUrl'] === 'string') {
+              imageUrl = bRec['imageUrl']
             }
             let title: string | undefined
             if (typeof bRec['title'] === 'string') {
@@ -562,7 +560,7 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
             }
             banners.push({
               id: bannerId,
-              imageKey,
+              imageUrl,
               title,
               linkUrl,
             })
@@ -588,9 +586,9 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
         displayStyle = record['displayStyle']
       }
 
-      let videoKey: string | undefined
-      if (typeof record['videoKey'] === 'string') {
-        videoKey = record['videoKey']
+      let videoUrl: string | undefined
+      if (typeof record['videoUrl'] === 'string') {
+        videoUrl = record['videoUrl']
       }
 
       let blockId = `block-${blocks.length + 1}`
@@ -620,8 +618,8 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
       if (displayStyle !== undefined) {
         block.displayStyle = displayStyle
       }
-      if (videoKey !== undefined) {
-        block.videoKey = videoKey
+      if (videoUrl !== undefined) {
+        block.videoUrl = videoUrl
       }
       blocks.push(block)
     }
@@ -640,25 +638,20 @@ export function shopProfile(shop: ShopResponse): ShopProfileData {
   if (shop.sellerType === 'BUSINESS') {
     businessType = 'BUSINESS'
   }
-  let taxOrIdNumber = safeText(shop.taxCode)
-  if (taxOrIdNumber === '') {
-    taxOrIdNumber = safeText(shop.idNumber)
-  }
   return {
     shopName: safeText(shop.name),
     slug: safeText(shop.slug),
     bio: safeText(shop.description),
-    logoUrl: imageFromKey(shop.logoKey),
-    bannerUrl: imageFromKey(shop.bannerKey),
-    contactName: safeText(shop.legalName),
+    logoUrl: urlOrPlaceholder(shop.logoUrl),
+    bannerUrl: urlOrPlaceholder(shop.bannerUrl),
     phone: safeText(shop.phone),
     pickupAddress: safeText(shop.address),
     // API khong co truong rieng cho thanh pho
     city: '',
     daysToShip: shop.processingDays ?? 2,
     businessType,
-    taxOrIdNumber,
-    isVerified: shop.status === 'APPROVED',
+    // Thông tin pháp nhân (legalName, idNumber, taxCode) nằm ở luồng eKYC, không còn trên profile
+    isVerified: shop.kycStatus === 'VERIFIED',
     bankName: safeText(shop.bankName),
     bankAccount: safeText(shop.bankAccount),
     bankHolder: safeText(shop.bankHolder),

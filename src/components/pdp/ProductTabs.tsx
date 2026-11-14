@@ -15,7 +15,7 @@ import {
   apiErrorMessage,
   fallbackImageOnError,
   hookErrorMessage,
-  imageUrl,
+  urlOrPlaceholder,
   priceInfo,
   takeData,
 } from '@/lib/api/apiAdapters'
@@ -153,9 +153,7 @@ export default function ProductTabs(props: { product: ProductResponse }) {
       count: Math.round((pct / 100) * fallback.count),
       pct,
     }))
-    withMediaCount = reviews.filter(
-      (r) => (r.imageKeys?.length ?? 0) > 0 || Boolean(r.videoKey),
-    ).length
+    withMediaCount = reviews.filter((r) => (r.media?.length ?? 0) > 0).length
   }
 
   let maxHelpfulCount = 0
@@ -392,7 +390,9 @@ export default function ProductTabs(props: { product: ProductResponse }) {
                   sort === 'HELPFUL' && maxHelpfulCount > 0 && count === maxHelpfulCount
                 const isMine = r.mine === true
                 const isLiked = r.helpfulByMe === true
-                const images = r.imageKeys ?? []
+                const media = r.media ?? []
+                const imageMedia = media.filter((m) => m.kind === 'IMAGE')
+                const videoMedia = media.find((m) => m.kind === 'VIDEO')
                 const tags = r.tags ?? []
 
                 let cardClass =
@@ -473,13 +473,13 @@ export default function ProductTabs(props: { product: ProductResponse }) {
                         </p>
                       )}
 
-                      {(images.length > 0 || Boolean(r.videoKey)) && (
+                      {(imageMedia.length > 0 || videoMedia !== undefined) && (
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {images.map(function (key) {
-                            const url = imageUrl(key)
+                          {imageMedia.map(function (m) {
+                            const url = urlOrPlaceholder(m.url)
                             return (
                               <button
-                                key={key}
+                                key={m.uploadId ?? url}
                                 type="button"
                                 onClick={function () {
                                   setLightboxMedia({ type: 'image', url })
@@ -496,19 +496,20 @@ export default function ProductTabs(props: { product: ProductResponse }) {
                               </button>
                             )
                           })}
-                          {Boolean(r.videoKey) && r.videoKey && (
+                          {videoMedia !== undefined && (
                             <button
                               type="button"
                               aria-label="Xem video đánh giá"
                               onClick={function () {
-                                if (r.videoKey) {
-                                  setLightboxMedia({ type: 'video', url: imageUrl(r.videoKey) })
-                                }
+                                setLightboxMedia({
+                                  type: 'video',
+                                  url: urlOrPlaceholder(videoMedia.url),
+                                })
                               }}
                               className="relative flex h-16 w-24 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-900 text-white transition hover:opacity-90 dark:border-white/15"
                             >
                               <video
-                                src={imageUrl(r.videoKey)}
+                                src={urlOrPlaceholder(videoMedia.url)}
                                 className="h-full w-full object-cover opacity-70"
                                 muted
                               />

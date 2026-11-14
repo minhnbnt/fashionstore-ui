@@ -13,7 +13,7 @@ import {
   PlayCircle,
 } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { checkVideoDuration, uploadImage, uploadVideo } from '@/lib/api/uploadImage'
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
@@ -24,24 +24,36 @@ function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
 }
 
 interface Props {
-  images: string[]
-  onImagesChange: (images: string[]) => void
-  videoKey: string | null
-  onVideoChange: (videoKey: string | null) => void
+  images: ProductMediaItem[]
+  onImagesChange: (images: ProductMediaItem[]) => void
+  video: ProductMediaValue | null
+  onVideoChange: (video: ProductMediaValue | null) => void
   tryOnEnabled: boolean
   onTryOnToggle: (enabled: boolean) => void
-  garmentKey: string | null
-  onGarmentChange: (garmentKey: string | null) => void
+  garment: ProductMediaValue | null
+  onGarmentChange: (garment: ProductMediaValue | null) => void
+}
+
+/** Một ảnh gallery: uploadId gửi vào ImageItemRequest, url (object URL hoặc URL response) để xem trước. */
+export interface ProductMediaItem {
+  uploadId: string
+  url: string
+}
+
+/** Video/garment sản phẩm: uploadId echo từ response để giữ nguyên, null khi chưa từng có. */
+export interface ProductMediaValue {
+  uploadId: string | null
+  url: string
 }
 
 export default function ProductMediaUploader({
   images,
   onImagesChange,
-  videoKey,
+  video,
   onVideoChange,
   tryOnEnabled,
   onTryOnToggle,
-  garmentKey,
+  garment,
   onGarmentChange,
 }: Props) {
   const [isUploadingImages, setIsUploadingImages] = useState(false)
@@ -74,15 +86,13 @@ export default function ProductMediaUploader({
     setErrorMessage(null)
 
     try {
-      const uploadPromises: Promise<string>[] = []
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        if (file !== undefined) {
-          uploadPromises.push(uploadImage(file))
-        }
-      }
-      const uploadedKeys = await Promise.all(uploadPromises)
-      onImagesChange([...images, ...uploadedKeys])
+      const uploadPromises = Array.from(files).map(function (file) {
+        return uploadImage(file).then(function (uploadId) {
+          return { uploadId, url: URL.createObjectURL(file) }
+        })
+      })
+      const uploadedItems = await Promise.all(uploadPromises)
+      onImagesChange([...images, ...uploadedItems])
     } catch (err: unknown) {
       let msg = 'Upload ảnh thất bại.'
       if (err instanceof Error) {
@@ -114,6 +124,10 @@ export default function ProductMediaUploader({
   }
 
   function handleRemoveImage(index: number) {
+    const removed = images[index]
+    if (removed !== undefined && removed.url.startsWith('blob:')) {
+      URL.revokeObjectURL(removed.url)
+    }
     onImagesChange(images.filter((_, i) => i !== index))
   }
 
@@ -157,8 +171,8 @@ export default function ProductMediaUploader({
     // Video hợp lệ -> Tiến hành upload S3
     setIsUploadingVideo(true)
     try {
-      const key = await uploadVideo(file)
-      onVideoChange(key)
+      const uploadId = await uploadVideo(file)
+      onVideoChange({ uploadId, url: localPreviewUrl })
       setUploadError(null)
     } catch (err: unknown) {
       let msg = 'Tải video lên hệ thống thất bại.'
@@ -181,8 +195,12 @@ export default function ProductMediaUploader({
     setIsUploadingVideo(true)
     setUploadError(null)
     try {
-      const key = await uploadVideo(videoFile)
-      onVideoChange(key)
+      const uploadId = await uploadVideo(videoFile)
+      let previewUrl = ''
+      if (videoPreviewUrl !== null) {
+        previewUrl = videoPreviewUrl
+      }
+      onVideoChange({ uploadId, url: previewUrl })
     } catch (err: unknown) {
       let msg = 'Tải video lên hệ thống thất bại.'
       if (err instanceof Error) {
@@ -217,8 +235,8 @@ export default function ProductMediaUploader({
     setErrorMessage(null)
 
     try {
-      const key = await uploadImage(file)
-      onGarmentChange(key)
+      const uploadId = await uploadImage(file)
+      onGarmentChange({ uploadId, url: URL.createObjectURL(file) })
     } catch (err: unknown) {
       let msg = 'Upload ảnh garment thất bại.'
       if (err instanceof Error) {
@@ -302,14 +320,14 @@ export default function ProductMediaUploader({
 
         {/* Gallery Grid */}
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-          {images.map(function (key, index) {
+          {images.map(function (item, index) {
             return (
               <div
-                key={key}
+                key={item.uploadId}
                 className="group relative flex aspect-3/4 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 transition dark:border-white/10 dark:bg-[#0a0f1e]"
               >
                 <img
-                  src={imageUrl(key)}
+                  src={item.url}
                   alt={`Sản phẩm ${index + 1}`}
                   onError={handleImageError}
                   className="h-full w-full object-cover"
@@ -399,7 +417,7 @@ export default function ProductMediaUploader({
             </p>
           </div>
 
-          {videoKey === null && videoPreviewUrl === null && (
+          {video === null && videoPreviewUrl === null && (
             <button
               type="button"
               disabled={isUploadingVideo}
@@ -424,11 +442,11 @@ export default function ProductMediaUploader({
           />
         </div>
 
-        {(videoKey !== null || videoPreviewUrl !== null) &&
+        {(video !== null || videoPreviewUrl !== null) &&
           (() => {
             let effectiveVideoSrc = videoPreviewUrl ?? undefined
-            if (effectiveVideoSrc === undefined && videoKey !== null) {
-              effectiveVideoSrc = imageUrl(videoKey)
+            if (effectiveVideoSrc === undefined && video !== null) {
+              effectiveVideoSrc = video.url
             }
             return (
               <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -561,10 +579,10 @@ export default function ProductMediaUploader({
         {tryOnEnabled && (
           <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-900/30 dark:bg-indigo-950/20">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              {garmentKey !== null && (
+              {garment !== null && (
                 <div className="relative aspect-3/4 w-32 overflow-hidden rounded-xl border border-indigo-200 bg-white shadow-xs dark:border-indigo-800">
                   <img
-                    src={imageUrl(garmentKey)}
+                    src={garment.url}
                     alt="Ảnh Garment phẳng nền trắng"
                     onError={handleImageError}
                     className="h-full w-full object-contain p-1"
@@ -581,7 +599,7 @@ export default function ProductMediaUploader({
                 </div>
               )}
 
-              {garmentKey === null && (
+              {garment === null && (
                 <button
                   type="button"
                   disabled={isUploadingGarment}

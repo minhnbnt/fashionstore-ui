@@ -14,7 +14,12 @@ import {
   VideoCamera,
 } from '@phosphor-icons/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  hookErrorMessage,
+  urlOrPlaceholder,
+  PLACEHOLDER_IMAGE,
+  takeData,
+} from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import type { DecorationBlock } from '@/types/seller'
@@ -38,8 +43,8 @@ function getProductDisplayInfo(p: ProductResponse) {
   let imageSrc = PLACEHOLDER_IMAGE
   if (p.images !== undefined && p.images.length > 0) {
     const firstImg = p.images[0]
-    if (firstImg?.s3Key !== undefined && firstImg.s3Key !== '') {
-      imageSrc = imageUrl(firstImg.s3Key)
+    if (firstImg?.url !== undefined && firstImg.url !== '') {
+      imageSrc = urlOrPlaceholder(firstImg.url)
     }
   }
 
@@ -96,12 +101,9 @@ function BannerSliderBlock({ block }: { block: DecorationBlock }) {
 
   const activeBanner = banners[currentIdx] ?? banners[0]
   let imageSrc = PLACEHOLDER_IMAGE
-  if (activeBanner?.imageKey !== undefined && activeBanner.imageKey !== '') {
-    if (activeBanner.imageKey.startsWith('http')) {
-      imageSrc = activeBanner.imageKey
-    } else {
-      imageSrc = imageUrl(activeBanner.imageKey)
-    }
+  if (activeBanner !== undefined) {
+    // imageUrl trong draft là URL public đầy đủ (từ PresignResponse.publicUrl)
+    imageSrc = urlOrPlaceholder(activeBanner.imageUrl)
   }
 
   const handlePrevSlide = () => {
@@ -427,7 +429,7 @@ export default function ShopDecorationRenderer({
         }
         if (b.type === 'VIDEO') {
           // Block chưa gắn video thì bỏ qua, đừng render hộp rỗng cho buyer
-          if (b.videoKey === undefined || b.videoKey === '') {
+          if (b.videoUrl === undefined || b.videoUrl === '') {
             return null
           }
           return <VideoBlock key={b.id} block={b} />
@@ -451,10 +453,10 @@ function VideoBlock({ block }: { block: DecorationBlock }) {
         </div>
       )}
       <div className={block.title !== '' ? 'p-4 pt-3' : 'p-4'}>
-        {block.videoKey !== undefined && block.videoKey !== '' && (
+        {block.videoUrl !== undefined && block.videoUrl !== '' && (
           // eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track
           <video
-            src={imageUrl(block.videoKey)}
+            src={urlOrPlaceholder(block.videoUrl)}
             controls
             playsInline
             preload="none"

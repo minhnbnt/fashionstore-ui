@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 
 import { Heart } from '@phosphor-icons/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { hookErrorMessage, urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import WishlistButton from '../../components/WishlistButton'
@@ -30,7 +30,7 @@ function WishlistCard(props: { item: WishlistItemResponse }) {
       <div className="relative">
         <Link to={href}>
           <img
-            src={imageUrl(item.defaultImageKey)}
+            src={urlOrPlaceholder(item.defaultImageUrl)}
             alt={item.name ?? ''}
             loading="lazy"
             width={600}

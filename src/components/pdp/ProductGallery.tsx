@@ -2,20 +2,20 @@ import { useState } from 'react'
 
 import { Play } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 
 import type { ImageResponse } from '@generated/model/imageResponse'
 
 export default function ProductGallery(props: {
   images: ImageResponse[]
   name: string
-  videoKey?: string | null
+  videoUrl?: string | null
 }) {
   const [active, setActive] = useState(0)
   const imgs = [...props.images].sort(function (a, b) {
     return (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
   })
-  const hasVideo = props.videoKey !== null && props.videoKey !== undefined && props.videoKey !== ''
+  const hasVideo = props.videoUrl !== null && props.videoUrl !== undefined && props.videoUrl !== ''
   const total = imgs.length + (hasVideo ? 1 : 0)
   if (total === 0) {
     return <div className="rounded-3xl bg-sky-100 p-10 dark:bg-white/5">Chưa có ảnh</div>
@@ -33,8 +33,8 @@ export default function ProductGallery(props: {
         {videoActive ? (
           // eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track
           <video
-            key={props.videoKey}
-            src={imageUrl(props.videoKey)}
+            key={props.videoUrl}
+            src={urlOrPlaceholder(props.videoUrl)}
             controls
             playsInline
             preload="metadata"
@@ -42,7 +42,7 @@ export default function ProductGallery(props: {
           />
         ) : (
           <img
-            src={imageUrl(activeImage?.s3Key)}
+            src={urlOrPlaceholder(activeImage?.url)}
             alt={props.name}
             width={600}
             height={600}
@@ -84,7 +84,7 @@ export default function ProductGallery(props: {
                 aria-label={'Ảnh ' + (i + 1)}
               >
                 <img
-                  src={imageUrl(img.s3Key)}
+                  src={urlOrPlaceholder(img.url)}
                   alt=""
                   loading="lazy"
                   width={150}

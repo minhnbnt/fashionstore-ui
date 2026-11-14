@@ -29,6 +29,9 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<ShopProfileData>(profile)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  // Chỉ track ảnh MỚI upload; undefined = giữ nguyên logo/banner cũ (API: null = giữ nguyên)
+  const [newLogoUploadId, setNewLogoUploadId] = useState<string | undefined>(undefined)
+  const [newBannerUploadId, setNewBannerUploadId] = useState<string | undefined>(undefined)
 
   const updateProfileMutation = useUpdateProfile({
     mutation: {
@@ -47,13 +50,13 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
   })
 
   function handleSaveProfile(next: ShopProfileData) {
-    let logoKey: string | null = null
-    if (next.logoUrl !== '') {
-      logoKey = next.logoUrl
+    let logoUploadId: string | undefined
+    if (newLogoUploadId !== undefined) {
+      logoUploadId = newLogoUploadId
     }
-    let bannerKey: string | null = null
-    if (next.bannerUrl !== '') {
-      bannerKey = next.bannerUrl
+    let bannerUploadId: string | undefined
+    if (newBannerUploadId !== undefined) {
+      bannerUploadId = newBannerUploadId
     }
 
     updateShopMutation.mutate({
@@ -61,8 +64,8 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
       data: {
         name: next.shopName,
         description: next.bio,
-        logoKey,
-        bannerKey,
+        logoUploadId,
+        bannerUploadId,
       },
     })
 
@@ -223,7 +226,10 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               hint="Ảnh vuông tỉ lệ 1:1, tối đa 5MB. Định dạng JPG, PNG, WEBP."
               aspectClass="aspect-square max-w-[120px]"
               value={formData.logoUrl}
-              onChange={(key) => setFormData({ ...formData, logoUrl: key })}
+              onChange={(uploadId, previewUrl) => {
+                setFormData({ ...formData, logoUrl: previewUrl })
+                setNewLogoUploadId(uploadId ?? undefined)
+              }}
               optional
             />
           </div>
@@ -234,7 +240,10 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               hint="Tỉ lệ 3:1 (khuyên dùng 1200x400px), tối đa 5MB."
               aspectClass="aspect-[3/1] max-w-full"
               value={formData.bannerUrl}
-              onChange={(key) => setFormData({ ...formData, bannerUrl: key })}
+              onChange={(uploadId, previewUrl) => {
+                setFormData({ ...formData, bannerUrl: previewUrl })
+                setNewBannerUploadId(uploadId ?? undefined)
+              }}
               optional
             />
           </div>
@@ -277,22 +286,6 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label
-              htmlFor="contactNameField"
-              className="mb-1 block text-xs font-semibold text-zinc-700 dark:text-zinc-200"
-            >
-              Người liên hệ tại kho
-            </label>
-            <input
-              id="contactNameField"
-              type="text"
-              value={formData.contactName}
-              onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-              className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
-            />
-          </div>
-
           <div>
             <label
               htmlFor="phoneField"
@@ -385,25 +378,9 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               </select>
             </div>
 
-            <div>
-              <label
-                htmlFor="taxOrIdNumberInput"
-                className="mb-1 block text-xs font-semibold text-zinc-700 dark:text-zinc-200"
-              >
-                Số CCCD / Mã số thuế
-              </label>
-              <input
-                id="taxOrIdNumberInput"
-                type="text"
-                value={formData.taxOrIdNumber}
-                onChange={(e) => setFormData({ ...formData, taxOrIdNumber: e.target.value })}
-                className="w-full rounded-full border border-zinc-300 bg-zinc-50 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/5"
-              />
-            </div>
-
             <div className="rounded border border-blue-200 bg-blue-50 p-2.5 text-[11px] leading-relaxed text-blue-800">
-              Thông tin định danh đã được hệ thống xác minh và bảo mật mã hóa theo chuẩn an ninh
-              thương mại điện tử.
+              Thông tin pháp nhân (CCCD / mã số thuế) được quản lý trong luồng eKYC đăng ký shop,
+              không chỉnh sửa tại đây.
             </div>
           </div>
         </div>

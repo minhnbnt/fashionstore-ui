@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 
 import { useSearch } from '@generated/endpoints/search/search'
 
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { priceLabel } from '@/lib/format'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
@@ -37,7 +37,7 @@ export default function RelatedProducts(props: {
               className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 dark:border-white/10 dark:bg-white/5"
             >
               <img
-                src={imageUrl(p.defaultImageKey)}
+                src={urlOrPlaceholder(p.defaultImageUrl)}
                 alt={p.name}
                 loading="lazy"
                 width={600}

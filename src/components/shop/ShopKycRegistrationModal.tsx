@@ -104,11 +104,11 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
   const [address, setAddress] = useState('')
   const [description, setDescription] = useState('')
 
-  const [logoKey, setLogoKey] = useState('')
+  const [logoUploadId, setLogoUploadId] = useState('')
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
 
-  const [bannerKey, setBannerKey] = useState('')
+  const [bannerUploadId, setBannerUploadId] = useState('')
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [bannerUploading, setBannerUploading] = useState(false)
 
@@ -119,19 +119,19 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
   const [idIssuedPlace, setIdIssuedPlace] = useState('')
   const [taxCode, setTaxCode] = useState('')
 
-  const [idFrontKey, setIdFrontKey] = useState('')
+  const [idFrontUploadId, setIdFrontUploadId] = useState('')
   const [idFrontPreview, setIdFrontPreview] = useState<string | null>(null)
   const [idFrontUploading, setIdFrontUploading] = useState(false)
 
-  const [idBackKey, setIdBackKey] = useState('')
+  const [idBackUploadId, setIdBackUploadId] = useState('')
   const [idBackPreview, setIdBackPreview] = useState<string | null>(null)
   const [idBackUploading, setIdBackUploading] = useState(false)
 
-  const [idSelfieKey, setIdSelfieKey] = useState('')
+  const [idSelfieUploadId, setIdSelfieUploadId] = useState('')
   const [idSelfiePreview, setIdSelfiePreview] = useState<string | null>(null)
   const [idSelfieUploading, setIdSelfieUploading] = useState(false)
 
-  const [businessCertKey, setBusinessCertKey] = useState('')
+  const [businessCertUploadId, setBusinessCertUploadId] = useState('')
   const [businessCertPreview, setBusinessCertPreview] = useState<string | null>(null)
   const [businessCertUploading, setBusinessCertUploading] = useState(false)
 
@@ -301,11 +301,11 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
       setErrorMessage('Vui lòng nhập mô tả phong cách gian hàng.')
       return false
     }
-    if (logoKey.trim() === '') {
+    if (logoUploadId.trim() === '') {
       setErrorMessage('Vui lòng tải lên ảnh Logo gian hàng.')
       return false
     }
-    if (bannerKey.trim() === '') {
+    if (bannerUploadId.trim() === '') {
       setErrorMessage('Vui lòng tải lên Ảnh bìa gian hàng.')
       return false
     }
@@ -336,15 +336,15 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
       setErrorMessage('Vui lòng nhập nơi cấp CCCD.')
       return false
     }
-    if (idFrontKey.trim() === '') {
+    if (idFrontUploadId.trim() === '') {
       setErrorMessage('Vui lòng tải lên ảnh mặt trước CCCD.')
       return false
     }
-    if (idBackKey.trim() === '') {
+    if (idBackUploadId.trim() === '') {
       setErrorMessage('Vui lòng tải lên ảnh mặt sau CCCD.')
       return false
     }
-    if (idSelfieKey.trim() === '') {
+    if (idSelfieUploadId.trim() === '') {
       setErrorMessage('Vui lòng tải lên ảnh chân dung cầm CCCD.')
       return false
     }
@@ -434,7 +434,6 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
         data: {
           email: userEmail,
           displayName,
-          avatarKey: logoKey || null,
         },
       })
 
@@ -443,8 +442,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
           name: name.trim(),
           slug: slug.trim(),
           description: description.trim(),
-          logoKey: logoKey.trim(),
-          bannerKey: bannerKey.trim(),
+          logoUploadId: logoUploadId.trim(),
+          bannerUploadId: bannerUploadId.trim(),
           phone: phone.trim(),
           address: address.trim(),
           sellerType: 'INDIVIDUAL',
@@ -453,10 +452,10 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
           idIssuedDate: idIssuedDate.trim(),
           idIssuedPlace: idIssuedPlace.trim(),
           taxCode: taxCode.trim() || null,
-          idFrontKey: idFrontKey.trim(),
-          idBackKey: idBackKey.trim(),
-          idSelfieKey: idSelfieKey.trim(),
-          businessCertKey: businessCertKey.trim() || null,
+          idFrontUploadId: idFrontUploadId.trim(),
+          idBackUploadId: idBackUploadId.trim(),
+          idSelfieUploadId: idSelfieUploadId.trim(),
+          businessCertUploadId: businessCertUploadId.trim() || null,
           bankName: bankName.trim(),
           bankAccount: bankAccount.trim(),
           bankHolder: bankHolder.trim(),
@@ -618,7 +617,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     accept="image/*"
                     disabled={logoUploading}
                     onChange={(e) => {
-                      void handleUpload(e, setLogoKey, setLogoPreview, setLogoUploading)
+                      void handleUpload(e, setLogoUploadId, setLogoPreview, setLogoUploading)
                     }}
                     className="hidden"
                   />
@@ -653,7 +652,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     </div>
                   )}
                 </label>
-                {logoKey && (
+                {logoUploadId && (
                   <p className="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                     ✓ Đã tải logo
                   </p>
@@ -672,7 +671,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     accept="image/*"
                     disabled={bannerUploading}
                     onChange={(e) => {
-                      void handleUpload(e, setBannerKey, setBannerPreview, setBannerUploading)
+                      void handleUpload(e, setBannerUploadId, setBannerPreview, setBannerUploading)
                     }}
                     className="hidden"
                   />
@@ -707,7 +706,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     </div>
                   )}
                 </label>
-                {bannerKey && (
+                {bannerUploadId && (
                   <p className="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                     ✓ Đã tải ảnh bìa
                   </p>
@@ -824,7 +823,12 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     accept="image/*"
                     disabled={idFrontUploading}
                     onChange={(e) => {
-                      void handleUpload(e, setIdFrontKey, setIdFrontPreview, setIdFrontUploading)
+                      void handleUpload(
+                        e,
+                        setIdFrontUploadId,
+                        setIdFrontPreview,
+                        setIdFrontUploading,
+                      )
                     }}
                     className="hidden"
                   />
@@ -866,7 +870,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     accept="image/*"
                     disabled={idBackUploading}
                     onChange={(e) => {
-                      void handleUpload(e, setIdBackKey, setIdBackPreview, setIdBackUploading)
+                      void handleUpload(e, setIdBackUploadId, setIdBackPreview, setIdBackUploading)
                     }}
                     className="hidden"
                   />
@@ -908,7 +912,12 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                     accept="image/*"
                     disabled={idSelfieUploading}
                     onChange={(e) => {
-                      void handleUpload(e, setIdSelfieKey, setIdSelfiePreview, setIdSelfieUploading)
+                      void handleUpload(
+                        e,
+                        setIdSelfieUploadId,
+                        setIdSelfiePreview,
+                        setIdSelfieUploading,
+                      )
                     }}
                     className="hidden"
                   />
@@ -958,7 +967,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                   onChange={(e) => {
                     void handleUpload(
                       e,
-                      setBusinessCertKey,
+                      setBusinessCertUploadId,
                       setBusinessCertPreview,
                       setBusinessCertUploading,
                     )

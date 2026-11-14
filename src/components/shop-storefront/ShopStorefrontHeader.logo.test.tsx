@@ -12,8 +12,8 @@ function shopWithBrokenLogo(): ShopResponse {
     id: 'shop-uuid-2',
     name: 'Shopee & Lazada Import',
     slug: 'browser-marketplace-import',
-    logoKey: 'seeds/market-logo.webp',
-    bannerKey: 'seeds/market-banner.webp',
+    logoUrl: 'seeds/market-logo.webp',
+    bannerUrl: 'seeds/market-banner.webp',
   }
 }
 

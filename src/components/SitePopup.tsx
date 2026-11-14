@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { useListPopups } from '@generated/endpoints/site-content/site-content'
 import { X } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import {
   browserSeenStore,
   isInternalLink,
@@ -133,7 +133,7 @@ export default function SitePopup() {
     return null
   }
 
-  const imageKey = popup.imageKey ?? ''
+  const imageUrl = popup.imageUrl ?? ''
   const title = popup.title ?? ''
   const body = popup.body ?? ''
   const ctaLabel = popup.ctaLabel ?? ''
@@ -158,10 +158,10 @@ export default function SitePopup() {
           <X size={16} weight="bold" />
         </button>
 
-        {imageKey !== '' && (
+        {imageUrl !== '' && (
           <PopupAction popup={popup} onClose={close} className="block">
             <img
-              src={imageUrl(imageKey)}
+              src={urlOrPlaceholder(imageUrl)}
               alt={title}
               width={800}
               height={800}

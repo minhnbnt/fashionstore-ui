@@ -8,8 +8,8 @@ import ProductGallery from './ProductGallery'
 // Mỗi test trả mảng mới để tránh chia tham chiếu giữa các test
 function images() {
   return [
-    { id: 'img-1', s3Key: 'products/ao-so-mi-1.jpg', sortOrder: 0 },
-    { id: 'img-2', s3Key: 'products/ao-so-mi-2.jpg', sortOrder: 1 },
+    { id: 'img-1', url: 'https://s3.test/products/ao-so-mi-1.jpg', sortOrder: 0 },
+    { id: 'img-2', url: 'https://s3.test/products/ao-so-mi-2.jpg', sortOrder: 1 },
   ]
 }
 
@@ -18,7 +18,7 @@ afterEach(cleanup)
 describe('ProductGallery — video sản phẩm (DOM)', () => {
   it('render video làm slot đầu gallery khi sản phẩm có videoKey', () => {
     const { container } = render(
-      <ProductGallery name="Áo Sơ Mi Lụa" videoKey="products/ao-so-mi.mp4" images={images()} />,
+      <ProductGallery name="Áo Sơ Mi Lụa" videoUrl="products/ao-so-mi.mp4" images={images()} />,
     )
 
     // Vùng chính là <video> stream từ key S3
@@ -35,7 +35,7 @@ describe('ProductGallery — video sản phẩm (DOM)', () => {
   it('click thumbnail ảnh → vùng chính đổi sang ảnh; click video → đổi ngược lại', async () => {
     const user = userEvent.setup()
     const { container } = render(
-      <ProductGallery name="Áo Sơ Mi Lụa" videoKey="products/ao-so-mi.mp4" images={images()} />,
+      <ProductGallery name="Áo Sơ Mi Lụa" videoUrl="products/ao-so-mi.mp4" images={images()} />,
     )
 
     await user.click(screen.getByRole('button', { name: 'Ảnh 2' }))
@@ -50,7 +50,7 @@ describe('ProductGallery — video sản phẩm (DOM)', () => {
 
   it('chỉ có video không có ảnh → hiện video thay vì "Chưa có ảnh"', () => {
     const { container } = render(
-      <ProductGallery name="Áo Sơ Mi Lụa" videoKey="products/ao-so-mi.mp4" images={[]} />,
+      <ProductGallery name="Áo Sơ Mi Lụa" videoUrl="products/ao-so-mi.mp4" images={[]} />,
     )
 
     expect(container.querySelector('video')).not.toBeNull()
@@ -58,11 +58,11 @@ describe('ProductGallery — video sản phẩm (DOM)', () => {
     expect(container.textContent).not.toContain('Chưa có ảnh')
   })
 
-  it('không có videoKey → gallery như cũ, không có thẻ video', () => {
+  it('không có videoUrl → gallery như cũ, không có thẻ video', () => {
     const { container } = render(
       <ProductGallery
         name="Áo Sơ Mi Lụa"
-        images={[{ id: 'img-1', s3Key: 'products/ao-so-mi-1.jpg', sortOrder: 0 }]}
+        images={[{ id: 'img-1', url: 'https://s3.test/products/ao-so-mi-1.jpg', sortOrder: 0 }]}
       />,
     )
 

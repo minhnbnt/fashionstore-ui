@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { useDetail1 } from '@generated/endpoints/products/products'
 import { ArrowSquareOut, ShoppingBagOpen } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import { productResponseToChatItem } from './productItem'
@@ -76,7 +76,7 @@ export default function ChatProductCard(props: ChatProductCardProps) {
         className="h-[76px] w-[60px] shrink-0 overflow-hidden rounded-xl border border-zinc-200/60 bg-[#f6f9ff] dark:border-white/10 dark:bg-white/5"
       >
         <img
-          src={imageUrl(product.defaultImageKey)}
+          src={urlOrPlaceholder(product.defaultImageUrl)}
           alt=""
           loading="lazy"
           width={60}

@@ -8,7 +8,12 @@ import {
 import { Megaphone, PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  hookErrorMessage,
+  urlOrPlaceholder,
+  PLACEHOLDER_IMAGE,
+  takeData,
+} from '@/lib/api/apiAdapters'
 import {
   audienceLabel,
   frequencyLabel,
@@ -31,7 +36,8 @@ function toggleRequest(popup: PopupResponse): PopupRequest {
     name: popup.name ?? '',
     title: popup.title ?? undefined,
     body: popup.body ?? undefined,
-    imageKey: popup.imageKey ?? undefined,
+    // Bật/tắt chỉ đổi active — echo lại uploadId từ response để giữ nguyên ảnh
+    imageUploadId: popup.imageUploadId ?? undefined,
     ctaLabel: popup.ctaLabel ?? undefined,
     linkUrl: popup.linkUrl ?? undefined,
     audience: popup.audience ?? 'ALL',
@@ -101,7 +107,7 @@ export default function PopupsTab({ onNotice }: { onNotice: (message: string) =>
       body = (
         <ul className="space-y-2">
           {popups.map(function (popup) {
-            const imageKey = popup.imageKey ?? ''
+            const imageUrl = popup.imageUrl ?? ''
             let toggleLabel = 'Bật'
             if (popup.active === true) {
               toggleLabel = 'Tắt'
@@ -112,9 +118,9 @@ export default function PopupsTab({ onNotice }: { onNotice: (message: string) =>
                 className="flex flex-col gap-3 rounded-2xl bg-white/70 p-3 sm:flex-row sm:items-center dark:bg-white/5"
               >
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 dark:bg-white/10">
-                  {imageKey !== '' && (
+                  {imageUrl !== '' && (
                     <img
-                      src={imageUrl(imageKey)}
+                      src={urlOrPlaceholder(imageUrl)}
                       alt=""
                       onError={function (e) {
                         if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
@@ -124,7 +130,7 @@ export default function PopupsTab({ onNotice }: { onNotice: (message: string) =>
                       className="h-full w-full object-cover"
                     />
                   )}
-                  {imageKey === '' && <Megaphone size={24} className="text-zinc-400" />}
+                  {imageUrl === '' && <Megaphone size={24} className="text-zinc-400" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2">

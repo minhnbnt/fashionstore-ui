@@ -48,7 +48,7 @@ import StatePanel from '@/components/ui/StatePanel'
 import {
   fallbackImageOnError,
   hookErrorMessage,
-  imageUrl,
+  urlOrPlaceholder,
   PLACEHOLDER_IMAGE,
   takeData,
 } from '@/lib/api/apiAdapters'
@@ -212,7 +212,7 @@ export default function OrderDetail() {
     function handleSubmitReturn(payload: {
       reason: string
       description: string
-      evidenceKeys: string[]
+      evidenceUploadIds: string[]
     }) {
       setActionError(null)
       createReturnMutation.mutate(
@@ -221,7 +221,7 @@ export default function OrderDetail() {
           data: {
             reason: payload.reason,
             description: payload.description || null,
-            evidenceKeys: payload.evidenceKeys,
+            evidenceUploadIds: payload.evidenceUploadIds,
           },
         },
         {
@@ -475,8 +475,8 @@ export default function OrderDetail() {
             <div className="divide-y divide-sky-100 dark:divide-white/5">
               {(order.items ?? []).map((item, idx) => {
                 let thumb = PLACEHOLDER_IMAGE
-                if (item.imageKey) {
-                  thumb = imageUrl(item.imageKey)
+                if (item.imageUrl) {
+                  thumb = urlOrPlaceholder(item.imageUrl)
                 }
                 const canVisit = Boolean(item.productId) && item.productAvailable !== false
                 return (

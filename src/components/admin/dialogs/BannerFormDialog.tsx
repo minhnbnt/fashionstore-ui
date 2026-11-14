@@ -39,8 +39,13 @@ export default function BannerFormDialog({ banner, defaultPlacement, onClose, on
     initialPlacement(banner, defaultPlacement),
   )
   const [title, setTitle] = useState(banner?.title ?? '')
-  const [imageKey, setImageKey] = useState(banner?.imageKey ?? '')
-  const [mobileImageKey, setMobileImageKey] = useState(banner?.mobileImageKey ?? '')
+  // Echo uploadId từ response để giữ nguyên ảnh khi chưa đổi; null = chưa có/chưa đổi
+  const [imageUploadId, setImageUploadId] = useState<string | null>(banner?.imageUploadId ?? null)
+  const [imagePreview, setImagePreview] = useState(banner?.imageUrl ?? '')
+  const [mobileImageUploadId, setMobileImageUploadId] = useState<string | null>(
+    banner?.mobileImageUploadId ?? null,
+  )
+  const [mobileImagePreview, setMobileImagePreview] = useState(banner?.mobileImageUrl ?? '')
   const [linkUrl, setLinkUrl] = useState(banner?.linkUrl ?? '')
   const [sortOrder, setSortOrder] = useState(String(banner?.sortOrder ?? 0))
   const [schedule, setSchedule] = useState<ScheduleValue>({
@@ -58,7 +63,7 @@ export default function BannerFormDialog({ banner, defaultPlacement, onClose, on
   const orderProblem = Number.isInteger(order) === false || order < 0 || order > 9999
   const canSubmit =
     title.trim() !== '' &&
-    imageKey !== '' &&
+    imageUploadId !== null &&
     linkProblem === false &&
     orderProblem === false &&
     scheduleError(schedule) === null &&
@@ -74,14 +79,14 @@ export default function BannerFormDialog({ banner, defaultPlacement, onClose, on
   }
 
   function handleSubmit() {
-    if (canSubmit === false) {
+    if (canSubmit === false || imageUploadId === null) {
       return
     }
     const data: BannerRequest = {
       placement,
       title: title.trim(),
-      imageKey,
-      mobileImageKey: mobileImageKey || undefined,
+      imageUploadId,
+      mobileImageUploadId: mobileImageUploadId ?? undefined,
       linkUrl: linkUrl.trim() || undefined,
       sortOrder: order,
       active: schedule.active,
@@ -165,16 +170,22 @@ export default function BannerFormDialog({ banner, defaultPlacement, onClose, on
       <ImageUploadField
         label="Ảnh desktop"
         hint={option?.hint ?? ''}
-        value={imageKey}
-        onChange={setImageKey}
+        value={imagePreview}
+        onChange={(uploadId, previewUrl) => {
+          setImageUploadId(uploadId)
+          setImagePreview(previewUrl)
+        }}
         aspectClass={desktopAspect}
         onUploadingChange={setUploading}
       />
       <ImageUploadField
         label="Ảnh mobile"
         hint="Bỏ trống thì mobile dùng ảnh desktop."
-        value={mobileImageKey}
-        onChange={setMobileImageKey}
+        value={mobileImagePreview}
+        onChange={(uploadId, previewUrl) => {
+          setMobileImageUploadId(uploadId)
+          setMobileImagePreview(previewUrl)
+        }}
         aspectClass="aspect-[4/3] max-w-xs"
         optional
         onUploadingChange={setUploading}

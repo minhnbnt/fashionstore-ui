@@ -1,4 +1,4 @@
-import { fallbackImageOnError, PLACEHOLDER_IMAGE, imageUrl } from '@/lib/api/apiAdapters'
+import { fallbackImageOnError, PLACEHOLDER_IMAGE, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import {
   findOrderProductReview,
   groupOrderReviewProducts,
@@ -54,8 +54,8 @@ export default function ReviewProductPickerModal(props: Props) {
           const existing = findOrderProductReview(props.orderId, productId, props.reviewLookup)
           const isLocked = existing !== undefined && Boolean(existing.edited)
           let thumb = PLACEHOLDER_IMAGE
-          if (item.imageKey) {
-            thumb = imageUrl(item.imageKey)
+          if (item.imageUrl) {
+            thumb = urlOrPlaceholder(item.imageUrl)
           }
 
           return (

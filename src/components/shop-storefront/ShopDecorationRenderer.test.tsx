@@ -26,7 +26,7 @@ describe('ShopDecorationRenderer — block VIDEO', () => {
                 type: 'VIDEO',
                 title: 'Video giới thiệu',
                 enabled: true,
-                videoKey: 'decoration/shop-intro.mp4',
+                videoUrl: 'https://s3.test/decoration/shop-intro.mp4',
               },
             ],
           }),
@@ -34,13 +34,13 @@ describe('ShopDecorationRenderer — block VIDEO', () => {
       ),
     )
 
-    // Video stream từ S3 qua imageUrl, có controls để buyer phát
+    // Video stream từ S3 qua urlOrPlaceholder, có controls để buyer phát
     expect(html).toContain('<video')
     expect(html).toContain('shop-intro.mp4')
     expect(html).toContain('Video giới thiệu')
   })
 
-  it('bỏ qua block VIDEO chưa có videoKey thay vì render hộp rỗng', () => {
+  it('bỏ qua block VIDEO chưa có videoUrl thay vì render hộp rỗng', () => {
     const queryClient = new QueryClient()
 
     const html = renderToString(
@@ -64,7 +64,7 @@ describe('ShopDecorationRenderer — block VIDEO', () => {
                 type: 'BANNER_SLIDER',
                 title: 'Banner chính',
                 enabled: true,
-                banners: [{ id: 's1', imageKey: 'banner.jpg', title: 'Xuân Hè' }],
+                banners: [{ id: 's1', imageUrl: 'https://s3.test/banner.jpg', title: 'Xuân Hè' }],
               },
             ],
           }),

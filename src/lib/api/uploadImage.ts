@@ -2,32 +2,28 @@ import { presign } from '@generated/endpoints/uploads/uploads'
 
 import { takeData } from './apiAdapters'
 
+import type { PresignRequestPurpose } from '@generated/model/presignRequestPurpose'
+
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 export const MAX_VIDEO_BYTES = 50 * 1024 * 1024
 
-/** Xin URL presign rồi PUT thẳng file lên S3, trả về S3 key để lưu vào banner/popup. */
-export async function uploadImage(file: File): Promise<string> {
+/**
+ * Xin URL presign (backend tạo sẵn row upload) rồi PUT thẳng file lên S3, trả về
+ * uploadId để gửi vào request nghiệp vụ. Ảnh giấy tờ KYC dùng purpose 'kyc' để
+ * backend đặt key dưới prefix riêng tư.
+ */
+export async function uploadImage(file: File, purpose?: PresignRequestPurpose): Promise<string> {
   if (file.type.startsWith('image/') === false) {
     throw new Error('Chỉ nhận file ảnh.')
+  }
+  if (file.type === 'image/svg+xml') {
+    throw new Error('Không nhận file SVG.')
   }
   if (file.size > MAX_IMAGE_BYTES) {
     throw new Error('Ảnh tối đa 5 MB.')
   }
 
-  const signed = takeData(await presign({ contentType: file.type }))
-  if (signed.url === undefined || signed.key === undefined) {
-    throw new Error('Không xin được URL upload.')
-  }
-
-  const response = await fetch(signed.url, {
-    method: 'PUT',
-    body: file,
-    headers: { 'Content-Type': file.type },
-  })
-  if (response.ok === false) {
-    throw new Error('Upload ảnh thất bại, thử lại sau.')
-  }
-  return signed.key
+  return putViaPresign(file, purpose)
 }
 
 export function checkVideoDuration(file: File, maxSeconds = 60): Promise<number> {
@@ -72,7 +68,11 @@ export function checkVideoDuration(file: File, maxSeconds = 60): Promise<number>
   })
 }
 
-export async function uploadVideo(file: File, maxSeconds = 60): Promise<string> {
+export async function uploadVideo(
+  file: File,
+  maxSeconds = 60,
+  purpose?: PresignRequestPurpose,
+): Promise<string> {
   if (file.type.startsWith('video/') === false) {
     throw new Error('Chỉ nhận file video.')
   }
@@ -82,18 +82,22 @@ export async function uploadVideo(file: File, maxSeconds = 60): Promise<string> 
 
   await checkVideoDuration(file, maxSeconds)
 
-  const signed = takeData(await presign({ contentType: file.type }))
-  if (signed.url === undefined || signed.key === undefined) {
-    throw new Error('Không xin được URL upload video.')
+  return putViaPresign(file, purpose)
+}
+
+async function putViaPresign(file: File, purpose?: PresignRequestPurpose): Promise<string> {
+  const signed = takeData(await presign({ contentType: file.type, purpose }))
+  if (signed.uploadUrl === undefined || signed.uploadId === undefined) {
+    throw new Error('Không xin được URL upload.')
   }
 
-  const response = await fetch(signed.url, {
+  const response = await fetch(signed.uploadUrl, {
     method: 'PUT',
     body: file,
     headers: { 'Content-Type': file.type },
   })
   if (response.ok === false) {
-    throw new Error('Upload video thất bại, thử lại sau.')
+    throw new Error('Upload tệp thất bại, thử lại sau.')
   }
-  return signed.key
+  return signed.uploadId
 }
