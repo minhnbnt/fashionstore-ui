@@ -356,7 +356,9 @@ export default function ReviewModal(props: Props) {
                         src={imageUrl(videoKey)}
                         controls
                         className="h-full w-full object-cover"
-                      />
+                      >
+                        <track kind="captions" />
+                      </video>
                       <button
                         type="button"
                         aria-label="Xóa video"
@@ -383,6 +385,7 @@ export default function ReviewModal(props: Props) {
               </div>
               <input
                 type="checkbox"
+                aria-label="Ẩn danh tên khi đánh giá"
                 checked={anonymous}
                 onChange={(e) => setAnonymous(e.target.checked)}
                 className="h-4 w-4 rounded accent-blue-600"

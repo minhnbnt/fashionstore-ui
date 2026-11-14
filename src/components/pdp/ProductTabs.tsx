@@ -589,7 +589,9 @@ export default function ProductTabs(props: { product: ProductResponse }) {
                 controls
                 autoPlay
                 className="max-h-[70vh] w-full object-contain"
-              />
+              >
+                <track kind="captions" />
+              </video>
             )}
           </div>
         </Modal>

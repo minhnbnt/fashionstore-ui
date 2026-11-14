@@ -27,6 +27,7 @@ import { reviewItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 
 import type { ReviewItem } from '@/types/seller'
+import type { ReviewSummaryResponse } from '@generated/model/reviewSummaryResponse'
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
   const target = event.currentTarget
@@ -183,7 +184,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
       {/* Thống kê đánh giá */}
       {(() => {
-        let summaryData: ReturnType<typeof takeData> | undefined
+        let summaryData: ReviewSummaryResponse | undefined
         if (summaryQuery.data !== undefined) {
           summaryData = takeData(summaryQuery.data)
         }
@@ -571,7 +572,9 @@ export default function SellerReviewsTab({ shopId }: Props) {
                 controls
                 autoPlay
                 className="max-h-[70vh] w-full object-contain"
-              />
+              >
+                <track kind="captions" />
+              </video>
             )}
           </div>
         </Modal>
