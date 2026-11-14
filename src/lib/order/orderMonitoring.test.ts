@@ -10,6 +10,7 @@ import {
   elapsedLabel,
   statusLabel,
   tabCount,
+  timelineTitle,
 } from './orderMonitoring'
 
 describe('canAdminCancel', () => {
@@ -37,6 +38,29 @@ describe('labels', () => {
     expect(cancelReasonLabel('FRAUD_SUSPECTED')).toBe('Nghi gian lận, đơn ảo')
     expect(cancelReasonLabel('OUT_OF_STOCK')).toBe('OUT_OF_STOCK')
     expect(cancelReasonLabel(undefined)).toBe('')
+  })
+
+  it('maps buyer cancel reasons and distinguishes BUYER OTHER vs ADMIN OTHER', () => {
+    expect(cancelReasonLabel('CHANGE_MIND', 'BUYER')).toBe('Đổi ý')
+    expect(cancelReasonLabel('FOUND_CHEAPER', 'BUYER')).toBe('Tìm được giá rẻ hơn')
+    expect(cancelReasonLabel('ORDERED_BY_MISTAKE', 'BUYER')).toBe('Đặt nhầm')
+    expect(cancelReasonLabel('OTHER', 'BUYER')).toBe('Khác')
+    expect(cancelReasonLabel('OTHER', 'ADMIN')).toBe('Lý do khác')
+    expect(cancelReasonLabel('OTHER')).toBe('Lý do khác')
+    expect(actorLabel('SYSTEM')).toBe('Hệ thống')
+    expect(cancelledByLabel('SYSTEM')).toBe('Hệ thống')
+  })
+
+  it('formats timelineTitle for normal transitions and receipt confirmation', () => {
+    expect(timelineTitle(null, 'PENDING', 'BUYER')).toBe('Tạo đơn hàng')
+    expect(timelineTitle('PENDING', 'CONFIRMED', 'SELLER')).toBe('Shop xác nhận đơn')
+    expect(timelineTitle('CONFIRMED', 'SHIPPING', 'SELLER')).toBe('Bàn giao cho đơn vị vận chuyển')
+    expect(timelineTitle('SHIPPING', 'DELIVERED', 'SELLER')).toBe('Hoàn tất giao hàng')
+    expect(timelineTitle('DELIVERED', 'DELIVERED', 'BUYER')).toBe('Người mua xác nhận đã nhận hàng')
+    expect(timelineTitle('DELIVERED', 'DELIVERED', 'SYSTEM')).toBe(
+      'Hệ thống tự động xác nhận hoàn thành sau 7 ngày',
+    )
+    expect(timelineTitle('PENDING', 'CANCELLED', 'BUYER')).toBe('Hủy đơn')
   })
 })
 

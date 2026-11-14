@@ -16,7 +16,10 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useSessionQuery } from '@/hooks/useSession'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { takeData } from '@/lib/api/apiAdapters'
-import { getTargetNotificationLink } from '@/lib/content/notificationLinks'
+import {
+  getTargetNotificationLink,
+  realtimeInvalidationKeys,
+} from '@/lib/content/notificationLinks'
 import { formatDateTime } from '@/lib/format'
 
 import type { GetUnreadNotificationCountParams, ListNotificationsParams } from '@generated/model'
@@ -35,9 +38,9 @@ export interface NotificationBellProps {
 
 function getNotificationClass(isRead: boolean): string {
   if (isRead) {
-    return 'w-full text-left p-3 rounded-xl transition hover:bg-zinc-100 dark:hover:bg-white/5 opacity-80'
+    return 'w-full text-left p-3 rounded-2xl transition hover:bg-zinc-100 dark:hover:bg-white/5 opacity-80'
   }
-  return 'w-full text-left p-3 rounded-xl transition bg-indigo-50/80 hover:bg-indigo-100/80 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50'
+  return 'w-full text-left p-3 rounded-2xl transition bg-indigo-50/80 hover:bg-indigo-100/80 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50'
 }
 
 export default function NotificationBell(props: NotificationBellProps) {
@@ -121,9 +124,32 @@ export default function NotificationBell(props: NotificationBellProps) {
     },
   })
 
-  useWebSocket('/user/queue/notifications', function () {
+  useWebSocket('/user/queue/notifications', function (frame) {
     void queryClient.invalidateQueries({ queryKey: getListNotificationsQueryKey() })
     void queryClient.invalidateQueries({ queryKey: getGetUnreadNotificationCountQueryKey() })
+    let notificationType: string | undefined
+    if (frame?.body) {
+      try {
+        const payload = JSON.parse(frame.body) as { type?: string }
+        notificationType = payload.type
+      } catch {
+        notificationType = undefined
+      }
+    }
+    const keys = realtimeInvalidationKeys(notificationType)
+    if (keys.length === 0) {
+      return
+    }
+    const prefixes = keys.map((k) => k[0])
+    void queryClient.invalidateQueries({
+      predicate: (query) => {
+        const first = query.queryKey[0]
+        if (typeof first !== 'string') {
+          return false
+        }
+        return prefixes.some((prefix) => first.startsWith(prefix))
+      },
+    })
   })
 
   useEffect(() => {

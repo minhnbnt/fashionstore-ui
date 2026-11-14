@@ -46,6 +46,12 @@ function timelineTitle(entry: OrderTimelineResponse): string {
   if (entry.fromStatus === null || entry.fromStatus === undefined) {
     return 'Đặt hàng'
   }
+  if (entry.fromStatus === 'DELIVERED' && entry.toStatus === 'DELIVERED') {
+    if (entry.actor === 'SYSTEM') {
+      return 'Hệ thống tự động xác nhận hoàn thành sau 7 ngày'
+    }
+    return 'Người mua xác nhận đã nhận hàng'
+  }
   return `${statusLabel(entry.fromStatus)} → ${statusLabel(entry.toStatus)}`
 }
 
@@ -109,7 +115,7 @@ function DetailBody({
           <p className="font-bold">
             Hủy bởi {cancelledByLabel(order.cancelledBy)}
             {order.cancelReason !== null && order.cancelReason !== undefined && (
-              <span> · {cancelReasonLabel(order.cancelReason)}</span>
+              <span> · {cancelReasonLabel(order.cancelReason, order.cancelledBy)}</span>
             )}
           </p>
           {detail.cancelNote !== null && detail.cancelNote !== undefined && (

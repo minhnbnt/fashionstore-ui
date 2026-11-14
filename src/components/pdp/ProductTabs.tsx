@@ -177,6 +177,11 @@ export default function ProductTabs(props: { product: ProductResponse }) {
                         <UserAvatar name={r.buyerDisplayName ?? 'Người mua'} />
                         <div>
                           <p className="text-sm font-bold">{r.buyerDisplayName ?? 'Người mua'}</p>
+                          {Boolean(r.edited) && (
+                            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                              Đã chỉnh sửa
+                            </span>
+                          )}
                           <div className="mt-0.5 flex items-center gap-2">
                             <Stars value={r.stars ?? 0} />
                             <span className="text-xs text-zinc-400">

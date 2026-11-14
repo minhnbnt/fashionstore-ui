@@ -252,3 +252,24 @@ export function canPerform(action: string, permissions: string[], isOwner: boole
   }
   return permissions.includes(action)
 }
+
+export function canViewOrderTracking(permissions: string[], isOwner: boolean): boolean {
+  if (isOwner) {
+    return true
+  }
+  return permissions.includes('ORDER_READ') || permissions.includes('ORDER_PROCESS')
+}
+
+export function canAddOrderTracking(
+  status: string | null | undefined,
+  permissions: string[],
+  isOwner: boolean,
+): boolean {
+  if (status !== 'SHIPPING') {
+    return false
+  }
+  if (isOwner) {
+    return true
+  }
+  return permissions.includes('ORDER_PROCESS')
+}
