@@ -20,7 +20,7 @@ vi.mock('@/hooks/useCart', () => ({
 }))
 
 vi.mock('@/hooks/useWishlist', () => ({
-  useWishlist: vi.fn(() => ({ count: 0 })),
+  useWishlist: vi.fn(),
 }))
 
 vi.mock('@generated/endpoints/categories/categories', () => ({
@@ -47,6 +47,7 @@ vi.mock('./NotificationBell', () => ({
 
 import { useSignOut } from '@/hooks/useAuthMutations'
 import { useSessionQuery } from '@/hooks/useSession'
+import { useWishlist } from '@/hooks/useWishlist'
 
 function sessionFor(email: string, role?: 'shop' | 'admin') {
   const appMetadata = role === undefined ? {} : { role }
@@ -87,6 +88,11 @@ describe('Header Account Menu', () => {
       mutate: signOutMutate,
       isPending: false,
     } as unknown as ReturnType<typeof useSignOut>)
+    vi.mocked(useWishlist).mockReturnValue({
+      count: 0,
+    } as unknown as ReturnType<typeof useWishlist>)
+    window.localStorage.removeItem('net:theme')
+    document.documentElement.classList.remove('dark')
   })
 
   afterEach(function () {
@@ -226,5 +232,50 @@ describe('Header Account Menu', () => {
     fireEvent.click(within(panel).getByRole('button', { name: 'Đăng xuất' }))
 
     expect(signOutMutate).toHaveBeenCalledTimes(1)
+  })
+
+  it('menu shows wishlist link with item count', () => {
+    vi.mocked(useSessionQuery).mockReturnValue(sessionFor('test@example.com'))
+    vi.mocked(useWishlist).mockReturnValue({
+      count: 3,
+    } as unknown as ReturnType<typeof useWishlist>)
+
+    renderWithClient(<Header />)
+    const panel = openAccountMenu()
+    if (panel === null) {
+      throw new Error('Menu chưa mở')
+    }
+
+    const scope = within(panel)
+    const link = scope.getByRole('link', { name: /Sản phẩm yêu thích/i })
+    expect(link.getAttribute('href')).toBe('/wishlist')
+    expect(scope.getByTestId('account-wishlist-count').textContent).toBe('3')
+  })
+
+  it('theme switch reflects current theme and toggles dark mode', () => {
+    vi.mocked(useSessionQuery).mockReturnValue(sessionFor('test@example.com'))
+
+    renderWithClient(<Header />)
+    const panel = openAccountMenu()
+    if (panel === null) {
+      throw new Error('Menu chưa mở')
+    }
+
+    const toggle = within(panel).getByRole('switch', { name: /Giao diện tối/i })
+    expect(toggle.getAttribute('aria-checked')).toBe('false')
+
+    fireEvent.click(toggle)
+
+    expect(toggle.getAttribute('aria-checked')).toBe('true')
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+  })
+
+  it('topbar drops standalone wishlist and theme buttons', () => {
+    vi.mocked(useSessionQuery).mockReturnValue(sessionFor('test@example.com'))
+
+    renderWithClient(<Header />)
+
+    expect(screen.queryByRole('button', { name: 'Đổi giao diện sáng tối' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Sản phẩm yêu thích' })).toBeNull()
   })
 })

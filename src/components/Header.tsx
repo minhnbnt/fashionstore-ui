@@ -9,15 +9,18 @@ import {
   ChatCircleDots,
   Heart,
   MagnifyingGlass,
+  Moon,
   Receipt,
   ShieldCheck,
   ShoppingBag,
   SignOut,
   Storefront,
+  Sun,
   User,
   UserCircle,
 } from '@phosphor-icons/react'
 
+import { useTheme } from '@/hooks/useTheme'
 import { urlOrPlaceholder, takeData } from '@/lib/api/apiAdapters'
 
 import { useSignOut } from '../hooks/useAuthMutations'
@@ -27,7 +30,6 @@ import { useSessionQuery } from '../hooks/useSession'
 import { useWishlist } from '../hooks/useWishlist'
 import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
 import NotificationBell from './NotificationBell'
-import ThemeToggle from './ui/ThemeToggle'
 import UserAvatar from './UserAvatar'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
@@ -61,6 +63,7 @@ function MenuLink(props: {
   label: string
   icon: React.ReactNode
   onNavigate: () => void
+  trailing?: React.ReactNode
 }) {
   return (
     <Link
@@ -74,6 +77,7 @@ function MenuLink(props: {
       <span className="motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5">
         {props.label}
       </span>
+      {props.trailing}
     </Link>
   )
 }
@@ -84,6 +88,14 @@ export default function Header() {
   const signOut = useSignOut()
   const { totalQuantity } = useCart()
   const { count: wishlistCount } = useWishlist()
+  const { theme, toggle: toggleTheme } = useTheme()
+
+  let themeTrackClass = 'bg-indigo-100 dark:bg-white/10'
+  let themeKnobStyle: React.CSSProperties = {}
+  if (theme === 'dark') {
+    themeTrackClass = 'bg-blue-600'
+    themeKnobStyle = { transform: 'translateX(12px)' }
+  }
   const [keyword, setKeyword] = useState('')
   const accountMenuContainerRef = useRef<HTMLDivElement>(null)
   const accountMenuTriggerRef = useRef<HTMLButtonElement>(null)
@@ -345,6 +357,50 @@ export default function Header() {
                     )}
                   </div>
 
+                  {/* Tuỳ chọn cá nhân */}
+                  <div className="border-t border-zinc-100 py-1.5 dark:border-white/10">
+                    <MenuLink
+                      to="/wishlist"
+                      label="Sản phẩm yêu thích"
+                      icon={<Heart size={16} />}
+                      onNavigate={function () {
+                        menu.close()
+                      }}
+                      trailing={
+                        wishlistCount > 0 && (
+                          <span
+                            data-testid="account-wishlist-count"
+                            className="ml-auto rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"
+                          >
+                            {wishlistCount}
+                          </span>
+                        )
+                      }
+                    />
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={theme === 'dark'}
+                      onClick={toggleTheme}
+                      className="group flex w-full items-center gap-2.5 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-indigo-50 focus-visible:bg-indigo-50 focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none focus-visible:ring-inset dark:text-zinc-200 dark:hover:bg-white/10 dark:focus-visible:bg-white/10 dark:focus-visible:ring-sky-400/40"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-sky-50 text-blue-700 motion-safe:transition-transform motion-safe:group-hover:scale-105 dark:from-white/10 dark:to-white/5 dark:text-sky-300">
+                        {theme === 'dark' && <Moon size={16} />}
+                        {theme !== 'dark' && <Sun size={16} />}
+                      </span>
+                      <span>Giao diện tối</span>
+                      <span
+                        aria-hidden="true"
+                        className={`ml-auto flex h-4 w-7 items-center rounded-full p-0.5 transition-colors ${themeTrackClass}`}
+                      >
+                        <span
+                          className="h-3 w-3 rounded-full bg-white shadow-sm motion-safe:transition-transform motion-safe:duration-200"
+                          style={themeKnobStyle}
+                        />
+                      </span>
+                    </button>
+                  </div>
+
                   {/* Danger zone */}
                   <div className="border-t border-zinc-100 dark:border-white/10">
                     <button
@@ -365,19 +421,6 @@ export default function Header() {
               )}
             </div>
 
-            <Link
-              to="/wishlist"
-              aria-label="Sản phẩm yêu thích"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10"
-            >
-              <Heart size={20} />
-              {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-700 px-1 text-[11px] font-extrabold text-white shadow">
-                  {wishlistCount}
-                </span>
-              )}
-            </Link>
-            <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10" />
             <Link
               to="/cart"
               aria-label="Giỏ hàng"
