@@ -70,6 +70,30 @@ describe('NotificationBell', () => {
     expect(html).not.toContain('Bán hàng')
   })
 
+  it('lien trigger voi panel bang aria-controls', () => {
+    vi.mocked(useGetUnreadNotificationCount).mockReturnValue({
+      data: { status: 200, data: { unread: 0 } },
+    } as unknown as ReturnType<typeof useGetUnreadNotificationCount>)
+
+    vi.mocked(useListNotifications).mockReturnValue({
+      data: { status: 200, data: { items: [], total: 0 } },
+    } as unknown as ReturnType<typeof useListNotifications>)
+
+    const html = renderToString(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(NotificationBell, {
+          categories: ['ORDER', 'ACTIVITY'],
+          defaultOpen: true,
+        }),
+      ),
+    )
+
+    expect(html).toContain('aria-controls="notification-menu"')
+    expect(html).toContain('id="notification-menu"')
+  })
+
   it('rendersUnreadBadgeOnTabsWhenCountsGreaterThanZero', () => {
     vi.mocked(useGetUnreadNotificationCount).mockReturnValue({
       data: { status: 200, data: { unread: 5, byCategory: { ORDER: 2, ACTIVITY: 3 } } },

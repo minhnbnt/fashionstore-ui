@@ -22,6 +22,7 @@ import { urlOrPlaceholder, takeData } from '@/lib/api/apiAdapters'
 
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useCart } from '../hooks/useCart'
+import { useMenuDisclosure } from '../hooks/useMenuDisclosure'
 import { useSessionQuery } from '../hooks/useSession'
 import { useWishlist } from '../hooks/useWishlist'
 import { getDefaultPathForRole, getRoleFromSession } from '../lib/auth'
@@ -55,6 +56,28 @@ function RoleBadge({ role }: { role: string }) {
   )
 }
 
+function MenuLink(props: {
+  to: string
+  label: string
+  icon: React.ReactNode
+  onNavigate: () => void
+}) {
+  return (
+    <Link
+      to={props.to}
+      onClick={props.onNavigate}
+      className="group flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-indigo-50 focus-visible:bg-indigo-50 focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none focus-visible:ring-inset dark:text-zinc-200 dark:hover:bg-white/10 dark:focus-visible:bg-white/10 dark:focus-visible:ring-sky-400/40"
+    >
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-sky-50 text-blue-700 motion-safe:transition-transform motion-safe:group-hover:scale-105 dark:from-white/10 dark:to-white/5 dark:text-sky-300">
+        {props.icon}
+      </span>
+      <span className="motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5">
+        {props.label}
+      </span>
+    </Link>
+  )
+}
+
 export default function Header() {
   const { data: session } = useSessionQuery()
   const navigate = useNavigate()
@@ -62,8 +85,12 @@ export default function Header() {
   const { totalQuantity } = useCart()
   const { count: wishlistCount } = useWishlist()
   const [keyword, setKeyword] = useState('')
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const accountMenuContainerRef = useRef<HTMLDivElement>(null)
+  const accountMenuTriggerRef = useRef<HTMLButtonElement>(null)
+  const menu = useMenuDisclosure({
+    containerRef: accountMenuContainerRef,
+    triggerRef: accountMenuTriggerRef,
+  })
 
   const categoriesQuery = useListCategories()
   let categories: CategoryResponse[] = []
@@ -80,7 +107,7 @@ export default function Header() {
   }
 
   function handleSignOut() {
-    setDropdownOpen(false)
+    menu.close()
     signOut.mutate(undefined, {
       onSuccess: function () {
         void navigate('/', { replace: true })
@@ -93,16 +120,7 @@ export default function Header() {
       void navigate('/login')
       return
     }
-    setDropdownOpen(function (prev) {
-      return !prev
-    })
-  }
-
-  function handleBlur(e: React.FocusEvent) {
-    if (dropdownRef.current !== null && dropdownRef.current.contains(e.relatedTarget)) {
-      return
-    }
-    setDropdownOpen(false)
+    menu.toggle()
   }
 
   const isLoggedIn = session !== null && session !== undefined
@@ -126,19 +144,29 @@ export default function Header() {
   }
 
   let avatarSrc: string | undefined
+  let displayName = ''
   if (meQuery.data !== undefined) {
     const me = takeData(meQuery.data)
     if (me.avatarUrl !== null && me.avatarUrl !== undefined && me.avatarUrl !== '') {
       avatarSrc = urlOrPlaceholder(me.avatarUrl)
     }
+    if (me.displayName !== undefined && me.displayName !== '') {
+      displayName = me.displayName
+    }
+  }
+  let cardName = displayName
+  if (cardName === '' && isLoggedIn && session.user.email !== undefined) {
+    cardName = session.user.email
   }
 
   let role = 'customer'
   let dashboardPath = '/account'
-  let dashboardLabel = 'Trang cá nhân'
+  let dashboardLabel = 'Tài khoản của tôi'
+  let settingsLabel: string | null = null
   if (isLoggedIn) {
     role = getRoleFromSession(session)
     dashboardPath = getDefaultPathForRole(role as 'admin' | 'shop' | 'customer')
+    settingsLabel = 'Cài đặt tài khoản'
     if (role === 'admin') {
       dashboardLabel = 'Bảng quản trị'
     }
@@ -147,6 +175,10 @@ export default function Header() {
       if (role !== 'admin') {
         dashboardPath = '/shop'
       }
+      settingsLabel = 'Cài đặt tài khoản & shop'
+    }
+    if (role !== 'admin' && role !== 'shop' && !hasAnyShop) {
+      settingsLabel = null
     }
   }
 
@@ -243,13 +275,16 @@ export default function Header() {
             <NotificationBell categories={['ORDER', 'ACTIVITY']} />
 
             {/* User avatar / dropdown */}
-            <div className="relative" ref={dropdownRef} onBlur={handleBlur}>
+            <div className="relative" ref={accountMenuContainerRef}>
               <button
                 type="button"
                 id="btn-user-menu"
+                ref={accountMenuTriggerRef}
                 aria-label="Tài khoản"
+                aria-expanded={menu.open}
+                aria-controls="account-menu"
                 onClick={handleAvatarClick}
-                className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-indigo-100 dark:hover:bg-white/10"
+                className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-indigo-100 active:scale-[0.98] dark:hover:bg-white/10"
               >
                 {isLoggedIn && session.user.email !== undefined && (
                   <UserAvatar name={session.user.email} size={28} src={avatarSrc} />
@@ -257,66 +292,75 @@ export default function Header() {
                 {(!isLoggedIn || session.user.email === undefined) && <User size={20} />}
               </button>
 
-              {dropdownOpen && isLoggedIn && (
-                <div className="absolute top-full right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-white/30 bg-white/90 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-[#11182a]/95">
-                  {/* User info */}
-                  <div className="border-b border-zinc-100 px-4 py-3 dark:border-white/10">
-                    <p className="truncate text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                      {session.user.email}
-                    </p>
-                    <div className="mt-1">
-                      <RoleBadge role={role} />
+              {menu.open && isLoggedIn && (
+                <div
+                  id="account-menu"
+                  className="absolute top-full right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-3xl border border-white/30 bg-white/90 shadow-xl backdrop-blur-md motion-safe:transition-[opacity,translate,scale] motion-safe:duration-150 motion-safe:ease-out dark:border-white/15 dark:bg-[#0a0f1e] dark:shadow-indigo-500/10 motion-safe:starting:translate-y-1 motion-safe:starting:scale-[0.96] motion-safe:starting:opacity-0"
+                >
+                  {/* Identity card */}
+                  <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3 dark:border-white/10">
+                    <UserAvatar name={session.user.email ?? 'user'} size={40} src={avatarSrc} />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold text-zinc-900 dark:text-zinc-100">
+                        {cardName}
+                      </p>
+                      {displayName !== '' && (
+                        <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                          {session.user.email}
+                        </p>
+                      )}
+                      <div className="mt-1.5">
+                        <RoleBadge role={role} />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Dashboard link */}
-                  <Link
-                    to={dashboardPath}
-                    onClick={function () {
-                      setDropdownOpen(false)
-                    }}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-indigo-50 dark:text-zinc-200 dark:hover:bg-white/10"
-                  >
-                    <UserCircle size={16} />
-                    {dashboardLabel}
-                  </Link>
-
-                  <Link
-                    to="/account/orders"
-                    onClick={function () {
-                      setDropdownOpen(false)
-                    }}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-indigo-50 dark:text-zinc-200 dark:hover:bg-white/10"
-                  >
-                    <Receipt size={16} />
-                    Đơn hàng của tôi
-                  </Link>
-
-                  {role !== 'customer' && (
-                    <Link
-                      to="/account"
-                      onClick={function () {
-                        setDropdownOpen(false)
+                  {/* Navigation */}
+                  <div className="py-1.5">
+                    <MenuLink
+                      to={dashboardPath}
+                      label={dashboardLabel}
+                      icon={<UserCircle size={16} />}
+                      onNavigate={function () {
+                        menu.close()
                       }}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-indigo-50 dark:text-zinc-200 dark:hover:bg-white/10"
-                    >
-                      <User size={16} />
-                      Tài khoản &amp; shop của tôi
-                    </Link>
-                  )}
+                    />
+                    <MenuLink
+                      to="/account/orders"
+                      label="Đơn hàng của tôi"
+                      icon={<Receipt size={16} />}
+                      onNavigate={function () {
+                        menu.close()
+                      }}
+                    />
+                    {settingsLabel !== null && (
+                      <MenuLink
+                        to="/account"
+                        label={settingsLabel}
+                        icon={<User size={16} />}
+                        onNavigate={function () {
+                          menu.close()
+                        }}
+                      />
+                    )}
+                  </div>
 
-                  {/* Sign out */}
-                  <button
-                    type="button"
-                    id="btn-sign-out"
-                    onClick={handleSignOut}
-                    disabled={signOut.isPending}
-                    className="flex w-full items-center gap-2.5 border-t border-zinc-100 px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-white/10 dark:text-red-400 dark:hover:bg-red-500/10"
-                  >
-                    <SignOut size={16} weight="bold" />
-                    {signOut.isPending && <span>Đang đăng xuất…</span>}
-                    {signOut.isPending === false && <span>Đăng xuất</span>}
-                  </button>
+                  {/* Danger zone */}
+                  <div className="border-t border-zinc-100 dark:border-white/10">
+                    <button
+                      type="button"
+                      id="btn-sign-out"
+                      onClick={handleSignOut}
+                      disabled={signOut.isPending}
+                      className="group flex w-full items-center gap-2.5 px-3.5 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-red-50 dark:bg-red-500/10">
+                        <SignOut size={16} weight="bold" />
+                      </span>
+                      {signOut.isPending && <span>Đang đăng xuất…</span>}
+                      {signOut.isPending === false && <span>Đăng xuất</span>}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
