@@ -22,6 +22,13 @@ import {
 
 import { useTheme } from '@/hooks/useTheme'
 import { urlOrPlaceholder, takeData } from '@/lib/api/apiAdapters'
+import {
+  cn,
+  iconChipClass,
+  menuItemClass,
+  switchKnobClass,
+  switchTrackClass,
+} from '@/lib/ui/styles'
 
 import { useSignOut } from '../hooks/useAuthMutations'
 import { useCart } from '../hooks/useCart'
@@ -66,12 +73,13 @@ function MenuLink(props: {
   trailing?: React.ReactNode
 }) {
   return (
-    <Link
-      to={props.to}
-      onClick={props.onNavigate}
-      className="group flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-indigo-50 focus-visible:bg-indigo-50 focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none focus-visible:ring-inset dark:text-zinc-200 dark:hover:bg-white/10 dark:focus-visible:bg-white/10 dark:focus-visible:ring-sky-400/40"
-    >
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-sky-50 text-blue-700 motion-safe:transition-transform motion-safe:group-hover:scale-105 dark:from-white/10 dark:to-white/5 dark:text-sky-300">
+    <Link to={props.to} onClick={props.onNavigate} className={cn(menuItemClass())}>
+      <span
+        className={cn(
+          iconChipClass(),
+          'motion-safe:transition-transform motion-safe:group-hover:scale-105',
+        )}
+      >
         {props.icon}
       </span>
       <span className="motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5">
@@ -90,10 +98,8 @@ export default function Header() {
   const { count: wishlistCount } = useWishlist()
   const { theme, toggle: toggleTheme } = useTheme()
 
-  let themeTrackClass = 'bg-indigo-100 dark:bg-white/10'
   let themeKnobStyle: React.CSSProperties = {}
   if (theme === 'dark') {
-    themeTrackClass = 'bg-blue-600'
     themeKnobStyle = { transform: 'translateX(12px)' }
   }
   const [keyword, setKeyword] = useState('')
@@ -382,21 +388,21 @@ export default function Header() {
                       role="switch"
                       aria-checked={theme === 'dark'}
                       onClick={toggleTheme}
-                      className="group flex w-full items-center gap-2.5 px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-indigo-50 focus-visible:bg-indigo-50 focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none focus-visible:ring-inset dark:text-zinc-200 dark:hover:bg-white/10 dark:focus-visible:bg-white/10 dark:focus-visible:ring-sky-400/40"
+                      className={cn(menuItemClass(), 'w-full')}
                     >
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-sky-50 text-blue-700 motion-safe:transition-transform motion-safe:group-hover:scale-105 dark:from-white/10 dark:to-white/5 dark:text-sky-300">
+                      <span className={cn(iconChipClass())}>
                         {theme === 'dark' && <Moon size={16} />}
                         {theme !== 'dark' && <Sun size={16} />}
                       </span>
                       <span>Giao diện tối</span>
                       <span
                         aria-hidden="true"
-                        className={`ml-auto flex h-4 w-7 items-center rounded-full p-0.5 transition-colors ${themeTrackClass}`}
+                        className={cn(
+                          switchTrackClass(theme === 'dark'),
+                          'ml-auto flex h-4 w-7 items-center rounded-full p-0.5 transition-colors',
+                        )}
                       >
-                        <span
-                          className="h-3 w-3 rounded-full bg-white shadow-sm motion-safe:transition-transform motion-safe:duration-200"
-                          style={themeKnobStyle}
-                        />
+                        <span className={cn(switchKnobClass())} style={themeKnobStyle} />
                       </span>
                     </button>
                   </div>
