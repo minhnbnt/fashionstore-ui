@@ -5,16 +5,12 @@ import type { ProductResponse } from '@generated/model/productResponse'
 
 export const PLACEHOLDER_IMAGE = 'https://picsum.photos/seed/net-noimage/600/750'
 
-export function imageUrl(s3Key: string | null | undefined): string {
-  if (s3Key === null || s3Key === undefined || s3Key === '') {
-    // backend chưa có ảnh thì dùng placeholder; có ảnh đầy đủ thì bỏ nhánh này
+/** URL ảnh từ response; null/undefined/rỗng thì dùng placeholder ảnh mặc định. */
+export function urlOrPlaceholder(url: string | null | undefined): string {
+  if (url === null || url === undefined || url === '') {
     return PLACEHOLDER_IMAGE
   }
-  const base = import.meta.env.VITE_ASSETS_URL as string | undefined
-  if (base === undefined || base === '') {
-    throw new Error('Thiếu VITE_ASSETS_URL trong .env')
-  }
-  return `${base}/${s3Key}`
+  return url
 }
 
 export function priceInfo(product: ProductResponse): PriceInfo {

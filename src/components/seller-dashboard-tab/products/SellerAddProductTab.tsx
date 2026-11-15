@@ -23,9 +23,12 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import ProductMediaUploader from '@/components/seller/ProductMediaUploader'
+import ProductMediaUploader, {
+  type ProductMediaItem,
+  type ProductMediaValue,
+} from '@/components/seller/ProductMediaUploader'
 import RichTextEditor from '@/components/ui/RichTextEditor'
-import { imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { uploadImage } from '@/lib/api/uploadImage'
 
@@ -55,7 +58,7 @@ interface VariantRow {
   compareAtPrice: number | null
   stockQuantity: number
   isDefault: boolean
-  imageKey: string | null
+  imageUploadId: string | null
 }
 
 function formatNumberWithDots(val: number | null | undefined): string {
@@ -139,7 +142,7 @@ function newVariantRow(
   size: string,
   color: string,
   isDefault = false,
-  imageKey: string | null = null,
+  imageUploadId: string | null = null,
 ): VariantRow {
   return {
     keyId: newVariantKeyId(),
@@ -150,7 +153,7 @@ function newVariantRow(
     compareAtPrice: 250000,
     stockQuantity: 50,
     isDefault,
-    imageKey,
+    imageUploadId,
   }
 }
 
@@ -168,11 +171,11 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     '### Đặc điểm nổi bật:\n- Chất liệu cao cấp, thoáng mát và co giãn nhẹ.\n- Phom dáng hiện đại, đường may tỉ mỉ, tôn dáng người mặc.\n- Phù hợp đi làm, đi chơi và dạo phố năng động.\n\n### Hướng dẫn giặt & bảo quản:\n- Giặt máy ở chế độ nhẹ nhàng với nước lạnh.\n- Không dùng chất tẩy rửa mạnh.\n- Phơi trong bóng râm, tránh ánh nắng trực tiếp.',
   )
 
-  // 2. Media
-  const [images, setImages] = useState<string[]>([])
-  const [videoKey, setVideoKey] = useState<string | null>(null)
+  // 2. Media — item = {uploadId, url}: uploadId gửi request, url (object URL) để xem trước
+  const [images, setImages] = useState<ProductMediaItem[]>([])
+  const [video, setVideo] = useState<ProductMediaValue | null>(null)
   const [tryOnEnabled, setTryOnEnabled] = useState(false)
-  const [garmentKey, setGarmentKey] = useState<string | null>(null)
+  const [garment, setGarment] = useState<ProductMediaValue | null>(null)
 
   // 3. Classifications (Màu sắc & Kích cỡ), Bulk Apply & Variants
   const [colors, setColors] = useState<string[]>(['Trắng', 'Đen'])
@@ -196,7 +199,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       newVariantRow(generateVariantSku('SP', 'Đen', 'L'), 'L', 'Đen', false),
     ]
   })
-  const [colorImages, setColorImages] = useState<Record<string, string>>({})
+  const [colorImages, setColorImages] = useState<Record<string, ProductMediaItem>>({})
   const [uploadingColor, setUploadingColor] = useState<string | null>(null)
 
   // 4. Additional Info & Shipping
@@ -340,7 +343,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             compareAtPrice: sampleCompareAtPrice,
             stockQuantity: sampleStock,
             isDefault: isFirst,
-            imageKey: colorImg,
+            imageUploadId: colorImg?.uploadId ?? null,
           })
         }
         isFirst = false
@@ -542,13 +545,16 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
     setUploadingColor(colorName)
     try {
-      const key = await uploadImage(file)
-      setColorImages((prev) => ({ ...prev, [colorName]: key }))
+      const uploadId = await uploadImage(file)
+      setColorImages((prev) => ({
+        ...prev,
+        [colorName]: { uploadId, url: URL.createObjectURL(file) },
+      }))
       // Update all variants with this color
       setVariants((prev) =>
         prev.map((v) => {
           if (v.color.trim().toLowerCase() === colorName.trim().toLowerCase()) {
-            return { ...v, imageKey: key }
+            return { ...v, imageUploadId: uploadId }
           }
           return v
         }),
@@ -608,7 +614,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       setFormError('Sản phẩm chỉ được tải lên tối đa 9 ảnh.')
       return
     }
-    if (tryOnEnabled && (garmentKey === null || garmentKey.trim() === '')) {
+    if (tryOnEnabled && garment === null) {
       setFormError(
         'Ảnh garment (trải phẳng trên nền trắng) là bắt buộc khi bật tính năng thử đồ ảo.',
       )
@@ -659,17 +665,17 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     }
 
     // 4. Construct payload
-    const imageItems: ImageItemRequest[] = images.map(function (key, index) {
+    const imageItems: ImageItemRequest[] = images.map(function (item, index) {
       return {
-        s3Key: key,
+        uploadId: item.uploadId,
         sortOrder: index,
         variantId: null,
       }
     })
 
     const variantItems: CreateVariantRequest[] = variants.map(function (v) {
-      const colorImg = colorImages[v.color.trim()]
-      const effectiveImgKey = v.imageKey ?? colorImg ?? null
+      const colorMedia = colorImages[v.color.trim()]
+      const effectiveUploadId = v.imageUploadId ?? colorMedia?.uploadId ?? null
       return {
         sku: v.sku.trim(),
         size: v.size.trim(),
@@ -678,7 +684,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         compareAtPrice: v.compareAtPrice,
         stockQuantity: v.stockQuantity,
         defaultVariant: v.isDefault,
-        imageKey: effectiveImgKey,
+        imageUploadId: effectiveUploadId,
       }
     })
 
@@ -689,8 +695,8 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       categoryId: effectiveCategoryId,
       variants: variantItems,
       images: imageItems,
-      videoKey: videoKey ?? null,
-      garmentKey: garmentKey ?? null,
+      videoUploadId: video?.uploadId ?? null,
+      garmentUploadId: garment?.uploadId ?? null,
       tryOnEnabled,
       material: trimmedOrNull(material),
       origin: trimmedOrNull(origin),
@@ -853,12 +859,12 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       <ProductMediaUploader
         images={images}
         onImagesChange={setImages}
-        videoKey={videoKey}
-        onVideoChange={setVideoKey}
+        video={video}
+        onVideoChange={setVideo}
         tryOnEnabled={tryOnEnabled}
         onTryOnToggle={setTryOnEnabled}
-        garmentKey={garmentKey}
-        onGarmentChange={setGarmentKey}
+        garment={garment}
+        onGarmentChange={setGarment}
       />
 
       {/* 3. Phân loại biến thể (Size & Màu sắc) & Tồn kho */}
@@ -1316,16 +1322,16 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             </h4>
             <div className="mt-3 flex flex-wrap gap-4">
               {distinctColors.map(function (colorName) {
-                const imgKey = colorImages[colorName]
+                const colorMedia = colorImages[colorName]
                 const isUploadingThis = uploadingColor === colorName
                 return (
                   <div
                     key={colorName}
                     className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-2.5 shadow-2xs dark:border-white/10 dark:bg-[#11182a]"
                   >
-                    {imgKey !== undefined && (
+                    {colorMedia !== undefined && (
                       <img
-                        src={imageUrl(imgKey)}
+                        src={colorMedia.url}
                         alt={colorName}
                         onError={handleImageError}
                         className="h-10 w-10 rounded-lg object-cover"
@@ -1340,8 +1346,8 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                           <SpinnerGap size={12} weight="bold" className="animate-spin" />
                         )}
                         {isUploadingThis === false && <UploadSimple size={12} weight="bold" />}
-                        {imgKey !== undefined && <span>Đổi ảnh</span>}
-                        {imgKey === undefined && <span>Tải ảnh màu</span>}
+                        {colorMedia !== undefined && <span>Đổi ảnh</span>}
+                        {colorMedia === undefined && <span>Tải ảnh màu</span>}
                         <input
                           type="file"
                           accept="image/*"

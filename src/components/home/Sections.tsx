@@ -6,7 +6,12 @@ import { useListPageLinks } from '@generated/endpoints/site-content/site-content
 import { Star, Truck, ShieldCheck, ArrowsLeftRight, ArrowRight } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  hookErrorMessage,
+  urlOrPlaceholder,
+  PLACEHOLDER_IMAGE,
+  takeData,
+} from '@/lib/api/apiAdapters'
 import { priceLabel } from '@/lib/format'
 
 import UserAvatar from '../UserAvatar'
@@ -146,7 +151,7 @@ export function ProductCard(props: { item: ProductSummaryResponse }) {
       <div className="relative">
         <Link to={'/product/' + p.id}>
           <img
-            src={imageUrl(p.defaultImageKey)}
+            src={urlOrPlaceholder(p.defaultImageUrl)}
             alt={p.name}
             loading="lazy"
             width={600}

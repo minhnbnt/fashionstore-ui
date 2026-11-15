@@ -104,7 +104,7 @@ export default function ProductDetail() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <ProductGallery
           images={product.images ?? []}
-          videoKey={product.videoKey ?? null}
+          videoUrl={product.videoUrl ?? null}
           name={product.name ?? ''}
         />
         <ProductInfo product={product} />

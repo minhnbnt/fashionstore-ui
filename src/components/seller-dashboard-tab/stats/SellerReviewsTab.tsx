@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
-import { useOpenWithBuyer } from '@generated/endpoints/chat/chat'
+import { useOpenConversationWithBuyer } from '@generated/endpoints/chat/chat'
 import {
   getList3QueryKey,
   getSummaryQueryKey as getSellerReviewSummaryQueryKey,
@@ -66,7 +66,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
   const { can } = useSellerPermissions(shopId)
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const openWithBuyerMutation = useOpenWithBuyer()
+  const openWithBuyerMutation = useOpenConversationWithBuyer()
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [onlyUnreplied, setOnlyUnreplied] = useState(false)
@@ -285,8 +285,8 @@ export default function SellerReviewsTab({ shopId }: Props) {
       {/* Thống kê đánh giá */}
       {(() => {
         let summaryData: ReviewSummaryResponse | undefined
-        if (summaryQuery.data !== undefined && summaryQuery.data.status === 200) {
-          summaryData = summaryQuery.data.data
+        if (summaryQuery.data !== undefined) {
+          summaryData = takeData(summaryQuery.data)
         }
         const reviewCount = summaryData?.reviewCount ?? reviews.length
         let averageValue = 0
@@ -430,20 +430,26 @@ export default function SellerReviewsTab({ shopId }: Props) {
           {groups.map(function (group: ReviewGroup) {
             const isOpen = openGroupIds.has(group.productId)
             const unrepliedCount = group.reviews.filter((r) => r.sellerReply === undefined).length
+            let caretClass = 'transition-transform'
+            if (isOpen) {
+              caretClass += ' rotate-180'
+            }
             return (
               <div
                 key={group.productId}
                 className="overflow-hidden rounded-2xl border border-zinc-100 dark:border-white/10"
               >
-                {/* Group header — cả dòng click để toggle; Link stopPropagation để chỉ navigate */}
-                <div
-                  className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-white/5"
+                {/* Group header — button cả dòng để toggle; Link stopPropagation để chỉ navigate */}
+                <button
+                  type="button"
+                  className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left hover:bg-zinc-50 dark:hover:bg-white/5"
                   onClick={function () {
                     toggleGroup(group.productId)
                   }}
+                  aria-expanded={isOpen}
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    {group.productId !== '' ? (
+                  <span className="flex flex-wrap items-center gap-2">
+                    {group.productId !== '' && (
                       <Link
                         to={`/product/${group.productId}`}
                         onClick={function (e) {
@@ -453,7 +459,8 @@ export default function SellerReviewsTab({ shopId }: Props) {
                       >
                         {group.productName}
                       </Link>
-                    ) : (
+                    )}
+                    {group.productId === '' && (
                       <span className="text-sm font-bold text-zinc-900 dark:text-white">
                         {group.productName}
                       </span>
@@ -464,24 +471,11 @@ export default function SellerReviewsTab({ shopId }: Props) {
                         {unrepliedCount} chưa phản hồi
                       </span>
                     )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={function (e) {
-                      e.stopPropagation()
-                      toggleGroup(group.productId)
-                    }}
-                    aria-expanded={isOpen}
-                    aria-label={group.productName}
-                    className="shrink-0 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                  >
-                    <CaretDown
-                      size={14}
-                      weight="bold"
-                      className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-                </div>
+                  </span>
+                  <span className="shrink-0 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                    <CaretDown size={14} weight="bold" className={caretClass} />
+                  </span>
+                </button>
 
                 {/* Review list — chỉ render khi open */}
                 {isOpen && (
@@ -870,7 +864,9 @@ export default function SellerReviewsTab({ shopId }: Props) {
                 controls
                 autoPlay
                 className="max-h-[70vh] w-full object-contain"
-              />
+              >
+                <track kind="captions" />
+              </video>
             )}
           </div>
         </Modal>

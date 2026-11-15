@@ -28,8 +28,8 @@ function defaultShop(): ShopResponse {
     processingDays: 2,
     address: '123 Phố Huế, Hai Bà Trưng, Hà Nội',
     returnPolicy: 'Hỗ trợ đổi trả miễn phí trong 15 ngày với mọi lý do.',
-    logoKey: 'shops/logo.jpg',
-    bannerKey: 'shops/banner.jpg',
+    logoUrl: 'shops/logo.jpg',
+    bannerUrl: 'shops/banner.jpg',
   }
 }
 
@@ -175,7 +175,7 @@ describe('ShopStorefront Customer Page', () => {
   })
 
   it('shop chưa upload logo thì hiện avatar generated thay cho ảnh placeholder', () => {
-    shopFixture.current = { ...defaultShop(), logoKey: null }
+    shopFixture.current = { ...defaultShop(), logoUrl: undefined }
     const html = renderStorefrontHtml()
 
     // Không còn ảnh placeholder "noimage" làm hình đại diện (alt = tên shop)

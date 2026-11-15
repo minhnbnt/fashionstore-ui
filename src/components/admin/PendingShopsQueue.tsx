@@ -4,7 +4,12 @@ import { useListAdminShops } from '@generated/endpoints/admin-shops/admin-shops'
 import { ListAdminShopsStatus } from '@generated/model/listAdminShopsStatus'
 import { HourglassMedium, Storefront } from '@phosphor-icons/react'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  hookErrorMessage,
+  urlOrPlaceholder,
+  PLACEHOLDER_IMAGE,
+  takeData,
+} from '@/lib/api/apiAdapters'
 
 const QUEUE_SIZE = 5
 
@@ -43,9 +48,9 @@ export default function PendingShopsQueue({ pendingCount }: { pendingCount: numb
                 key={shop.id}
                 className="flex items-center gap-3 rounded-2xl bg-white/70 px-4 py-3 dark:bg-white/5"
               >
-                {shop.logoKey !== null && shop.logoKey !== undefined && (
+                {shop.logoUrl !== null && shop.logoUrl !== undefined && (
                   <img
-                    src={imageUrl(shop.logoKey)}
+                    src={urlOrPlaceholder(shop.logoUrl)}
                     alt=""
                     width={36}
                     height={36}
@@ -58,7 +63,7 @@ export default function PendingShopsQueue({ pendingCount }: { pendingCount: numb
                     className="h-9 w-9 shrink-0 rounded-2xl object-cover"
                   />
                 )}
-                {(shop.logoKey === null || shop.logoKey === undefined) && (
+                {(shop.logoUrl === null || shop.logoUrl === undefined) && (
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 dark:bg-indigo-900/40">
                     <Storefront
                       size={18}

@@ -4,9 +4,9 @@ import {
   apiErrorMessage,
   apiErrorText,
   hookErrorMessage,
-  imageUrl,
   priceInfo,
   takeData,
+  urlOrPlaceholder,
 } from './apiAdapters'
 import { ApiError } from './apiFetch'
 
@@ -29,14 +29,16 @@ function product(variants: VariantResponse[]): ProductResponse {
   return { id: 'p1', name: 'Áo demo', variants }
 }
 
-describe('imageUrl', () => {
-  it('key null thi tra placeholder', () => {
-    expect(imageUrl(null)).toContain('picsum')
+describe('urlOrPlaceholder', () => {
+  it('url null hoac rong thi tra placeholder', () => {
+    expect(urlOrPlaceholder(null)).toBe(urlOrPlaceholder(undefined))
+    expect(urlOrPlaceholder('')).toBe(urlOrPlaceholder(undefined))
   })
 
-  it('key S3 thi ghep voi base URL', () => {
-    const base = import.meta.env.VITE_ASSETS_URL as string
-    expect(imageUrl('shops/a/img.jpg')).toBe(`${base}/shops/a/img.jpg`)
+  it('url tu response thi tra nguyen ven, khong ghep base', () => {
+    expect(urlOrPlaceholder('https://s3.test/bucket/img.jpg')).toBe(
+      'https://s3.test/bucket/img.jpg',
+    )
   })
 })
 

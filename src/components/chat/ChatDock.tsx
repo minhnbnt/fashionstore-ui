@@ -29,7 +29,7 @@ import { useAllShopProducts } from '@/hooks/useAllShopProducts'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
 import { usePinToBottom } from '@/hooks/usePinToBottom'
 import { useSessionQuery } from '@/hooks/useSession'
-import { apiErrorText, imageUrl, takeData } from '@/lib/api/apiAdapters'
+import { apiErrorText, takeData } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
 import { formatDateTime } from '@/lib/format'
 
@@ -127,7 +127,10 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
   const queryClient = useQueryClient()
 
   const [messageInput, setMessageInput] = useState('')
-  const [pendingImageKey, setPendingImageKey] = useState<string | null>(null)
+  const [pendingImage, setPendingImage] = useState<{
+    uploadId: string
+    objectUrl: string
+  } | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [showProductPickerModal, setShowProductPickerModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -177,8 +180,8 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
     if (!file) return
     setIsUploadingImage(true)
     void uploadImage(file)
-      .then(function (key) {
-        setPendingImageKey(key)
+      .then(function (uploadId) {
+        setPendingImage({ uploadId, objectUrl: URL.createObjectURL(file) })
       })
       .catch(function (err) {
         console.error('Lỗi tải ảnh:', err)
@@ -193,7 +196,7 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
 
   function handleSend() {
     const trimmed = messageInput.trim()
-    if (trimmed === '' && !pendingImageKey) {
+    if (trimmed === '' && pendingImage === null) {
       return
     }
     if (conversationId === '') {
@@ -203,11 +206,11 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
       id: conversationId,
       data: {
         content: trimmed,
-        imageKey: pendingImageKey ?? undefined,
+        imageUploadId: pendingImage?.uploadId,
       },
     })
     setMessageInput('')
-    setPendingImageKey(null)
+    setPendingImage(null)
     pinNow()
   }
 
@@ -269,9 +272,9 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
             const displayContent = stripProductLinks(msg.content)
             return (
               <div key={msg.id} className={messageRowClass(isMine)}>
-                {msg.imageKey && (
+                {msg.imageUrl !== undefined && msg.imageUrl !== null && (
                   <div className="mb-1.5">
-                    <ChatImageBubble imageKey={msg.imageKey} />
+                    <ChatImageBubble url={msg.imageUrl} />
                   </div>
                 )}
                 {displayContent !== '' && (
@@ -324,16 +327,16 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
           </div>
         )}
 
-        {pendingImageKey && (
+        {pendingImage && (
           <div className="mb-2.5 flex w-fit items-center gap-2 rounded-2xl border border-zinc-200/80 bg-[#f6f9ff] p-1.5 dark:border-white/10 dark:bg-white/10">
             <img
-              src={imageUrl(pendingImageKey)}
+              src={pendingImage.objectUrl}
               alt="Ảnh đính kèm chuẩn bị gửi"
               className="h-14 w-14 rounded-xl object-cover"
             />
             <button
               type="button"
-              onClick={() => setPendingImageKey(null)}
+              onClick={() => setPendingImage(null)}
               aria-label="Xóa ảnh đính kèm"
               className="rounded-full p-1 text-zinc-500 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/20"
             >
@@ -392,7 +395,7 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
           <button
             type="button"
             onClick={handleSend}
-            disabled={isUploadingImage || (messageInput.trim() === '' && !pendingImageKey)}
+            disabled={isUploadingImage || (messageInput.trim() === '' && pendingImage === null)}
             aria-label="Gửi tin nhắn"
             className={CHAT_SEND_BUTTON_CLASS}
           >

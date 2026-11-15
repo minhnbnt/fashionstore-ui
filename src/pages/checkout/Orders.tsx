@@ -46,7 +46,7 @@ import { useSessionQuery } from '@/hooks/useSession'
 import {
   fallbackImageOnError,
   hookErrorMessage,
-  imageUrl,
+  urlOrPlaceholder,
   PLACEHOLDER_IMAGE,
   takeData,
 } from '@/lib/api/apiAdapters'
@@ -354,7 +354,7 @@ export default function Orders() {
   function handleSubmitReturn(payload: {
     reason: string
     description: string
-    evidenceKeys: string[]
+    evidenceUploadIds: string[]
   }) {
     if (!returnTarget?.id) {
       return
@@ -367,7 +367,7 @@ export default function Orders() {
         data: {
           reason: payload.reason,
           description: payload.description || null,
-          evidenceKeys: payload.evidenceKeys,
+          evidenceUploadIds: payload.evidenceUploadIds,
         },
       },
       {
@@ -628,8 +628,8 @@ export default function Orders() {
               <div className="divide-y divide-sky-100 dark:divide-white/5">
                 {(order.items ?? []).map((item, idx) => {
                   let thumb = PLACEHOLDER_IMAGE
-                  if (item.imageKey) {
-                    thumb = imageUrl(item.imageKey)
+                  if (item.imageUrl) {
+                    thumb = urlOrPlaceholder(item.imageUrl)
                   }
                   const canVisitProduct = Boolean(item.productId) && item.productAvailable !== false
                   return (

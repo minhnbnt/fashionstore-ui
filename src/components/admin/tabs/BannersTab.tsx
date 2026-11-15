@@ -8,7 +8,12 @@ import {
 import { PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  hookErrorMessage,
+  urlOrPlaceholder,
+  PLACEHOLDER_IMAGE,
+  takeData,
+} from '@/lib/api/apiAdapters'
 import {
   PLACEMENT_OPTIONS,
   placementLabel,
@@ -37,8 +42,9 @@ function toggleRequest(banner: BannerResponse) {
   return {
     placement: banner.placement ?? 'HOME_CAROUSEL',
     title: banner.title ?? '',
-    imageKey: banner.imageKey ?? '',
-    mobileImageKey: banner.mobileImageKey ?? undefined,
+    // Bật/tắt chỉ đổi active — echo lại uploadId từ response để giữ nguyên ảnh
+    imageUploadId: banner.imageUploadId ?? '',
+    mobileImageUploadId: banner.mobileImageUploadId ?? undefined,
     linkUrl: banner.linkUrl ?? undefined,
     sortOrder: banner.sortOrder ?? 0,
     active: banner.active !== true,
@@ -124,7 +130,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
                 className="flex flex-col gap-3 rounded-2xl bg-white/70 p-3 md:flex-row md:items-center dark:bg-white/5"
               >
                 <img
-                  src={imageUrl(banner.imageKey)}
+                  src={urlOrPlaceholder(banner.imageUrl)}
                   alt=""
                   width={180}
                   height={60}

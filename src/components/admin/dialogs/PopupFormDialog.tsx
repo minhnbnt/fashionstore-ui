@@ -46,7 +46,9 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
   const [name, setName] = useState(popup?.name ?? '')
   const [title, setTitle] = useState(popup?.title ?? '')
   const [body, setBody] = useState(popup?.body ?? '')
-  const [imageKey, setImageKey] = useState(popup?.imageKey ?? '')
+  // Echo uploadId từ response; null = popup chỉ có chữ (bỏ ảnh)
+  const [imageUploadId, setImageUploadId] = useState<string | null>(popup?.imageUploadId ?? null)
+  const [imagePreview, setImagePreview] = useState(popup?.imageUrl ?? '')
   const [ctaLabel, setCtaLabel] = useState(popup?.ctaLabel ?? '')
   const [linkUrl, setLinkUrl] = useState(popup?.linkUrl ?? '')
   const [audience, setAudience] = useState<PopupAudienceValue>(popup?.audience ?? 'ALL')
@@ -64,7 +66,7 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
   const create = useCreatePopup()
   const update = useUpdatePopup()
 
-  const contentProblem = title.trim() === '' && imageKey === ''
+  const contentProblem = title.trim() === '' && imagePreview === ''
   const linkProblem = isSafeLink(linkUrl.trim()) === false
   const canSubmit =
     name.trim() !== '' &&
@@ -92,7 +94,7 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
       name: name.trim(),
       title: title.trim() || undefined,
       body: body.trim() || undefined,
-      imageKey: imageKey || undefined,
+      imageUploadId: imageUploadId ?? undefined,
       ctaLabel: ctaLabel.trim() || undefined,
       linkUrl: linkUrl.trim() || undefined,
       audience,
@@ -144,8 +146,11 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
       <ImageUploadField
         label="Ảnh popup"
         hint="Ảnh vuông 800×800. Bấm vào ảnh sẽ đi tới link."
-        value={imageKey}
-        onChange={setImageKey}
+        value={imagePreview}
+        onChange={(uploadId, previewUrl) => {
+          setImageUploadId(uploadId)
+          setImagePreview(previewUrl)
+        }}
         aspectClass="aspect-square max-w-[220px]"
         optional
         onUploadingChange={setUploading}

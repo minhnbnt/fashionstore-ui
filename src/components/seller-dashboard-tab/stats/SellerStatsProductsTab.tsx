@@ -15,7 +15,7 @@ import {
 } from '@phosphor-icons/react'
 
 import { BarChart } from '@/components/ui/charts'
-import { PLACEHOLDER_IMAGE, imageUrl, takeData } from '@/lib/api/apiAdapters'
+import { PLACEHOLDER_IMAGE, urlOrPlaceholder, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import { productAnalyticsItems } from '@/lib/seller/sellerStatsAdapters'
 
@@ -30,7 +30,7 @@ function resolveProductImage(key: string | null): string {
   if (key === null || key === '') {
     return PLACEHOLDER_IMAGE
   }
-  return imageUrl(key)
+  return urlOrPlaceholder(key)
 }
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
@@ -184,7 +184,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                     <td className="py-3">
                       <div className="flex items-center gap-3">
                         <img
-                          src={resolveProductImage(item.imageKey)}
+                          src={resolveProductImage(item.imageUrl)}
                           alt={item.productName}
                           onError={handleImageError}
                           className="h-10 w-10 shrink-0 rounded-xl object-cover"
@@ -262,7 +262,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                         <td className="py-2.5">
                           <div className="flex items-center gap-2">
                             <img
-                              src={resolveProductImage(item.imageKey)}
+                              src={resolveProductImage(item.imageUrl)}
                               alt={item.productName}
                               onError={handleImageError}
                               className="h-8 w-8 shrink-0 rounded-lg object-cover"
@@ -353,7 +353,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                       <td className="py-2.5">
                         <div className="flex items-center gap-2">
                           <img
-                            src={resolveProductImage(item.imageKey)}
+                            src={resolveProductImage(item.imageUrl)}
                             alt={item.productName}
                             onError={handleImageError}
                             className="h-8 w-8 shrink-0 rounded-lg object-cover"
@@ -420,7 +420,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                 className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-white p-3.5 shadow-sm dark:border-rose-800/40 dark:bg-[#11182a]"
               >
                 <img
-                  src={resolveProductImage(item.imageKey)}
+                  src={resolveProductImage(item.imageUrl)}
                   alt={item.productName}
                   onError={handleImageError}
                   className="h-11 w-11 shrink-0 rounded-xl object-cover grayscale"

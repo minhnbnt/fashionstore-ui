@@ -189,7 +189,7 @@ export function productAnalyticsItems(
   return list.map((item) => ({
     productId: item.productId ?? '',
     productName: item.productName ?? '',
-    imageKey: item.imageKey ?? null,
+    imageUrl: item.imageUrl ?? null,
     totalSold: item.totalSold ?? 0,
     totalRevenue: item.totalRevenue ?? 0,
     viewCount: item.viewCount ?? 0,

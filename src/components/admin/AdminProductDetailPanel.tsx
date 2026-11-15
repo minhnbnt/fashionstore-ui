@@ -24,7 +24,12 @@ import {
   statusLabel,
   violationLabel,
 } from '@/lib/admin/productModeration'
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  hookErrorMessage,
+  urlOrPlaceholder,
+  PLACEHOLDER_IMAGE,
+  takeData,
+} from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import type { AdminProductDetailResponse } from '@generated/model/adminProductDetailResponse'
@@ -109,7 +114,7 @@ function DetailBody({
           return (
             <img
               key={image.id}
-              src={imageUrl(image.s3Key)}
+              src={urlOrPlaceholder(image.url)}
               alt=""
               width={120}
               height={150}
@@ -204,7 +209,7 @@ function DetailBody({
       </div>
 
       {/* Video sản phẩm nếu có */}
-      {detail.videoKey !== null && detail.videoKey !== undefined && detail.videoKey !== '' && (
+      {detail.videoUrl !== null && detail.videoUrl !== undefined && detail.videoUrl !== '' && (
         <section>
           <h4 className="mb-2 flex items-center gap-2 text-sm font-bold">
             <VideoCamera size={16} weight="bold" className="text-orange-600" />
@@ -213,7 +218,7 @@ function DetailBody({
           <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black">
             {/* eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track */}
             <video
-              src={imageUrl(detail.videoKey)}
+              src={urlOrPlaceholder(detail.videoUrl)}
               controls
               playsInline
               className="h-full w-full object-contain"
@@ -230,11 +235,11 @@ function DetailBody({
             Ảnh Garment (Virtual Try-On)
           </h4>
           <div className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900/30 dark:bg-indigo-950/20">
-            {detail.garmentKey !== null &&
-              detail.garmentKey !== undefined &&
-              detail.garmentKey !== '' && (
+            {detail.garmentUrl !== null &&
+              detail.garmentUrl !== undefined &&
+              detail.garmentUrl !== '' && (
                 <img
-                  src={imageUrl(detail.garmentKey)}
+                  src={urlOrPlaceholder(detail.garmentUrl)}
                   alt="Garment Flat Lay"
                   onError={(event) => {
                     event.currentTarget.src = PLACEHOLDER_IMAGE

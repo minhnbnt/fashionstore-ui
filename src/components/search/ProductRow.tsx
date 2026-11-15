@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router'
 
 import { Heart, ShoppingBag } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
@@ -23,7 +23,7 @@ export default function ProductRow(props: { item: ProductSummaryResponse }) {
       <div className="relative shrink-0">
         <Link to={'/product/' + p.id}>
           <img
-            src={imageUrl(p.defaultImageKey)}
+            src={urlOrPlaceholder(p.defaultImageUrl)}
             alt={p.name}
             loading="lazy"
             width={600}

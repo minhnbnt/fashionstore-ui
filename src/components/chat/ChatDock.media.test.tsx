@@ -67,7 +67,7 @@ function messagesFixture(): ChatMessageResponse[] {
       senderId: 'buyer-1',
       senderType: 'BUYER',
       content: 'Ảnh sản phẩm mẫu',
-      imageKey: 'chat/sample-photo.jpg',
+      imageUrl: 'chat/sample-photo.jpg',
       sentAt: '2026-10-27T09:01:00Z',
       isRead: false,
     },
@@ -77,7 +77,7 @@ function messagesFixture(): ChatMessageResponse[] {
       senderId: 'shop-1',
       senderType: 'SELLER',
       content: 'Bạn xem mẫu này nhé: /product/ao-so-mi',
-      imageKey: undefined,
+      imageUrl: undefined,
       sentAt: '2026-10-27T09:02:00Z',
       isRead: true,
     },
@@ -244,7 +244,7 @@ describe('ChatDock Media & Product Link Enhancements', () => {
         expect.stringContaining('/api/conversations/conv-1/messages'),
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ content: '', imageKey: 'chat/uploaded-key.jpg' }),
+          body: JSON.stringify({ content: '', imageUploadId: 'chat/uploaded-key.jpg' }),
         }),
       )
     })

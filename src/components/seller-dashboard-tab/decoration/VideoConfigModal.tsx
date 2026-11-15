@@ -3,7 +3,6 @@ import { useRef, useState } from 'react'
 import { SpinnerGap, Trash, UploadSimple, VideoCamera } from '@phosphor-icons/react'
 
 import Modal from '@/components/Modal'
-import { imageUrl } from '@/lib/api/apiAdapters'
 import { checkVideoDuration, uploadVideo } from '@/lib/api/uploadImage'
 
 import type { DecorationBlock } from '@/types/seller'
@@ -26,13 +25,25 @@ export default function VideoConfigModal({
   onSave,
 }: VideoConfigModalProps) {
   const [title, setTitle] = useState(block.title)
-  const [videoKey, setVideoKey] = useState<string | null>(block.videoKey ?? null)
+  const [videoUploadId, setVideoUploadId] = useState<string | null>(block.videoUploadId ?? null)
+  const [videoPreview, setVideoPreview] = useState<string | null>(block.videoUrl ?? null)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   if (!isOpen) {
     return null
+  }
+
+  let uploadButtonIcon = <UploadSimple size={20} weight="bold" />
+  if (isUploading) {
+    uploadButtonIcon = (
+      <SpinnerGap size={20} weight="bold" className="animate-spin text-indigo-500" />
+    )
+  }
+  let uploadButtonLabel = 'Chọn video từ thiết bị'
+  if (isUploading) {
+    uploadButtonLabel = 'Đang tải video lên S3...'
   }
 
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -45,10 +56,15 @@ export default function VideoConfigModal({
     setIsUploading(true)
     try {
       await checkVideoDuration(file, MAX_VIDEO_SECONDS)
-      const key = await uploadVideo(file)
-      setVideoKey(key)
+      const uploadId = await uploadVideo(file)
+      setVideoUploadId(uploadId)
+      setVideoPreview(URL.createObjectURL(file))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không tải được video, thử lại sau.')
+      let message = 'Không tải được video, thử lại sau.'
+      if (e instanceof Error && e.message !== '') {
+        message = e.message
+      }
+      setError(message)
     } finally {
       setIsUploading(false)
     }
@@ -58,8 +74,9 @@ export default function VideoConfigModal({
     onSave({
       ...block,
       title,
-      // videoKey: undefined → JSON.stringify bỏ field, block trở lại trạng thái chưa có video
-      videoKey: videoKey ?? undefined,
+      // videoUrl: undefined → JSON.stringify bỏ field, block trở lại trạng thái chưa có video
+      videoUploadId: videoUploadId ?? undefined,
+      videoUrl: videoPreview ?? undefined,
     })
     onClose()
   }
@@ -89,11 +106,12 @@ export default function VideoConfigModal({
             <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
               Video ({MAX_VIDEO_SECONDS}s, tối đa 50 MB)
             </span>
-            {videoKey !== null && (
+            {videoPreview !== null && (
               <button
                 type="button"
                 onClick={function () {
-                  setVideoKey(null)
+                  setVideoUploadId(null)
+                  setVideoPreview(null)
                   setError(null)
                 }}
                 className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
@@ -104,7 +122,7 @@ export default function VideoConfigModal({
             )}
           </div>
 
-          {videoKey === null ? (
+          {videoPreview === null && (
             <button
               type="button"
               disabled={isUploading}
@@ -113,14 +131,11 @@ export default function VideoConfigModal({
               }}
               className="flex w-full flex-col items-center gap-1.5 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-3 py-6 text-xs font-semibold text-zinc-500 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/15 dark:bg-white/5 dark:text-zinc-400 dark:hover:bg-white/10"
             >
-              {isUploading ? (
-                <SpinnerGap size={20} weight="bold" className="animate-spin text-indigo-500" />
-              ) : (
-                <UploadSimple size={20} weight="bold" />
-              )}
-              {isUploading ? 'Đang tải video lên S3...' : 'Chọn video từ thiết bị'}
+              {uploadButtonIcon}
+              {uploadButtonLabel}
             </button>
-          ) : (
+          )}
+          {videoPreview !== null && (
             <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-black dark:border-white/10">
               {isUploading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 text-white backdrop-blur-xs">
@@ -129,8 +144,8 @@ export default function VideoConfigModal({
               )}
               {/* eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track */}
               <video
-                key={videoKey}
-                src={imageUrl(videoKey)}
+                key={videoPreview}
+                src={videoPreview}
                 controls
                 playsInline
                 preload="metadata"

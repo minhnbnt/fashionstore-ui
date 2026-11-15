@@ -29,7 +29,12 @@ import {
   statusLabel,
   violationLabel,
 } from '@/lib/admin/productModeration'
-import { hookErrorMessage, imageUrl, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import {
+  hookErrorMessage,
+  urlOrPlaceholder,
+  PLACEHOLDER_IMAGE,
+  takeData,
+} from '@/lib/api/apiAdapters'
 
 import AdminProductDetailPanel from '../../components/admin/AdminProductDetailPanel'
 import AdminShell from '../../components/admin/AdminShell'
@@ -112,7 +117,7 @@ function ProductRow({
         className="flex min-w-0 flex-1 items-center gap-3 text-left"
       >
         <img
-          src={imageUrl(product.imageKey)}
+          src={urlOrPlaceholder(product.imageUrl)}
           alt=""
           width={56}
           height={70}

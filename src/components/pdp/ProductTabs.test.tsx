@@ -60,7 +60,7 @@ function sampleReviews(): ReviewResponse[] {
       variantLabel: 'M · Đen',
       stars: 5,
       comment: 'Áo đẹp, vải mát và đường may rất chắc chắn.',
-      imageKeys: ['reviews/r1.jpg'],
+      media: [{ url: 'https://s3.test/reviews/r1.jpg', kind: 'IMAGE', uploadId: 'u1' }],
       tags: ['Chất lượng tốt', 'Size đúng chuẩn'],
       anonymous: true,
       mine: false,

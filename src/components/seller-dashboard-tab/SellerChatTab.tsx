@@ -42,7 +42,7 @@ import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
 import { usePinToBottom } from '@/hooks/usePinToBottom'
-import { imageUrl, takeData } from '@/lib/api/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
 import { chatConversationItem, chatMessageItem } from '@/lib/seller/sellerAdapters'
 
@@ -66,7 +66,10 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
   const queryClient = useQueryClient()
   const [selectedConvId, setSelectedConvId] = useState('')
   const [messageInput, setMessageInput] = useState('')
-  const [pendingImageKey, setPendingImageKey] = useState<string | null>(null)
+  const [pendingImage, setPendingImage] = useState<{
+    uploadId: string
+    objectUrl: string
+  } | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAutoReplyModal, setShowAutoReplyModal] = useState(false)
@@ -167,12 +170,16 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
     markReadMutation.mutate({ id })
   }
 
-  function handleSendMessage(conversationId: string, content: string, imageKey?: string | null) {
+  function handleSendMessage(
+    conversationId: string,
+    content: string,
+    imageUploadId?: string | null,
+  ) {
     sendMessageMutation.mutate({
       id: conversationId,
       data: {
         content,
-        imageKey: imageKey ?? undefined,
+        imageUploadId: imageUploadId ?? undefined,
       },
     })
   }
@@ -209,8 +216,8 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
     if (!file) return
     setIsUploadingImage(true)
     void uploadImage(file)
-      .then(function (key) {
-        setPendingImageKey(key)
+      .then(function (uploadId) {
+        setPendingImage({ uploadId, objectUrl: URL.createObjectURL(file) })
       })
       .catch(function (err) {
         console.error('Lỗi tải ảnh:', err)
@@ -225,15 +232,15 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
 
   function handleSend() {
     const trimmed = messageInput.trim()
-    if (trimmed === '' && !pendingImageKey) {
+    if (trimmed === '' && pendingImage === null) {
       return
     }
     if (activeConvId === '') {
       return
     }
-    handleSendMessage(activeConvId, trimmed, pendingImageKey)
+    handleSendMessage(activeConvId, trimmed, pendingImage?.uploadId)
     setMessageInput('')
-    setPendingImageKey(null)
+    setPendingImage(null)
     pinNow()
   }
 
@@ -375,9 +382,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                   const displayContent = stripProductLinks(msg.content)
                   return (
                     <div key={msg.id} className={messageRowClass(isMe)}>
-                      {msg.imageKey && (
+                      {msg.imageUrl !== undefined && msg.imageUrl !== null && (
                         <div className="mb-1.5">
-                          <ChatImageBubble imageKey={msg.imageKey} />
+                          <ChatImageBubble url={msg.imageUrl} />
                         </div>
                       )}
                       {displayContent !== '' && (
@@ -400,16 +407,16 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
 
               {/* Ô nhập tin nhắn */}
               <div className="shrink-0 border-t border-zinc-200/70 bg-white/85 px-4 py-3 backdrop-blur-xs dark:border-white/10 dark:bg-[#11182a]/85">
-                {pendingImageKey && (
+                {pendingImage && (
                   <div className="mb-2.5 flex w-fit items-center gap-2 rounded-2xl border border-zinc-200/80 bg-[#f6f9ff] p-1.5 dark:border-white/10 dark:bg-white/10">
                     <img
-                      src={imageUrl(pendingImageKey)}
+                      src={pendingImage.objectUrl}
                       alt="Ảnh đính kèm chuẩn bị gửi"
                       className="h-14 w-14 rounded-xl object-cover"
                     />
                     <button
                       type="button"
-                      onClick={() => setPendingImageKey(null)}
+                      onClick={() => setPendingImage(null)}
                       aria-label="Xóa ảnh đính kèm"
                       className="rounded-full p-1 text-zinc-500 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/20"
                     >
@@ -469,7 +476,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                   <button
                     type="button"
                     onClick={handleSend}
-                    disabled={isUploadingImage || (messageInput.trim() === '' && !pendingImageKey)}
+                    disabled={
+                      isUploadingImage || (messageInput.trim() === '' && pendingImage === null)
+                    }
                     aria-label="Gửi tin nhắn"
                     className={CHAT_SEND_BUTTON_CLASS}
                   >

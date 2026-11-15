@@ -53,7 +53,7 @@ vi.mock('react-router', async (importOriginal) => {
 })
 
 vi.mock('@generated/endpoints/chat/chat', () => ({
-  useOpenWithBuyer: () => ({
+  useOpenConversationWithBuyer: () => ({
     isPending: false,
     mutate: (vars: unknown, callOpts?: { onSuccess?: (data: unknown) => void }) => {
       openWithBuyerMutateMock(vars)
@@ -136,7 +136,7 @@ const baseReview = {
   variantLabel: 'L · Trắng',
   stars: 5,
   comment: 'Áo mặc cực kỳ thoải mái và mát.',
-  imageKeys: ['reviews/khang-1.jpg'],
+  media: [{ url: 'reviews/khang-1.jpg', kind: 'IMAGE', uploadId: 'upload-1' }],
   tags: ['Chất lượng tốt', 'Size đúng chuẩn'],
   anonymous: true,
   helpfulCount: 4,
@@ -163,7 +163,7 @@ function setupDefaultMocks() {
           variantLabel: 'L · Trắng',
           stars: 5,
           comment: 'Áo mặc cực kỳ thoải mái và mát.',
-          imageKeys: ['reviews/khang-1.jpg'],
+          media: [{ url: 'reviews/khang-1.jpg', kind: 'IMAGE', uploadId: 'upload-1' }],
           tags: ['Chất lượng tốt', 'Size đúng chuẩn'],
           anonymous: true,
           helpfulCount: 4,

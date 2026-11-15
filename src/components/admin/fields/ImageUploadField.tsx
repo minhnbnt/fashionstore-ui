@@ -2,7 +2,7 @@ import { useId, useState } from 'react'
 
 import { ImageSquare, Trash, UploadSimple } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
 
 import { ERROR_CLASS, HINT_CLASS, LABEL_CLASS } from '../dialogs/ContentDialog'
@@ -10,15 +10,17 @@ import { ERROR_CLASS, HINT_CLASS, LABEL_CLASS } from '../dialogs/ContentDialog'
 interface Props {
   label: string
   hint: string
+  /** URL xem trước: URL từ response hoặc object URL của file vừa chọn; '' = chưa có ảnh */
   value: string
-  onChange: (key: string) => void
+  /** Báo ảnh người dùng vừa chọn: uploadId mới + URL xem trước; uploadId null = đã bỏ ảnh */
+  onChange: (uploadId: string | null, previewUrl: string) => void
   /** Tỉ lệ khung xem trước, ví dụ "aspect-[3/1]". */
   aspectClass: string
   optional?: boolean
   onUploadingChange?: (uploading: boolean) => void
 }
 
-/** Chọn ảnh → presign → PUT S3 → giữ S3 key. Xem trước theo đúng tỉ lệ hiển thị. */
+/** Chọn ảnh → presign → PUT S3 → trả uploadId. Xem trước bằng object URL local, đúng tỉ lệ hiển thị. */
 export default function ImageUploadField({
   label,
   hint,
@@ -46,7 +48,8 @@ export default function ImageUploadField({
     setError(null)
     setBusy(true)
     try {
-      onChange(await uploadImage(file))
+      const uploadId = await uploadImage(file)
+      onChange(uploadId, URL.createObjectURL(file))
     } catch (problem) {
       let message = 'Upload ảnh thất bại, thử lại sau.'
       if (problem instanceof Error && problem.message !== '') {
@@ -79,7 +82,7 @@ export default function ImageUploadField({
       >
         {value !== '' && (
           <img
-            src={imageUrl(value)}
+            src={urlOrPlaceholder(value)}
             alt=""
             onError={(e) => {
               if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
@@ -110,7 +113,7 @@ export default function ImageUploadField({
         {optional && value !== '' && (
           <button
             type="button"
-            onClick={() => onChange('')}
+            onClick={() => onChange(null, '')}
             className="flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
           >
             <Trash size={14} weight="bold" />

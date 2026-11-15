@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react'
 
 import { MagnifyingGlassPlus, X } from '@phosphor-icons/react'
 
-import { imageUrl, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 
 interface Props {
-  imageKey: string
+  url: string
   alt?: string
 }
 
-export default function ChatImageBubble({ imageKey, alt = 'Ảnh đính kèm' }: Props) {
+export default function ChatImageBubble({ url, alt = 'Ảnh đính kèm' }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
-  const src = imageUrl(imageKey)
+  const src = urlOrPlaceholder(url)
 
   useEffect(
     function closeOnEscape() {

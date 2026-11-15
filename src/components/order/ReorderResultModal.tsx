@@ -19,6 +19,9 @@ function issueReasonLabel(reason: string | undefined): string {
   if (reason === 'PRODUCT_UNAVAILABLE') {
     return 'Sản phẩm đã ngừng bán'
   }
+  if (reason === 'PRODUCT_DELETED') {
+    return 'Sản phẩm không còn tồn tại'
+  }
   if (reason === 'VARIANT_UNAVAILABLE') {
     return 'Biến thể không còn kinh doanh'
   }

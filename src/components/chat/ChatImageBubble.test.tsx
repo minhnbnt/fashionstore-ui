@@ -11,7 +11,7 @@ describe('ChatImageBubble', () => {
   })
 
   it('hiển thị ảnh thumbnail với đúng url', () => {
-    render(<ChatImageBubble imageKey="chat/test-image.jpg" alt="Ảnh đính kèm" />)
+    render(<ChatImageBubble url="chat/test-image.jpg" alt="Ảnh đính kèm" />)
 
     const img = screen.getByRole('img', { name: 'Ảnh đính kèm' }) as HTMLImageElement
     expect(img).toBeTruthy()
@@ -20,7 +20,7 @@ describe('ChatImageBubble', () => {
 
   it('click vào ảnh mở modal phóng to, click nút đóng thì đóng modal', async () => {
     const user = userEvent.setup()
-    render(<ChatImageBubble imageKey="chat/test-image.jpg" alt="Ảnh đính kèm" />)
+    render(<ChatImageBubble url="chat/test-image.jpg" alt="Ảnh đính kèm" />)
 
     expect(screen.queryByRole('dialog')).toBeNull()
 
@@ -41,7 +41,7 @@ describe('ChatImageBubble', () => {
 
   it('nhấn phím Escape đóng modal phóng to ảnh', async () => {
     const user = userEvent.setup()
-    render(<ChatImageBubble imageKey="chat/test-image.jpg" alt="Ảnh đính kèm" />)
+    render(<ChatImageBubble url="chat/test-image.jpg" alt="Ảnh đính kèm" />)
 
     await user.click(screen.getByRole('button', { name: 'Xem ảnh lớn: Ảnh đính kèm' }))
     expect(screen.getByRole('dialog')).toBeTruthy()
