@@ -4,6 +4,7 @@ import { CaretDown, CaretUp, Check, Funnel, Money, Tag, Trash } from '@phosphor-
 
 import { formatVnd } from '@/lib/format'
 import { PRICE_PRESETS } from '@/lib/searchFilters'
+import { cn, filterRowClass, iconChipClass, optionPillClass } from '@/lib/ui/styles'
 
 import PriceInputs from './PriceInputs'
 
@@ -53,7 +54,7 @@ function AccordionGroup(props: {
         className="group flex w-full items-center justify-between text-left"
       >
         <div className="flex items-center gap-2">
-          {props.icon && <span className="text-sky-700 dark:text-sky-400">{props.icon}</span>}
+          {props.icon && <span className={cn(iconChipClass())}>{props.icon}</span>}
           <span className="text-xs font-extrabold tracking-wider text-zinc-800 uppercase dark:text-zinc-200">
             {props.title}
           </span>
@@ -136,7 +137,9 @@ export default function FilterPanel(props: {
       {/* Sidebar Header */}
       <div className="flex items-center justify-between border-b border-sky-100 pb-3.5 dark:border-white/10">
         <div className="flex items-center gap-2">
-          <Funnel size={18} weight="bold" className="text-sky-700 dark:text-sky-400" />
+          <span className={cn(iconChipClass(), 'h-8 w-8')}>
+            <Funnel size={18} weight="bold" />
+          </span>
           <h2 className="text-sm font-extrabold text-zinc-900 uppercase dark:text-white">
             Bộ lọc tìm kiếm
           </h2>
@@ -311,29 +314,17 @@ export default function FilterPanel(props: {
 }
 
 function categoryClass(selected: boolean): string {
-  if (selected) {
-    return 'w-full flex items-center justify-between rounded-full bg-indigo-900 px-3 py-2 text-left text-xs font-extrabold text-white shadow-xs'
-  }
-  return 'w-full flex items-center justify-between rounded-full px-3 py-2 text-left text-xs font-semibold text-zinc-600 transition hover:bg-sky-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white'
+  return cn(filterRowClass(selected))
 }
 
 function presetChipClass(selected: boolean): string {
-  if (selected) {
-    return 'rounded-full bg-indigo-900 px-2.5 py-1.5 text-[11px] font-extrabold text-white shadow-xs'
-  }
-  return 'rounded-full border border-sky-100 bg-white/70 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-700 transition hover:border-sky-300 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:border-white/30 dark:hover:bg-white/10'
+  return cn(optionPillClass(selected))
 }
 
 function sizePillClass(selected: boolean): string {
-  if (selected) {
-    return 'rounded-full bg-indigo-900 px-3 py-1.5 text-xs font-extrabold text-white shadow-xs'
-  }
-  return 'rounded-full border border-sky-100 bg-white/70 px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:border-sky-300 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:border-white/30 dark:hover:bg-white/10'
+  return cn(optionPillClass(selected))
 }
 
 function colorPillClass(selected: boolean): string {
-  if (selected) {
-    return 'flex items-center gap-1.5 rounded-full bg-indigo-900 px-2.5 py-1.5 text-xs font-extrabold text-white shadow-xs'
-  }
-  return 'flex items-center gap-1.5 rounded-full border border-sky-100 bg-white/70 px-2.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-sky-300 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:border-white/30 dark:hover:bg-white/10'
+  return cn(optionPillClass(selected), 'flex items-center gap-1.5 text-xs')
 }
