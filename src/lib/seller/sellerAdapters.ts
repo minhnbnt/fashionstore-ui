@@ -10,6 +10,9 @@ import type {
   ProductItem,
   ReturnItem,
   ReviewItem,
+  ReviewProductOption,
+  ReviewReplyTemplateItem,
+  ReviewTrendPoint,
   SettlementItem,
   ShopAuditItem,
   ShopMemberItem,
@@ -24,8 +27,11 @@ import type { DecorationResponse } from '@generated/model/decorationResponse'
 import type { InventoryItemResponse } from '@generated/model/inventoryItemResponse'
 import type { OrderResponse } from '@generated/model/orderResponse'
 import type { ReturnRequestResponse } from '@generated/model/returnRequestResponse'
+import type { ReviewReplyTemplateResponse } from '@generated/model/reviewReplyTemplateResponse'
 import type { SellerProductResponse } from '@generated/model/sellerProductResponse'
+import type { SellerReviewProductOptionResponse } from '@generated/model/sellerReviewProductOptionResponse'
 import type { SellerReviewResponse } from '@generated/model/sellerReviewResponse'
+import type { SellerReviewTrendResponse } from '@generated/model/sellerReviewTrendResponse'
 import type { SettlementResponse } from '@generated/model/settlementResponse'
 import type { ShopActivityResponse } from '@generated/model/shopActivityResponse'
 import type { ShopMemberDetailResponse } from '@generated/model/shopMemberDetailResponse'
@@ -279,10 +285,7 @@ export function returnItem(
   }
 }
 
-export function reviewItem(
-  review: SellerReviewResponse,
-  productName: string | undefined,
-): ReviewItem {
+export function reviewItem(review: SellerReviewResponse, productName?: string): ReviewItem {
   const media = review.media ?? []
   const images = media
     .filter((item) => item.kind === 'IMAGE')
@@ -294,10 +297,18 @@ export function reviewItem(
     }
   }
 
+  let resolvedProductName = safeText(review.productName)
+  if (resolvedProductName === '' && productName !== undefined) {
+    resolvedProductName = safeText(productName)
+  }
+
   return {
     id: safeId(review.id),
+    productId: safeId(review.productId),
+    buyerId:
+      review.buyerId !== null && review.buyerId !== undefined ? safeId(review.buyerId) : undefined,
     buyerName: safeText(review.buyerDisplayName),
-    productName: safeText(productName),
+    productName: resolvedProductName,
     variantLabel: optionalText(review.variantLabel),
     rating: review.stars ?? 0,
     comment: safeText(review.comment),
@@ -311,6 +322,40 @@ export function reviewItem(
     isReported: review.isReported === true,
     createdAt: formatDateTime(review.createdAt),
   }
+}
+
+export function reviewProductOptionItem(
+  option: SellerReviewProductOptionResponse,
+): ReviewProductOption {
+  return {
+    id: safeId(option.id),
+    name: safeText(option.name),
+    reviewCount: option.reviewCount ?? 0,
+  }
+}
+
+export function reviewReplyTemplateItem(
+  template: ReviewReplyTemplateResponse,
+): ReviewReplyTemplateItem {
+  return {
+    id: safeId(template.id),
+    title: safeText(template.title),
+    content: safeText(template.content),
+    updatedAt: formatDateTime(template.updatedAt),
+  }
+}
+
+export function reviewTrendPoints(
+  trend: SellerReviewTrendResponse | undefined,
+): ReviewTrendPoint[] {
+  if (trend === undefined || trend.points === undefined) {
+    return []
+  }
+  return trend.points.map((point) => ({
+    label: safeText(point.label),
+    reviewCount: point.reviewCount ?? 0,
+    averageRating: point.averageRating ?? 0,
+  }))
 }
 
 export function settlementItem(
@@ -662,4 +707,32 @@ export function shopProfile(shop: ShopResponse): ShopProfileData {
 
 export function inventoryItemName(inventory: InventoryItemResponse): string {
   return safeText(inventory.productName)
+}
+
+// ─── Review grouping ───────────────────────────────────────────────────────
+
+export interface ReviewGroup {
+  productId: string
+  productName: string
+  reviews: ReviewItem[]
+}
+
+export function groupReviewsByProduct(reviews: ReviewItem[]): ReviewGroup[] {
+  const map = new Map<string, ReviewGroup>()
+  for (const rev of reviews) {
+    const pid = rev.productId
+    if (!map.has(pid)) {
+      map.set(pid, {
+        productId: pid,
+        productName: rev.productName.trim() !== '' ? rev.productName : 'Sản phẩm không xác định',
+        reviews: [],
+      })
+    }
+    map.get(pid)!.reviews.push(rev)
+  }
+  return [...map.values()].sort((a, b) => {
+    const diff = b.reviews.length - a.reviews.length
+    if (diff !== 0) return diff
+    return a.productId.localeCompare(b.productId)
+  })
 }

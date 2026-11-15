@@ -1,5 +1,7 @@
 export interface ReviewItem {
   id: string
+  productId: string
+  buyerId?: string
   buyerName: string
   productName: string
   variantLabel?: string
@@ -15,3 +17,24 @@ export interface ReviewItem {
   isReported: boolean
   createdAt: string
 }
+
+export interface ReviewProductOption {
+  id: string
+  name: string
+  reviewCount: number
+}
+
+export interface ReviewReplyTemplateItem {
+  id: string
+  title: string
+  content: string
+  updatedAt: string
+}
+
+export interface ReviewTrendPoint {
+  label: string
+  reviewCount: number
+  averageRating: number
+}
+
+export type ReviewTrendPeriod = 'day' | 'week' | 'month'

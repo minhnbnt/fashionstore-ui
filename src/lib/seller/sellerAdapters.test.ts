@@ -5,11 +5,15 @@ import {
   chatConversationItem,
   decorationBlocks,
   decorationDraftJson,
+  groupReviewsByProduct,
   memberItem,
   orderItem,
   productItem,
   returnItem,
   reviewItem,
+  reviewProductOptionItem,
+  reviewReplyTemplateItem,
+  reviewTrendPoints,
   roleItem,
   settlementItem,
   shopProfile,
@@ -210,6 +214,44 @@ describe('reviewItem va settlementItem', () => {
     expect(item.productName).toBe('Quần jeans')
     expect(item.isReported).toBe(true)
     expect(item.images).toEqual([])
+  })
+
+  it('tách media: kind IMAGE vào images, kind VIDEO vào videoUrl', () => {
+    const item = reviewItem({
+      id: 'rv3',
+      stars: 4,
+      media: [
+        { url: 'https://cdn.example.com/a.jpg', kind: 'IMAGE', uploadId: 'u1' },
+        { url: 'https://cdn.example.com/b.mp4', kind: 'VIDEO', uploadId: 'u2' },
+      ],
+    })
+    expect(item.images).toEqual(['https://cdn.example.com/a.jpg'])
+    expect(item.videoUrl).toBe('https://cdn.example.com/b.mp4')
+  })
+
+  it('uu tien productName tu response va map product option, template, trend points', () => {
+    const item = reviewItem({ id: 'rv2', productName: 'Áo sơ mi', stars: 5 }, 'Tên fallback')
+    expect(item.productName).toBe('Áo sơ mi')
+
+    const option = reviewProductOptionItem({ id: 'p1', name: 'Quần tây', reviewCount: 3 })
+    expect(option).toEqual({ id: 'p1', name: 'Quần tây', reviewCount: 3 })
+
+    const tpl = reviewReplyTemplateItem({
+      id: 't1',
+      title: 'Cảm ơn',
+      content: 'Cảm ơn bạn!',
+      updatedAt: '2026-10-20T10:00:00Z',
+    })
+    expect(tpl.title).toBe('Cảm ơn')
+    expect(tpl.content).toBe('Cảm ơn bạn!')
+
+    expect(
+      reviewTrendPoints({
+        period: 'day',
+        points: [{ label: '2026-10-20', reviewCount: 4, averageRating: 4.5 }],
+      }),
+    ).toEqual([{ label: '2026-10-20', reviewCount: 4, averageRating: 4.5 }])
+    expect(reviewTrendPoints(undefined)).toEqual([])
   })
 
   it('map settlement kem order code', () => {
@@ -439,5 +481,63 @@ describe('shopProfile', () => {
     expect(profile.isVerified).toBe(true)
     expect(profile.city).toBe('')
     expect(profile.returnPolicy).toBe('Đổi trả miễn phí trong 7 ngày')
+  })
+})
+
+import type { ReviewItem } from '@/types/seller/reviews'
+
+describe('groupReviewsByProduct', () => {
+  function makeRev(productId: string, productName: string, id: string): ReviewItem {
+    return {
+      id,
+      productId,
+      productName,
+      buyerName: 'X',
+      rating: 5,
+      comment: '',
+      images: [],
+      tags: [],
+      helpfulCount: 0,
+      anonymous: false,
+      isReported: false,
+      createdAt: '2026-01-01',
+    }
+  }
+
+  it('gom đúng nhóm, sắp xếp theo reviewCount giảm dần, tie-break productId alpha', () => {
+    const revs = [
+      makeRev('p1', 'Áo Thun', 'r1'),
+      makeRev('p2', 'Quần Jeans', 'r2'),
+      makeRev('p1', 'Áo Thun', 'r3'),
+      makeRev('p3', 'Giày', 'r4'),
+      makeRev('p2', 'Quần Jeans', 'r5'),
+      makeRev('p2', 'Quần Jeans', 'r6'),
+    ]
+    const result = groupReviewsByProduct(revs)
+    expect(result).toHaveLength(3)
+    expect(result[0].productId).toBe('p2')
+    expect(result[0].reviews).toHaveLength(3)
+    expect(result[0].reviews.map((r) => r.id)).toEqual(expect.arrayContaining(['r2', 'r5', 'r6']))
+    expect(result[1].productId).toBe('p1')
+    expect(result[1].reviews).toHaveLength(2)
+    expect(result[2].productId).toBe('p3')
+    expect(result[2].reviews).toHaveLength(1)
+  })
+
+  it('productName rỗng → fallback "Sản phẩm không xác định"', () => {
+    const rev = makeRev('p1', '', 'r1')
+    const result = groupReviewsByProduct([rev])
+    expect(result[0].productName).toBe('Sản phẩm không xác định')
+  })
+
+  it('mảng rỗng → trả []', () => {
+    expect(groupReviewsByProduct([])).toEqual([])
+  })
+
+  it('tie-break: 2 nhóm cùng số lượng → sắp xếp productId alphabetical', () => {
+    const revs = [makeRev('p2', 'B', 'r1'), makeRev('p1', 'A', 'r2')]
+    const result = groupReviewsByProduct(revs)
+    expect(result[0].productId).toBe('p1')
+    expect(result[1].productId).toBe('p2')
   })
 })
