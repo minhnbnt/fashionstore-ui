@@ -63,7 +63,7 @@ export default function ChangePasswordForm() {
   }
 
   return (
-    <div className="rounded-2xl bg-white/70 p-4 transition dark:bg-white/10">
+    <div className="rounded-2xl border border-zinc-300/70 bg-white/70 p-4 transition dark:border-white/10 dark:bg-white/10">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">

@@ -20,11 +20,13 @@ import { useSessionQuery } from '../../hooks/useSession'
 
 import type { UserResponse } from '@generated/model/userResponse'
 
+// Đồng bộ với tab của khung chat (ChatDock): segmented control dạng pill,
+// tab đang chọn dùng btn-primary gradient.
 function getTabBtnClass(isActive: boolean): string {
   if (isActive) {
-    return 'flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 transition-all dark:bg-indigo-500'
+    return 'btn-primary flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-xs'
   }
-  return 'flex items-center gap-2 rounded-2xl bg-zinc-100 px-5 py-2.5 text-xs font-bold text-zinc-600 transition-all hover:bg-zinc-200 dark:bg-white/5 dark:text-zinc-400 dark:hover:bg-white/10'
+  return 'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-zinc-600 transition hover:text-[#17203a] dark:text-zinc-300 dark:hover:text-white'
 }
 
 export default function Account() {
@@ -138,7 +140,7 @@ export default function Account() {
               onClick={function () {
                 handleSelectTab('shops')
               }}
-              className="flex w-full items-center justify-between rounded-2xl bg-white/70 p-3.5 text-left text-xs font-bold text-zinc-700 transition hover:bg-white dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+              className="flex w-full items-center justify-between rounded-2xl border border-zinc-300/70 bg-white/70 p-3.5 text-left text-xs font-bold text-zinc-700 transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
             >
               <div className="flex items-center gap-2.5">
                 <Storefront size={18} className="text-indigo-600 dark:text-indigo-400" />
@@ -154,7 +156,7 @@ export default function Account() {
               onClick={function () {
                 handleSelectTab('addresses')
               }}
-              className="flex w-full items-center justify-between rounded-2xl bg-white/70 p-3.5 text-left text-xs font-bold text-zinc-700 transition hover:bg-white dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+              className="flex w-full items-center justify-between rounded-2xl border border-zinc-300/70 bg-white/70 p-3.5 text-left text-xs font-bold text-zinc-700 transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
             >
               <div className="flex items-center gap-2.5">
                 <MapPin size={18} className="text-emerald-600 dark:text-emerald-400" />
@@ -167,7 +169,7 @@ export default function Account() {
 
             <Link
               to="/account/orders"
-              className="flex w-full items-center justify-between rounded-2xl bg-white/70 p-3.5 text-left text-xs font-bold text-zinc-700 transition hover:bg-white dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+              className="flex w-full items-center justify-between rounded-2xl border border-zinc-300/70 bg-white/70 p-3.5 text-left text-xs font-bold text-zinc-700 transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
             >
               <div className="flex items-center gap-2.5">
                 <Package size={18} className="text-blue-600 dark:text-sky-400" />
@@ -198,30 +200,32 @@ export default function Account() {
 
         {/* Right Column: Tabbed Content (My Shops or Address Book) */}
         <div className="glass rounded-3xl p-6 md:p-8 lg:col-span-7">
-          {/* Tab buttons */}
+          {/* Tab buttons — segmented control đồng bộ khung chat */}
           <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-zinc-200/80 pb-4 dark:border-white/10">
-            <button
-              type="button"
-              id="tab-btn-shops"
-              onClick={function () {
-                handleSelectTab('shops')
-              }}
-              className={getTabBtnClass(activeTab === 'shops')}
-            >
-              <Storefront size={18} weight="bold" />
-              <span>Gian hàng của tôi</span>
-            </button>
-            <button
-              type="button"
-              id="tab-btn-addresses"
-              onClick={function () {
-                handleSelectTab('addresses')
-              }}
-              className={getTabBtnClass(activeTab === 'addresses')}
-            >
-              <MapPin size={18} weight="bold" />
-              <span>Sổ địa chỉ</span>
-            </button>
+            <div className="flex items-center gap-1 rounded-full bg-zinc-100/90 p-1 dark:bg-white/10">
+              <button
+                type="button"
+                id="tab-btn-shops"
+                onClick={function () {
+                  handleSelectTab('shops')
+                }}
+                className={getTabBtnClass(activeTab === 'shops')}
+              >
+                <Storefront size={14} weight="bold" />
+                <span>Gian hàng của tôi</span>
+              </button>
+              <button
+                type="button"
+                id="tab-btn-addresses"
+                onClick={function () {
+                  handleSelectTab('addresses')
+                }}
+                className={getTabBtnClass(activeTab === 'addresses')}
+              >
+                <MapPin size={14} weight="bold" />
+                <span>Sổ địa chỉ</span>
+              </button>
+            </div>
           </div>
 
           {statusNotice !== null && (
