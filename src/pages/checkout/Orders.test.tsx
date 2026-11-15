@@ -237,7 +237,7 @@ describe('Orders page (1.4.5 + 1.4.6)', () => {
 
   it('chuyen /cart ngay khi Mua lai thanh cong 100%, mo modal khi co mon thieu hang', async () => {
     const user = userEvent.setup()
-    reorderMutateAsync.mockResolvedValueOnce({
+    reorderMutateAsync.mockResolvedValue({
       status: 200,
       data: {
         totalRequestedItems: 1,
@@ -252,7 +252,7 @@ describe('Orders page (1.4.5 + 1.4.6)', () => {
 
     const buyAgainButtons = screen.getAllByRole('button', { name: 'Mua lại' })
     await user.click(buyAgainButtons[0])
-    expect(screen.getByText('cart-page-target')).toBeTruthy()
+    expect(await screen.findByText('cart-page-target')).toBeTruthy()
   })
 
   it('chi mo nut Danh gia cho don DELIVERED da xac nhan nhan hang va tach biet tung don', async () => {
@@ -343,7 +343,7 @@ describe('Orders page (1.4.5 + 1.4.6)', () => {
 
   it('hien ReorderResultModal khi Mua lai co san pham bi bo qua', async () => {
     const user = userEvent.setup()
-    reorderMutateAsync.mockResolvedValueOnce({
+    reorderMutateAsync.mockResolvedValue({
       status: 200,
       data: {
         totalRequestedItems: 1,
@@ -365,6 +365,6 @@ describe('Orders page (1.4.5 + 1.4.6)', () => {
     renderOrders('/account/orders?tab=DELIVERED')
     const buyAgainButtons = screen.getAllByRole('button', { name: 'Mua lại' })
     await user.click(buyAgainButtons[0])
-    expect(screen.getByText(/Kết quả mua lại đơn hàng/i)).toBeTruthy()
+    expect(await screen.findByText(/Kết quả mua lại đơn hàng/i)).toBeTruthy()
   })
 })
