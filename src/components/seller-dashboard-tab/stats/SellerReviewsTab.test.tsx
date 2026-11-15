@@ -21,6 +21,7 @@ const {
   deleteTemplateMutateMock,
   reportMutateMock,
   openWithBuyerMutateMock,
+  navigateMock,
 } = vi.hoisted(() => ({
   canMock: vi.fn<(permission: string) => boolean>(() => true),
   useList3Mock: vi.fn(),
@@ -33,6 +34,7 @@ const {
   deleteTemplateMutateMock: vi.fn(),
   reportMutateMock: vi.fn(),
   openWithBuyerMutateMock: vi.fn(),
+  navigateMock: vi.fn(),
 }))
 
 let latestReplyOptions: { onSuccess?: () => void; onError?: (err: unknown) => void } | undefined
@@ -48,7 +50,7 @@ vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>()
   return {
     ...actual,
-    useNavigate: () => vi.fn(),
+    useNavigate: () => navigateMock,
   }
 })
 
@@ -56,7 +58,7 @@ vi.mock('@generated/endpoints/chat/chat', () => ({
   useOpenConversationWithBuyer: () => ({
     isPending: false,
     mutate: (vars: unknown, callOpts?: { onSuccess?: (data: unknown) => void }) => {
-      openWithBuyerMutateMock(vars)
+      openWithBuyerMutateMock(vars, callOpts)
       callOpts?.onSuccess?.({ status: 200, data: { id: 'conv-1' } })
     },
   }),
@@ -401,6 +403,7 @@ describe('grouped-by-product view', () => {
     renderTab()
     expect(screen.getAllByText('Áo Thun Oversize').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('2 đánh giá')).toBeTruthy()
+    expect(screen.getByText('2 chưa phản hồi')).toBeTruthy()
     expect(screen.getByText('Quần Jeans')).toBeTruthy()
     expect(screen.getByText('1 đánh giá')).toBeTruthy()
   })
@@ -511,5 +514,80 @@ describe('clickable product & message buyer', () => {
     renderTab()
     fireEvent.click(screen.getByRole('button', { name: /Áo Thun Oversize/i }))
     expect(screen.queryByRole('button', { name: /Nhắn tin/i })).toBeNull()
+  })
+
+  it('nhắn tin: mở hội thoại đúng buyer rồi điều hướng sang hội thoại vừa mở', () => {
+    setupDefaultMocks()
+    useList3Mock.mockReturnValue({
+      isLoading: false,
+      data: {
+        status: 200,
+        data: [
+          {
+            ...baseReview,
+            id: 'r1',
+            productId: 'p1',
+            productName: 'Áo Thun Oversize',
+            buyerId: 'buyer-uuid-1',
+            anonymous: false,
+          },
+        ],
+      },
+    })
+    renderTab()
+    fireEvent.click(screen.getByRole('button', { name: /Áo Thun Oversize/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Nhắn tin/i }))
+    expect(openWithBuyerMutateMock).toHaveBeenCalledWith(
+      { data: { shopId: 'shop-1', buyerId: 'buyer-uuid-1' } },
+      expect.anything(),
+    )
+    expect(navigateMock).toHaveBeenCalledWith('/messages?tab=shop&id=conv-1')
+  })
+})
+
+describe('media preview', () => {
+  it('review có media VIDEO hiển thị phần xem trước video', () => {
+    setupDefaultMocks()
+    useList3Mock.mockReturnValue({
+      isLoading: false,
+      data: {
+        status: 200,
+        data: [
+          {
+            ...baseReview,
+            id: 'r1',
+            productId: 'p1',
+            productName: 'Áo Thun Oversize',
+            media: [{ url: 'reviews/clip.mp4', kind: 'VIDEO', uploadId: 'u2' }],
+          },
+        ],
+      },
+    })
+    const view = renderTab()
+    fireEvent.click(screen.getByRole('button', { name: /Áo Thun Oversize/i }))
+    const video = view.container.querySelector('video')
+    expect(video).not.toBeNull()
+    expect((video as HTMLVideoElement).getAttribute('src')).toBe('reviews/clip.mp4')
+  })
+})
+
+describe('báo cáo vi phạm', () => {
+  it('gửi báo cáo đúng reviewId kèm lý do lên API', () => {
+    setupDefaultMocks()
+    useList3Mock.mockReturnValue({
+      isLoading: false,
+      data: {
+        status: 200,
+        data: [{ ...baseReview, id: 'r1', productId: 'p1', productName: 'Áo Thun Oversize' }],
+      },
+    })
+    renderTab()
+    fireEvent.click(screen.getByRole('button', { name: /Áo Thun Oversize/i }))
+    fireEvent.click(screen.getByTitle('Báo cáo vi phạm'))
+    fireEvent.click(screen.getByRole('button', { name: /Gửi báo cáo/ }))
+    expect(reportMutateMock).toHaveBeenCalledWith({
+      id: 'r1',
+      data: { reason: 'Đánh giá sai sự thật / Cạnh tranh không lành mạnh' },
+    })
   })
 })

@@ -216,6 +216,19 @@ describe('reviewItem va settlementItem', () => {
     expect(item.images).toEqual([])
   })
 
+  it('tách media: kind IMAGE vào images, kind VIDEO vào videoUrl', () => {
+    const item = reviewItem({
+      id: 'rv3',
+      stars: 4,
+      media: [
+        { url: 'https://cdn.example.com/a.jpg', kind: 'IMAGE', uploadId: 'u1' },
+        { url: 'https://cdn.example.com/b.mp4', kind: 'VIDEO', uploadId: 'u2' },
+      ],
+    })
+    expect(item.images).toEqual(['https://cdn.example.com/a.jpg'])
+    expect(item.videoUrl).toBe('https://cdn.example.com/b.mp4')
+  })
+
   it('uu tien productName tu response va map product option, template, trend points', () => {
     const item = reviewItem({ id: 'rv2', productName: 'Áo sơ mi', stars: 5 }, 'Tên fallback')
     expect(item.productName).toBe('Áo sơ mi')
