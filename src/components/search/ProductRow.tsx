@@ -5,6 +5,8 @@ import { Heart, ShoppingBag } from '@phosphor-icons/react'
 import { urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 
+import SimilarityBadge from './SimilarityBadge'
+
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 
 function priceLabel(p: ProductSummaryResponse): string {
@@ -15,7 +17,7 @@ function priceLabel(p: ProductSummaryResponse): string {
 }
 
 // Hàng ngang cho chế độ xem danh sách: ảnh trái, tên + giá phải.
-export default function ProductRow(props: { item: ProductSummaryResponse }) {
+export default function ProductRow(props: { item: ProductSummaryResponse; similarity?: number }) {
   const p = props.item
   const navigate = useNavigate()
   return (
@@ -36,6 +38,7 @@ export default function ProductRow(props: { item: ProductSummaryResponse }) {
             className="aspect-[4/5] w-24 rounded-2xl object-cover md:w-36"
           />
         </Link>
+        {props.similarity !== undefined && <SimilarityBadge similarity={props.similarity} />}
         <button
           type="button"
           aria-label="Yêu thích"
