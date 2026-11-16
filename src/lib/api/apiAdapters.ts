@@ -57,6 +57,12 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
   search: {
     400: 'Bộ lọc tìm kiếm chưa hợp lệ.',
   },
+  imageSearch: {
+    400: 'Ảnh không hợp lệ. Vui lòng chọn ảnh khác.',
+    413: 'Ảnh quá lớn. Dung lượng tối đa là 8 MB.',
+    415: 'Định dạng không được hỗ trợ. Hãy dùng JPG, PNG hoặc WebP.',
+    503: 'Dịch vụ tìm kiếm đang bận. Vui lòng thử lại sau.',
+  },
   adminStats: {
     403: 'Bạn không có quyền xem số liệu quản trị.',
   },
@@ -202,6 +208,10 @@ export function hookErrorMessage(endpoint: string, error: unknown): string {
     return apiErrorMessage(endpoint, error.status)
   }
   return apiErrorMessage(endpoint, 0)
+}
+
+export function imageSearchErrorText(err: unknown): string {
+  return hookErrorMessage('imageSearch', err)
 }
 
 /** Message lỗi thân thiện từ BE (apiFetch đã map detail/message vào ApiError.message), lỗi lạ thì fallback */

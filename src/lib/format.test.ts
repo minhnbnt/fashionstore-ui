@@ -8,6 +8,7 @@ import {
   formatSoldCount,
   formatVnd,
   priceLabel,
+  similarityPercent,
   splitFullAddress,
 } from './format'
 
@@ -137,5 +138,16 @@ describe('formatSoldCount', () => {
     expect(formatSoldCount(0)).toBe('0')
     expect(formatSoldCount(null)).toBe('0')
     expect(formatSoldCount(undefined)).toBe('0')
+  })
+})
+
+describe('similarityPercent', () => {
+  it('chuyen similarity thanh phan tram va clamp ve 0..100', () => {
+    expect(similarityPercent(0.5)).toBe(50)
+    expect(similarityPercent(0.937)).toBe(94)
+    expect(similarityPercent(1)).toBe(100)
+    expect(similarityPercent(-0.4)).toBe(0)
+    expect(similarityPercent(1.4)).toBe(100)
+    expect(similarityPercent(Number.NaN)).toBe(0)
   })
 })
