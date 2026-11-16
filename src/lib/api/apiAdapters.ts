@@ -1,7 +1,9 @@
 import { ApiError } from './apiFetch'
 
 import type { PriceInfo, SuccessStatus } from '@/types/product'
+import type { ImageSearchHit } from '@generated/model/imageSearchHit'
 import type { ProductResponse } from '@generated/model/productResponse'
+import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 
 export const PLACEHOLDER_IMAGE = 'https://picsum.photos/seed/net-noimage/600/750'
 
@@ -226,5 +228,16 @@ export function apiErrorText(err: unknown, fallback: string): string {
 export function fallbackImageOnError(event: { currentTarget: HTMLImageElement }): void {
   if (event.currentTarget.src !== PLACEHOLDER_IMAGE) {
     event.currentTarget.src = PLACEHOLDER_IMAGE
+  }
+}
+
+/** Map hit của endpoint ảnh sang shape card dùng chung; không bịa field BM25 (rank). */
+export function imageHitToSummary(hit: ImageSearchHit): ProductSummaryResponse {
+  return {
+    id: hit.id,
+    name: hit.name,
+    slug: hit.slug,
+    minPrice: hit.minPrice,
+    defaultImageUrl: hit.defaultImageUrl,
   }
 }

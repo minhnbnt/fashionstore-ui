@@ -4,6 +4,7 @@ import {
   apiErrorMessage,
   apiErrorText,
   hookErrorMessage,
+  imageHitToSummary,
   imageSearchErrorText,
   priceInfo,
   takeData,
@@ -157,5 +158,26 @@ describe('imageSearchErrorText', () => {
 
   it('fallback khi loi khong co status', () => {
     expect(imageSearchErrorText(new Error('boom'))).toBe('Đã xảy ra lỗi. Vui lòng thử lại sau.')
+  })
+})
+
+describe('imageHitToSummary', () => {
+  it('chuyen hit anh sang shape summary, khong bi rank', () => {
+    expect(
+      imageHitToSummary({
+        id: 'p1',
+        name: 'Áo',
+        slug: 'ao',
+        minPrice: 250000,
+        defaultImageUrl: 'https://cdn/a.png',
+        similarity: 0.9,
+      }),
+    ).toEqual({
+      id: 'p1',
+      name: 'Áo',
+      slug: 'ao',
+      minPrice: 250000,
+      defaultImageUrl: 'https://cdn/a.png',
+    })
   })
 })
