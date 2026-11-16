@@ -52,6 +52,10 @@
       "description": "Thống kê và Báo cáo dành cho Shop"
     },
     {
+      "name": "Search",
+      "description": "Tìm hàng giống ảnh query bằng vector Fashion-CLIP"
+    },
+    {
       "name": "Categories",
       "description": "Danh mục public, admin seed tay bằng SQL"
     },
@@ -6304,6 +6308,141 @@
             "bearerAuth": []
           }
         ]
+      }
+    },
+    "/api/search/products/by-image": {
+      "post": {
+        "tags": ["Search"],
+        "summary": "Tìm sản phẩm giống ảnh",
+        "description": "Chỉ hàng ACTIVE của shop APPROVED, xếp theo cosine distance tăng dần. Không nhận bộ lọc, không phân trang.",
+        "operationId": "byImage",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tối đa `limit` sản phẩm giống nhất",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageSearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "File rỗng hoặc không decode được",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageSearchResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Ảnh lớn hơn 8MB",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageSearchResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Content-type không phải image/*",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageSearchResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Worker embedding không sẵn sàng",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageSearchResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Data or state conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid JWT",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/reviews/{reviewId}/helpful": {
@@ -25528,6 +25667,46 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "ImageSearchHit": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "minPrice": {
+            "type": ["integer", "null"],
+            "format": "int64",
+            "description": "Giá variant thấp nhất (VND)"
+          },
+          "defaultImageUrl": {
+            "type": ["string", "null"],
+            "description": "URL ảnh đại diện"
+          },
+          "similarity": {
+            "type": "number",
+            "format": "double",
+            "description": "Độ giống 0..1, càng lớn càng giống"
+          }
+        }
+      },
+      "ImageSearchResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageSearchHit"
+            }
           }
         }
       },
