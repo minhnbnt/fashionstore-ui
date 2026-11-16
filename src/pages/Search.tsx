@@ -27,6 +27,14 @@ import {
   toQueryString,
   withFilter,
 } from '@/lib/searchFilters'
+import {
+  chipClass,
+  cn,
+  filterChipClass,
+  primaryButtonClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from '@/lib/ui/styles'
 
 import { ProductCard } from '../components/home/Sections'
 import EmptySearchState from '../components/search/EmptySearchState'
@@ -122,10 +130,10 @@ function ActiveChips(props: {
             onClick={function () {
               props.onChange(chip.patch)
             }}
-            className="flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-800 transition hover:border-sky-300 hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300 dark:hover:bg-sky-500/20"
+            className={cn(filterChipClass())}
           >
             <span>{chip.label}</span>
-            <X size={12} weight="bold" />
+            <X size={12} weight="bold" className="opacity-70" />
           </button>
         )
       })}
@@ -329,12 +337,15 @@ export default function Search() {
             onClick={function () {
               setFiltersOpen(!filtersOpen)
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-sky-100 bg-white/80 py-3 text-sm font-extrabold text-sky-700 shadow-xs lg:hidden dark:border-white/10 dark:bg-white/5 dark:text-sky-300"
+            className={cn(
+              primaryButtonClass(),
+              'flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-extrabold shadow-xs lg:hidden',
+            )}
           >
             <Funnel size={16} weight="bold" />
             <span>Bộ lọc nâng cao</span>
             {filterCount > 0 && (
-              <span className="rounded-full bg-indigo-900 px-2 py-0.5 text-xs text-white">
+              <span className="rounded-full bg-white/25 px-2 py-0.5 text-xs text-white">
                 {filterCount}
               </span>
             )}
@@ -371,20 +382,22 @@ export default function Search() {
                   Sắp xếp theo:
                 </span>
 
-                {sortTabs.map(function (s) {
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={function () {
-                        change({ sort: s })
-                      }}
-                      className={sortTabClass(sortValue === s)}
-                    >
-                      {SORT_LABELS[s]}
-                    </button>
-                  )
-                })}
+                <div className={cn(segmentedTrackClass(), 'flex-wrap')}>
+                  {sortTabs.map(function (s) {
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={function () {
+                          change({ sort: s })
+                        }}
+                        className={sortTabClass(sortValue === s)}
+                      >
+                        {SORT_LABELS[s]}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* Result Count & View Switcher */}
@@ -398,7 +411,7 @@ export default function Search() {
                   )}
                 </p>
 
-                <div className="hidden items-center rounded-full border border-sky-100 bg-white/80 p-0.5 sm:flex dark:border-white/10 dark:bg-white/5">
+                <div className={cn(segmentedTrackClass(), 'hidden sm:flex')}>
                   <button
                     type="button"
                     title="Xem dạng lưới"
@@ -503,24 +516,20 @@ export default function Search() {
 }
 
 function sortTabClass(selected: boolean): string {
-  if (selected) {
-    return 'rounded-full bg-indigo-900 px-3.5 py-1.5 text-xs font-extrabold text-white shadow-xs'
-  }
-  return 'rounded-full border border-sky-100 bg-white/70 px-3.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-sky-300 hover:text-zinc-900 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:border-white/30 dark:hover:text-white'
+  return cn(segmentedItemClass(selected))
 }
 
 function hotTagClass(isCurrent: boolean): string {
-  if (isCurrent) {
-    return 'rounded-full bg-indigo-900 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs'
-  }
-  return 'rounded-full border border-sky-100 bg-white/70 px-2.5 py-1 text-[11px] font-bold text-zinc-600 transition hover:border-sky-300 hover:text-sky-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:border-white/30 dark:hover:text-sky-300'
+  return cn(chipClass(isCurrent))
 }
 
 function viewTabClass(active: boolean): string {
   if (active) {
-    return 'rounded-full bg-indigo-900 p-1.5 text-white shadow-xs'
+    return cn(segmentedItemClass(true), 'p-1.5')
   }
-  return 'rounded-full p-1.5 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200'
+  return cn(
+    'rounded-full p-1.5 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200',
+  )
 }
 
 function resultsOpacityClass(isPlaceholder: boolean): string {

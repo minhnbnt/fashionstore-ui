@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import {
@@ -13,6 +13,7 @@ import {
 import { Bell, CheckCircle, X } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import { useMenuDisclosure } from '@/hooks/useMenuDisclosure'
 import { useSessionQuery } from '@/hooks/useSession'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { takeData } from '@/lib/api/apiAdapters'
@@ -51,15 +52,19 @@ export default function NotificationBell(props: NotificationBellProps) {
   if (defaultOpen !== undefined) {
     initialOpen = defaultOpen
   }
-  const [open, setOpen] = useState(initialOpen)
+  const bellContainerRef = useRef<HTMLDivElement>(null)
+  const bellTriggerRef = useRef<HTMLButtonElement>(null)
+  const menu = useMenuDisclosure({
+    containerRef: bellContainerRef,
+    triggerRef: bellTriggerRef,
+    initialOpen,
+  })
 
   let initialTab: 'ORDER' | 'ACTIVITY' | 'SELLING' = 'ORDER'
   if (categories && categories.length > 0) {
     initialTab = categories[0]
   }
   const [activeTab, setActiveTab] = useState<'ORDER' | 'ACTIVITY' | 'SELLING'>(initialTab)
-
-  const dropdownRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -152,20 +157,6 @@ export default function NotificationBell(props: NotificationBellProps) {
     })
   })
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpen(false)
-      }
-    }
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [open])
-
   if (!isLoggedIn) {
     return null
   }
@@ -204,7 +195,7 @@ export default function NotificationBell(props: NotificationBellProps) {
     if (item.id && !item.readAt) {
       markReadMutation.mutate({ id: item.id })
     }
-    setOpen(false)
+    menu.close()
     if (item.type === 'CHAT_MESSAGE' && (item.link === null || item.link === undefined)) {
       window.dispatchEvent(new CustomEvent('fashionstore:open-chat'))
       return
@@ -224,13 +215,16 @@ export default function NotificationBell(props: NotificationBellProps) {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative" ref={bellContainerRef}>
       <button
         type="button"
         id="btn-notification-bell"
+        ref={bellTriggerRef}
         aria-label="Thông báo"
-        onClick={() => setOpen(!open)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-full text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10"
+        aria-expanded={menu.open}
+        aria-controls="notification-menu"
+        onClick={menu.toggle}
+        className="relative flex h-10 w-10 items-center justify-center rounded-full text-zinc-600 transition hover:bg-indigo-100 active:scale-[0.98] dark:text-zinc-300 dark:hover:bg-white/10"
       >
         <Bell size={20} weight={bellWeight} />
         {unreadCount > 0 && (
@@ -240,8 +234,11 @@ export default function NotificationBell(props: NotificationBellProps) {
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-2xl backdrop-blur-md sm:w-96 dark:border-white/15 dark:bg-[#0a0f1e]">
+      {menu.open && (
+        <div
+          id="notification-menu"
+          className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-2xl backdrop-blur-md sm:w-96 dark:border-white/15 dark:bg-[#0a0f1e]"
+        >
           <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3 dark:border-white/10">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Thông báo</h3>

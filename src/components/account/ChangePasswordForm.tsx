@@ -4,6 +4,7 @@ import { CheckCircle, Eye, EyeSlash, Key, LockKey, WarningCircle, X } from '@pho
 
 import { useUpdatePassword } from '../../hooks/useAuthMutations'
 import { friendlyAuthError, validatePasswordReset } from '../../lib/auth'
+import { cardClass, cn } from '../../lib/ui/styles'
 
 export default function ChangePasswordForm() {
   const [isOpen, setIsOpen] = useState(false)
@@ -63,7 +64,7 @@ export default function ChangePasswordForm() {
   }
 
   return (
-    <div className="rounded-2xl bg-white/70 p-4 transition dark:bg-white/10">
+    <div className={cn(cardClass(), 'p-4 transition')}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">

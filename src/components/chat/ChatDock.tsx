@@ -32,6 +32,7 @@ import { useSessionQuery } from '@/hooks/useSession'
 import { apiErrorText, takeData } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
 import { formatDateTime } from '@/lib/format'
+import { cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 import {
   bubbleClass,
@@ -535,10 +536,7 @@ function ChatDockList({
 }
 
 function tabClass(active: boolean): string {
-  if (active) {
-    return 'btn-primary flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-xs'
-  }
-  return 'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-zinc-600 transition hover:text-[#17203a] dark:text-zinc-300 dark:hover:text-white'
+  return cn(segmentedItemClass(active))
 }
 
 function ChatDockBody(props: ChatDockProps) {
@@ -726,7 +724,7 @@ function ChatDockBody(props: ChatDockProps) {
         <ChatPanel className="glass fixed inset-x-3 bottom-[88px] z-50 flex h-[min(68dvh,540px)] flex-col overflow-hidden rounded-3xl bg-white/92 shadow-2xl md:inset-x-auto md:right-6 md:w-[560px] dark:bg-[#11182a]/94">
           {/* Header: 2 tab + expand button */}
           <div className="flex shrink-0 items-center justify-between border-b border-zinc-200/70 bg-white/80 px-3.5 py-2.5 backdrop-blur-xs dark:border-white/10 dark:bg-white/[0.03]">
-            <div className="flex items-center gap-1 rounded-full bg-zinc-100/90 p-1 dark:bg-white/10">
+            <div className={cn(segmentedTrackClass())}>
               <button
                 type="button"
                 onClick={function () {

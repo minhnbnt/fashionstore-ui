@@ -1,5 +1,32 @@
 # Design system — nét
 
+## UI kit (code dùng được)
+
+Kit nằm ở `src/lib/ui/styles.ts` — mỗi hàm trả về chuỗi class Tailwind cho một pattern
+đã chốt, dùng lại nhiều nơi. `cn()` (clsx + tailwind-merge) để ghép/ghi đè class.
+
+```ts
+import { cn, iconChipClass, segmentedItemClass } from '@/lib/ui/styles'
+
+className={cn(iconChipClass(), 'h-9 w-9')} // class ghi đè sau thắng
+```
+
+| Helper                                                   | Dùng cho                                                         |
+| -------------------------------------------------------- | ---------------------------------------------------------------- |
+| `primaryButtonClass()`                                   | Nút CTA gradient brand (`.btn-primary`)                          |
+| `segmentedTrackClass()` / `segmentedItemClass(active)`   | Nhóm nút pill (tab, chọn sắp xếp, chuyển view)                   |
+| `iconChipClass()`                                        | Ô icon bo góc nền gradient nhạt (menu, accordion, panel header)  |
+| `cardClass()`                                            | Card lồng trong panel glass (viền `zinc-300/70` đủ thấy ở light) |
+| `filterRowClass(selected)` / `optionPillClass(selected)` | Hàng chọn + pill nhỏ trong sidebar bộ lọc                        |
+| `filterChipClass()`                                      | Chip bộ lọc đang bật (họ sky)                                    |
+| `chipClass(active)`                                      | Chip gợi ý nhỏ (xu hướng)                                        |
+| `switchTrackClass(on)` / `switchKnobClass()`             | Switch gạt (giao diện sáng/tối)                                  |
+| `sectionLabelClass()`                                    | Nhãn nhóm nhỏ uppercase ("Sắp xếp theo:")                        |
+| `menuItemClass()`                                        | Hàng trong menu tài khoản                                        |
+
+Luật: trạng thái active của nút nhóm dùng `btn-primary` (gradient), **không** dùng
+`bg-indigo-900` đặc — gradient là chuẩn nhận diện của trạng thái đang chọn.
+
 ## Màu (lock 1 accent)
 
 - Nền: `#f6f9ff`. Chữ: `#17203a`.
