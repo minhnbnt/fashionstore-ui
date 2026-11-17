@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 
 import { useByImage } from '@generated/endpoints/search/search'
-import { ImageSquare, ArrowClockwise, UploadSimple, WarningCircle, X } from '@phosphor-icons/react'
+import { ArrowClockwise, ImageSquare, UploadSimple, WarningCircle, X } from '@phosphor-icons/react'
 
 import { imageSearchErrorText } from '@/lib/api/apiAdapters'
 import { cn } from '@/lib/ui/styles'
@@ -120,6 +120,15 @@ export default function ImageSearchPanel({ onResults, onClear }: Props) {
     zoneClass = zoneClass + ' border-blue-600 bg-blue-50/70 dark:bg-blue-950/30'
   }
 
+  let dropzoneLabel = 'Chọn ảnh để tìm sản phẩm giống'
+  if (previewUrl !== null) {
+    dropzoneLabel = 'Đổi ảnh'
+  }
+  let submitLabel = 'Tìm sản phẩm giống ảnh'
+  if (mutation.isPending) {
+    submitLabel = 'Đang tìm…'
+  }
+
   return (
     <section aria-label="Tìm sản phẩm bằng ảnh" className="glass mt-6 rounded-3xl p-5 md:p-6">
       <div className="flex flex-col items-center gap-5 md:flex-row md:items-center md:gap-6">
@@ -128,7 +137,7 @@ export default function ImageSearchPanel({ onResults, onClear }: Props) {
             <button
               type="button"
               data-testid="image-dropzone"
-              aria-label={previewUrl === null ? 'Chọn ảnh để tìm sản phẩm giống' : 'Đổi ảnh'}
+              aria-label={dropzoneLabel}
               disabled={mutation.isPending}
               onClick={function () {
                 inputRef.current?.click()
@@ -231,7 +240,7 @@ export default function ImageSearchPanel({ onResults, onClear }: Props) {
                   aria-hidden="true"
                 />
               )}
-              {mutation.isPending ? 'Đang tìm…' : 'Tìm sản phẩm giống ảnh'}
+              {submitLabel}
             </button>
             {file !== null && (
               <button

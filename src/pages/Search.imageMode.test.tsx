@@ -54,6 +54,7 @@ describe('Search — che do tim bang anh', () => {
     render(
       <MemoryRouter initialEntries={['/search?q=ao']}>
         <Search />
+        <LocationProbe />
       </MemoryRouter>,
     )
 
@@ -62,6 +63,7 @@ describe('Search — che do tim bang anh', () => {
 
     expect(screen.getByText('panel anh gia')).toBeTruthy()
     expect(screen.queryByText('Xu hướng:')).toBeNull()
+    expect(screen.getByTestId('probe').textContent).toBe('/search?q=ao&by-image=1')
 
     fireEvent.click(screen.getByRole('button', { name: 'Tìm bằng từ khóa' }))
     expect(screen.getByText('Xu hướng:')).toBeTruthy()
