@@ -4,12 +4,17 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vite-plus/test'
 
 import { ApiError } from '@/lib/api/apiFetch'
 
-const { mutateAsync, onClear, onResults } = vi.hoisted(function () {
-  return { mutateAsync: vi.fn(), onClear: vi.fn(), onResults: vi.fn() }
+const { mutateAsync, onClear, onResults, pendingState } = vi.hoisted(function () {
+  return {
+    mutateAsync: vi.fn(),
+    onClear: vi.fn(),
+    onResults: vi.fn(),
+    pendingState: { isPending: false },
+  }
 })
 
 vi.mock('@generated/endpoints/search/search', () => ({
-  useByImage: () => ({ mutateAsync, isPending: false }),
+  useByImage: () => ({ mutateAsync, isPending: pendingState.isPending }),
 }))
 
 import ImageSearchPanel from './ImageSearchPanel'
@@ -25,6 +30,7 @@ beforeAll(function () {
 afterEach(function () {
   cleanup()
   vi.clearAllMocks()
+  pendingState.isPending = false
 })
 
 function png(name: string, size: number): File {
@@ -116,5 +122,29 @@ describe('ImageSearchPanel', () => {
     fireEvent.change(input(), { target: { files: [png('a.png', 100)] } })
     fireEvent.click(screen.getByRole('button', { name: 'Xóa ảnh' }))
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview')
+  })
+
+  it('dang tim thi hien spinner va khoa cac nut', () => {
+    pendingState.isPending = true
+    renderPanel()
+    fireEvent.change(input(), { target: { files: [png('a.png', 100)] } })
+
+    expect(screen.getByText('Đang tìm…')).toBeTruthy()
+    const submit = screen.getByRole('button', { name: 'Đang tìm…' }) as HTMLButtonElement
+    expect(submit.disabled).toBe(true)
+    const dropzone = screen.getByTestId('image-dropzone') as HTMLButtonElement
+    expect(dropzone.disabled).toBe(true)
+  })
+
+  it('nut X tren preview xoa anh va revoke object URL', () => {
+    renderPanel()
+    fireEvent.change(input(), { target: { files: [png('a.png', 100)] } })
+    expect(screen.getByAltText('Ảnh đã chọn để tìm')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Xóa ảnh đã chọn' }))
+
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview')
+    expect(screen.queryByAltText('Ảnh đã chọn để tìm')).toBeNull()
+    expect(onClear).toHaveBeenCalled()
   })
 })

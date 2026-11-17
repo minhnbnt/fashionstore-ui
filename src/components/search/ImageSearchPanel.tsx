@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 
 import { useByImage } from '@generated/endpoints/search/search'
-import { ImageSquare, UploadSimple, WarningCircle, X } from '@phosphor-icons/react'
+import { ImageSquare, ArrowClockwise, UploadSimple, WarningCircle, X } from '@phosphor-icons/react'
 
 import { imageSearchErrorText } from '@/lib/api/apiAdapters'
 import { cn } from '@/lib/ui/styles'
@@ -107,86 +107,114 @@ export default function ImageSearchPanel({ onResults, onClear }: Props) {
     }
   }
 
-  let dropzoneClass =
-    'flex aspect-4/3 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-4 text-center transition md:w-72'
-  if (isDragging) {
-    dropzoneClass = dropzoneClass + ' border-blue-600 bg-blue-50/70 dark:bg-blue-950/30'
+  let zoneClass =
+    'relative block h-44 w-60 cursor-pointer overflow-hidden rounded-2xl border-2 transition disabled:cursor-not-allowed disabled:opacity-60'
+  if (previewUrl === null) {
+    zoneClass =
+      zoneClass +
+      ' flex flex-col items-center justify-center border-dashed border-zinc-300 p-4 text-center hover:border-blue-500 dark:border-white/15'
   } else {
-    dropzoneClass = dropzoneClass + ' border-zinc-300 hover:border-blue-500 dark:border-white/15'
+    zoneClass = zoneClass + ' border-zinc-300 hover:border-blue-500 dark:border-white/15'
+  }
+  if (isDragging) {
+    zoneClass = zoneClass + ' border-blue-600 bg-blue-50/70 dark:bg-blue-950/30'
   }
 
   return (
     <section aria-label="Tìm sản phẩm bằng ảnh" className="glass mt-6 rounded-3xl p-5 md:p-6">
-      <div className="flex flex-col gap-5 md:flex-row md:items-start">
-        <button
-          type="button"
-          data-testid="image-dropzone"
-          aria-label="Chọn ảnh để tìm sản phẩm giống"
-          onClick={function () {
-            inputRef.current?.click()
-          }}
-          onDragOver={function (e) {
-            e.preventDefault()
-            setIsDragging(true)
-          }}
-          onDragLeave={function () {
-            setIsDragging(false)
-          }}
-          onDrop={handleDrop}
-          className={cn(dropzoneClass)}
-        >
-          {previewUrl !== null && file !== null && (
-            <img
-              src={previewUrl}
-              alt="Ảnh đã chọn để tìm"
-              className="max-h-48 w-full rounded-xl object-contain"
-            />
+      <div className="flex flex-col items-center gap-5 md:flex-row md:items-center md:gap-6">
+        <div className="flex flex-col items-center gap-1.5">
+          <div className="relative">
+            <button
+              type="button"
+              data-testid="image-dropzone"
+              aria-label={previewUrl === null ? 'Chọn ảnh để tìm sản phẩm giống' : 'Đổi ảnh'}
+              disabled={mutation.isPending}
+              onClick={function () {
+                inputRef.current?.click()
+              }}
+              onDragOver={function (e) {
+                e.preventDefault()
+                setIsDragging(true)
+              }}
+              onDragLeave={function () {
+                setIsDragging(false)
+              }}
+              onDrop={handleDrop}
+              className={cn(zoneClass, 'group')}
+            >
+              {previewUrl !== null && file !== null && (
+                <>
+                  <img
+                    src={previewUrl}
+                    alt="Ảnh đã chọn để tìm"
+                    className="h-full w-full object-cover"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 flex items-center justify-center bg-zinc-950/50 text-xs font-bold text-white opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100"
+                  >
+                    Đổi ảnh
+                  </span>
+                </>
+              )}
+              {previewUrl === null && (
+                <>
+                  <UploadSimple
+                    size={28}
+                    weight="bold"
+                    className="text-blue-600 dark:text-sky-300"
+                  />
+                  <span className="mt-2 block text-sm font-bold text-zinc-800 dark:text-white">
+                    Chọn hoặc kéo thả ảnh
+                  </span>
+                  <span className="mt-1 block text-[11px] text-zinc-500">
+                    JPG, PNG, WebP · tối đa 8 MB
+                  </span>
+                </>
+              )}
+            </button>
+            {previewUrl !== null && (
+              <button
+                type="button"
+                aria-label="Xóa ảnh đã chọn"
+                disabled={mutation.isPending}
+                onClick={clear}
+                className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-zinc-950/60 text-white shadow transition hover:bg-zinc-950/80 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <X size={14} weight="bold" />
+              </button>
+            )}
+          </div>
+          {file !== null && (
+            <p className="max-w-60 truncate text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+              {file.name} · {fileSizeLabel(file.size)}
+            </p>
           )}
-          {previewUrl === null && (
-            <>
-              <UploadSimple size={30} weight="bold" className="text-blue-600 dark:text-sky-300" />
-              <span className="mt-2 block text-sm font-bold text-zinc-800 dark:text-white">
-                Chọn ảnh hoặc kéo thả vào đây
-              </span>
-              <span className="mt-1 block text-[11px] text-zinc-500">
-                JPG, PNG, WebP · tối đa 8 MB
-              </span>
-            </>
-          )}
-        </button>
+        </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <div className="w-full min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <ImageSquare size={20} weight="bold" className="text-blue-700 dark:text-sky-300" />
             <h2 className="text-base font-extrabold text-zinc-900 dark:text-white">
               Tìm sản phẩm giống ảnh
             </h2>
           </div>
-          <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Chụp hoặc chọn một ảnh trang phục. Hệ thống sẽ so sánh ảnh đó với các sản phẩm trong sàn
-            và trả về những item giống nhất.
+          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+            Chụp hoặc chọn một ảnh trang phục — hệ thống trả về những sản phẩm giống nhất trong sàn.
           </p>
-
-          {file !== null && (
-            <div className="rounded-2xl border border-sky-100 bg-sky-50/50 p-3 dark:border-white/10 dark:bg-white/5">
-              <p className="truncate text-xs font-bold text-zinc-800 dark:text-white">
-                {file.name}
-              </p>
-              <p className="mt-0.5 text-[11px] text-zinc-500">{fileSizeLabel(file.size)}</p>
-            </div>
-          )}
 
           {error !== null && (
             <div
               role="alert"
-              className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300"
+              className="mt-3 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300"
             >
               <WarningCircle size={16} weight="fill" className="shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
               type="button"
               disabled={file === null || mutation.isPending}
@@ -195,14 +223,22 @@ export default function ImageSearchPanel({ onResults, onClear }: Props) {
               }}
               className="btn-primary flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-extrabold disabled:opacity-50"
             >
-              {mutation.isPending && <span aria-hidden="true">…</span>}
-              Tìm sản phẩm giống ảnh
+              {mutation.isPending && (
+                <ArrowClockwise
+                  size={14}
+                  weight="bold"
+                  className="animate-spin"
+                  aria-hidden="true"
+                />
+              )}
+              {mutation.isPending ? 'Đang tìm…' : 'Tìm sản phẩm giống ảnh'}
             </button>
             {file !== null && (
               <button
                 type="button"
+                disabled={mutation.isPending}
                 onClick={clear}
-                className="flex items-center gap-1.5 rounded-full border border-zinc-200 px-4 py-2.5 text-xs font-bold text-zinc-600 hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-300"
+                className="flex items-center gap-1.5 rounded-full border border-zinc-200 px-4 py-2.5 text-xs font-bold text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10"
               >
                 <X size={14} weight="bold" />
                 Xóa ảnh

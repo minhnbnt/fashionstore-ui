@@ -157,11 +157,21 @@ export default function Search() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
-  const [mode, setMode] = useState<'text' | 'image'>('text')
+  // Chế độ ảnh dẫn xuất từ URL (?by-image=1) để mở từ nút camera trên header,
+  // refresh không mất; chuyển mode ghi/xóa param nhưng giữ nguyên filter của text mode.
+  const isImageMode = params.get('by-image') === '1'
   const [imageHits, setImageHits] = useState<ImageSearchHit[]>([])
   const [imageSearched, setImageSearched] = useState(false)
 
-  const isImageMode = mode === 'image'
+  function setMode(next: 'text' | 'image'): void {
+    const nextParams = new URLSearchParams(params)
+    if (next === 'image') {
+      nextParams.set('by-image', '1')
+    } else {
+      nextParams.delete('by-image')
+    }
+    setParams(nextParams)
+  }
 
   function handleImageResults(hits: ImageSearchHit[]): void {
     setImageHits(hits)

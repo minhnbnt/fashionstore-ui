@@ -6,6 +6,7 @@ import { useMyConversations } from '@generated/endpoints/chat/chat'
 import { useMine } from '@generated/endpoints/shops/shops'
 import { useMe } from '@generated/endpoints/users/users'
 import {
+  Camera,
   ChatCircleDots,
   Heart,
   MagnifyingGlass,
@@ -258,6 +259,17 @@ export default function Header() {
               className="w-full bg-transparent outline-none placeholder:text-zinc-400"
               placeholder="Tìm áo, váy, khoác…"
             />
+            <button
+              type="button"
+              aria-label="Tìm bằng ảnh"
+              title="Tìm bằng ảnh"
+              onClick={function () {
+                void navigate('/search?by-image=1')
+              }}
+              className="shrink-0 rounded-full p-0.5 text-zinc-400 transition hover:bg-sky-100 hover:text-blue-700 active:scale-95 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-sky-300"
+            >
+              <Camera size={16} weight="bold" />
+            </button>
           </form>
           <div className="ml-auto flex items-center gap-2 md:ml-0">
             {/* Seller Channel Link */}

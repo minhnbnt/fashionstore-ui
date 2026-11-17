@@ -1,4 +1,4 @@
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
@@ -42,6 +42,11 @@ vi.mock('../components/home/Sections', () => ({
 
 import Search from './Search'
 
+function LocationProbe() {
+  const location = useLocation()
+  return <p data-testid="probe">{location.pathname + location.search}</p>
+}
+
 afterEach(cleanup)
 
 describe('Search — che do tim bang anh', () => {
@@ -76,5 +81,33 @@ describe('Search — che do tim bang anh', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tìm bằng từ khóa' }))
     fireEvent.click(screen.getByRole('button', { name: 'Tìm bằng ảnh' }))
     expect(screen.queryByText('card p1')).toBeNull()
+  })
+
+  it('mo /search?by-image=1 thi vao ngay che do anh', () => {
+    render(
+      <MemoryRouter initialEntries={['/search?by-image=1']}>
+        <Search />
+        <LocationProbe />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('panel anh gia')).toBeTruthy()
+    expect(screen.queryByText('Xu hướng:')).toBeNull()
+  })
+
+  it('quay lai che do text thi bo by-image khoi URL va giu q', () => {
+    render(
+      <MemoryRouter initialEntries={['/search?q=ao&by-image=1']}>
+        <Search />
+        <LocationProbe />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('panel anh gia')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm bằng từ khóa' }))
+
+    expect(screen.getByText('Xu hướng:')).toBeTruthy()
+    expect(screen.getByTestId('probe').textContent).toBe('/search?q=ao')
   })
 })
