@@ -315,6 +315,7 @@ export default function Search() {
             type="button"
             aria-pressed={isImageMode === false}
             onClick={function () {
+              handleImageClear()
               setMode('text')
             }}
             className={segmentedItemClass(isImageMode === false)}

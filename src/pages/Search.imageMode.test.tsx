@@ -17,8 +17,26 @@ vi.mock('@generated/endpoints/categories/categories', () => ({
   useListCategories: vi.fn(() => ({ data: { status: 200, data: [] } })),
 }))
 vi.mock('@/components/search/ImageSearchPanel', () => ({
-  default: function FakePanel() {
-    return <div>panel anh gia</div>
+  default: function FakePanel(props: {
+    onResults: (hits: { id: string }[]) => void
+    onClear: () => void
+  }) {
+    return (
+      <div>
+        <div>panel anh gia</div>
+        <button type="button" onClick={() => props.onResults([{ id: 'p1' }])}>
+          tra ket qua
+        </button>
+        <button type="button" onClick={() => props.onClear()}>
+          xoa ket qua
+        </button>
+      </div>
+    )
+  },
+}))
+vi.mock('../components/home/Sections', () => ({
+  ProductCard: function FakeCard(props: { item: { id?: string } }) {
+    return <div>card {props.item.id}</div>
   },
 }))
 
@@ -42,5 +60,21 @@ describe('Search — che do tim bang anh', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Tìm bằng từ khóa' }))
     expect(screen.getByText('Xu hướng:')).toBeTruthy()
+  })
+
+  it('don ket qua anh khi quay lai che do text', () => {
+    render(
+      <MemoryRouter initialEntries={['/search']}>
+        <Search />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm bằng ảnh' }))
+    fireEvent.click(screen.getByRole('button', { name: 'tra ket qua' }))
+    expect(screen.getByText('card p1')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm bằng từ khóa' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm bằng ảnh' }))
+    expect(screen.queryByText('card p1')).toBeNull()
   })
 })
