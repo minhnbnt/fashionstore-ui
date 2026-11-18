@@ -139,7 +139,7 @@ export default function ReviewReplyTemplateModal({
       </div>
 
       {errorMessage !== null && (
-        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
           <WarningCircle size={16} weight="bold" />
           <span>{errorMessage}</span>
         </div>
@@ -166,7 +166,7 @@ export default function ReviewReplyTemplateModal({
                 setTitle(e.target.value)
               }}
               placeholder="Ví dụ: Cảm ơn đánh giá 5 sao"
-              className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-[#0b101b] dark:text-white"
+              className="mt-1 w-full rounded-full border border-zinc-300 bg-white/80 px-3 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
 
@@ -189,7 +189,7 @@ export default function ReviewReplyTemplateModal({
                 setContent(e.target.value)
               }}
               placeholder="Nhập nội dung phản hồi văn bản thuần..."
-              className="mt-1 w-full resize-none rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-[#0b101b] dark:text-white"
+              className="mt-1 w-full resize-none rounded-2xl border border-zinc-300 bg-white/80 px-3 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
 
@@ -206,7 +206,7 @@ export default function ReviewReplyTemplateModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="btn-primary inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold disabled:opacity-50"
             >
               <Plus size={14} weight="bold" />
               {submitLabel}
@@ -255,7 +255,7 @@ export default function ReviewReplyTemplateModal({
                       onClick={function () {
                         deleteMutation.mutate({ templateId: tpl.id })
                       }}
-                      className="inline-flex items-center gap-1 rounded-full border border-red-200 px-2.5 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-rose-200 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/15"
                     >
                       <Trash size={13} />
                       Xóa

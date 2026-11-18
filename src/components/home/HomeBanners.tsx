@@ -5,8 +5,10 @@ import { useListBanners } from '@generated/endpoints/site-content/site-content'
 import { CaretLeft, CaretRight, Pause, Play } from '@phosphor-icons/react'
 import { useReducedMotion } from 'motion/react'
 
+import { Skeleton } from '@/components/ui/Skeleton'
 import { urlOrPlaceholder, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { isInternalLink } from '@/lib/content/siteContent'
+import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 import type { PublicBannerResponse } from '@generated/model/publicBannerResponse'
 
@@ -112,6 +114,14 @@ export function BannerCarousel() {
     [count, paused, reduce],
   )
 
+  if (query.isPending) {
+    return (
+      <section aria-label="Đang tải khuyến mãi" className="mx-auto max-w-[1400px] px-4 pb-6">
+        <Skeleton className="aspect-[4/3] w-full rounded-3xl md:aspect-[3/1]" />
+      </section>
+    )
+  }
+
   if (count === 0) {
     return null
   }
@@ -155,7 +165,10 @@ export function BannerCarousel() {
               type="button"
               onClick={() => go(-1)}
               aria-label="Banner trước"
-              className="glass absolute top-1/2 left-3 -translate-y-1/2 rounded-full p-2.5 text-zinc-900 dark:text-white"
+              className={cn(
+                'glass absolute top-1/2 left-3 -translate-y-1/2 cursor-pointer rounded-full p-2.5 text-zinc-900 dark:text-white',
+                FOCUS_RING_CLASS,
+              )}
             >
               <CaretLeft size={18} weight="bold" />
             </button>
@@ -163,7 +176,10 @@ export function BannerCarousel() {
               type="button"
               onClick={() => go(1)}
               aria-label="Banner sau"
-              className="glass absolute top-1/2 right-3 -translate-y-1/2 rounded-full p-2.5 text-zinc-900 dark:text-white"
+              className={cn(
+                'glass absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded-full p-2.5 text-zinc-900 dark:text-white',
+                FOCUS_RING_CLASS,
+              )}
             >
               <CaretRight size={18} weight="bold" />
             </button>
@@ -172,17 +188,21 @@ export function BannerCarousel() {
                 type="button"
                 onClick={() => setPaused(paused === false)}
                 aria-label={pauseLabel}
-                className="glass absolute right-3 bottom-3 rounded-full p-2 text-zinc-900 dark:text-white"
+                className={cn(
+                  'glass absolute right-3 bottom-3 cursor-pointer rounded-full p-2 text-zinc-900 dark:text-white',
+                  FOCUS_RING_CLASS,
+                )}
               >
                 {paused && <Play size={14} weight="fill" />}
                 {paused === false && <Pause size={14} weight="fill" />}
               </button>
             )}
-            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+            <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-0.5">
               {banners.map(function (banner, dot) {
-                let dotClass = 'h-2 w-2 rounded-full bg-white/60 transition-all'
-                if (dot === index % count) {
-                  dotClass = 'h-2 w-6 rounded-full bg-white transition-all'
+                const isActive = dot === index % count
+                let dotClass = 'block h-2 w-2 rounded-full bg-white/60 transition-all'
+                if (isActive) {
+                  dotClass = 'block h-2 w-6 rounded-full bg-white transition-all'
                 }
                 return (
                   <button
@@ -190,9 +210,14 @@ export function BannerCarousel() {
                     type="button"
                     onClick={() => setIndex(dot)}
                     aria-label={`Xem banner ${dot + 1}`}
-                    aria-current={dot === index % count}
-                    className={dotClass}
-                  />
+                    aria-current={isActive}
+                    className={cn(
+                      'flex h-8 w-8 cursor-pointer items-center justify-center rounded-full',
+                      FOCUS_RING_CLASS,
+                    )}
+                  >
+                    <span className={dotClass} />
+                  </button>
                 )
               })}
             </div>

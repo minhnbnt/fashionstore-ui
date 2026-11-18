@@ -16,11 +16,50 @@ interface Props {
   isLoading?: boolean
 }
 
+function trackingStatusLabel(code: string | undefined): string {
+  if (code === 'CREATED' || code === 'ORDER_CREATED') {
+    return 'Đã tạo vận đơn'
+  }
+  if (code === 'PICKED_UP') {
+    return 'Đã lấy hàng'
+  }
+  if (code === 'IN_TRANSIT') {
+    return 'Đang trung chuyển'
+  }
+  if (code === 'ARRIVED_HUB' || code === 'AT_HUB') {
+    return 'Đã đến kho trung chuyển'
+  }
+  if (code === 'OUT_FOR_DELIVERY') {
+    return 'Đang giao hàng'
+  }
+  if (code === 'DELIVERED') {
+    return 'Giao hàng thành công'
+  }
+  if (code === 'DELIVERY_FAILED' || code === 'FAILED') {
+    return 'Giao hàng thất bại'
+  }
+  if (code === 'RETURNED' || code === 'RETURNING') {
+    return 'Hoàn hàng'
+  }
+  if (code === 'CANCELLED') {
+    return 'Đã hủy vận đơn'
+  }
+  return code ?? 'Cập nhật'
+}
+
 function trackingStatusBadge(code: string | undefined): string {
   if (code === 'DELIVERED') {
     return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200'
   }
-  if (code === 'OUT_FOR_DELIVERY' || code === 'IN_TRANSIT') {
+  if (code === 'DELIVERY_FAILED' || code === 'FAILED' || code === 'CANCELLED') {
+    return 'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-200'
+  }
+  if (
+    code === 'OUT_FOR_DELIVERY' ||
+    code === 'IN_TRANSIT' ||
+    code === 'ARRIVED_HUB' ||
+    code === 'AT_HUB'
+  ) {
     return 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200'
   }
   return 'bg-zinc-100 text-zinc-700 dark:bg-white/10 dark:text-zinc-200'
@@ -105,7 +144,7 @@ export default function ShipmentTrackingCard(props: Props) {
                     <span
                       className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${trackingStatusBadge(ev.statusCode)}`}
                     >
-                      {ev.statusCode}
+                      {trackingStatusLabel(ev.statusCode)}
                     </span>
                   </div>
                   {Boolean(ev.location) && (

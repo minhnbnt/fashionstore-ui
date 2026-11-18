@@ -2,87 +2,104 @@ import { Link } from 'react-router'
 
 import { Heart } from '@phosphor-icons/react'
 
-import { hookErrorMessage, urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import AccountLayout from '@/components/account/AccountLayout'
+import { EmptyState } from '@/components/ui/EmptyState'
+import ProductCard from '@/components/ui/ProductCard'
+import { ProductCardSkeleton } from '@/components/ui/Skeleton'
+import StatePanel from '@/components/ui/StatePanel'
+import WishlistButton from '@/components/WishlistButton'
+import { useWishlist } from '@/hooks/useWishlist'
+import { fallbackImageOnError, hookErrorMessage, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
-
-import WishlistButton from '../../components/WishlistButton'
-import { useWishlist } from '../../hooks/useWishlist'
+import { CARD_CLASS, cn } from '@/lib/ui/styles'
 
 import type { WishlistItemResponse } from '@generated/model/wishlistItemResponse'
 
-function WishlistCard(props: { item: WishlistItemResponse }) {
+function UnavailableWishlistCard(props: { item: WishlistItemResponse }) {
   const item = props.item
-  const href = '/product/' + (item.productId ?? '')
-  const unavailable = item.available === false
-
-  let imageClass = 'aspect-[4/5] w-full object-cover'
-  if (unavailable) {
-    imageClass = 'aspect-[4/5] w-full object-cover opacity-40 grayscale'
-  }
-
   let priceLabel = 'Liên hệ'
   if (item.minPrice !== null && item.minPrice !== undefined) {
     priceLabel = formatVnd(item.minPrice)
   }
 
   return (
-    <article className="group overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-sm transition hover:shadow-xl hover:shadow-sky-200 dark:border-white/10 dark:bg-white/5 dark:hover:shadow-black/50">
-      <div className="relative">
-        <Link to={href}>
-          <img
-            src={urlOrPlaceholder(item.defaultImageUrl)}
-            alt={item.name ?? ''}
-            loading="lazy"
-            width={600}
-            height={750}
-            onError={function (e) {
-              if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
-                e.currentTarget.src = PLACEHOLDER_IMAGE
-              }
-            }}
-            className={imageClass}
-          />
-        </Link>
+    <article className={cn(CARD_CLASS, 'flex h-full flex-col overflow-hidden opacity-85')}>
+      <div className="relative overflow-hidden bg-zinc-100/80 dark:bg-white/5">
+        <img
+          src={urlOrPlaceholder(item.defaultImageUrl)}
+          alt={item.name ?? 'Sản phẩm không còn bán'}
+          loading="lazy"
+          width={600}
+          height={750}
+          onError={fallbackImageOnError}
+          className="aspect-[4/5] w-full object-cover opacity-45 grayscale"
+        />
         <WishlistButton productId={item.productId} />
-        {unavailable && (
-          <span className="absolute top-3 left-3 rounded-full bg-zinc-900/80 px-3 py-1 text-xs font-bold text-white">
-            Không còn bán
-          </span>
-        )}
+        <span className="absolute top-2.5 left-2.5 rounded-full bg-zinc-900/85 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-xs">
+          Không còn bán
+        </span>
       </div>
-      <div className="p-4">
-        <Link to={href}>
-          <h3 className="truncate text-sm font-bold hover:underline">{item.name}</h3>
-        </Link>
-        <p className="mt-2 font-extrabold text-blue-700 dark:text-sky-300">{priceLabel}</p>
-        {unavailable && item.unavailableReason !== undefined && item.unavailableReason !== null && (
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{item.unavailableReason}</p>
-        )}
+      <div className="flex flex-1 flex-col p-3.5 sm:p-4">
+        <h3 className="line-clamp-2 min-h-[2.5rem] text-sm leading-snug font-bold text-zinc-500 dark:text-zinc-400">
+          {item.name}
+        </h3>
+        <div className="mt-auto pt-2.5">
+          <p className="text-base font-extrabold text-zinc-400 tabular-nums line-through dark:text-zinc-500">
+            {priceLabel}
+          </p>
+          {item.unavailableReason !== undefined &&
+            item.unavailableReason !== null &&
+            item.unavailableReason !== '' && (
+              <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">
+                {item.unavailableReason}
+              </p>
+            )}
+        </div>
       </div>
     </article>
   )
 }
 
 export default function Wishlist() {
-  const { error, isError, isLoading, items, refetch } = useWishlist()
+  const { isLoggedIn, error, isError, isLoading, items, refetch } = useWishlist()
+
+  const breadcrumbs = [
+    { label: 'Trang chủ', to: '/' },
+    { label: 'Tài khoản', to: '/account' },
+    { label: 'Sản phẩm yêu thích' },
+  ]
+
+  if (!isLoggedIn) {
+    return (
+      <AccountLayout breadcrumbs={breadcrumbs}>
+        <StatePanel
+          title="Bạn chưa đăng nhập"
+          description="Đăng nhập để xem và quản lý danh sách sản phẩm yêu thích của bạn."
+          action={
+            <Link
+              to="/login"
+              className="btn-primary mt-5 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold"
+            >
+              Đăng nhập ngay
+            </Link>
+          }
+        />
+      </AccountLayout>
+    )
+  }
 
   let body = (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4" aria-busy="true">
-      {[0, 1, 2, 3].map(function (index) {
-        return (
-          <div
-            key={index}
-            className="aspect-[3/4] animate-pulse rounded-3xl bg-white/60 dark:bg-white/5"
-          />
-        )
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-3" aria-busy="true">
+      {[0, 1, 2, 3, 4, 5].map(function (index) {
+        return <ProductCardSkeleton key={index} />
       })}
     </div>
   )
 
   if (isError) {
     body = (
-      <div className="glass rounded-3xl px-6 py-12 text-center">
-        <p className="text-sm text-red-600 dark:text-red-400">
+      <div className="glass rounded-3xl px-6 py-12 text-center dark:bg-[#11182a]">
+        <p className="text-sm text-rose-600 dark:text-rose-400">
           {hookErrorMessage('wishlist', error)}
         </p>
         <button
@@ -90,7 +107,7 @@ export default function Wishlist() {
           onClick={function () {
             void refetch()
           }}
-          className="mt-3 rounded-full px-4 py-2 text-sm font-bold text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
+          className="btn-primary mt-4 cursor-pointer rounded-full px-5 py-2 text-sm font-bold"
         >
           Thử lại
         </button>
@@ -100,47 +117,66 @@ export default function Wishlist() {
 
   if (isLoading === false && isError === false && items.length === 0) {
     body = (
-      <div className="glass rounded-3xl px-6 py-16 text-center">
-        <Heart size={40} weight="duotone" className="mx-auto text-rose-400" />
-        <p className="mt-3 font-bold">Chưa có sản phẩm yêu thích</p>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Nhấn vào trái tim trên sản phẩm để lưu lại.
-        </p>
-        <Link
-          to="/"
-          className="btn-primary mt-5 inline-flex rounded-full px-5 py-2.5 text-sm font-bold"
-        >
-          Xem sản phẩm
-        </Link>
-      </div>
+      <EmptyState
+        icon={<Heart size={28} weight="duotone" className="text-rose-500" />}
+        title="Chưa có sản phẩm yêu thích"
+        description="Nhấn vào biểu tượng trái tim trên sản phẩm để lưu lại và xem nhanh bất cứ lúc nào."
+        action={
+          <Link
+            to="/search"
+            className="btn-primary inline-flex rounded-full px-5 py-2.5 text-sm font-bold"
+          >
+            Khám phá sản phẩm
+          </Link>
+        }
+      />
     )
   }
 
   if (items.length > 0) {
     body = (
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {items.map(function (item, index) {
-          return <WishlistCard key={item.productId ?? index} item={item} />
+          if (item.available === false) {
+            return <UnavailableWishlistCard key={item.productId ?? index} item={item} />
+          }
+          return (
+            <ProductCard
+              key={item.productId ?? index}
+              item={{
+                id: item.productId,
+                name: item.name,
+                minPrice: item.minPrice,
+                defaultImageUrl: item.defaultImageUrl,
+              }}
+              showShop={false}
+              showWishlist={true}
+            />
+          )
         })}
       </div>
     )
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[110px] pb-16">
+    <AccountLayout breadcrumbs={breadcrumbs}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] shadow-lg">
             <Heart size={22} weight="fill" className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tighter">Sản phẩm yêu thích</h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">{items.length} sản phẩm</p>
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#17203a] dark:text-white">
+              Sản phẩm yêu thích
+            </h1>
+            <p className="text-sm text-zinc-500 tabular-nums dark:text-zinc-400">
+              {items.length} sản phẩm
+            </p>
           </div>
         </div>
       </div>
 
       <div className="mt-6">{body}</div>
-    </main>
+    </AccountLayout>
   )
 }

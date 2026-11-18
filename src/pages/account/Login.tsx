@@ -1,7 +1,19 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router'
 
-import { ArrowsLeftRight, Eye, EyeSlash, Tag, Truck } from '@phosphor-icons/react'
+import {
+  ArrowsLeftRight,
+  Eye,
+  EyeSlash,
+  Headset,
+  LockSimple,
+  ShieldCheck,
+  Tag,
+  Truck,
+} from '@phosphor-icons/react'
+
+import { notify } from '@/lib/notifications'
+import { cn, INPUT_CLASS, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 import {
   usePasswordReset,
@@ -23,6 +35,24 @@ const PERKS = [
   { icon: Truck, text: 'Miễn phí vận chuyển cho đơn từ 500K' },
   { icon: Tag, text: 'Ưu đãi sớm trước 24 giờ' },
   { icon: ArrowsLeftRight, text: 'Đổi trả trong 30 ngày' },
+]
+
+const TRUST_HIGHLIGHTS = [
+  {
+    icon: ShieldCheck,
+    label: 'Gian hàng xác thực',
+    detail: 'Kiểm duyệt rõ ràng trên nền tảng DHMQ',
+  },
+  {
+    icon: LockSimple,
+    label: 'Bảo mật tài khoản',
+    detail: 'Mã hóa phiên đăng nhập & giao dịch an toàn',
+  },
+  {
+    icon: Headset,
+    label: 'Hỗ trợ tận tâm',
+    detail: 'Đồng hành xử lý đơn hàng và đổi trả mỗi ngày',
+  },
 ]
 
 // Không ternary (AGENTS.md): helper if/return.
@@ -60,7 +90,9 @@ export default function Login() {
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -74,9 +106,10 @@ export default function Login() {
   const signUp = useSignUp()
   const reset = usePasswordReset()
   const googleSignIn = useSignInWithGoogle()
+  const oauthError = searchParams.get('error')
 
   if (isPending) {
-    return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
+    return <p className="mx-auto max-w-6xl px-4 py-24 text-center">Đang tải…</p>
   }
 
   if (session !== null && session !== undefined) {
@@ -86,12 +119,20 @@ export default function Login() {
     return <Navigate to={dest} replace />
   }
 
-  const oauthError = searchParams.get('error')
   const busy = signIn.isPending || signUp.isPending || reset.isPending || googleSignIn.isPending
 
   let inputType = 'password'
+  let passwordToggleLabel = 'Hiện mật khẩu'
   if (showPassword) {
     inputType = 'text'
+    passwordToggleLabel = 'Ẩn mật khẩu'
+  }
+
+  let confirmInputType = 'password'
+  let confirmToggleLabel = 'Hiện xác nhận mật khẩu'
+  if (showConfirmPassword) {
+    confirmInputType = 'text'
+    confirmToggleLabel = 'Ẩn xác nhận mật khẩu'
   }
 
   let autoComplete = 'new-password'
@@ -101,6 +142,7 @@ export default function Login() {
 
   function handleMode(next: Mode) {
     setMode(next)
+    setConfirmPassword('')
     setFormError(null)
     setNotice(null)
     signIn.reset()
@@ -139,6 +181,16 @@ export default function Login() {
       setFormError(invalid)
       return
     }
+    if (mode === 'signup') {
+      if (confirmPassword === '') {
+        setFormError('Vui lòng xác nhận lại mật khẩu.')
+        return
+      }
+      if (confirmPassword !== password) {
+        setFormError('Mật khẩu xác nhận không khớp.')
+        return
+      }
+    }
     setFormError(null)
     setNotice(null)
     const creds = { email: email.trim(), password }
@@ -146,6 +198,7 @@ export default function Login() {
       signIn.mutate(creds, {
         onSuccess: function (newSession) {
           if (newSession !== null) {
+            notify.success('Đăng nhập thành công')
             const role = getRoleFromSession(newSession)
             const defaultPath = getDefaultPathForRole(role)
             const dest = resolveDest(from, defaultPath)
@@ -161,6 +214,7 @@ export default function Login() {
     signUp.mutate(creds, {
       onSuccess: function (newSession) {
         if (newSession !== null) {
+          notify.success('Tạo tài khoản thành công')
           const role = getRoleFromSession(newSession)
           const defaultPath = getDefaultPathForRole(role)
           const dest = resolveDest(from, defaultPath)
@@ -176,6 +230,7 @@ export default function Login() {
   }
 
   function handleGoogleSignIn() {
+    setFormError(null)
     googleSignIn.mutate(undefined, {
       onError: function (err) {
         setFormError(friendlyAuthError(err))
@@ -184,19 +239,19 @@ export default function Login() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
+    <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
       <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
         <aside className="relative hidden overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-blue-700 to-sky-400 p-8 text-white lg:flex lg:flex-col">
           <div className="hero-blob top-[-80px] right-[-80px] h-64 w-64 bg-white/20" />
           <div className="hero-blob bottom-[-100px] left-[-60px] h-72 w-72 bg-indigo-950/40" />
           <p className="relative flex items-center gap-1 text-2xl font-extrabold tracking-tighter">
-            <span>nét</span>
+            <span>DHMQ</span>
             <span className="h-2.5 w-2.5 rounded-full bg-white" />
           </p>
           <h2 className="relative mt-6 text-3xl leading-tight font-extrabold tracking-tighter">
             Một tài khoản,
             <br />
-            cả tủ đồ nét
+            cả tủ đồ DHMQ
           </h2>
           <ul className="relative mt-6 space-y-3">
             {PERKS.map(function (perk) {
@@ -211,34 +266,60 @@ export default function Login() {
               )
             })}
           </ul>
-          <figure className="relative mt-auto pt-8">
-            <blockquote className="text-sm leading-relaxed text-white/90">
-              "Đặt hôm trước, hôm sau đã nhận được. Đóng gói cẩn thận."
-            </blockquote>
-            <figcaption className="mt-2 text-xs font-bold text-white/70">Trâm, Sài Gòn</figcaption>
-          </figure>
+          <div className="relative mt-auto pt-8">
+            <div className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+              <p className="text-[11px] font-extrabold tracking-[0.16em] text-white/80 uppercase">
+                Cam kết nền tảng DHMQ
+              </p>
+              <div className="mt-3 space-y-2.5">
+                {TRUST_HIGHLIGHTS.map(function (item) {
+                  return (
+                    <div key={item.label} className="flex items-start gap-2.5 text-xs">
+                      <item.icon size={16} weight="bold" className="mt-0.5 shrink-0 text-sky-200" />
+                      <div>
+                        <p className="font-bold text-white">{item.label}</p>
+                        <p className="text-white/75">{item.detail}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
         </aside>
 
         <div className="glass rounded-3xl p-6 md:p-8">
           {mode !== 'forgot' && (
-            <div className="flex rounded-full bg-indigo-50 p-1 text-sm font-bold dark:bg-white/10">
+            <div
+              role="tablist"
+              aria-label="Chọn chế độ tài khoản"
+              className={cn(segmentedTrackClass(), 'w-full')}
+            >
               <button
                 type="button"
+                role="tab"
+                aria-selected={mode === 'login'}
                 onClick={function () {
                   handleMode('login')
                 }}
-                className="flex-1 rounded-full py-2"
-                style={{ ...(mode === 'login' && { background: '#312e81', color: '#fff' }) }}
+                className={cn(
+                  segmentedItemClass(mode === 'login'),
+                  'flex-1 cursor-pointer justify-center py-2 text-sm',
+                )}
               >
                 Đăng nhập
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={mode === 'signup'}
                 onClick={function () {
                   handleMode('signup')
                 }}
-                className="flex-1 rounded-full py-2"
-                style={{ ...(mode === 'signup' && { background: '#312e81', color: '#fff' }) }}
+                className={cn(
+                  segmentedItemClass(mode === 'signup'),
+                  'flex-1 cursor-pointer justify-center py-2 text-sm',
+                )}
               >
                 Đăng ký
               </button>
@@ -247,7 +328,7 @@ export default function Login() {
 
           <h1 className="mt-5 text-2xl font-extrabold tracking-tighter">
             {mode === 'login' && <span>Chào mừng quay trở lại</span>}
-            {mode === 'signup' && <span>Tạo tài khoản nét</span>}
+            {mode === 'signup' && <span>Tạo tài khoản DHMQ</span>}
             {mode === 'forgot' && <span>Quên mật khẩu</span>}
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
@@ -265,7 +346,7 @@ export default function Login() {
                 id="btn-google-signin"
                 onClick={handleGoogleSignIn}
                 disabled={busy}
-                className="mt-5 flex w-full items-center justify-center gap-3 rounded-full border border-zinc-200 bg-white py-3 text-sm font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-60 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+                className="mt-5 flex w-full cursor-pointer items-center justify-center gap-3 rounded-full border border-zinc-300 bg-white/80 py-3 text-sm font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
               >
                 <GoogleIcon />
                 {googleSignIn.isPending && <span>Đang chuyển hướng…</span>}
@@ -278,34 +359,41 @@ export default function Login() {
                 <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
               </div>
 
-              {oauthError !== null && (
-                <p className="mb-3 rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
-                  Đăng nhập Google thất bại. Vui lòng thử lại.
+              {oauthError !== null && oauthError !== '' && (
+                <p
+                  role="alert"
+                  className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+                >
+                  Đăng nhập Google thất bại. Vui lòng thử lại hoặc dùng email và mật khẩu.
                 </p>
               )}
             </>
           )}
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-            <label className="block text-sm font-bold">
+            <label htmlFor="login-email" className="block text-sm font-bold">
               Email
               <input
+                id="login-email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={function (e) {
                   setEmail(e.target.value)
                 }}
-                placeholder="ban@net.vn"
+                placeholder="ban@dhmq.vn"
                 autoComplete="email"
-                className="mt-1 w-full rounded-2xl border border-sky-100 bg-white/80 px-4 py-2.5 font-normal outline-none placeholder:text-zinc-400 focus:border-sky-400 dark:border-white/15 dark:bg-white/10"
+                className={cn(INPUT_CLASS, 'mt-1 font-normal')}
               />
             </label>
 
             {mode !== 'forgot' && (
-              <label className="block text-sm font-bold">
+              <label htmlFor="login-password" className="block text-sm font-bold">
                 Mật khẩu
                 <span className="relative mt-1 block">
                   <input
+                    id="login-password"
+                    name="password"
                     type={inputType}
                     value={password}
                     onChange={function (e) {
@@ -313,17 +401,17 @@ export default function Login() {
                     }}
                     placeholder="Tối thiểu 6 ký tự"
                     autoComplete={autoComplete}
-                    className="w-full rounded-2xl border border-sky-100 bg-white/80 px-4 py-2.5 pr-11 font-normal outline-none placeholder:text-zinc-400 focus:border-sky-400 dark:border-white/15 dark:bg-white/10"
+                    className={cn(INPUT_CLASS, 'pr-11 font-normal')}
                   />
                   <button
                     type="button"
-                    aria-label="Hiện mật khẩu"
+                    aria-label={passwordToggleLabel}
                     onClick={function () {
                       setShowPassword(function (prev) {
                         return !prev
                       })
                     }}
-                    className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full p-1 text-zinc-500"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded-full p-1 text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                   >
                     {showPassword && <EyeSlash size={18} />}
                     {showPassword === false && <Eye size={18} />}
@@ -332,8 +420,44 @@ export default function Login() {
               </label>
             )}
 
+            {mode === 'signup' && (
+              <label htmlFor="login-confirm-password" className="block text-sm font-bold">
+                Xác nhận mật khẩu
+                <span className="relative mt-1 block">
+                  <input
+                    id="login-confirm-password"
+                    name="confirmPassword"
+                    type={confirmInputType}
+                    value={confirmPassword}
+                    onChange={function (e) {
+                      setConfirmPassword(e.target.value)
+                    }}
+                    placeholder="Nhập lại mật khẩu"
+                    autoComplete="new-password"
+                    className={cn(INPUT_CLASS, 'pr-11 font-normal')}
+                  />
+                  <button
+                    type="button"
+                    aria-label={confirmToggleLabel}
+                    onClick={function () {
+                      setShowConfirmPassword(function (prev) {
+                        return !prev
+                      })
+                    }}
+                    className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded-full p-1 text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                  >
+                    {showConfirmPassword && <EyeSlash size={18} />}
+                    {showConfirmPassword === false && <Eye size={18} />}
+                  </button>
+                </span>
+              </label>
+            )}
+
             {formError !== null && (
-              <p className="rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
+              <p
+                role="alert"
+                className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+              >
                 {formError}
               </p>
             )}
@@ -346,7 +470,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={busy}
-              className="btn-primary w-full rounded-full py-3 text-sm font-bold disabled:opacity-60"
+              className="btn-primary w-full cursor-pointer rounded-full py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60"
             >
               {busy && <span>Đang xử lý…</span>}
               {busy === false && mode === 'login' && <span>Đăng nhập</span>}
@@ -361,7 +485,7 @@ export default function Login() {
               onClick={function () {
                 handleMode('forgot')
               }}
-              className="mt-3 w-full text-center text-sm font-medium text-blue-700 hover:underline dark:text-sky-300"
+              className="mt-3 w-full cursor-pointer text-center text-sm font-medium text-blue-700 hover:underline dark:text-sky-300"
             >
               Quên mật khẩu?
             </button>
@@ -373,7 +497,7 @@ export default function Login() {
               onClick={function () {
                 handleMode('login')
               }}
-              className="mt-3 w-full text-center text-sm font-medium text-blue-700 hover:underline dark:text-sky-300"
+              className="mt-3 w-full cursor-pointer text-center text-sm font-medium text-blue-700 hover:underline dark:text-sky-300"
             >
               Quay lại đăng nhập
             </button>

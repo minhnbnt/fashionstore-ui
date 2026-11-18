@@ -12,11 +12,11 @@ import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
 import { useListProducts } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
 import { getMineQueryKey, useUpdateProfile } from '@generated/endpoints/shops/shops'
 import {
-  PaperPlaneRight,
-  MagnifyingGlass,
-  CheckCircle,
-  Robot,
+  ArrowLeft,
   Image as ImageIcon,
+  MagnifyingGlass,
+  PaperPlaneRight,
+  Robot,
   ShoppingBagOpen,
   X,
 } from '@phosphor-icons/react'
@@ -44,6 +44,7 @@ import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/us
 import { usePinToBottom } from '@/hooks/usePinToBottom'
 import { takeData } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
+import { notify } from '@/lib/notifications'
 import { chatConversationItem, chatMessageItem } from '@/lib/seller/sellerAdapters'
 
 import type { ChatConversationItem, ChatMessageItem } from '@/types/seller'
@@ -53,18 +54,44 @@ import type { SellerProductResponse } from '@generated/model/sellerProductRespon
 interface Props {
   shopId: string
   autoReplyText: string
+  initialConvId?: string
 }
 
 function conversationRowClass(active: boolean): string {
   if (active) {
-    return 'bg-indigo-50/90 ring-1 ring-indigo-200/80 dark:bg-white/10 dark:ring-white/15'
+    return 'bg-sky-50/90 ring-1 ring-blue-200/80 dark:bg-white/10 dark:ring-white/15'
   }
   return 'hover:bg-[#f6f9ff] dark:hover:bg-white/5'
 }
 
-export default function SellerChatTab({ shopId, autoReplyText }: Props) {
+function mobileListPaneClass(mobileView: 'LIST' | 'THREAD'): string {
+  if (mobileView === 'THREAD') {
+    return 'hidden h-full min-h-0 flex-col border-r border-zinc-200/70 bg-white/60 md:col-span-1 md:flex dark:border-white/10 dark:bg-white/[0.02]'
+  }
+  return 'flex h-full min-h-0 flex-col border-r border-zinc-200/70 bg-white/60 md:col-span-1 dark:border-white/10 dark:bg-white/[0.02]'
+}
+
+function mobileThreadPaneClass(mobileView: 'LIST' | 'THREAD'): string {
+  if (mobileView === 'LIST') {
+    return 'hidden h-full min-h-0 flex-col md:col-span-2 md:flex'
+  }
+  return 'flex h-full min-h-0 flex-col md:col-span-2'
+}
+
+export default function SellerChatTab({ shopId, autoReplyText, initialConvId }: Props) {
   const queryClient = useQueryClient()
-  const [selectedConvId, setSelectedConvId] = useState('')
+  const [selectedConvId, setSelectedConvId] = useState(function () {
+    if (initialConvId !== undefined && initialConvId !== '') {
+      return initialConvId
+    }
+    return ''
+  })
+  const [mobileView, setMobileView] = useState<'LIST' | 'THREAD'>(function () {
+    if (initialConvId !== undefined && initialConvId !== '') {
+      return 'THREAD'
+    }
+    return 'LIST'
+  })
   const [messageInput, setMessageInput] = useState('')
   const [pendingImage, setPendingImage] = useState<{
     uploadId: string
@@ -75,7 +102,6 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
   const [showAutoReplyModal, setShowAutoReplyModal] = useState(false)
   const [showProductPickerModal, setShowProductPickerModal] = useState(false)
   const [tempAutoReply, setTempAutoReply] = useState(autoReplyText)
-  const [notification, setNotification] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const shopProductsQuery = useListProducts(
@@ -123,6 +149,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
         void queryClient.invalidateQueries({ queryKey: getMessagesQueryKey(variables.id) })
         void queryClient.invalidateQueries({ queryKey: getSellerConversationsQueryKey({ shopId }) })
       },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể gửi tin nhắn. Vui lòng thử lại.')
+      },
     },
   })
   const markReadMutation = useMarkRead({
@@ -136,6 +165,10 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getMineQueryKey() })
+        notify.success('Đã lưu cấu hình tin nhắn tự động!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, 'shops', 'Không thể lưu cấu hình tin nhắn tự động.')
       },
     },
   })
@@ -167,6 +200,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
 
   function handleSelectConversation(id: string) {
     setSelectedConvId(id)
+    setMobileView('THREAD')
     markReadMutation.mutate({ id })
   }
 
@@ -186,13 +220,6 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
 
   function handleSaveAutoReply(text: string) {
     updateProfileMutation.mutate({ id: shopId, data: { autoReplyText: text } })
-  }
-
-  function showToast(msg: string) {
-    setNotification(msg)
-    setTimeout(function () {
-      setNotification(null)
-    }, 3000)
   }
 
   const selectedConv = conversations.find(function (c) {
@@ -219,8 +246,8 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
       .then(function (uploadId) {
         setPendingImage({ uploadId, objectUrl: URL.createObjectURL(file) })
       })
-      .catch(function (err) {
-        console.error('Lỗi tải ảnh:', err)
+      .catch(function (err: unknown) {
+        notify.fromError(err, undefined, 'Tải ảnh thất bại. Vui lòng thử lại.')
       })
       .finally(function () {
         setIsUploadingImage(false)
@@ -247,19 +274,10 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
   function handleSaveAutoReplyConfirm() {
     handleSaveAutoReply(tempAutoReply)
     setShowAutoReplyModal(false)
-    showToast('Đã lưu cấu hình tin nhắn tự động!')
   }
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-full border border-zinc-200/80 bg-[#17203a] px-4 py-2.5 text-sm font-bold text-white shadow-xl dark:border-white/15 dark:bg-white dark:text-[#17203a]">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -278,7 +296,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
           }}
           className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-bold text-[#17203a] shadow-2xs transition hover:border-blue-600 hover:text-blue-700 active:scale-[0.98] dark:border-white/15 dark:bg-white/10 dark:text-slate-100"
         >
-          <Robot size={16} weight="bold" className="text-indigo-600 dark:text-sky-300" />
+          <Robot size={16} weight="bold" className="text-blue-700 dark:text-sky-300" />
           Cài đặt Tin nhắn Tự động (Auto-reply)
         </button>
       </div>
@@ -286,7 +304,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
       {/* Cửa sổ Chat 2 cột */}
       <div className="glass grid h-[calc(100vh-210px)] max-h-[750px] min-h-[520px] grid-cols-1 overflow-hidden rounded-3xl bg-white/88 shadow-xl md:grid-cols-3 dark:bg-[#11182a]/92">
         {/* Cột trái: Danh sách hội thoại */}
-        <div className="flex h-full min-h-0 flex-col border-r border-zinc-200/70 bg-white/60 md:col-span-1 dark:border-white/10 dark:bg-white/[0.02]">
+        <div className={mobileListPaneClass(mobileView)}>
           <div className="shrink-0 border-b border-zinc-200/70 p-3 dark:border-white/10">
             <div className={CHAT_SEARCH_PILL_CLASS}>
               <MagnifyingGlass size={14} weight="bold" className="shrink-0 text-zinc-400" />
@@ -329,7 +347,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                     </p>
                   </div>
                   {conv.unreadCount > 0 && (
-                    <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-bold text-white">
+                    <span className="btn-primary flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] font-bold">
                       {conv.unreadCount}
                     </span>
                   )}
@@ -340,20 +358,29 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
         </div>
 
         {/* Cột phải: Khung chat chi tiết */}
-        <div className="flex h-full min-h-0 flex-col md:col-span-2">
+        <div className={mobileThreadPaneClass(mobileView)}>
           {selectedConv !== undefined && (
             <>
               {/* Header khung chat */}
-              <div className="flex shrink-0 items-center justify-between border-b border-zinc-200/70 bg-white/85 px-5 py-3.5 backdrop-blur-xs dark:border-white/10 dark:bg-[#11182a]/85">
-                <div className="flex items-center gap-3">
+              <div className="flex shrink-0 items-center justify-between border-b border-zinc-200/70 bg-white/85 px-4 py-3.5 backdrop-blur-xs sm:px-5 dark:border-white/10 dark:bg-[#11182a]/85">
+                <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                  <button
+                    type="button"
+                    aria-label="Quay lại danh sách hội thoại"
+                    onClick={function () {
+                      setMobileView('LIST')
+                    }}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 md:hidden dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                  >
+                    <ArrowLeft size={16} weight="bold" />
+                  </button>
                   <UserAvatar name={selectedConv.buyerName} size={38} />
-                  <div>
-                    <p className="text-sm font-bold text-[#17203a] dark:text-white">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-[#17203a] dark:text-white">
                       {selectedConv.buyerName}
                     </p>
-                    <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      Trực tuyến
+                    <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      Hội thoại khách hàng
                     </p>
                   </div>
                 </div>
@@ -363,7 +390,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
                   onClick={function () {
                     handleSelectConversation(selectedConv.id)
                   }}
-                  className="rounded-full border border-zinc-300 bg-white px-3.5 py-1.5 text-[11px] font-bold text-[#17203a] transition hover:border-blue-600 hover:text-blue-700 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:text-slate-200"
+                  className="shrink-0 rounded-full border border-zinc-300 bg-white px-3.5 py-1.5 text-[11px] font-bold text-[#17203a] transition hover:border-blue-600 hover:text-blue-700 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:text-slate-200"
                 >
                   Đánh dấu đã đọc
                 </button>
@@ -527,7 +554,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
               onChange={function (e) {
                 setTempAutoReply(e.target.value)
               }}
-              placeholder="VD: Cảm ơn bạn đã ghé thăm FashionHub! Chúng tôi sẽ phản hồi trong ít phút..."
+              placeholder="VD: Cảm ơn bạn đã ghé thăm DHMQ! Chúng tôi sẽ phản hồi trong ít phút..."
               className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white/90 p-3 text-xs text-[#17203a] outline-none placeholder:text-zinc-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>

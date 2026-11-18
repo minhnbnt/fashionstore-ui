@@ -11,10 +11,10 @@ import type { ProvinceResponse } from '@generated/model/provinceResponse'
 import type { WardResponse } from '@generated/model/wardResponse'
 
 const INPUT_CLASS =
-  'mt-1 w-full rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2.5 text-xs font-medium text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white dark:placeholder:text-zinc-500'
+  'mt-1 w-full rounded-full border border-zinc-300 bg-white/85 px-3.5 py-2.5 text-xs font-medium text-[#17203a] outline-none transition placeholder:text-zinc-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:placeholder:text-zinc-400 dark:focus:border-sky-400 dark:focus:ring-sky-400/25'
 
 const SEARCH_INPUT_CLASS =
-  'w-full rounded-full border border-zinc-300 bg-white/80 py-2.5 pr-10 pl-9 text-xs font-medium text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white dark:placeholder:text-zinc-500'
+  'w-full rounded-full border border-zinc-300 bg-white/85 py-2.5 pr-10 pl-9 text-xs font-medium text-[#17203a] outline-none transition placeholder:text-zinc-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 dark:border-white/15 dark:bg-white/10 dark:text-white dark:placeholder:text-zinc-400 dark:focus:border-sky-400 dark:focus:ring-sky-400/25'
 
 function optionItemClass(isSelected: boolean): string {
   if (isSelected) {
@@ -199,6 +199,7 @@ export default function LocationAddressSelector({
             {provinceSearch.length > 0 && (
               <button
                 type="button"
+                aria-label="Xóa tỉnh thành phố"
                 onClick={() => {
                   setProvince('')
                   setProvinceSearch('')
@@ -206,7 +207,7 @@ export default function LocationAddressSelector({
                   setWardSearch('')
                   emitChange(detail, '', '')
                 }}
-                className="absolute top-2.5 right-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="absolute top-2.5 right-8 cursor-pointer rounded-full p-0.5 text-zinc-500 transition hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100"
               >
                 <X size={14} />
               </button>
@@ -218,9 +219,9 @@ export default function LocationAddressSelector({
           </div>
 
           {provinceDropdownOpen && (
-            <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-white/15 dark:bg-zinc-900">
+            <div className="absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-zinc-200 bg-white py-1 shadow-xl dark:border-white/15 dark:bg-[#0a0f1e] dark:shadow-black/60">
               {filteredProvinces.length === 0 && (
-                <div className="px-3.5 py-2.5 text-xs text-zinc-400">
+                <div className="px-3.5 py-2.5 text-xs text-zinc-500 dark:text-zinc-400">
                   Không tìm thấy Tỉnh/Thành phố
                 </div>
               )}
@@ -231,12 +232,14 @@ export default function LocationAddressSelector({
                     key={p.code ?? p.name}
                     type="button"
                     onClick={() => handleSelectProvince(p)}
-                    className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-xs ${optionItemClass(
+                    className={`flex w-full cursor-pointer items-center justify-between px-3.5 py-2 text-left text-xs ${optionItemClass(
                       isSelected,
                     )}`}
                   >
                     <span>{p.name}</span>
-                    {isSelected && <Check size={14} weight="bold" className="text-blue-600" />}
+                    {isSelected && (
+                      <Check size={14} weight="bold" className="text-blue-600 dark:text-sky-400" />
+                    )}
                   </button>
                 )
               })}
@@ -250,7 +253,7 @@ export default function LocationAddressSelector({
             htmlFor={`${idPrefix}-ward`}
             className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
           >
-            Phường / Xã {required && <span className="text-red-500">*</span>}
+            Phường / Xã {required && <span className="text-rose-500">*</span>}
           </label>
           <div className="relative mt-1">
             <input
@@ -277,12 +280,13 @@ export default function LocationAddressSelector({
             {wardSearch.length > 0 && (
               <button
                 type="button"
+                aria-label="Xóa phường xã"
                 onClick={() => {
                   setWard('')
                   setWardSearch('')
                   emitChange(detail, '', province)
                 }}
-                className="absolute top-2.5 right-8 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="absolute top-2.5 right-8 cursor-pointer rounded-full p-0.5 text-zinc-500 transition hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100"
               >
                 <X size={14} />
               </button>
@@ -294,12 +298,16 @@ export default function LocationAddressSelector({
           </div>
 
           {wardDropdownOpen && provinceCode !== '' && (
-            <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-white/15 dark:bg-zinc-900">
+            <div className="absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-zinc-200 bg-white py-1 shadow-xl dark:border-white/15 dark:bg-[#0a0f1e] dark:shadow-black/60">
               {wardsQuery.isPending && (
-                <div className="px-3.5 py-2.5 text-xs text-zinc-400">Đang tải danh sách...</div>
+                <div className="px-3.5 py-2.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  Đang tải danh sách...
+                </div>
               )}
               {!wardsQuery.isPending && filteredWards.length === 0 && (
-                <div className="px-3.5 py-2.5 text-xs text-zinc-400">Không tìm thấy Phường/Xã</div>
+                <div className="px-3.5 py-2.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  Không tìm thấy Phường/Xã
+                </div>
               )}
               {filteredWards.map((w) => {
                 const isSelected = w.name === ward
@@ -308,12 +316,14 @@ export default function LocationAddressSelector({
                     key={w.code ?? w.name}
                     type="button"
                     onClick={() => handleSelectWard(w)}
-                    className={`flex w-full items-center justify-between px-3.5 py-2 text-left text-xs ${optionItemClass(
+                    className={`flex w-full cursor-pointer items-center justify-between px-3.5 py-2 text-left text-xs ${optionItemClass(
                       isSelected,
                     )}`}
                   >
                     <span>{w.name}</span>
-                    {isSelected && <Check size={14} weight="bold" className="text-blue-600" />}
+                    {isSelected && (
+                      <Check size={14} weight="bold" className="text-blue-600 dark:text-sky-400" />
+                    )}
                   </button>
                 )
               })}
@@ -328,7 +338,7 @@ export default function LocationAddressSelector({
           htmlFor={`${idPrefix}-detail`}
           className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
         >
-          Số nhà, tên đường, ngõ ngách {required && <span className="text-red-500">*</span>}
+          Số nhà, tên đường, ngõ ngách {required && <span className="text-rose-500">*</span>}
         </label>
         <input
           id={`${idPrefix}-detail`}
@@ -341,7 +351,11 @@ export default function LocationAddressSelector({
         />
       </div>
 
-      {error && <p className="text-[11px] text-red-500">{error}</p>}
+      {error && (
+        <p role="alert" className="text-xs font-medium text-rose-600 dark:text-rose-400">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

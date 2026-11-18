@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { useOpenConversationWithBuyer } from '@generated/endpoints/chat/chat'
@@ -15,7 +15,6 @@ import {
 import {
   ChatCircleDots,
   CaretDown,
-  CheckCircle,
   Flag,
   PaperPlaneRight,
   Play,
@@ -28,6 +27,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
 import { hookErrorMessage, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 import {
   groupReviewsByProduct,
   reviewItem,
@@ -35,6 +35,15 @@ import {
   reviewReplyTemplateItem,
 } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
+import {
+  badgeToneClass,
+  cn,
+  dangerButtonClass,
+  FOCUS_RING_CLASS,
+  PANEL_CLASS,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from '@/lib/ui/styles'
 
 import ReviewReplyTemplateModal from './ReviewReplyTemplateModal'
 import ReviewTrendCard from './ReviewTrendCard'
@@ -53,9 +62,9 @@ function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
 
 function filterPillClass(active: boolean): string {
   if (active) {
-    return 'rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+    return 'btn-primary rounded-full px-4 py-2 text-xs font-bold transition'
   }
-  return 'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white'
+  return 'rounded-full px-4 py-2 text-xs font-bold transition text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white'
 }
 
 interface Props {
@@ -67,7 +76,6 @@ export default function SellerReviewsTab({ shopId }: Props) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const openWithBuyerMutation = useOpenConversationWithBuyer()
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [onlyUnreplied, setOnlyUnreplied] = useState(false)
   const [selectedStars, setSelectedStars] = useState<number | undefined>(undefined)
@@ -80,7 +88,6 @@ export default function SellerReviewsTab({ shopId }: Props) {
   const [reportReason, setReportReason] = useState(
     'Đánh giá sai sự thật / Cạnh tranh không lành mạnh',
   )
-  const [notification, setNotification] = useState<string | null>(null)
   const [lightboxMedia, setLightboxMedia] = useState<{
     type: 'image' | 'video'
     url: string
@@ -156,24 +163,6 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
   const groups: ReviewGroup[] = groupReviewsByProduct(reviews)
 
-  function showToast(msg: string) {
-    if (toastTimerRef.current !== null) {
-      clearTimeout(toastTimerRef.current)
-    }
-    setNotification(msg)
-    toastTimerRef.current = setTimeout(function () {
-      setNotification(null)
-    }, 3000)
-  }
-
-  useEffect(function () {
-    return function () {
-      if (toastTimerRef.current !== null) {
-        clearTimeout(toastTimerRef.current)
-      }
-    }
-  }, [])
-
   function handleInsertTemplate(templateContent: string) {
     setReplyError(null)
     if (replyContent.trim() === '') {
@@ -201,10 +190,12 @@ export default function SellerReviewsTab({ shopId }: Props) {
           setReplyTargetId(null)
           setReplyContent('')
           setReplyError(null)
-          showToast('Đã gửi phản hồi đánh giá của khách hàng!')
+          notify.success('Đã gửi phản hồi đánh giá của khách hàng!')
         },
         onError: function (error) {
-          setReplyError(hookErrorMessage('sellerReviewReply', error))
+          const msg = hookErrorMessage('sellerReviewReply', error)
+          setReplyError(msg)
+          notify.error(msg)
         },
       },
     )
@@ -219,7 +210,10 @@ export default function SellerReviewsTab({ shopId }: Props) {
       {
         onSuccess: function () {
           setReportTargetId(null)
-          showToast('Đã gửi báo cáo đánh giá lên bộ phận kiểm duyệt của sàn!')
+          notify.success('Đã gửi báo cáo đánh giá lên bộ phận kiểm duyệt của sàn!')
+        },
+        onError: function (error) {
+          notify.fromError(error, undefined, 'Không thể gửi báo cáo đánh giá. Vui lòng thử lại.')
         },
       },
     )
@@ -251,14 +245,6 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -275,7 +261,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
           onClick={function () {
             setIsTemplateModalOpen(true)
           }}
-          className="inline-flex items-center gap-2 self-start rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+          className={cn(secondaryButtonClass(), 'self-start text-xs')}
         >
           <SlidersHorizontal size={15} weight="bold" />
           Quản lý mẫu ({templates.length})
@@ -299,15 +285,17 @@ export default function SellerReviewsTab({ shopId }: Props) {
           { stars: 5, count: summaryData?.fiveStarCount ?? 0, barClass: 'bg-amber-400' },
           { stars: 4, count: summaryData?.fourStarCount ?? 0, barClass: 'bg-amber-400' },
           { stars: 3, count: summaryData?.threeStarCount ?? 0, barClass: 'bg-sky-400' },
-          { stars: 2, count: summaryData?.twoStarCount ?? 0, barClass: 'bg-orange-400' },
-          { stars: 1, count: summaryData?.oneStarCount ?? 0, barClass: 'bg-red-400' },
+          { stars: 2, count: summaryData?.twoStarCount ?? 0, barClass: 'bg-amber-500' },
+          { stars: 1, count: summaryData?.oneStarCount ?? 0, barClass: 'bg-rose-500' },
         ]
         return (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-              <span className="text-xs font-semibold text-zinc-500">Đánh giá trung bình</span>
+            <div className={cn(PANEL_CLASS, 'p-6')}>
+              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                Đánh giá trung bình
+              </span>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400">
+                <span className="text-4xl font-black text-blue-700 dark:text-sky-300">
                   {averageDisplay}
                 </span>
                 <span className="text-xs text-zinc-400">/ 5.0 sao</span>
@@ -321,11 +309,13 @@ export default function SellerReviewsTab({ shopId }: Props) {
                   return <Star key={s} size={16} weight={weight} />
                 })}
               </div>
-              <p className="mt-2 text-xs text-zinc-500">Dựa trên {reviewCount} lượt đánh giá</p>
+              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                Dựa trên {reviewCount} lượt đánh giá
+              </p>
             </div>
 
-            <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm sm:col-span-2 dark:border-white/10 dark:bg-[#11182a]">
-              <span className="text-xs font-semibold text-zinc-500">
+            <div className={cn(PANEL_CLASS, 'p-6 sm:col-span-2')}>
+              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                 Phân bố đánh giá theo mức sao
               </span>
               <div className="mt-4 space-y-2 text-xs">
@@ -345,7 +335,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                           style={{ width: pct + '%' }}
                         />
                       </div>
-                      <span className="w-16 text-right font-medium text-zinc-500">
+                      <span className="w-16 text-right font-medium text-zinc-500 dark:text-zinc-400">
                         {row.count} ({pct}%)
                       </span>
                     </div>
@@ -361,8 +351,8 @@ export default function SellerReviewsTab({ shopId }: Props) {
       <ReviewTrendCard shopId={shopId} />
 
       {/* Bộ lọc & Danh sách đánh giá */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-        <div className="flex flex-col gap-3 border-b border-zinc-100 pb-4 lg:flex-row lg:items-center lg:justify-between dark:border-white/10">
+      <div className={cn(PANEL_CLASS, 'p-6')}>
+        <div className="flex flex-col gap-3 border-b border-zinc-200/80 pb-4 lg:flex-row lg:items-center lg:justify-between dark:border-white/10">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -412,7 +402,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
               onChange={function (e) {
                 setSelectedProductId(e.target.value)
               }}
-              className="rounded-2xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+              className="rounded-full border border-zinc-300 bg-white/85 px-4 py-2 text-xs font-semibold text-[#17203a] outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-zinc-200"
             >
               <option value="">Tất cả sản phẩm ({productOptions.length})</option>
               {productOptions.map(function (opt) {
@@ -507,22 +497,28 @@ export default function SellerReviewsTab({ shopId }: Props) {
                                           {
                                             onSuccess: function (result) {
                                               if (result.status === 200) {
-                                                void navigate(
-                                                  `/messages?tab=shop&id=${result.data.id}`,
-                                                )
+                                                const convId = result.data.id ?? ''
+                                                let targetUrl = `/shop?shopId=${encodeURIComponent(shopId)}&tab=chat`
+                                                if (convId !== '') {
+                                                  targetUrl = `${targetUrl}&convId=${encodeURIComponent(convId)}`
+                                                }
+                                                void navigate(targetUrl)
                                               }
                                             },
                                           },
                                         )
                                       }}
                                       disabled={openWithBuyerMutation.isPending}
-                                      className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2 py-0.5 text-[10px] font-semibold text-zinc-500 hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50 dark:border-white/10 dark:hover:border-indigo-500 dark:hover:text-indigo-300"
+                                      className={cn(
+                                        'inline-flex cursor-pointer items-center gap-1 rounded-full border border-zinc-300 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-600 transition hover:border-blue-600 hover:text-blue-700 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:border-sky-400 dark:hover:text-sky-300',
+                                        FOCUS_RING_CLASS,
+                                      )}
                                     >
                                       <ChatCircleDots size={11} weight="bold" />
                                       Nhắn tin
                                     </button>
                                   )}
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:bg-sky-500/20 dark:text-sky-200">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-800 dark:bg-sky-500/20 dark:text-sky-200">
                                     <ThumbsUp size={10} weight="fill" />
                                     {rev.helpfulCount}
                                   </span>
@@ -538,18 +534,27 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
                             <div className="flex items-center gap-2">
                               {rev.isReported && (
-                                <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
+                                <span
+                                  className={cn(
+                                    'rounded-full px-2.5 py-0.5 text-[10px] font-bold',
+                                    badgeToneClass('danger'),
+                                  )}
+                                >
                                   Đang khiếu nại
                                 </span>
                               )}
                               {canReply && (
                                 <button
                                   type="button"
+                                  aria-label="Báo cáo vi phạm"
                                   onClick={function () {
                                     setReportTargetId(rev.id)
                                   }}
                                   title="Báo cáo vi phạm"
-                                  className="text-zinc-400 hover:text-red-500"
+                                  className={cn(
+                                    'cursor-pointer rounded-full p-1.5 text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/15 dark:hover:text-rose-300',
+                                    FOCUS_RING_CLASS,
+                                  )}
                                 >
                                   <Flag size={14} weight="bold" />
                                 </button>
@@ -560,7 +565,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                           <div className="mt-3 text-xs">
                             <div className="flex flex-wrap items-center gap-2 font-semibold text-zinc-500">
                               {rev.variantLabel !== undefined && (
-                                <span className="rounded-full bg-zinc-200/70 px-2 py-0.5 text-[11px] text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
+                                <span className="rounded-full bg-zinc-200/70 px-2.5 py-0.5 text-[11px] text-zinc-700 dark:bg-white/10 dark:text-zinc-200">
                                   Phân loại: {rev.variantLabel}
                                 </span>
                               )}
@@ -571,7 +576,10 @@ export default function SellerReviewsTab({ shopId }: Props) {
                                   return (
                                     <span
                                       key={tag}
-                                      className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"
+                                      className={cn(
+                                        'rounded-full px-2.5 py-0.5 text-[10px] font-bold',
+                                        badgeToneClass('info'),
+                                      )}
                                     >
                                       {tag}
                                     </span>
@@ -591,10 +599,11 @@ export default function SellerReviewsTab({ shopId }: Props) {
                                     <button
                                       key={idx}
                                       type="button"
+                                      aria-label={`Xem ảnh đánh giá ${idx + 1} phóng to`}
                                       onClick={function () {
                                         setLightboxMedia({ type: 'image', url: img })
                                       }}
-                                      className="h-16 w-16 overflow-hidden rounded-xl border border-zinc-200 dark:border-white/10"
+                                      className="h-16 w-16 cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/10"
                                     >
                                       <img
                                         src={img}
@@ -608,12 +617,13 @@ export default function SellerReviewsTab({ shopId }: Props) {
                                 {rev.videoUrl !== undefined && (
                                   <button
                                     type="button"
+                                    aria-label="Xem video đánh giá phóng to"
                                     onClick={function () {
                                       if (rev.videoUrl !== undefined) {
                                         setLightboxMedia({ type: 'video', url: rev.videoUrl })
                                       }
                                     }}
-                                    className="relative flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-900 text-white dark:border-white/10"
+                                    className="relative flex h-16 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-900 text-white dark:border-white/10"
                                   >
                                     <video
                                       src={rev.videoUrl}
@@ -630,12 +640,12 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
                             {/* Phản hồi của shop */}
                             {rev.sellerReply !== undefined && (
-                              <div className="mt-3 rounded-2xl bg-indigo-50/80 p-3 text-xs text-indigo-900 dark:bg-indigo-900/30 dark:text-indigo-200">
+                              <div className="mt-3 rounded-2xl border border-sky-200/80 bg-sky-50/70 p-3 text-xs text-[#17203a] dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-200">
                                 <p className="flex items-center gap-1.5 font-bold">
                                   <ChatCircleDots
                                     size={14}
                                     weight="bold"
-                                    className="text-indigo-600"
+                                    className="text-blue-700 dark:text-sky-300"
                                   />
                                   Phản hồi của Người bán:
                                 </p>
@@ -647,10 +657,10 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
                             {/* Form trả lời */}
                             {isReplying && (
-                              <div className="mt-3 rounded-2xl border border-indigo-200 bg-white p-3.5 dark:border-indigo-900/40 dark:bg-white/10">
+                              <div className="mt-3 rounded-2xl border border-sky-200 bg-white p-3.5 dark:border-sky-500/30 dark:bg-white/10">
                                 {templates.length > 0 && (
                                   <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
-                                    <span className="text-[11px] font-semibold text-zinc-500">
+                                    <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
                                       Chèn mẫu nhanh:
                                     </span>
                                     {templates.map(function (tpl) {
@@ -661,7 +671,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                                           onClick={function () {
                                             handleInsertTemplate(tpl.content)
                                           }}
-                                          className="rounded-full border border-indigo-200 bg-indigo-50/70 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-200 dark:hover:bg-indigo-500/25"
+                                          className="cursor-pointer rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-800 hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-200 dark:hover:bg-sky-500/25"
                                         >
                                           {tpl.title}
                                         </button>
@@ -685,7 +695,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                                 />
 
                                 {replyError !== null && (
-                                  <p className="mt-2 rounded-xl bg-red-50 px-3 py-1.5 text-[11px] font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
+                                  <p className="mt-2 rounded-2xl bg-rose-50 px-3 py-1.5 text-[11px] font-medium text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
                                     {replyError}
                                   </p>
                                 )}
@@ -702,7 +712,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                                         setReplyContent('')
                                         setReplyError(null)
                                       }}
-                                      className="rounded-xl px-3 py-1 text-[11px] font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/10"
+                                      className="cursor-pointer rounded-full px-3.5 py-1 text-[11px] font-bold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/10"
                                     >
                                       Hủy
                                     </button>
@@ -712,7 +722,10 @@ export default function SellerReviewsTab({ shopId }: Props) {
                                       onClick={function () {
                                         handleSendReply(rev.id)
                                       }}
-                                      className="btn-primary flex items-center gap-1 rounded-xl px-3.5 py-1 text-[11px] font-bold disabled:opacity-50"
+                                      className={cn(
+                                        primaryButtonClass(),
+                                        'inline-flex items-center gap-1 rounded-full px-4 py-1 text-[11px] font-bold disabled:opacity-50',
+                                      )}
                                     >
                                       <PaperPlaneRight size={12} weight="bold" />
                                       Gửi phản hồi
@@ -730,7 +743,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
                                   setReplyContent('')
                                   setReplyError(null)
                                 }}
-                                className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+                                className="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs font-bold text-blue-700 hover:underline dark:text-sky-300"
                               >
                                 <ChatCircleDots size={14} weight="bold" />
                                 Trả lời đánh giá này
@@ -753,7 +766,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
           )}
 
           {!reviewsQuery.isLoading && reviewsQuery.isError && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
               {hookErrorMessage('sellerReviewList', reviewsQuery.error)}
             </div>
           )}
@@ -776,7 +789,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
             setIsTemplateModalOpen(false)
           }}
           onChanged={function (msg) {
-            showToast(msg)
+            notify.success(msg)
           }}
         />
       )}
@@ -790,7 +803,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
           }}
           widthClass="max-w-md"
         >
-          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+          <p className="mt-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
             Nếu đánh giá chứa từ ngữ xúc phạm hoặc nghi vấn đối thủ cạnh tranh chơi xấu, ban quản
             trị sàn sẽ xem xét gỡ bỏ.
           </p>
@@ -808,7 +821,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
               onChange={function (e) {
                 setReportReason(e.target.value)
               }}
-              className="mt-1.5 w-full rounded-full border border-zinc-300 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
             >
               <option value="Đánh giá sai sự thật / Cạnh tranh không lành mạnh">
                 Đánh giá sai sự thật / Cạnh tranh không lành mạnh
@@ -826,14 +839,14 @@ export default function SellerReviewsTab({ shopId }: Props) {
               onClick={function () {
                 setReportTargetId(null)
               }}
-              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+              className={cn(secondaryButtonClass(), 'text-xs')}
             >
               Hủy
             </button>
             <button
               type="button"
               onClick={handleConfirmReport}
-              className="rounded-2xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
+              className={cn(dangerButtonClass(), 'px-5 text-xs')}
             >
               Gửi báo cáo
             </button>

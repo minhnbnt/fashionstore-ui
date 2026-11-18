@@ -204,7 +204,7 @@ export function canSeeTab(tab: SellerTabId, permissions: string[], isOwner: bool
     return permissions.includes('PRODUCT_READ') || permissions.includes('PRODUCT_WRITE')
   }
 
-  if (tab === 'ADD_PRODUCT') {
+  if (tab === 'ADD_PRODUCT' || tab === 'EDIT_PRODUCT') {
     return permissions.includes('PRODUCT_WRITE')
   }
 

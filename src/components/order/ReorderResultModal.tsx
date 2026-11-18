@@ -99,14 +99,14 @@ export default function ReorderResultModal(props: Props) {
           <button
             type="button"
             onClick={props.onClose}
-            className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 dark:border-white/15 dark:text-zinc-200"
+            className="cursor-pointer rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
           >
             Đóng
           </button>
           <button
             type="button"
             onClick={props.onGoToCart}
-            className="btn-primary rounded-full px-5 py-2 text-xs font-bold"
+            className="btn-primary cursor-pointer rounded-full px-5 py-2 text-xs font-bold"
           >
             Đi tới giỏ hàng
           </button>

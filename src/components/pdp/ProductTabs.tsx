@@ -22,6 +22,7 @@ import {
 import { ApiError } from '@/lib/api/apiFetch'
 import { formatDateTime } from '@/lib/format'
 import { ratingSummary } from '@/lib/shop/ratingSummary'
+import { cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 import Markdown from '../Markdown'
 import Modal from '../Modal'
@@ -35,7 +36,7 @@ import type { ReviewResponse } from '@generated/model/reviewResponse'
 function Stars(props: { value: number; size?: number }) {
   const s = props.size || 14
   return (
-    <span className="flex items-center gap-0.5 text-sky-400">
+    <span className="flex items-center gap-0.5 text-amber-400">
       {[1, 2, 3, 4, 5].map(function (i) {
         if (i <= Math.round(props.value)) {
           return <Star key={i} size={s} weight="fill" />
@@ -54,17 +55,14 @@ function reviewsErrorStatus(error: unknown): number {
 }
 
 function tabButtonClass(active: boolean): string {
-  if (active) {
-    return 'rounded-full bg-[#17203a] px-4 py-2 text-sm font-bold text-white shadow-sm dark:bg-white dark:text-[#0a0f1e]'
-  }
-  return 'rounded-full border border-sky-100 bg-white/70 px-4 py-2 text-sm font-bold text-zinc-700 hover:bg-sky-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
+  return cn(segmentedItemClass(active), 'cursor-pointer px-4 py-2 text-sm')
 }
 
 function filterChipClass(active: boolean): string {
   if (active) {
-    return 'rounded-full bg-[#17203a] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm dark:bg-white dark:text-[#0a0f1e]'
+    return 'btn-primary cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold shadow-xs'
   }
-  return 'rounded-full border border-sky-100 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-sky-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
+  return 'cursor-pointer rounded-full border border-zinc-300 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-blue-600 dark:border-white/15 dark:bg-white/5 dark:text-zinc-200 dark:hover:border-sky-400 dark:hover:bg-white/10'
 }
 
 function starDistributionPct(count: number, total: number): number {
@@ -189,10 +187,16 @@ export default function ProductTabs(props: { product: ProductResponse }) {
   }
 
   return (
-    <section className="mt-10 rounded-3xl border border-sky-100 bg-white/80 p-6 dark:border-white/10 dark:bg-white/5">
-      <div className="flex flex-wrap gap-2">
+    <section className="mt-10 rounded-3xl border border-zinc-200/80 bg-white/80 p-6 dark:border-white/10 dark:bg-[#11182a]">
+      <div
+        role="tablist"
+        aria-label="Thông tin sản phẩm"
+        className={cn(segmentedTrackClass(), 'inline-flex flex-wrap')}
+      >
         <button
           type="button"
+          role="tab"
+          aria-selected={tab === 'mo-ta'}
           onClick={function () {
             setTab('mo-ta')
           }}
@@ -202,6 +206,8 @@ export default function ProductTabs(props: { product: ProductResponse }) {
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={tab === 'thong-so'}
           onClick={function () {
             setTab('thong-so')
           }}
@@ -211,6 +217,8 @@ export default function ProductTabs(props: { product: ProductResponse }) {
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={tab === 'danh-gia'}
           onClick={function () {
             setTab('danh-gia')
           }}
@@ -266,11 +274,13 @@ export default function ProductTabs(props: { product: ProductResponse }) {
           {totalReviews > 0 && (
             <div className="grid grid-cols-1 gap-5 rounded-3xl bg-sky-50/70 p-5 md:grid-cols-[auto_1fr] dark:bg-white/5">
               <div className="text-center md:min-w-36">
-                <p className="text-5xl font-extrabold tracking-tight">{averageDisplay}</p>
+                <p className="text-5xl font-extrabold tracking-tight tabular-nums">
+                  {averageDisplay}
+                </p>
                 <div className="mt-2 flex justify-center">
                   <Stars value={averageNumber} size={16} />
                 </div>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
                   {totalReviews} đánh giá
                 </p>
               </div>
@@ -278,14 +288,16 @@ export default function ProductTabs(props: { product: ProductResponse }) {
                 {starRows.map(function (row) {
                   return (
                     <div key={row.stars} className="flex items-center gap-2 text-xs font-bold">
-                      <span className="w-6 text-zinc-500">{row.stars}★</span>
+                      <span className="w-6 text-zinc-500 tabular-nums dark:text-zinc-400">
+                        {row.stars}★
+                      </span>
                       <div className="h-2 flex-1 overflow-hidden rounded-full bg-sky-100 dark:bg-white/10">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-indigo-900 to-sky-400"
+                          className="h-full rounded-full bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8]"
                           style={{ width: row.pct + '%' }}
                         />
                       </div>
-                      <span className="w-16 text-right text-zinc-500">
+                      <span className="w-16 text-right text-zinc-500 tabular-nums dark:text-zinc-400">
                         {row.count} ({row.pct}%)
                       </span>
                     </div>
@@ -337,13 +349,13 @@ export default function ProductTabs(props: { product: ProductResponse }) {
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className={segmentedTrackClass()}>
                 <button
                   type="button"
                   onClick={function () {
                     setSort('HELPFUL')
                   }}
-                  className={filterChipClass(sort === 'HELPFUL')}
+                  className={cn(segmentedItemClass(sort === 'HELPFUL'), 'cursor-pointer')}
                 >
                   Hữu ích nhất
                 </button>
@@ -352,7 +364,7 @@ export default function ProductTabs(props: { product: ProductResponse }) {
                   onClick={function () {
                     setSort('NEWEST')
                   }}
-                  className={filterChipClass(sort === 'NEWEST')}
+                  className={cn(segmentedItemClass(sort === 'NEWEST'), 'cursor-pointer')}
                 >
                   Mới nhất
                 </button>
@@ -370,7 +382,7 @@ export default function ProductTabs(props: { product: ProductResponse }) {
             <p className="text-sm text-zinc-500 dark:text-zinc-400">Đang tải đánh giá…</p>
           )}
           {reviewsQuery.isPending === false && reviewsQuery.isError && (
-            <p className="text-sm text-red-600 dark:text-red-400">
+            <p className="text-sm text-rose-600 dark:text-rose-400">
               {apiErrorMessage('productDetail', reviewsErrorStatus(reviewsQuery.error))}
             </p>
           )}
@@ -403,10 +415,10 @@ export default function ProductTabs(props: { product: ProductResponse }) {
                 }
 
                 let helpfulButtonClass =
-                  'inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
+                  'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-zinc-300 bg-white/80 px-3 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
                 if (isLiked) {
                   helpfulButtonClass =
-                    'inline-flex items-center gap-1.5 rounded-full border border-blue-600 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 transition disabled:cursor-not-allowed disabled:opacity-50 dark:border-sky-400 dark:bg-sky-500/20 dark:text-sky-200'
+                    'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-blue-600 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 transition disabled:cursor-not-allowed disabled:opacity-50 dark:border-sky-400 dark:bg-sky-500/20 dark:text-sky-200'
                 }
 
                 let thumbsWeight: 'fill' | 'regular' = 'regular'

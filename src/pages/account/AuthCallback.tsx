@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 
 import {
   fetchSession,
@@ -64,27 +64,27 @@ export default function AuthCallback() {
 
   if (status === 'error') {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12 text-center">
+      <main className="mx-auto max-w-6xl px-4 pt-24 pb-16 text-center">
         <div className="glass mx-auto w-full max-w-sm rounded-3xl p-8">
-          <p className="text-2xl font-extrabold tracking-tighter text-red-600 dark:text-red-400">
+          <p className="text-2xl font-extrabold tracking-tighter text-rose-600 dark:text-rose-400">
             Đăng nhập thất bại
           </p>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Không thể xác thực với Google. Vui lòng thử lại.
           </p>
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="btn-primary mt-5 inline-block rounded-full px-6 py-2.5 text-sm font-bold"
           >
             Quay lại đăng nhập
-          </a>
+          </Link>
         </div>
       </main>
     )
   }
 
   return (
-    <main className="mx-auto flex max-w-[1400px] flex-col items-center justify-center px-4 pt-[100px] pb-12">
+    <main className="mx-auto flex max-w-6xl flex-col items-center justify-center px-4 pt-24 pb-16">
       <div className="glass mx-auto w-full max-w-sm rounded-3xl p-8 text-center">
         <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
         <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">Đang xác thực…</p>

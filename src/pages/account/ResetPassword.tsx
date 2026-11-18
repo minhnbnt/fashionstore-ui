@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router'
 
 import { CheckCircle, Eye, EyeSlash, Lock, WarningCircle } from '@phosphor-icons/react'
 
+import { notify } from '@/lib/notifications'
+import { cn, INPUT_CLASS } from '@/lib/ui/styles'
+
 import { useUpdatePassword } from '../../hooks/useAuthMutations'
 import {
   fetchSession,
@@ -117,6 +120,7 @@ export default function ResetPassword() {
 
     updatePassword.mutate(password, {
       onSuccess: function () {
+        notify.success('Đặt lại mật khẩu thành công', 'Hệ thống sẽ chuyển bạn về trang đăng nhập.')
         setStatus('success')
       },
       onError: function (err) {
@@ -126,18 +130,22 @@ export default function ResetPassword() {
   }
 
   let inputType = 'password'
+  let passwordToggleLabel = 'Hiện mật khẩu mới'
   if (showPassword) {
     inputType = 'text'
+    passwordToggleLabel = 'Ẩn mật khẩu mới'
   }
 
   let confirmInputType = 'password'
+  let confirmToggleLabel = 'Hiện xác nhận mật khẩu'
   if (showConfirm) {
     confirmInputType = 'text'
+    confirmToggleLabel = 'Ẩn xác nhận mật khẩu'
   }
 
   if (status === 'checking') {
     return (
-      <main className="mx-auto flex max-w-[1400px] flex-col items-center justify-center px-4 pt-[100px] pb-12">
+      <main className="mx-auto flex max-w-6xl flex-col items-center justify-center px-4 pt-24 pb-16">
         <div className="glass mx-auto w-full max-w-md rounded-3xl p-8 text-center">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
           <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">
@@ -150,9 +158,9 @@ export default function ResetPassword() {
 
   if (status === 'invalid') {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12 text-center">
+      <main className="mx-auto max-w-6xl px-4 pt-24 pb-16 text-center">
         <div className="glass mx-auto w-full max-w-md rounded-3xl p-8">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300">
             <WarningCircle size={28} weight="bold" />
           </div>
           <h1 className="mt-4 text-2xl font-extrabold tracking-tighter text-zinc-900 dark:text-white">
@@ -175,7 +183,7 @@ export default function ResetPassword() {
 
   if (status === 'success') {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12 text-center">
+      <main className="mx-auto max-w-6xl px-4 pt-24 pb-16 text-center">
         <div className="glass mx-auto w-full max-w-md rounded-3xl p-8">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
             <CheckCircle size={28} weight="bold" />
@@ -199,7 +207,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
+    <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
       <div className="glass mx-auto w-full max-w-md rounded-3xl p-6 md:p-8">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
@@ -218,7 +226,10 @@ export default function ResetPassword() {
         </p>
 
         {formError !== null && (
-          <p className="mt-4 rounded-2xl bg-red-50 px-4 py-2.5 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-300">
+          <p
+            role="alert"
+            className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+          >
             {formError}
           </p>
         )}
@@ -242,7 +253,7 @@ export default function ResetPassword() {
                 }}
                 disabled={updatePassword.isPending}
                 placeholder="Ít nhất 6 ký tự"
-                className="w-full rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 pr-11 text-sm transition outline-none focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
+                className={cn(INPUT_CLASS, 'py-3 pr-11 transition disabled:opacity-60')}
               />
               <button
                 type="button"
@@ -251,8 +262,8 @@ export default function ResetPassword() {
                     return !prev
                   })
                 }}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
-                aria-label="Ẩn hiện mật khẩu mới"
+                className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
+                aria-label={passwordToggleLabel}
               >
                 {showPassword && <EyeSlash size={18} />}
                 {showPassword === false && <Eye size={18} />}
@@ -278,7 +289,7 @@ export default function ResetPassword() {
                 }}
                 disabled={updatePassword.isPending}
                 placeholder="Nhập lại mật khẩu mới"
-                className="w-full rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 pr-11 text-sm transition outline-none focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
+                className={cn(INPUT_CLASS, 'py-3 pr-11 transition disabled:opacity-60')}
               />
               <button
                 type="button"
@@ -287,8 +298,8 @@ export default function ResetPassword() {
                     return !prev
                   })
                 }}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
-                aria-label="Ẩn hiện xác nhận mật khẩu"
+                className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
+                aria-label={confirmToggleLabel}
               >
                 {showConfirm && <EyeSlash size={18} />}
                 {showConfirm === false && <Eye size={18} />}
@@ -299,7 +310,7 @@ export default function ResetPassword() {
           <button
             type="submit"
             disabled={updatePassword.isPending}
-            className="btn-primary mt-2 w-full rounded-full py-3 text-sm font-bold disabled:opacity-60"
+            className="btn-primary mt-2 w-full cursor-pointer rounded-full py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {updatePassword.isPending && <span>Đang cập nhật…</span>}
             {updatePassword.isPending === false && <span>Cập nhật mật khẩu</span>}

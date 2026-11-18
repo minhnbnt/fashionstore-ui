@@ -3,29 +3,24 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import { getGetMyShopsQueryKey } from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
 import { useMe } from '@generated/endpoints/users/users'
-import { MapPin, Package, ShieldWarning, SignOut, Storefront } from '@phosphor-icons/react'
+import { ArrowLeft, Heart, MapPin, Package, ShieldWarning, SignOut } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import AccountLayout from '@/components/account/AccountLayout'
+import AddressBookTab from '@/components/account/AddressBookTab'
+import AvatarUploader from '@/components/account/AvatarUploader'
+import ChangePasswordForm from '@/components/account/ChangePasswordForm'
+import MyShopsTab from '@/components/account/MyShopsTab'
+import ShopKycRegistrationModal from '@/components/shop/ShopKycRegistrationModal'
 import StatusBadge from '@/components/ui/StatusBadge'
+import { useSignOut } from '@/hooks/useAuthMutations'
+import { useSessionQuery } from '@/hooks/useSession'
 import { takeData } from '@/lib/api/apiAdapters'
 import { getRoleFromSession, refreshAuthSession } from '@/lib/auth'
-import { cardClass, cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
-
-import AddressBookTab from '../../components/account/AddressBookTab'
-import AvatarUploader from '../../components/account/AvatarUploader'
-import ChangePasswordForm from '../../components/account/ChangePasswordForm'
-import MyShopsTab from '../../components/account/MyShopsTab'
-import ShopKycRegistrationModal from '../../components/shop/ShopKycRegistrationModal'
-import { useSignOut } from '../../hooks/useAuthMutations'
-import { useSessionQuery } from '../../hooks/useSession'
+import { notify } from '@/lib/notifications'
+import { cn, FOCUS_RING_CLASS, PANEL_CLASS } from '@/lib/ui/styles'
 
 import type { UserResponse } from '@generated/model/userResponse'
-
-// Đồng bộ với tab của khung chat (ChatDock): segmented control dạng pill,
-// tab đang chọn dùng btn-primary gradient.
-function getTabBtnClass(isActive: boolean): string {
-  return cn(segmentedItemClass(isActive))
-}
 
 export default function Account() {
   const { data: session } = useSessionQuery()
@@ -34,10 +29,9 @@ export default function Account() {
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [modalOpen, setModalOpen] = useState(false)
-  const [statusNotice, setStatusNotice] = useState<string | null>(null)
   const roleRefreshAttempted = useRef(false)
 
-  const activeTab = searchParams.get('tab') || 'shops'
+  const isAddressesDeepLink = searchParams.get('tab') === 'addresses'
 
   const profileQuery = useMe()
   let profile: UserResponse | undefined
@@ -61,21 +55,22 @@ export default function Account() {
   function handleSignOut() {
     signOut.mutate(undefined, {
       onSuccess: function () {
+        notify.success('Đã đăng xuất')
         void navigate('/', { replace: true })
+      },
+      onError: function (err) {
+        notify.fromError(err, 'signOut', 'Không thể đăng xuất. Vui lòng thử lại.')
       },
     })
   }
 
   function handleShopCreated() {
     setModalOpen(false)
-    setStatusNotice(
-      'Đăng ký mở shop thành công! Hồ sơ đang ở trạng thái chờ duyệt (dự kiến 1-3 ngày làm việc).',
+    notify.success(
+      'Đăng ký mở shop thành công',
+      'Hồ sơ đang ở trạng thái chờ duyệt (1-3 ngày làm việc).',
     )
     void queryClient.invalidateQueries({ queryKey: getGetMyShopsQueryKey() })
-  }
-
-  function handleSelectTab(tab: string) {
-    setSearchParams({ tab })
   }
 
   let userEmail = ''
@@ -83,183 +78,158 @@ export default function Account() {
     userEmail = session.user.email
   }
 
-  return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-16">
-      {profile?.status === 'LOCKED' && (
-        <section className="mb-6 rounded-3xl border border-red-200 bg-red-50 p-5 dark:border-red-400/20 dark:bg-red-500/10">
-          <div className="flex items-start gap-3">
-            <ShieldWarning
-              size={24}
-              weight="bold"
-              className="shrink-0 text-red-700 dark:text-red-200"
-            />
-            <div>
-              <h2 className="font-extrabold text-red-800 dark:text-red-100">
-                Tài khoản đang bị khóa
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-red-700 dark:text-red-200">
-                {profile.statusReason ?? 'Hãy liên hệ bộ phận hỗ trợ để được kiểm tra.'}
-              </p>
-              <p className="mt-2 text-xs text-red-600 dark:text-red-300">
-                Bạn chỉ có thể xem trang này cho đến khi quản trị viên mở khóa.
-              </p>
-            </div>
+  let lockedBanner = null
+  if (profile?.status === 'LOCKED') {
+    lockedBanner = (
+      <section className="mb-6 rounded-3xl border border-rose-200 bg-rose-50 p-5 dark:border-rose-500/30 dark:bg-rose-500/15">
+        <div className="flex items-start gap-3">
+          <ShieldWarning
+            size={24}
+            weight="bold"
+            className="shrink-0 text-rose-700 dark:text-rose-300"
+          />
+          <div>
+            <h2 className="font-extrabold text-rose-800 dark:text-rose-200">
+              Tài khoản đang bị khóa
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-rose-700 dark:text-rose-200">
+              {profile.statusReason ?? 'Hãy liên hệ bộ phận hỗ trợ để được kiểm tra.'}
+            </p>
+            <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+              Bạn chỉ có thể xem trang này cho đến khi quản trị viên mở khóa.
+            </p>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
+    )
+  }
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Left Column: Account Profile & Preferences */}
-        <div className="glass rounded-3xl p-6 md:p-8 lg:col-span-5">
-          <p className="text-xs font-bold tracking-[0.18em] text-indigo-900 uppercase dark:text-indigo-200">
-            Tài khoản cá nhân
-          </p>
-          <h1 className="mt-2 text-2xl font-extrabold tracking-tighter">Hồ sơ của tôi</h1>
+  let breadcrumbs = [{ label: 'Trang chủ', to: '/' }, { label: 'Hồ sơ & Gian hàng' }]
+  if (isAddressesDeepLink) {
+    breadcrumbs = [
+      { label: 'Trang chủ', to: '/' },
+      { label: 'Hồ sơ & Gian hàng', to: '/account' },
+      { label: 'Sổ địa chỉ' },
+    ]
+  }
+
+  return (
+    <AccountLayout breadcrumbs={breadcrumbs} topBanner={lockedBanner}>
+      <div className="space-y-6">
+        {/* Profile + Security Card */}
+        <section className={cn(PANEL_CLASS, 'p-6')}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold tracking-widest text-blue-700 uppercase dark:text-sky-300">
+                Tài khoản cá nhân
+              </p>
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#17203a] dark:text-white">
+                Hồ sơ của tôi
+              </h1>
+            </div>
+
+            <button
+              type="button"
+              id="btn-account-logout"
+              onClick={handleSignOut}
+              disabled={signOut.isPending}
+              className={cn(
+                'inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50/80 px-4 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/25',
+                FOCUS_RING_CLASS,
+              )}
+            >
+              <SignOut size={15} weight="bold" />
+              {signOut.isPending && <span>Đang đăng xuất…</span>}
+              {signOut.isPending === false && <span>Đăng xuất</span>}
+            </button>
+          </div>
 
           {session !== undefined && session !== null && (
-            <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white/70 p-4 dark:bg-white/10">
-              <AvatarUploader name={userEmail || 'guest'} avatarUrl={profile?.avatarUrl} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-zinc-800 dark:text-zinc-100">
-                  {userEmail}
-                </p>
-                <div className="mt-0.5 flex items-center gap-2">
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Khách hàng thành viên</p>
-                  <StatusBadge status={profile?.status} />
+            <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5">
+              <div className="flex min-w-0 items-center gap-3.5">
+                <AvatarUploader name={userEmail || 'guest'} avatarUrl={profile?.avatarUrl} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-extrabold text-[#17203a] dark:text-white">
+                    {userEmail}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-zinc-600 dark:text-zinc-300">
+                      Khách hàng thành viên
+                    </span>
+                    <StatusBadge status={profile?.status} />
+                  </div>
                 </div>
               </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  to="/account/orders"
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:border-blue-300 hover:text-blue-700 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:text-sky-300',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <Package size={14} weight="bold" />
+                  <span>Đơn hàng</span>
+                </Link>
+                <Link
+                  to="/account/addresses"
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:border-blue-300 hover:text-blue-700 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:text-sky-300',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <MapPin size={14} weight="bold" />
+                  <span>Địa chỉ</span>
+                </Link>
+                <Link
+                  to="/wishlist"
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:border-blue-300 hover:text-blue-700 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:text-sky-300',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <Heart size={14} weight="bold" />
+                  <span>Yêu thích</span>
+                </Link>
+              </div>
             </div>
           )}
 
-          {/* Quick tab shortcuts on Left Column */}
-          <div className="mt-5 space-y-2">
-            <button
-              type="button"
-              onClick={function () {
-                handleSelectTab('shops')
-              }}
-              className={cn(
-                cardClass(),
-                'flex w-full items-center justify-between p-3.5 text-left text-xs font-bold text-zinc-700 transition hover:bg-white dark:text-zinc-200 dark:hover:bg-white/15',
-              )}
-            >
-              <div className="flex items-center gap-2.5">
-                <Storefront size={18} className="text-indigo-600 dark:text-indigo-400" />
-                <span>Gian hàng của tôi</span>
-              </div>
-              <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
-                Xem tất cả
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={function () {
-                handleSelectTab('addresses')
-              }}
-              className={cn(
-                cardClass(),
-                'flex w-full items-center justify-between p-3.5 text-left text-xs font-bold text-zinc-700 transition hover:bg-white dark:text-zinc-200 dark:hover:bg-white/15',
-              )}
-            >
-              <div className="flex items-center gap-2.5">
-                <MapPin size={18} className="text-emerald-600 dark:text-emerald-400" />
-                <span>Sổ địa chỉ nhận hàng</span>
-              </div>
-              <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
-                Quản lý
-              </span>
-            </button>
-
-            <Link
-              to="/account/orders"
-              className={cn(
-                cardClass(),
-                'flex w-full items-center justify-between p-3.5 text-left text-xs font-bold text-zinc-700 transition hover:bg-white dark:text-zinc-200 dark:hover:bg-white/15',
-              )}
-            >
-              <div className="flex items-center gap-2.5">
-                <Package size={18} className="text-blue-600 dark:text-sky-400" />
-                <span>Đơn hàng của tôi</span>
-              </div>
-              <span className="text-[11px] font-semibold text-blue-600 dark:text-sky-300">
-                Theo dõi
-              </span>
-            </Link>
-          </div>
-
-          <div className="mt-5 space-y-3 text-sm">
+          <div className="mt-4">
             <ChangePasswordForm />
           </div>
+        </section>
 
-          <button
-            type="button"
-            id="btn-account-logout"
-            onClick={handleSignOut}
-            disabled={signOut.isPending}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-red-200 py-3 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-500/30 dark:hover:bg-red-500/10"
-          >
-            <SignOut size={16} weight="bold" />
-            {signOut.isPending && <span>Đang đăng xuất…</span>}
-            {signOut.isPending === false && <span>Đăng xuất</span>}
-          </button>
-        </div>
-
-        {/* Right Column: Tabbed Content (My Shops or Address Book) */}
-        <div className="glass rounded-3xl p-6 md:p-8 lg:col-span-7">
-          {/* Tab buttons — segmented control đồng bộ khung chat */}
-          <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-zinc-200/80 pb-4 dark:border-white/10">
-            <div className={cn(segmentedTrackClass())}>
-              <button
-                type="button"
-                id="tab-btn-shops"
-                onClick={function () {
-                  handleSelectTab('shops')
-                }}
-                className={getTabBtnClass(activeTab === 'shops')}
-              >
-                <Storefront size={14} weight="bold" />
-                <span>Gian hàng của tôi</span>
-              </button>
-              <button
-                type="button"
-                id="tab-btn-addresses"
-                onClick={function () {
-                  handleSelectTab('addresses')
-                }}
-                className={getTabBtnClass(activeTab === 'addresses')}
-              >
-                <MapPin size={14} weight="bold" />
-                <span>Sổ địa chỉ</span>
-              </button>
-            </div>
-          </div>
-
-          {statusNotice !== null && (
-            <div
-              id="account-status-notice"
-              className="mb-6 rounded-2xl bg-sky-50 px-4 py-3 text-xs font-semibold text-sky-800 dark:bg-sky-500/10 dark:text-sky-300"
+        {/* Main Content Panel: MyShopsTab by default, or AddressBookTab if ?tab=addresses deep link */}
+        {isAddressesDeepLink && (
+          <section id="address-book" className={cn(PANEL_CLASS, 'space-y-4 p-6')}>
+            <button
+              type="button"
+              onClick={function () {
+                setSearchParams({})
+              }}
+              className={cn(
+                'inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-blue-700 hover:underline dark:text-sky-300',
+                FOCUS_RING_CLASS,
+              )}
             >
-              {statusNotice}
-            </div>
-          )}
+              <ArrowLeft size={14} weight="bold" />
+              <span>Quay lại Gian hàng của tôi</span>
+            </button>
+            <AddressBookTab />
+          </section>
+        )}
 
-          {activeTab === 'shops' && (
-            <section id="seller-channel">
-              <MyShopsTab
-                onOpenRegisterModal={function () {
-                  setModalOpen(true)
-                }}
-              />
-            </section>
-          )}
-
-          {activeTab === 'addresses' && (
-            <section id="address-book">
-              <AddressBookTab />
-            </section>
-          )}
-        </div>
+        {isAddressesDeepLink === false && (
+          <section id="seller-channel" className={cn(PANEL_CLASS, 'p-6')}>
+            <MyShopsTab
+              onOpenRegisterModal={function () {
+                setModalOpen(true)
+              }}
+            />
+          </section>
+        )}
       </div>
 
       {/* Shop eKYC Registration Modal */}
@@ -271,6 +241,6 @@ export default function Account() {
         }}
         onSuccess={handleShopCreated}
       />
-    </main>
+    </AccountLayout>
   )
 }

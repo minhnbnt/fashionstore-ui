@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 
 import { useReportProduct } from '@generated/endpoints/product-reports/product-reports'
-import { CheckCircle, Flag, X } from '@phosphor-icons/react'
+import { CheckCircle, Flag } from '@phosphor-icons/react'
 
+import Modal from '@/components/Modal'
 import { BUYER_REPORT_REASONS, REPORT_DESCRIPTION_MAX } from '@/lib/admin/productModeration'
 import { hookErrorMessage } from '@/lib/api/apiAdapters'
+import { cn, FOCUS_RING_CLASS, secondaryButtonClass, TEXTAREA_CLASS } from '@/lib/ui/styles'
 
 import { useSessionQuery } from '../../hooks/useSession'
 
@@ -41,17 +43,17 @@ export default function ReportProductButton({ productId }: { productId: string }
   }
 
   let body = (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="mt-4 space-y-4">
       <fieldset>
         <legend className="mb-2 text-sm font-bold">Sản phẩm này có vấn đề gì?</legend>
         <div className="space-y-1.5">
           {BUYER_REPORT_REASONS.map(function (option) {
             const checked = option.type === reason
             let optionClass =
-              'flex cursor-pointer items-center gap-2.5 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-sm transition hover:border-indigo-300 dark:border-white/10'
+              'flex cursor-pointer items-center gap-2.5 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-sm transition hover:border-blue-400 dark:border-white/10 dark:hover:border-sky-400/50'
             if (checked) {
               optionClass =
-                'flex cursor-pointer items-center gap-2.5 rounded-2xl border border-indigo-500 bg-indigo-50 px-3.5 py-2.5 text-sm font-semibold transition dark:bg-indigo-500/10'
+                'flex cursor-pointer items-center gap-2.5 rounded-2xl border border-blue-600 bg-blue-50/80 px-3.5 py-2.5 text-sm font-semibold transition dark:border-sky-400 dark:bg-sky-400/10'
             }
             return (
               <label key={option.type} className={optionClass}>
@@ -61,7 +63,7 @@ export default function ReportProductButton({ productId }: { productId: string }
                   value={option.type}
                   checked={checked}
                   onChange={() => setReason(option.type)}
-                  className="accent-indigo-600"
+                  className="accent-blue-600 dark:accent-sky-400"
                 />
                 {option.label}
               </label>
@@ -81,7 +83,7 @@ export default function ReportProductButton({ productId }: { productId: string }
           rows={3}
           maxLength={REPORT_DESCRIPTION_MAX}
           placeholder="Ví dụ: logo in lệch, chất vải khác ảnh…"
-          className="w-full resize-y rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-white/5"
+          className={cn(TEXTAREA_CLASS, 'resize-y')}
         />
         <p className="mt-1 text-right text-xs text-zinc-400 tabular-nums">
           {description.length}/{REPORT_DESCRIPTION_MAX}
@@ -89,7 +91,7 @@ export default function ReportProductButton({ productId }: { productId: string }
       </div>
 
       {report.isError && (
-        <p className="text-sm text-red-600 dark:text-red-400">
+        <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">
           {hookErrorMessage('productReport', report.error)}
         </p>
       )}
@@ -98,14 +100,17 @@ export default function ReportProductButton({ productId }: { productId: string }
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="rounded-full border border-zinc-200 px-5 py-2.5 text-sm font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+          className={cn(secondaryButtonClass(), 'px-5 py-2.5')}
         >
           Hủy
         </button>
         <button
           type="submit"
           disabled={reason === null || report.isPending}
-          className="btn-primary rounded-full px-5 py-2.5 text-sm font-bold disabled:opacity-50"
+          className={cn(
+            'btn-primary cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
+            FOCUS_RING_CLASS,
+          )}
         >
           {report.isPending && <span>Đang gửi…</span>}
           {report.isPending === false && <span>Gửi báo cáo</span>}
@@ -115,7 +120,7 @@ export default function ReportProductButton({ productId }: { productId: string }
   )
   if (report.isSuccess) {
     body = (
-      <div className="space-y-4 text-center">
+      <div className="mt-4 space-y-4 text-center">
         <CheckCircle size={44} weight="fill" className="mx-auto text-emerald-500" />
         <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
           Cảm ơn bạn đã báo cáo. Đội ngũ kiểm duyệt sẽ xem xét và xử lý nếu sản phẩm vi phạm chính
@@ -124,7 +129,10 @@ export default function ReportProductButton({ productId }: { productId: string }
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="btn-primary rounded-full px-6 py-2.5 text-sm font-bold"
+          className={cn(
+            'btn-primary cursor-pointer rounded-full px-6 py-2.5 text-sm font-bold',
+            FOCUS_RING_CLASS,
+          )}
         >
           Đóng
         </button>
@@ -137,35 +145,24 @@ export default function ReportProductButton({ productId }: { productId: string }
       <button
         type="button"
         onClick={handleOpen}
-        className="flex items-center gap-1.5 text-sm font-semibold text-zinc-500 transition hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400"
+        className={cn(
+          'flex cursor-pointer items-center gap-1.5 rounded-full text-sm font-semibold text-zinc-500 transition hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-400',
+          FOCUS_RING_CLASS,
+        )}
       >
         <Flag size={14} weight="bold" />
         Báo cáo sản phẩm
       </button>
 
       {open && (
-        <dialog
-          open
-          aria-labelledby="report-product-title"
-          className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black/60 p-4 text-inherit backdrop-blur-xs"
+        <Modal
+          title="Báo cáo sản phẩm"
+          onClose={() => setOpen(false)}
+          widthClass="max-w-md"
+          closeOnBackdrop
         >
-          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#11182a]">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 id="report-product-title" className="text-lg font-extrabold tracking-tighter">
-                Báo cáo sản phẩm
-              </h2>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Đóng"
-                className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:hover:bg-white/10"
-              >
-                <X size={18} weight="bold" />
-              </button>
-            </div>
-            {body}
-          </div>
-        </dialog>
+          {body}
+        </Modal>
       )}
     </>
   )

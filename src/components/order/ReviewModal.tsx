@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Camera, Star, VideoCamera, X } from '@phosphor-icons/react'
 
@@ -67,32 +67,53 @@ function starLabelText(stars: number): string {
   return 'Tuyệt vời'
 }
 
-export default function ReviewModal(props: Props) {
-  const existing = props.existingReview ?? null
-  // Media cũ echo uploadId từ response; media mới = object URL local + uploadId vừa presign
+function extractExistingMedia(existing: ReviewResponse | null): {
+  images: ReviewMediaInput[]
+  video: ReviewMediaInput | null
+} {
   const existingMedia = existing?.media ?? []
-  const existingImages = existingMedia
+  const images = existingMedia
     .filter((m) => m.kind === 'IMAGE')
     .map((m) => ({ uploadId: m.uploadId ?? '', previewUrl: urlOrPlaceholder(m.url) }))
-  let existingVideo: ReviewMediaInput | null = null
+  let video: ReviewMediaInput | null = null
   for (const m of existingMedia) {
-    if (m.kind === 'VIDEO' && existingVideo === null) {
-      existingVideo = { uploadId: m.uploadId ?? '', previewUrl: urlOrPlaceholder(m.url) }
+    if (m.kind === 'VIDEO' && video === null) {
+      video = { uploadId: m.uploadId ?? '', previewUrl: urlOrPlaceholder(m.url) }
     }
   }
+  return { images, video }
+}
+
+function ReviewModalForm(props: Omit<Props, 'open'>) {
+  const existing = props.existingReview ?? null
+  const initialMedia = extractExistingMedia(existing)
   const [stars, setStars] = useState<number>(existing?.stars ?? 5)
   const [comment, setComment] = useState<string>(existing?.comment ?? '')
-  const [images, setImages] = useState<ReviewMediaInput[]>(existingImages)
-  const [video, setVideo] = useState<ReviewMediaInput | null>(existingVideo)
+  const [images, setImages] = useState<ReviewMediaInput[]>(initialMedia.images)
+  const [video, setVideo] = useState<ReviewMediaInput | null>(initialMedia.video)
   const [tags, setTags] = useState<string[]>(existing?.tags ?? [])
   const [anonymous, setAnonymous] = useState<boolean>(existing?.anonymous ?? false)
   const [uploading, setUploading] = useState<boolean>(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const objectUrlsRef = useRef<Set<string>>(new Set())
 
-  if (!props.open) {
-    return null
+  function revokeObjectUrl(url: string) {
+    if (objectUrlsRef.current.has(url)) {
+      URL.revokeObjectURL(url)
+      objectUrlsRef.current.delete(url)
+    }
   }
+
+  useEffect(() => {
+    const urls = objectUrlsRef.current
+    return () => {
+      for (const url of urls) {
+        URL.revokeObjectURL(url)
+      }
+      urls.clear()
+    }
+  }, [])
 
   const isEditLocked = existing !== null && Boolean(existing.edited)
   const isEditing = existing !== null && !isEditLocked
@@ -151,14 +172,18 @@ export default function ReviewModal(props: Props) {
             continue
           }
           const uploadId = await uploadImage(file)
-          nextImages.push({ uploadId, previewUrl: URL.createObjectURL(file) })
+          const previewUrl = URL.createObjectURL(file)
+          objectUrlsRef.current.add(previewUrl)
+          nextImages.push({ uploadId, previewUrl })
         } else if (file.type.startsWith('video/')) {
           if (nextVideo !== null) {
             setUploadError('Mỗi đánh giá chỉ được đính kèm tối đa 1 video.')
             continue
           }
           const uploadId = await uploadVideo(file, MAX_REVIEW_VIDEO_SECONDS)
-          nextVideo = { uploadId, previewUrl: URL.createObjectURL(file) }
+          const previewUrl = URL.createObjectURL(file)
+          objectUrlsRef.current.add(previewUrl)
+          nextVideo = { uploadId, previewUrl }
         } else {
           setUploadError('Chỉ hỗ trợ tải lên tệp ảnh hoặc video.')
         }
@@ -367,10 +392,11 @@ export default function ReviewModal(props: Props) {
                       <button
                         type="button"
                         aria-label="Xóa ảnh"
-                        onClick={() =>
+                        onClick={() => {
+                          revokeObjectUrl(item.previewUrl)
                           setImages(images.filter((i) => i.uploadId !== item.uploadId))
-                        }
-                        className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black"
+                        }}
+                        className="absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white hover:bg-black"
                       >
                         <X size={11} weight="bold" />
                       </button>
@@ -384,8 +410,11 @@ export default function ReviewModal(props: Props) {
                       <button
                         type="button"
                         aria-label="Xóa video"
-                        onClick={() => setVideo(null)}
-                        className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black"
+                        onClick={() => {
+                          revokeObjectUrl(video.previewUrl)
+                          setVideo(null)
+                        }}
+                        className="absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white hover:bg-black"
                       >
                         <X size={11} weight="bold" />
                       </button>
@@ -441,5 +470,25 @@ export default function ReviewModal(props: Props) {
         )}
       </div>
     </Modal>
+  )
+}
+
+export default function ReviewModal(props: Props) {
+  if (!props.open) {
+    return null
+  }
+  const existingKey = props.existingReview?.id ?? 'new'
+  return (
+    <ReviewModalForm
+      key={`${existingKey}:${props.productName}`}
+      productName={props.productName}
+      variantLabel={props.variantLabel}
+      reviewerName={props.reviewerName}
+      existingReview={props.existingReview}
+      isPending={props.isPending}
+      error={props.error}
+      onClose={props.onClose}
+      onSubmit={props.onSubmit}
+    />
   )
 }

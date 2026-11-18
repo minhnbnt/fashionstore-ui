@@ -7,12 +7,15 @@ import { useInventory } from '@generated/endpoints/seller-products-inventory/sel
 import { useList4 } from '@generated/endpoints/seller-returns/seller-returns'
 import { useGetMyShops } from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
 import { useMine } from '@generated/endpoints/shops/shops'
-import { Storefront, WarningCircle } from '@phosphor-icons/react'
+import { Package, Storefront, WarningCircle } from '@phosphor-icons/react'
 
+import { EmptyState } from '@/components/ui/EmptyState'
+import { PageSkeleton } from '@/components/ui/Skeleton'
 import { apiErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { shopProfile } from '@/lib/seller/sellerAdapters'
 import { getFirstAllowedTab, parseSellerTab, sellerTabParam } from '@/lib/seller/sellerNavigation'
 import { canSeeTab } from '@/lib/seller/sellerPermissions'
+import { cn, primaryButtonClass } from '@/lib/ui/styles'
 
 import {
   SellerAddProductTab,
@@ -63,8 +66,8 @@ function emptyProfile(shopName: string): ShopProfileData {
 
 function TabLoading() {
   return (
-    <main className="py-24 text-center">
-      <p className="text-sm text-zinc-500">Đang tải gian hàng…</p>
+    <main className="py-6">
+      <PageSkeleton />
     </main>
   )
 }
@@ -72,7 +75,9 @@ function TabLoading() {
 function ShopError(props: { status: number }) {
   return (
     <main className="mx-auto max-w-[1400px] px-4 py-24 text-center">
-      <p className="text-sm text-red-600">{apiErrorMessage('shops', props.status)}</p>
+      <p className="text-sm font-medium text-rose-600 dark:text-rose-400">
+        {apiErrorMessage('shops', props.status)}
+      </p>
     </main>
   )
 }
@@ -152,11 +157,21 @@ export default function ShopDashboard() {
     }
   }
 
-  // Sidebar badge cần 4 bộ đếm này ở mọi tab nên fetch ngay tại page.
-  const ordersQuery = useList5({ shopId }, { query: { enabled: shopReady } })
-  const returnsQuery = useList4({ shopId }, { query: { enabled: shopReady } })
-  const inventoryQuery = useInventory(shopId, undefined, { query: { enabled: shopReady } })
-  const conversationsQuery = useSellerConversations({ shopId }, { query: { enabled: shopReady } })
+  // Sidebar badge cần 4 bộ đếm này ở mọi tab — chỉ gọi API khi nhân viên/chủ shop có quyền tương ứng.
+  const canSeeOrders = canSeeTab('ORDERS', permissions, isOwner)
+  const canSeeReturns = canSeeTab('RETURNS', permissions, isOwner)
+  const canSeeInventory = canSeeTab('INVENTORY', permissions, isOwner)
+  const canSeeChat = canSeeTab('CHAT', permissions, isOwner)
+
+  const ordersQuery = useList5({ shopId }, { query: { enabled: shopReady && canSeeOrders } })
+  const returnsQuery = useList4({ shopId }, { query: { enabled: shopReady && canSeeReturns } })
+  const inventoryQuery = useInventory(shopId, undefined, {
+    query: { enabled: shopReady && canSeeInventory },
+  })
+  const conversationsQuery = useSellerConversations(
+    { shopId },
+    { query: { enabled: shopReady && canSeeChat } },
+  )
 
   const activeTab = parseSellerTab(searchParams.get('tab'))
   const editProductId = searchParams.get('productId') ?? ''
@@ -216,21 +231,23 @@ export default function ShopDashboard() {
 
   if (memberships.length === 0) {
     return (
-      <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center p-8 text-center">
-        <Storefront size={56} className="text-orange-500" />
-        <h2 className="mt-4 text-xl font-bold text-zinc-900 dark:text-zinc-100">
-          Bạn chưa tham gia gian hàng nào
-        </h2>
-        <p className="mt-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-          Hãy đăng ký mở gian hàng mới trên sàn nét hoặc liên hệ chủ shop để nhận thư mời làm nhân
-          viên.
-        </p>
-        <Link
-          to="/account?tab=shops"
-          className="btn-primary mt-6 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-bold"
-        >
-          <span>Đến trang Hồ sơ & Mở Shop</span>
-        </Link>
+      <main className="mx-auto flex min-h-[60vh] max-w-lg items-center justify-center p-6">
+        <EmptyState
+          icon={<Storefront size={28} weight="bold" className="text-blue-700 dark:text-sky-300" />}
+          title="Bạn chưa tham gia gian hàng nào"
+          description="Hãy đăng ký mở gian hàng mới trên sàn DHMQ hoặc liên hệ chủ shop để nhận thư mời làm nhân viên."
+          action={
+            <Link
+              to="/account?tab=shops"
+              className={cn(
+                primaryButtonClass(),
+                'inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-bold',
+              )}
+            >
+              <span>Đến trang Hồ sơ & Mở Shop</span>
+            </Link>
+          }
+        />
       </main>
     )
   }
@@ -355,11 +372,35 @@ export default function ShopDashboard() {
         />
       )}
 
+      {isTabAllowed && activeTab === 'EDIT_PRODUCT' && editProductId === '' && (
+        <EmptyState
+          icon={<Package size={28} weight="bold" className="text-blue-700 dark:text-sky-300" />}
+          title="Chưa chọn sản phẩm để chỉnh sửa"
+          description="Vui lòng chọn một sản phẩm từ danh sách để xem và cập nhật thông tin chi tiết."
+          action={
+            <button
+              type="button"
+              onClick={function () {
+                handleSelectTab('PRODUCTS')
+              }}
+              className={cn(
+                primaryButtonClass(),
+                'inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold',
+              )}
+            >
+              Về danh sách sản phẩm
+            </button>
+          }
+        />
+      )}
+
       {isTabAllowed && activeTab === 'INVENTORY' && <SellerInventoryTab shopId={shopId} />}
 
       {isTabAllowed && activeTab === 'ORDERS' && <SellerOrdersTab shopId={shopId} />}
 
-      {isTabAllowed && activeTab === 'RETURNS' && <SellerReturnsTab shopId={shopId} />}
+      {isTabAllowed && activeTab === 'RETURNS' && (
+        <SellerReturnsTab shopId={shopId} shopPickupAddress={profile.pickupAddress} />
+      )}
 
       {isTabAllowed && activeTab === 'REVENUE' && (
         <SellerRevenueTab
@@ -373,7 +414,11 @@ export default function ShopDashboard() {
       {isTabAllowed && activeTab === 'REVIEWS' && <SellerReviewsTab key={shopId} shopId={shopId} />}
 
       {isTabAllowed && activeTab === 'CHAT' && (
-        <SellerChatTab shopId={shopId} autoReplyText={autoReplyText} />
+        <SellerChatTab
+          shopId={shopId}
+          autoReplyText={autoReplyText}
+          initialConvId={searchParams.get('convId') ?? undefined}
+        />
       )}
 
       {isTabAllowed && activeTab === 'DECORATION' && (
@@ -388,7 +433,9 @@ export default function ShopDashboard() {
 
       {isTabAllowed && activeTab === 'STATS_REVENUE' && <SellerStatsRevenueTab shopId={shopId} />}
 
-      {isTabAllowed && activeTab === 'STATS_PRODUCTS' && <SellerStatsProductsTab shopId={shopId} />}
+      {isTabAllowed && activeTab === 'STATS_PRODUCTS' && (
+        <SellerStatsProductsTab shopId={shopId} onNavigateTab={handleOverviewNavigate} />
+      )}
 
       {isTabAllowed && activeTab === 'STATS_CUSTOMERS' && (
         <SellerStatsCustomersTab shopId={shopId} />

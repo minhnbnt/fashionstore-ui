@@ -34,7 +34,7 @@ export const FREQUENCY_OPTIONS: { value: PopupFrequencyValue; label: string }[] 
 ]
 
 export const FOOTER_GROUP_OPTIONS: { value: FooterGroupValue; label: string }[] = [
-  { value: 'ABOUT', label: 'Về nét' },
+  { value: 'ABOUT', label: 'Về DHMQ' },
   { value: 'POLICY', label: 'Chính sách' },
   { value: 'SUPPORT', label: 'Hỗ trợ' },
   { value: 'NONE', label: 'Không hiện ở footer' },
