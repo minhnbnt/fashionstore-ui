@@ -14,6 +14,7 @@ import PdpShopCard from '../components/pdp/PdpShopCard'
 import ProductGallery from '../components/pdp/ProductGallery'
 import ProductInfo from '../components/pdp/ProductInfo'
 import ProductTabs from '../components/pdp/ProductTabs'
+import ProductQnaSection from '../components/pdp/qna/ProductQnaSection'
 import RelatedProducts from '../components/pdp/RelatedProducts'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
@@ -141,6 +142,7 @@ export default function ProductDetail() {
         <PdpShopCard shopId={product.shopId} />
       )}
       <ProductTabs product={product} />
+      <ProductQnaSection productId={productId} />
       <div className="mt-10">
         <RelatedProducts category={category} currentId={productId} />
       </div>
