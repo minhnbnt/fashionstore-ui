@@ -41,6 +41,13 @@ import { takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { formatDateTime } from '@/lib/format'
 import { notify } from '@/lib/notifications'
+import {
+  cn,
+  FOCUS_RING_CLASS,
+  PANEL_CLASS,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from '@/lib/ui/styles'
 
 import type { ImageItemRequest } from '@generated/model/imageItemRequest'
 import type { ProductAuditLogResponse } from '@generated/model/productAuditLogResponse'
@@ -105,7 +112,7 @@ function renderActionBadge(action: string) {
 
   return (
     <span
-      className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold ${colorClass}`}
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${colorClass}`}
     >
       {label}
     </span>
@@ -605,7 +612,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         <button
           type="button"
           onClick={onBack}
-          className="mt-6 rounded-2xl bg-zinc-900 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900"
+          className={cn(primaryButtonClass(), 'mt-6 rounded-full px-5 py-2.5 text-xs font-bold')}
         >
           Quay lại danh sách sản phẩm
         </button>
@@ -636,24 +643,25 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       )}
 
       {/* Top Bar Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+      <div className={cn(PANEL_CLASS, 'flex flex-wrap items-center justify-between gap-4 p-6')}>
         <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={onBack}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+            aria-label="Quay lại danh sách sản phẩm"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10"
             title="Quay lại danh sách"
           >
             <ArrowLeft size={18} weight="bold" />
           </button>
 
           <div>
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="text-lg font-bold text-[#17203a] dark:text-white">
                 Chỉnh sửa sản phẩm
               </h2>
               {status === 'ACTIVE' && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-400">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                   Đang bán (ACTIVE)
                 </span>
@@ -665,12 +673,12 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 </span>
               )}
               {status !== 'ACTIVE' && status !== 'HIDDEN' && (
-                <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-bold text-red-700 dark:bg-red-950/50 dark:text-red-400">
+                <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-bold text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">
                   {status}
                 </span>
               )}
             </div>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
               Cập nhật thông tin chi tiết, biến thể, hình ảnh & media và quản lý trạng thái hiển
               thị.
             </p>
@@ -685,7 +693,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             onClick={function () {
               setShowAuditModal(true)
             }}
-            className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+            className={cn(secondaryButtonClass(), 'px-4 py-2 text-xs')}
           >
             <ClockCounterClockwise size={16} weight="bold" />
             Lịch sử chỉnh sửa
@@ -696,7 +704,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             type="button"
             disabled={isTogglingStatus}
             onClick={handleToggleStatus}
-            className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 px-3.5 py-2 text-xs font-bold text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+            className={cn(secondaryButtonClass(), 'px-4 py-2 text-xs')}
           >
             {isTogglingStatus && <SpinnerGap size={14} weight="bold" className="animate-spin" />}
             {!isTogglingStatus && status === 'ACTIVE' && <EyeSlash size={16} weight="bold" />}
@@ -710,7 +718,10 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             type="button"
             disabled={isSaving}
             onClick={handleSave}
-            className="btn-primary flex items-center gap-2 rounded-2xl px-5 py-2 text-xs font-bold shadow-md transition disabled:opacity-50"
+            className={cn(
+              primaryButtonClass(),
+              'flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold shadow-md disabled:opacity-50',
+            )}
           >
             {isSaving && <SpinnerGap size={14} weight="bold" className="animate-spin" />}
             {!isSaving && <FloppyDisk size={16} weight="bold" />}
@@ -719,8 +730,34 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         </div>
       </div>
 
+      {/* Sticky Section Quick-Jump Bar */}
+      <nav
+        aria-label="Chuyển nhanh mục chỉnh sửa sản phẩm"
+        className="sticky top-20 z-20 flex items-center gap-1.5 overflow-x-auto rounded-full border border-zinc-200/90 bg-white/95 p-1.5 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-[#11182a]/95"
+      >
+        {[
+          { id: 'edit-sec-basic', label: '1. Thông tin cơ bản' },
+          { id: 'edit-sec-media', label: '2. Hình ảnh & Video' },
+          { id: 'edit-sec-variants', label: '3. Biến thể & Tồn kho' },
+          { id: 'edit-sec-shipping', label: '4. Thuộc tính & Đóng gói' },
+        ].map(function (sec) {
+          return (
+            <a
+              key={sec.id}
+              href={`#${sec.id}`}
+              className={cn(
+                'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold text-zinc-600 transition hover:bg-sky-50 hover:text-blue-700 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-sky-300',
+                FOCUS_RING_CLASS,
+              )}
+            >
+              {sec.label}
+            </a>
+          )
+        })}
+      </nav>
+
       {/* Section 1: Thông tin cơ bản */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+      <section id="edit-sec-basic" className={cn(PANEL_CLASS, 'scroll-mt-36 p-6')}>
         <h3 className="border-b border-zinc-100 pb-3 text-sm font-bold tracking-wider text-zinc-900 uppercase dark:border-white/10 dark:text-white">
           1. Thông tin cơ bản
         </h3>
@@ -741,7 +778,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setName(e.target.value)
               }}
               placeholder="Nhập tên sản phẩm thời trang..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
 
@@ -755,7 +792,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 <LockKey size={13} weight="bold" className="text-zinc-400" />
                 Đường dẫn tĩnh (Slug)
               </label>
-              <div className="mt-1.5 flex items-center rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-xs text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+              <div className="mt-1.5 flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-xs text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
                 <input
                   id="editProductSlug"
                   type="text"
@@ -771,7 +808,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                   }}
                   aria-label="Sao chép slug"
                   title="Sao chép slug"
-                  className="ml-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                  className="ml-2 cursor-pointer text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                 >
                   <Copy size={14} weight="bold" />
                 </button>
@@ -787,7 +824,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 htmlFor="editProductCategory"
                 className="block text-xs font-bold text-zinc-800 dark:text-zinc-200"
               >
-                Ngành hàng / Danh mục <span className="text-red-500">*</span>
+                Ngành hàng / Danh mục <span className="text-rose-500">*</span>
               </label>
               <select
                 id="editProductCategory"
@@ -795,7 +832,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setCategoryId(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
               >
                 <option value="">-- Chọn danh mục --</option>
                 {categoriesList.map(function (cat) {
@@ -822,7 +859,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setStatus(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
               >
                 <option value="ACTIVE">ACTIVE - Đang bán công khai</option>
                 <option value="HIDDEN">HIDDEN - Tạm ẩn khỏi sàn</option>
@@ -848,33 +885,35 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Section 2: Media Uploader */}
-      <ProductMediaUploader
-        images={images}
-        onImagesChange={setImages}
-        video={video}
-        onVideoChange={setVideo}
-        tryOnEnabled={tryOnEnabled}
-        onTryOnToggle={setTryOnEnabled}
-        garment={garment}
-        onGarmentChange={setGarment}
-      />
+      <section id="edit-sec-media" className="scroll-mt-36">
+        <ProductMediaUploader
+          images={images}
+          onImagesChange={setImages}
+          video={video}
+          onVideoChange={setVideo}
+          tryOnEnabled={tryOnEnabled}
+          onTryOnToggle={setTryOnEnabled}
+          garment={garment}
+          onGarmentChange={setGarment}
+        />
+      </section>
 
       {/* Section 3: Quản lý biến thể & Tồn kho */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+      <section id="edit-sec-variants" className={cn(PANEL_CLASS, 'scroll-mt-36 p-6')}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-4 dark:border-white/10">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
+              <h3 className="text-sm font-bold tracking-wider text-[#17203a] uppercase dark:text-white">
                 3. Quản lý biến thể & tồn kho
               </h3>
-              <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400">
+              <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-sky-500/20 dark:text-sky-300">
                 {variants.length} biến thể
               </span>
             </div>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
               Cập nhật giá bán, giá so sánh và số lượng tồn kho theo từng kích cỡ & màu sắc.
             </p>
           </div>
@@ -882,7 +921,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
           <button
             type="button"
             onClick={handleAddNewVariant}
-            className="flex items-center gap-1.5 rounded-2xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-600 transition hover:bg-indigo-100 dark:border-indigo-900/40 dark:bg-indigo-950/40 dark:text-indigo-400"
+            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold text-blue-700 transition hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25"
           >
             <Plus size={14} weight="bold" />
             Thêm biến thể mới
@@ -892,7 +931,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         {/* Công cụ Áp dụng hàng loạt (Bulk Apply Bar) */}
         <div className="mt-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-4 dark:border-white/10 dark:bg-white/5">
           <div className="flex items-center gap-2 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-            <Lightning size={16} weight="bold" className="text-indigo-600 dark:text-indigo-400" />
+            <Lightning size={16} weight="bold" className="text-blue-700 dark:text-sky-300" />
             <span>Công cụ áp dụng hàng loạt (Bulk Apply):</span>
           </div>
 
@@ -910,7 +949,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setBulkTarget(e.target.value)
                 }}
-                className="mt-1 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                className="mt-1 rounded-full border border-zinc-300 bg-white px-3.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
               >
                 <option value="ALL">Tất cả {variants.length} biến thể</option>
                 {distinctColors.map(function (c) {
@@ -943,7 +982,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                     setBulkPrice('')
                   }
                 }}
-                className="mt-1 w-32 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                className="mt-1 w-32 rounded-full border border-zinc-300 bg-white px-3.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
 
@@ -967,7 +1006,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                     setBulkCompareAtPrice('')
                   }
                 }}
-                className="mt-1 w-32 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                className="mt-1 w-32 rounded-full border border-zinc-300 bg-white px-3.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
 
@@ -987,14 +1026,17 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setBulkStock(e.target.value)
                 }}
-                className="mt-1 w-24 rounded-xl border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                className="mt-1 w-24 rounded-full border border-zinc-300 bg-white px-3.5 py-1.5 text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
 
             <button
               type="button"
               onClick={handleApplyBulk}
-              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-indigo-700"
+              className={cn(
+                primaryButtonClass(),
+                'flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold shadow-xs',
+              )}
             >
               <Lightning size={14} weight="bold" />
               Áp dụng hàng loạt
@@ -1036,7 +1078,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
               {variants.map(function (v) {
                 return (
-                  <tr key={v.keyId} className="dark:hover:bg-white/10/30 hover:bg-zinc-50/50">
+                  <tr key={v.keyId} className="hover:bg-zinc-50/50 dark:hover:bg-white/5">
                     <td className="py-2.5 pl-2 text-center">
                       <input
                         type="radio"
@@ -1047,7 +1089,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         }}
                         aria-label={`Chọn biến thể ${v.sku} làm mặc định`}
                         title="Chọn làm biến thể mặc định"
-                        className="h-4 w-4 accent-indigo-600"
+                        className="h-4 w-4 accent-blue-600"
                       />
                     </td>
 
@@ -1060,7 +1102,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         }}
                         aria-label="Màu sắc"
                         placeholder="VD: Trắng"
-                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                        className="w-full rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-semibold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
                       />
                     </td>
 
@@ -1073,7 +1115,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         }}
                         aria-label="Kích cỡ"
                         placeholder="VD: M, L"
-                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                        className="w-full rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-semibold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
                       />
                     </td>
 
@@ -1086,7 +1128,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         }}
                         aria-label="Mã SKU"
                         placeholder="SKU"
-                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 font-mono text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                        className="w-full rounded-full border border-zinc-300 px-3 py-1.5 font-mono text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
                       />
                     </td>
 
@@ -1103,7 +1145,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                           handleUpdateVariantField(v.keyId, 'price', val)
                         }}
                         aria-label="Giá bán"
-                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 text-xs font-bold text-zinc-900 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                        className="w-full rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-bold text-[#17203a] outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
                       />
                     </td>
 
@@ -1117,7 +1159,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                         }}
                         aria-label="Giá gốc"
                         placeholder="Không có"
-                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 text-xs font-semibold text-zinc-500 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-400"
+                        className="w-full rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-500 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-400"
                       />
                     </td>
 
@@ -1134,7 +1176,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                           )
                         }}
                         aria-label="Tồn kho"
-                        className="w-full rounded-xl border border-zinc-300 px-2.5 py-1.5 text-center text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                        className="w-full rounded-full border border-zinc-300 px-3 py-1.5 text-center text-xs font-bold outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
                       />
                     </td>
 
@@ -1147,7 +1189,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                           }}
                           aria-label="Xóa biến thể mới thêm"
                           title="Xóa biến thể mới thêm"
-                          className="flex h-8 w-8 items-center justify-center rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20"
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/15"
                         >
                           <Trash size={14} weight="bold" />
                         </button>
@@ -1162,10 +1204,10 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       {/* Section 4: Thuộc tính thời trang & Thông số kiện hàng */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+      <section id="edit-sec-shipping" className={cn(PANEL_CLASS, 'scroll-mt-36 p-6')}>
         <h3 className="border-b border-zinc-100 pb-3 text-sm font-bold tracking-wider text-zinc-900 uppercase dark:border-white/10 dark:text-white">
           4. Thuộc tính thời trang & Thông số kiện hàng
         </h3>
@@ -1186,7 +1228,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setMaterial(e.target.value)
               }}
               placeholder="VD: 100% Cotton Organic, Lụa Satin, Kaki..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
 
@@ -1205,7 +1247,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 setOrigin(e.target.value)
               }}
               placeholder="VD: Việt Nam, Hàn Quốc, Nhật Bản..."
-              className="mt-1.5 w-full rounded-2xl border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+              className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
         </div>
@@ -1271,7 +1313,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setWeightGrams(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                className="mt-1 w-full rounded-full border border-zinc-300 px-3 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
             <div>
@@ -1289,7 +1331,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setLengthCm(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                className="mt-1 w-full rounded-full border border-zinc-300 px-3 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
             <div>
@@ -1307,7 +1349,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setWidthCm(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                className="mt-1 w-full rounded-full border border-zinc-300 px-3 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
             <div>
@@ -1325,19 +1367,19 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 onChange={function (e) {
                   setHeightCm(Number(e.target.value))
                 }}
-                className="mt-1 w-full rounded-xl border border-zinc-300 p-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
+                className="mt-1 w-full rounded-full border border-zinc-300 px-3 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
               />
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Floating Save Actions at bottom */}
-      <div className="sticky bottom-6 flex items-center justify-between rounded-3xl border border-zinc-200/80 bg-white/95 p-4 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-[#11182a]/95">
+      <div className="sticky bottom-6 flex items-center justify-between rounded-3xl border border-zinc-200/90 bg-white/95 p-4 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-[#11182a]/95">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 px-4 py-2.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+          className={cn(secondaryButtonClass(), 'px-4 py-2.5 text-xs')}
         >
           <ArrowLeft size={16} weight="bold" />
           Hủy & Quay lại
@@ -1348,7 +1390,10 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
             type="button"
             disabled={isSaving}
             onClick={handleSave}
-            className="btn-primary flex items-center gap-2 rounded-2xl px-6 py-2.5 text-xs font-bold shadow-md transition disabled:opacity-50"
+            className={cn(
+              primaryButtonClass(),
+              'flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-bold shadow-md disabled:opacity-50',
+            )}
           >
             {isSaving && <SpinnerGap size={16} weight="bold" className="animate-spin" />}
             {!isSaving && <FloppyDisk size={16} weight="bold" />}
@@ -1390,7 +1435,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                 return (
                   <div key={log.id} className="group relative">
                     {/* Dot on timeline */}
-                    <div className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full border-2 border-white bg-indigo-600 dark:border-[#11182a]" />
+                    <div className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full border-2 border-white bg-blue-600 dark:border-[#11182a] dark:bg-sky-400" />
 
                     <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/50 p-3.5 dark:border-white/10 dark:bg-white/5">
                       <div className="flex flex-wrap items-center justify-between gap-2">

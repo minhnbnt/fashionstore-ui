@@ -12,6 +12,8 @@ import {
 } from '@phosphor-icons/react'
 
 import Drawer from '@/components/ui/Drawer'
+import { TableRowsSkeleton } from '@/components/ui/Skeleton'
+import { statusMeta } from '@/lib/admin/admin'
 import {
   canApprove,
   canBan,
@@ -26,12 +28,18 @@ import {
 } from '@/lib/admin/productModeration'
 import {
   hookErrorMessage,
-  urlOrPlaceholder,
   PLACEHOLDER_IMAGE,
   takeData,
+  urlOrPlaceholder,
 } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
-import { cn, dangerButtonClass, primaryButtonClass } from '@/lib/ui/styles'
+import {
+  cn,
+  dangerButtonClass,
+  FOCUS_RING_CLASS,
+  primaryButtonClass,
+  successButtonClass,
+} from '@/lib/ui/styles'
 
 import type { AdminProductDetailResponse } from '@generated/model/adminProductDetailResponse'
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
@@ -39,6 +47,7 @@ import type { ProductModerationHistoryResponse } from '@generated/model/productM
 
 interface Props {
   productId: string
+  approving?: boolean
   onClose: () => void
   onBan: (product: AdminProductResponse) => void
   onRestore: (product: AdminProductResponse) => void
@@ -74,6 +83,7 @@ function dimensionLabel(
 
 function DetailBody({
   detail,
+  approving,
   onBan,
   onRestore,
   onDismiss,
@@ -81,6 +91,7 @@ function DetailBody({
   onReject,
 }: {
   detail: AdminProductDetailResponse
+  approving: boolean
   onBan: Props['onBan']
   onRestore: Props['onRestore']
   onDismiss: Props['onDismiss']
@@ -136,20 +147,22 @@ function DetailBody({
             <span className="text-xs text-zinc-500 dark:text-zinc-400">{product.categoryName}</span>
           )}
         </div>
-        <h3 className="mt-2 text-xl font-extrabold tracking-tighter">{product.name}</h3>
+        <h3 className="mt-2 text-xl font-extrabold tracking-tighter text-[#17203a] dark:text-[#e2e8f0]">
+          {product.name}
+        </h3>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">/{product.slug}</p>
         <p className="mt-2 text-sm">
           Shop <strong>{product.shopName}</strong>
           {product.shopStatus !== 'APPROVED' && (
-            <span className="ml-2 text-xs text-amber-700 dark:text-amber-300">
-              ({product.shopStatus})
+            <span className="ml-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+              ({statusMeta(product.shopStatus).label})
             </span>
           )}
         </p>
       </div>
 
       {product.status === 'BANNED' && (
-        <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-500/10 dark:text-red-200">
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200">
           <p className="font-bold">{violationLabel(product.violationType)}</p>
           <p className="mt-1">{product.statusReason}</p>
         </div>
@@ -160,8 +173,9 @@ function DetailBody({
         {canApprove(product.status) && onApprove !== undefined && (
           <button
             type="button"
+            disabled={approving}
             onClick={() => onApprove(product)}
-            className="flex cursor-pointer items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+            className={cn(successButtonClass(), 'px-5 py-2.5')}
           >
             <CheckCircle size={16} weight="bold" />
             Phê duyệt sản phẩm
@@ -171,7 +185,10 @@ function DetailBody({
           <button
             type="button"
             onClick={() => onReject(product)}
-            className="flex cursor-pointer items-center gap-2 rounded-full border border-rose-300 px-5 py-2.5 text-sm font-bold text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/10"
+            className={cn(
+              'flex cursor-pointer items-center gap-2 rounded-full border border-rose-300 px-5 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/15',
+              FOCUS_RING_CLASS,
+            )}
           >
             <Prohibit size={16} weight="bold" />
             Từ chối duyệt
@@ -181,7 +198,7 @@ function DetailBody({
           <button
             type="button"
             onClick={() => onBan(product)}
-            className={cn(dangerButtonClass(), 'cursor-pointer px-5 py-2.5')}
+            className={cn(dangerButtonClass(), 'px-5 py-2.5')}
           >
             <Prohibit size={16} weight="bold" />
             Gỡ sản phẩm
@@ -193,7 +210,7 @@ function DetailBody({
             onClick={() => onRestore(product)}
             className={cn(
               primaryButtonClass(),
-              'flex cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold',
+              'flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold',
             )}
           >
             <ArrowCounterClockwise size={16} weight="bold" />
@@ -204,7 +221,10 @@ function DetailBody({
           <button
             type="button"
             onClick={() => onDismiss(product)}
-            className="flex cursor-pointer items-center gap-2 rounded-full border border-emerald-300 px-5 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+            className={cn(
+              'flex cursor-pointer items-center gap-2 rounded-full border border-emerald-300 px-5 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300 dark:hover:bg-emerald-500/15',
+              FOCUS_RING_CLASS,
+            )}
           >
             <ShieldCheck size={16} weight="bold" />
             Không vi phạm
@@ -216,7 +236,7 @@ function DetailBody({
       {detail.videoUrl !== null && detail.videoUrl !== undefined && detail.videoUrl !== '' && (
         <section>
           <h4 className="mb-2 flex items-center gap-2 text-sm font-bold">
-            <VideoCamera size={16} weight="bold" className="text-orange-600" />
+            <VideoCamera size={16} weight="bold" className="text-blue-700 dark:text-sky-300" />
             Video giới thiệu sản phẩm
           </h4>
           <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black">
@@ -235,10 +255,10 @@ function DetailBody({
       {detail.tryOnEnabled === true && (
         <section>
           <h4 className="mb-2 flex items-center gap-2 text-sm font-bold">
-            <Sparkle size={16} weight="fill" className="text-indigo-600" />
+            <Sparkle size={16} weight="fill" className="text-blue-700 dark:text-sky-300" />
             Ảnh Garment (Virtual Try-On)
           </h4>
-          <div className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-3 dark:border-indigo-900/30 dark:bg-indigo-950/20">
+          <div className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-3 dark:border-sky-500/30 dark:bg-sky-500/10">
             {detail.garmentUrl !== null &&
               detail.garmentUrl !== undefined &&
               detail.garmentUrl !== '' && (
@@ -248,14 +268,14 @@ function DetailBody({
                   onError={(event) => {
                     event.currentTarget.src = PLACEHOLDER_IMAGE
                   }}
-                  className="h-20 w-16 rounded-xl border border-indigo-200 bg-white object-contain p-1 dark:border-indigo-500/30"
+                  className="h-20 w-16 rounded-2xl border border-sky-200 bg-white object-contain p-1 dark:border-sky-500/30"
                 />
               )}
             <div className="text-xs text-zinc-600 dark:text-zinc-300">
-              <span className="font-semibold text-indigo-700 dark:text-indigo-300">
+              <span className="font-semibold text-blue-700 dark:text-sky-300">
                 Đã bật Thử Đồ Ảo AI.
               </span>
-              <p className="mt-0.5 text-[11px] text-zinc-500">
+              <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
                 Ảnh phẳng trải trên nền trắng dùng để huấn luyện mô hình ghép trang phục.
               </p>
             </div>
@@ -264,33 +284,33 @@ function DetailBody({
       )}
 
       {/* Thông tin bổ sung & Vận chuyển */}
-      <section className="space-y-3 rounded-2xl bg-white/70 p-4 text-xs dark:bg-white/5">
+      <section className="space-y-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 text-xs dark:border-white/10 dark:bg-white/5">
         <h4 className="flex items-center gap-2 text-sm font-bold">
           <Package size={16} weight="bold" />
-          Thông tin bổ sung & Vận chuyển
+          Thông tin bổ sung &amp; Vận chuyển
         </h4>
-        <div className="grid grid-cols-2 gap-2 text-zinc-600 dark:text-zinc-400">
+        <div className="grid grid-cols-2 gap-2 text-zinc-600 dark:text-zinc-300">
           <div>
             Chất liệu:{' '}
-            <strong className="text-zinc-900 dark:text-white">
+            <strong className="text-[#17203a] dark:text-white">
               {detail.material ?? 'Chưa cập nhật'}
             </strong>
           </div>
           <div>
             Xuất xứ:{' '}
-            <strong className="text-zinc-900 dark:text-white">
+            <strong className="text-[#17203a] dark:text-white">
               {detail.origin ?? 'Chưa cập nhật'}
             </strong>
           </div>
           <div>
             Cân nặng:{' '}
-            <strong className="text-zinc-900 dark:text-white">
+            <strong className="text-[#17203a] dark:text-white">
               {weightLabel(detail.weightGrams)}
             </strong>
           </div>
           <div>
             Kích thước:{' '}
-            <strong className="text-zinc-900 dark:text-white">
+            <strong className="text-[#17203a] dark:text-white">
               {dimensionLabel(detail.lengthCm, detail.widthCm, detail.heightCm)}
             </strong>
           </div>
@@ -298,7 +318,7 @@ function DetailBody({
         {detail.careInstructions !== null &&
           detail.careInstructions !== undefined &&
           detail.careInstructions !== '' && (
-            <p className="text-[11px] text-zinc-500">
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
               <strong>Bảo quản:</strong> {detail.careInstructions}
             </p>
           )}
@@ -312,10 +332,11 @@ function DetailBody({
           </h4>
           <ul className="space-y-2">
             {reports.map(function (report) {
-              let itemClass = 'rounded-2xl bg-white/70 px-4 py-3 text-sm dark:bg-white/5'
+              let itemClass =
+                'rounded-2xl border border-zinc-200/80 bg-zinc-50/70 px-4 py-3 text-sm dark:border-white/10 dark:bg-white/5'
               if (report.status !== 'OPEN') {
                 itemClass =
-                  'rounded-2xl bg-white/40 px-4 py-3 text-sm opacity-70 dark:bg-white/[0.03]'
+                  'rounded-2xl border border-zinc-200/60 bg-zinc-50/40 px-4 py-3 text-sm opacity-75 dark:border-white/10 dark:bg-white/[0.03]'
               }
               return (
                 <li key={report.id} className={itemClass}>
@@ -370,7 +391,7 @@ function DetailBody({
 
       <section>
         <h4 className="mb-2 text-sm font-bold">Biến thể ({variants.length})</h4>
-        <ul className="divide-y divide-zinc-100 rounded-2xl bg-white/70 dark:divide-white/10 dark:bg-white/5">
+        <ul className="divide-y divide-zinc-200/80 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 dark:divide-white/10 dark:border-white/10 dark:bg-white/5">
           {variants.map(function (variant) {
             return (
               <li
@@ -432,6 +453,7 @@ function DetailBody({
 /** Bảng trượt bên phải: đủ thông tin để admin đánh giá trước khi gỡ. */
 export default function AdminProductDetailPanel({
   productId,
+  approving = false,
   onClose,
   onBan,
   onRestore,
@@ -441,10 +463,13 @@ export default function AdminProductDetailPanel({
 }: Props) {
   const query = useGetAdminProduct(productId)
 
-  let body = <p className="text-sm text-zinc-500 dark:text-zinc-400">Đang tải…</p>
+  let body: React.ReactNode = <TableRowsSkeleton rows={4} columns={2} />
   if (query.isError) {
     body = (
-      <p className="text-sm text-red-600 dark:text-red-400">
+      <p
+        role="alert"
+        className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+      >
         {hookErrorMessage('adminProductDetail', query.error)}
       </p>
     )
@@ -453,6 +478,7 @@ export default function AdminProductDetailPanel({
     body = (
       <DetailBody
         detail={takeData(query.data)}
+        approving={approving}
         onBan={onBan}
         onRestore={onRestore}
         onDismiss={onDismiss}

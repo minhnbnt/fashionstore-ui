@@ -81,17 +81,27 @@ describe('AppToaster', () => {
     expect(capturedProps.latest?.icons?.loading).toBeDefined()
   })
 
-  it('đồng bộ dark theme từ useTheme và tuân thủ token design system', function () {
+  it('đồng bộ dark theme từ useTheme và tuân thủ token design system + màu semantic theo trạng thái', function () {
     themeState.theme = 'dark'
     render(<AppToaster />)
 
     const el = screen.getByTestId('app-toaster')
     expect(el.getAttribute('data-theme')).toBe('dark')
 
-    const toastClass = capturedProps.latest?.toastOptions?.classNames?.toast ?? ''
+    const classNames = capturedProps.latest?.toastOptions?.classNames
+    const toastClass = classNames?.toast ?? ''
     expect(toastClass).toContain('dark:bg-[#0a0f1e]/95')
     expect(toastClass).toContain('rounded-2xl')
     expect(toastClass).not.toContain('dark:bg-zinc-800')
     expect(toastClass).not.toContain('dark:border-zinc-700')
+
+    expect(classNames?.success ?? '').toContain('emerald')
+    expect(classNames?.success ?? '').toContain('dark:!bg-[#0c231c]/95')
+    expect(classNames?.error ?? '').toContain('rose')
+    expect(classNames?.error ?? '').toContain('dark:!bg-[#241019]/95')
+    expect(classNames?.warning ?? '').toContain('amber')
+    expect(classNames?.warning ?? '').toContain('dark:!bg-[#241b0d]/95')
+    expect(classNames?.info ?? '').toContain('sky')
+    expect(classNames?.info ?? '').toContain('dark:!bg-[#0d1d2f]/95')
   })
 })

@@ -8,6 +8,8 @@ import {
 } from '@generated/endpoints/addresses/addresses'
 import {
   ArrowClockwise,
+  Buildings,
+  House,
   MapPin,
   PencilSimple,
   Plus,
@@ -19,7 +21,9 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { takeData } from '@/lib/api/apiAdapters'
+import { formatAddressLabel } from '@/lib/format'
 import { notify } from '@/lib/notifications'
+import { CARD_CLASS, cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 import AddressFormModal from './AddressFormModal'
 
@@ -39,6 +43,20 @@ function addAddressButtonTitle(isMaxReached: boolean): string {
     return 'Bạn đã đạt giới hạn 10 địa chỉ'
   }
   return 'Thêm địa chỉ mới'
+}
+
+function renderAddressLabelBadge(label: string | undefined) {
+  if (label === undefined || label === '') {
+    return null
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200/90 bg-white/90 px-2.5 py-0.5 text-[10px] font-bold text-zinc-700 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200">
+      {label === 'HOME' && <House size={11} weight="fill" />}
+      {label === 'OFFICE' && <Buildings size={11} weight="fill" />}
+      {label !== 'HOME' && label !== 'OFFICE' && <MapPin size={11} weight="fill" />}
+      <span>{formatAddressLabel(label)}</span>
+    </span>
+  )
 }
 
 export default function AddressBookTab() {
@@ -205,31 +223,34 @@ export default function AddressBookTab() {
           {addresses.map(function (addr) {
             const isDef = addr.defaultAddress === true
 
-            let containerClass =
-              'rounded-3xl border p-5 transition flex flex-col md:flex-row md:items-start md:justify-between gap-4'
+            let containerClass = cn(
+              CARD_CLASS,
+              'flex flex-col gap-4 p-5 transition md:flex-row md:items-start md:justify-between',
+            )
             if (isDef) {
-              containerClass +=
-                ' border-blue-200 bg-sky-50/50 dark:border-sky-400/30 dark:bg-white/5'
-            } else {
-              containerClass +=
-                ' border-zinc-200 bg-white/80 hover:border-zinc-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20'
+              containerClass = cn(
+                CARD_CLASS,
+                'flex flex-col gap-4 border-blue-200 bg-sky-50/50 p-5 transition md:flex-row md:items-start md:justify-between dark:border-sky-400/35 dark:bg-[#11182a]',
+              )
             }
 
             return (
               <div key={addr.id} className={containerClass}>
                 <div className="space-y-2">
-                  {/* Row 1: Recipient Name, Phone, Default Badge */}
+                  {/* Row 1: Recipient Name, Phone, Label Badge, Default Badge */}
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-extrabold text-zinc-900 dark:text-white">
+                    <span className="text-sm font-extrabold text-[#17203a] dark:text-white">
                       {addr.recipientName || 'Khách hàng'}
                     </span>
                     <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                    <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                    <span className="text-xs font-medium text-zinc-600 tabular-nums dark:text-zinc-300">
                       {addr.phoneNumber || 'Chưa có SĐT'}
                     </span>
 
+                    {renderAddressLabelBadge(addr.label)}
+
                     {isDef && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 px-2.5 py-0.5 text-[10px] font-extrabold text-white">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] px-2.5 py-0.5 text-[10px] font-extrabold text-white">
                         <ShieldCheck size={12} weight="fill" />
                         Mặc định
                       </span>
@@ -276,7 +297,10 @@ export default function AddressBookTab() {
                           setDeleteTarget(addr)
                         }}
                         disabled={isMutating}
-                        className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-2xs transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:hover:bg-rose-950/30"
+                        className={cn(
+                          'inline-flex cursor-pointer items-center gap-1 rounded-full border border-rose-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-2xs transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-500/30 dark:bg-white/10 dark:text-rose-300 dark:hover:bg-rose-500/15',
+                          FOCUS_RING_CLASS,
+                        )}
                         title="Xóa địa chỉ"
                         aria-label="Xóa địa chỉ"
                       >

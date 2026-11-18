@@ -188,7 +188,11 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
           />
         </label>
       </div>
-      {contentProblem && <p className={ERROR_CLASS}>Popup cần có ảnh hoặc tiêu đề.</p>}
+      {contentProblem && (
+        <p role="alert" className={ERROR_CLASS}>
+          Popup cần có ảnh hoặc tiêu đề.
+        </p>
+      )}
 
       <label className="block">
         <span className={LABEL_CLASS}>Mô tả ngắn</span>
@@ -212,7 +216,7 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
           className={INPUT_CLASS}
         />
         {linkProblem && (
-          <span className={ERROR_CLASS}>
+          <span role="alert" className={ERROR_CLASS}>
             Link phải bắt đầu bằng / hoặc http(s)://, không có khoảng trắng.
           </span>
         )}

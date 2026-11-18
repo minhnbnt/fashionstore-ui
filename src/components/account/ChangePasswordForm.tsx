@@ -56,13 +56,17 @@ export default function ChangePasswordForm() {
   }
 
   let inputType = 'password'
+  let passwordToggleLabel = 'Hiện mật khẩu mới'
   if (showPassword) {
     inputType = 'text'
+    passwordToggleLabel = 'Ẩn mật khẩu mới'
   }
 
   let confirmInputType = 'password'
+  let confirmToggleLabel = 'Hiện xác nhận mật khẩu'
   if (showConfirm) {
     confirmInputType = 'text'
+    confirmToggleLabel = 'Ẩn xác nhận mật khẩu'
   }
 
   return (
@@ -107,8 +111,8 @@ export default function ChangePasswordForm() {
           className="mt-4 space-y-3 border-t border-zinc-200/60 pt-3 dark:border-white/10"
         >
           {formError !== null && (
-            <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-3.5 py-2 text-xs font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
-              <WarningCircle size={15} weight="bold" />
+            <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
+              <WarningCircle size={15} weight="bold" className="shrink-0" />
               <span>{formError}</span>
             </div>
           )}
@@ -144,7 +148,7 @@ export default function ChangePasswordForm() {
                   })
                 }}
                 className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
-                aria-label="Ẩn hiện mật khẩu mới"
+                aria-label={passwordToggleLabel}
               >
                 {showPassword && <EyeSlash size={15} />}
                 {showPassword === false && <Eye size={15} />}
@@ -183,7 +187,7 @@ export default function ChangePasswordForm() {
                   })
                 }}
                 className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
-                aria-label="Ẩn hiện xác nhận mật khẩu"
+                aria-label={confirmToggleLabel}
               >
                 {showConfirm && <EyeSlash size={15} />}
                 {showConfirm === false && <Eye size={15} />}

@@ -10,7 +10,7 @@ import {
 
 export { INPUT_CLASS, LABEL_CLASS, TEXTAREA_CLASS }
 export const HINT_CLASS = 'mt-1 text-xs text-zinc-500 dark:text-zinc-400'
-export const ERROR_CLASS = 'mt-1 text-xs text-red-600 dark:text-red-400'
+export const ERROR_CLASS = 'mt-1 text-xs font-medium text-rose-600 dark:text-rose-400'
 
 interface Props {
   title: string
@@ -54,7 +54,10 @@ export default function ContentDialog({
         <div className="space-y-4">
           {children}
           {error !== null && (
-            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-200">
+            <p
+              role="alert"
+              className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200"
+            >
               {error}
             </p>
           )}
@@ -65,7 +68,7 @@ export default function ContentDialog({
             type="button"
             onClick={handleClose}
             disabled={pending}
-            className={cn(secondaryButtonClass(), 'cursor-pointer px-5 py-2.5')}
+            className={cn(secondaryButtonClass(), 'px-5 py-2.5')}
           >
             Hủy
           </button>
@@ -74,7 +77,7 @@ export default function ContentDialog({
             disabled={canSubmit === false || pending}
             className={cn(
               primaryButtonClass(),
-              'cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
+              'rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
             )}
           >
             {pending && <span>{pendingLabel}</span>}

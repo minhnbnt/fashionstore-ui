@@ -24,6 +24,13 @@ import { apiErrorMessage, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapt
 import { notify } from '@/lib/notifications'
 import { productItem, stockMovementItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
+import {
+  badgeToneClass,
+  cn,
+  PANEL_CLASS,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from '@/lib/ui/styles'
 
 import type { ProductItem, StockMovementItem } from '@/types/seller'
 import type { InventoryItemResponse } from '@generated/model/inventoryItemResponse'
@@ -227,20 +234,35 @@ export default function SellerInventoryTab({ shopId }: Props) {
   function renderStockState(stock: number, threshold: number, isLow: boolean) {
     if (stock === 0) {
       return (
-        <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-bold text-red-600 dark:bg-red-950/40 dark:text-red-400">
+        <span
+          className={cn(
+            'rounded-full px-2.5 py-0.5 text-[11px] font-bold',
+            badgeToneClass('danger'),
+          )}
+        >
           Hết hàng
         </span>
       )
     }
     if (isLow) {
       return (
-        <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
+        <span
+          className={cn(
+            'rounded-full px-2.5 py-0.5 text-[11px] font-bold',
+            badgeToneClass('warning'),
+          )}
+        >
           Tồn kho thấp ({stock}/{threshold})
         </span>
       )
     }
     return (
-      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+      <span
+        className={cn(
+          'rounded-full px-2.5 py-0.5 text-[11px] font-bold',
+          badgeToneClass('success'),
+        )}
+      >
         Đủ hàng ({stock})
       </span>
     )
@@ -250,12 +272,12 @@ export default function SellerInventoryTab({ shopId }: Props) {
     return (
       <td className="py-2.5 text-center font-bold">
         {m.changeQty > 0 && (
-          <span className="inline-flex items-center text-emerald-600">
+          <span className="inline-flex items-center text-emerald-700 dark:text-emerald-300">
             <ArrowUp size={12} weight="bold" />+{m.changeQty}
           </span>
         )}
         {m.changeQty <= 0 && (
-          <span className="inline-flex items-center text-red-600">
+          <span className="inline-flex items-center text-rose-600 dark:text-rose-400">
             <ArrowDown size={12} weight="bold" />
             {m.changeQty}
           </span>
@@ -298,7 +320,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
       )}
 
       {/* Bảng tồn kho */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+      <div className={PANEL_CLASS}>
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 pb-2 md:border-b-0 md:pb-0 dark:border-white/10">
             {[
@@ -384,7 +406,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
                           src={v.productImage}
                           alt={v.productName ?? ''}
                           onError={handleImageError}
-                          className="h-9 w-9 rounded-lg border border-zinc-200 object-cover dark:border-white/10"
+                          className="h-9 w-9 rounded-2xl border border-zinc-200 object-cover dark:border-white/10"
                         />
                         <span className="max-w-[220px] truncate font-bold text-zinc-900 dark:text-white">
                           {v.productName}
@@ -417,7 +439,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
                           onClick={function () {
                             handleOpenAdjust(v)
                           }}
-                          className="inline-flex items-center gap-1 rounded-xl border border-zinc-200 px-3 py-1.5 text-[11px] font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300"
+                          className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-zinc-300 px-3 py-1.5 text-[11px] font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
                         >
                           <PencilSimple size={13} weight="bold" />
                           Điều chỉnh
@@ -428,7 +450,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
                         onClick={function () {
                           setHistoryVariant(v)
                         }}
-                        className="ml-1.5 inline-flex items-center gap-1 rounded-xl border border-zinc-200 px-3 py-1.5 text-[11px] font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300"
+                        className="ml-1.5 inline-flex cursor-pointer items-center gap-1 rounded-full border border-zinc-300 px-3 py-1.5 text-[11px] font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
                       >
                         <ClockCounterClockwise size={13} weight="bold" />
                         Lịch sử
@@ -487,7 +509,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
                 onChange={function (e) {
                   setAdjustReason(e.target.value as AdjustReason)
                 }}
-                className="mt-1 w-full rounded-full border border-zinc-300 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
               >
                 <option value="RESTOCK">Nhập thêm hàng vào kho (RESTOCK)</option>
                 <option value="DAMAGE">Xuất bỏ hàng lỗi / hư hỏng (DAMAGE)</option>
@@ -522,14 +544,14 @@ export default function SellerInventoryTab({ shopId }: Props) {
               onClick={function () {
                 setShowAdjustModal(false)
               }}
-              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+              className={cn(secondaryButtonClass(), 'text-xs')}
             >
               Hủy bỏ
             </button>
             <button
               type="button"
               onClick={handleConfirmAdjust}
-              className="btn-primary rounded-2xl px-5 py-2 text-xs font-bold"
+              className={cn(primaryButtonClass(), 'rounded-full px-5 py-2 text-xs font-bold')}
             >
               Xác nhận lưu vào sổ kho
             </button>
@@ -552,7 +574,9 @@ export default function SellerInventoryTab({ shopId }: Props) {
 
           <div className="mt-4 max-h-[420px] overflow-y-auto">
             {movementsError !== '' && (
-              <p className="py-4 text-center text-sm text-red-600">{movementsError}</p>
+              <p className="py-4 text-center text-sm text-rose-600 dark:text-rose-400">
+                {movementsError}
+              </p>
             )}
             {movementsQuery.isPending && (
               <p className="py-4 text-center text-sm text-zinc-500">Đang tải nhật ký…</p>
@@ -574,7 +598,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
                       <tr key={m.id}>
                         <td className="py-2.5 text-zinc-500">{m.createdAt}</td>
                         <td className="py-2.5">
-                          <span className="rounded-lg bg-zinc-100 px-2 py-0.5 font-semibold text-zinc-700 dark:bg-white/10 dark:text-zinc-300">
+                          <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-semibold text-zinc-700 dark:bg-white/10 dark:text-zinc-300">
                             {m.reason}
                           </span>
                         </td>
@@ -607,7 +631,7 @@ export default function SellerInventoryTab({ shopId }: Props) {
               onClick={function () {
                 setHistoryVariant(null)
               }}
-              className="rounded-2xl border border-zinc-200 px-5 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+              className={cn(secondaryButtonClass(), 'px-5 text-xs')}
             >
               Đóng
             </button>

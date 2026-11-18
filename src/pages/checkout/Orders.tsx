@@ -25,6 +25,7 @@ import {
 } from '@generated/endpoints/reviews/reviews'
 import {
   ArrowCounterClockwise,
+  ChatCircleDots,
   CheckCircle,
   MagnifyingGlass,
   Package,
@@ -34,6 +35,7 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import AccountLayout from '@/components/account/AccountLayout'
 import CancelOrderModal from '@/components/order/CancelOrderModal'
 import OrderProgressStepper from '@/components/order/OrderProgressStepper'
 import ReorderResultModal from '@/components/order/ReorderResultModal'
@@ -185,6 +187,8 @@ export default function Orders() {
   } | null>(null)
   const [reorderResult, setReorderResult] = useState<ReorderResponse | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [pendingReceiptOrderId, setPendingReceiptOrderId] = useState<string | null>(null)
+  const [pendingReorderOrderId, setPendingReorderOrderId] = useState<string | null>(null)
 
   const ordersQuery = useMine3({ query: { enabled: isLoggedIn } })
   const returnsQuery = useMyReturns({ query: { enabled: isLoggedIn } })
@@ -341,6 +345,7 @@ export default function Orders() {
       return
     }
     const orderId = order.id
+    setPendingReceiptOrderId(orderId)
     confirmReceiptMutation.mutate(
       { id: orderId },
       {
@@ -351,7 +356,21 @@ export default function Orders() {
         onError: (err) => {
           notify.fromError(err, 'confirmReceipt', 'Không thể xác nhận nhận hàng')
         },
+        onSettled: () => {
+          setPendingReceiptOrderId(null)
+        },
       },
+    )
+  }
+
+  function handleOpenShopChat(order: OrderResponse) {
+    if (!order.shopId) {
+      return
+    }
+    window.dispatchEvent(
+      new CustomEvent('fashionstore:open-chat', {
+        detail: { shopId: order.shopId, shopName: order.shopName },
+      }),
     )
   }
 
@@ -454,6 +473,7 @@ export default function Orders() {
     if (!order.id) {
       return
     }
+    setPendingReorderOrderId(order.id)
     try {
       const response = await reorderMutation.mutateAsync({ orderId: order.id })
       const data = takeData(response)
@@ -469,36 +489,52 @@ export default function Orders() {
       setReorderResult(data)
     } catch (err) {
       notify.fromError(err, 'reorder', 'Không thể mua lại đơn hàng')
+    } finally {
+      setPendingReorderOrderId(null)
     }
   }
 
+  const breadcrumbs = [
+    { label: 'Trang chủ', to: '/' },
+    { label: 'Tài khoản', to: '/account' },
+    { label: 'Đơn hàng của tôi' },
+  ]
+
   if (sessionPending) {
     return (
-      <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
+      <AccountLayout breadcrumbs={breadcrumbs}>
         <StatePanel title="Đang tải đơn hàng" description="Vui lòng đợi trong giây lát…" />
-      </main>
+      </AccountLayout>
     )
   }
 
   if (!isLoggedIn) {
     return (
-      <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
+      <AccountLayout breadcrumbs={breadcrumbs}>
         <StatePanel
           title="Bạn chưa đăng nhập"
           description="Đăng nhập để theo dõi tiến trình và lịch sử đơn hàng của bạn."
+          action={
+            <Link
+              to="/login"
+              className="btn-primary mt-5 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold"
+            >
+              Đăng nhập ngay
+            </Link>
+          }
         />
-      </main>
+      </AccountLayout>
     )
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
+    <AccountLayout breadcrumbs={breadcrumbs}>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-bold tracking-widest text-blue-600 uppercase dark:text-sky-400">
             Tài khoản cá nhân
           </p>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tighter text-zinc-900 dark:text-white">
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-zinc-900 sm:text-3xl dark:text-white">
             Đơn hàng của tôi
           </h1>
         </div>
@@ -519,19 +555,23 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* 7 tabs dong bo 1-1 voi shop */}
-      <div className="mb-6 flex flex-wrap gap-2 pb-2">
+      {/* 7 tabs dong bo 1-1 voi shop — single-line horizontal scroll on mobile */}
+      <nav
+        aria-label="Lọc theo trạng thái đơn hàng"
+        className="mb-6 flex flex-nowrap gap-2 overflow-x-auto pb-2 md:flex-wrap"
+      >
         {BUYER_ORDER_TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
+            aria-pressed={activeTab === tab.key}
             onClick={() => selectTab(tab.key)}
             className={tabButtonClass(activeTab === tab.key)}
           >
             {tab.label} ({tabCounts[tab.key]})
           </button>
         ))}
-      </div>
+      </nav>
 
       {ordersQuery.isLoading && (
         <StatePanel title="Đang tải đơn hàng" description="Danh sách đơn đang được cập nhật…" />
@@ -701,6 +741,17 @@ export default function Orders() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  {Boolean(order.shopId) && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenShopChat(order)}
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50/80 px-3.5 py-1.5 text-xs font-bold text-blue-700 transition hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25"
+                    >
+                      <ChatCircleDots size={14} weight="bold" />
+                      <span>Chat với Shop</span>
+                    </button>
+                  )}
+
                   <Link
                     to={`/account/orders/${order.id}`}
                     className="inline-flex items-center gap-1.5 rounded-full border border-zinc-300 px-3.5 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
@@ -713,7 +764,7 @@ export default function Orders() {
                     <button
                       type="button"
                       onClick={() => setCancelTarget(order)}
-                      className="rounded-full border border-red-300 px-3.5 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/15"
+                      className="cursor-pointer rounded-full border border-rose-300 px-3.5 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/15"
                     >
                       Hủy đơn hàng
                     </button>
@@ -722,9 +773,11 @@ export default function Orders() {
                   {showReceiptBtn && (
                     <button
                       type="button"
-                      disabled={confirmReceiptMutation.isPending}
+                      disabled={
+                        confirmReceiptMutation.isPending && pendingReceiptOrderId === order.id
+                      }
                       onClick={() => handleConfirmReceipt(order)}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <CheckCircle size={14} weight="bold" />
                       <span>Đã nhận hàng</span>
@@ -735,7 +788,7 @@ export default function Orders() {
                     <button
                       type="button"
                       onClick={() => setReturnTarget(order)}
-                      className="rounded-full border border-zinc-300 px-3.5 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+                      className="cursor-pointer rounded-full border border-zinc-300 px-3.5 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
                     >
                       Yêu cầu đổi trả
                     </button>
@@ -746,7 +799,7 @@ export default function Orders() {
                       type="button"
                       disabled={reviewBtn.disabled}
                       onClick={() => openReviewForOrder(order)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 px-3.5 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-amber-400/30 dark:text-amber-300 dark:hover:bg-amber-500/15"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-300 px-3.5 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-amber-400/30 dark:text-amber-300 dark:hover:bg-amber-500/15"
                     >
                       <Star size={14} weight="bold" />
                       <span>{reviewBtn.label}</span>
@@ -756,9 +809,9 @@ export default function Orders() {
                   {canReorder && (
                     <button
                       type="button"
-                      disabled={reorderMutation.isPending}
+                      disabled={reorderMutation.isPending && pendingReorderOrderId === order.id}
                       onClick={() => void handleReorder(order)}
-                      className="btn-primary inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold disabled:opacity-50"
+                      className="btn-primary inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <ArrowCounterClockwise size={14} weight="bold" />
                       <span>Mua lại</span>
@@ -845,6 +898,6 @@ export default function Orders() {
           void navigate('/cart')
         }}
       />
-    </main>
+    </AccountLayout>
   )
 }

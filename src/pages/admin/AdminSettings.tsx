@@ -11,8 +11,6 @@ import { ListConfigAuditEntity } from '@generated/model/listConfigAuditEntity'
 import {
   ArrowCounterClockwise,
   ArrowRight,
-  CaretLeft,
-  CaretRight,
   ClockCounterClockwise,
   FloppyDisk,
   Money,
@@ -22,6 +20,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import AdminShell from '@/components/admin/AdminShell'
+import Pagination from '@/components/search/Pagination'
 import EmptyState from '@/components/ui/EmptyState'
 import { Skeleton, TableRowsSkeleton } from '@/components/ui/Skeleton'
 import StatePanel from '@/components/ui/StatePanel'
@@ -70,6 +69,8 @@ interface SettingsFormState {
   codMinTotal: string
   codMaxTotal: string
 }
+
+type SettingsFieldErrors = Partial<Record<keyof SettingsFormState, string>>
 
 const EMPTY_FORM: SettingsFormState = {
   siteName: '',
@@ -218,6 +219,17 @@ function formatAuditValue(raw: string | null | undefined): string {
   return trimmed
 }
 
+function fieldInputClass(hasError: boolean, extra?: string): string {
+  if (hasError) {
+    return cn(
+      INPUT_CLASS,
+      'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 dark:border-rose-400 dark:focus:border-rose-400',
+      extra,
+    )
+  }
+  return cn(INPUT_CLASS, extra)
+}
+
 function SettingsFormSkeleton() {
   return (
     <div className="space-y-5" aria-busy="true" aria-label="Đang tải cấu hình hệ thống">
@@ -225,7 +237,7 @@ function SettingsFormSkeleton() {
         return (
           <div key={sectionIdx} className={PANEL_CLASS}>
             <div className="mb-5 flex items-center gap-3">
-              <Skeleton className="h-9 w-9 rounded-xl" />
+              <Skeleton className="h-9 w-9 rounded-2xl" />
               <div className="space-y-2">
                 <Skeleton className="h-5 w-48" />
                 <Skeleton className="h-3.5 w-72 max-w-full" />
@@ -254,6 +266,7 @@ export default function AdminSettings() {
   const updateMutation = useUpdateSystemSettings()
 
   const [draft, setDraft] = useState<SettingsFormState | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<SettingsFieldErrors>({})
   const [entityFilter, setEntityFilter] = useState<EntityFilterValue>('ALL')
   const [auditPage, setAuditPage] = useState(0)
 
@@ -292,89 +305,94 @@ export default function AdminSettings() {
       ...form,
       [field]: value,
     })
+    if (fieldErrors[field] !== undefined) {
+      setFieldErrors(function (prev) {
+        const next = { ...prev }
+        delete next[field]
+        return next
+      })
+    }
   }
 
   function handleReset() {
     setDraft(null)
+    setFieldErrors({})
   }
 
   function submitSettings() {
     const trimmedSiteName = form.siteName.trim()
     if (trimmedSiteName === '') {
-      notify.warning('Thiếu tên sàn', 'Vui lòng nhập tên sàn hiển thị trước khi lưu.')
+      const msg = 'Vui lòng nhập tên sàn hiển thị trước khi lưu.'
+      setFieldErrors({ siteName: msg })
+      notify.warning('Thiếu tên sàn', msg)
       return
     }
 
     const trimmedEmail = form.supportEmail.trim()
     if (trimmedEmail !== '' && trimmedEmail.includes('@') === false) {
-      notify.warning(
-        'Email hỗ trợ không hợp lệ',
-        'Vui lòng nhập địa chỉ email có chứa ký tự @ hoặc để trống.',
-      )
+      const msg = 'Vui lòng nhập địa chỉ email có chứa ký tự @ hoặc để trống.'
+      setFieldErrors({ supportEmail: msg })
+      notify.warning('Email hỗ trợ không hợp lệ', msg)
       return
     }
 
     const freeShippingThreshold = parseStrictInt(form.freeShippingThreshold)
     if (freeShippingThreshold === null || freeShippingThreshold < 0) {
-      notify.warning(
-        'Ngưỡng freeship không hợp lệ',
-        'Ngưỡng miễn phí vận chuyển phải là số nguyên từ 0 trở lên.',
-      )
+      const msg = 'Ngưỡng miễn phí vận chuyển phải là số nguyên từ 0 trở lên.'
+      setFieldErrors({ freeShippingThreshold: msg })
+      notify.warning('Ngưỡng freeship không hợp lệ', msg)
       return
     }
 
     const baseItems = parseStrictInt(form.baseItems)
     if (baseItems === null || baseItems < 1 || baseItems > 20) {
-      notify.warning(
-        'Số sản phẩm phí cơ bản không hợp lệ',
-        'Giá trị phải là số nguyên trong khoảng từ 1 đến 20.',
-      )
+      const msg = 'Giá trị phải là số nguyên trong khoảng từ 1 đến 20.'
+      setFieldErrors({ baseItems: msg })
+      notify.warning('Số sản phẩm phí cơ bản không hợp lệ', msg)
       return
     }
 
     const paymentHoldMinutes = parseStrictInt(form.paymentHoldMinutes)
     if (paymentHoldMinutes === null || paymentHoldMinutes < 5 || paymentHoldMinutes > 1440) {
-      notify.warning(
-        'Thời gian giữ đơn không hợp lệ',
-        'Số phút giữ đơn chờ thanh toán phải từ 5 đến 1440 phút.',
-      )
+      const msg = 'Số phút giữ đơn chờ thanh toán phải từ 5 đến 1440 phút.'
+      setFieldErrors({ paymentHoldMinutes: msg })
+      notify.warning('Thời gian giữ đơn không hợp lệ', msg)
       return
     }
 
     const autoCompleteDays = parseStrictInt(form.autoCompleteDays)
     if (autoCompleteDays === null || autoCompleteDays < 1 || autoCompleteDays > 30) {
-      notify.warning(
-        'Thời gian tự hoàn tất không hợp lệ',
-        'Số ngày tự hoàn tất đơn phải từ 1 đến 30 ngày.',
-      )
+      const msg = 'Số ngày tự hoàn tất đơn phải từ 1 đến 30 ngày.'
+      setFieldErrors({ autoCompleteDays: msg })
+      notify.warning('Thời gian tự hoàn tất không hợp lệ', msg)
       return
     }
 
     const codMinTotal = parseStrictInt(form.codMinTotal)
     if (codMinTotal === null || codMinTotal < 0) {
-      notify.warning(
-        'Tổng đơn COD tối thiểu không hợp lệ',
-        'Tổng đơn tối thiểu cho COD phải là số nguyên từ 0 trở lên.',
-      )
+      const msg = 'Tổng đơn tối thiểu cho COD phải là số nguyên từ 0 trở lên.'
+      setFieldErrors({ codMinTotal: msg })
+      notify.warning('Tổng đơn COD tối thiểu không hợp lệ', msg)
       return
     }
 
     const codMaxTotal = parseStrictInt(form.codMaxTotal)
     if (codMaxTotal === null || codMaxTotal < 0) {
-      notify.warning(
-        'Tổng đơn COD tối đa không hợp lệ',
-        'Tổng đơn tối đa cho COD phải là số nguyên từ 0 trở lên (0 = không giới hạn).',
-      )
+      const msg = 'Tổng đơn tối đa cho COD phải là số nguyên từ 0 trở lên (0 = không giới hạn).'
+      setFieldErrors({ codMaxTotal: msg })
+      notify.warning('Tổng đơn COD tối đa không hợp lệ', msg)
       return
     }
 
     if (codMaxTotal > 0 && codMaxTotal < codMinTotal) {
-      notify.warning(
-        'Giới hạn COD không hợp lệ',
-        'Tổng đơn COD tối đa phải lớn hơn hoặc bằng mức tối thiểu (hoặc đặt 0 để không giới hạn).',
-      )
+      const msg =
+        'Tổng đơn COD tối đa phải lớn hơn hoặc bằng mức tối thiểu (hoặc đặt 0 để không giới hạn).'
+      setFieldErrors({ codMaxTotal: msg })
+      notify.warning('Giới hạn COD không hợp lệ', msg)
       return
     }
+
+    setFieldErrors({})
 
     const payload: UpdateSettingsRequest = {
       siteName: trimmedSiteName,
@@ -402,6 +420,7 @@ export default function AdminSettings() {
       )
       .then(function () {
         setDraft(null)
+        setFieldErrors({})
         void queryClient.invalidateQueries({ queryKey: getGetSystemSettingsQueryKey() })
         void queryClient.invalidateQueries({ queryKey: getListConfigAuditQueryKey() })
       })
@@ -444,7 +463,7 @@ export default function AdminSettings() {
           <button
             type="button"
             onClick={submitSettings}
-            disabled={updateMutation.isPending || formReady === false}
+            disabled={isDirty === false || updateMutation.isPending || formReady === false}
             className={cn(
               primaryButtonClass(),
               'inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
@@ -513,12 +532,21 @@ export default function AdminSettings() {
                     type="text"
                     maxLength={100}
                     value={form.siteName}
+                    aria-invalid={fieldErrors.siteName !== undefined}
                     onChange={function (event) {
                       updateField('siteName', event.target.value)
                     }}
                     placeholder="DHMQ"
-                    className={INPUT_CLASS}
+                    className={fieldInputClass(fieldErrors.siteName !== undefined)}
                   />
+                  {fieldErrors.siteName !== undefined && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                    >
+                      {fieldErrors.siteName}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -546,12 +574,21 @@ export default function AdminSettings() {
                     id="setting-support-email"
                     type="email"
                     value={form.supportEmail}
+                    aria-invalid={fieldErrors.supportEmail !== undefined}
                     onChange={function (event) {
                       updateField('supportEmail', event.target.value)
                     }}
                     placeholder="support@dhmq.vn"
-                    className={INPUT_CLASS}
+                    className={fieldInputClass(fieldErrors.supportEmail !== undefined)}
                   />
+                  {fieldErrors.supportEmail !== undefined && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                    >
+                      {fieldErrors.supportEmail}
+                    </p>
+                  )}
                 </div>
               </div>
             </section>
@@ -584,16 +621,29 @@ export default function AdminSettings() {
                     min={0}
                     step={1000}
                     value={form.freeShippingThreshold}
+                    aria-invalid={fieldErrors.freeShippingThreshold !== undefined}
                     onChange={function (event) {
                       updateField('freeShippingThreshold', event.target.value)
                     }}
-                    className={cn(INPUT_CLASS, 'tabular-nums')}
+                    className={fieldInputClass(
+                      fieldErrors.freeShippingThreshold !== undefined,
+                      'tabular-nums',
+                    )}
                   />
-                  {freeShippingPreview !== null && (
-                    <p className="mt-1.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
-                      {freeShippingPreview}
+                  {fieldErrors.freeShippingThreshold !== undefined && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                    >
+                      {fieldErrors.freeShippingThreshold}
                     </p>
                   )}
+                  {fieldErrors.freeShippingThreshold === undefined &&
+                    freeShippingPreview !== null && (
+                      <p className="mt-1.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                        {freeShippingPreview}
+                      </p>
+                    )}
                 </div>
 
                 <div>
@@ -606,14 +656,25 @@ export default function AdminSettings() {
                     min={1}
                     max={20}
                     value={form.baseItems}
+                    aria-invalid={fieldErrors.baseItems !== undefined}
                     onChange={function (event) {
                       updateField('baseItems', event.target.value)
                     }}
-                    className={cn(INPUT_CLASS, 'tabular-nums')}
+                    className={fieldInputClass(fieldErrors.baseItems !== undefined, 'tabular-nums')}
                   />
-                  <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                    Cho phép từ 1 đến 20 sản phẩm
-                  </p>
+                  {fieldErrors.baseItems !== undefined && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                    >
+                      {fieldErrors.baseItems}
+                    </p>
+                  )}
+                  {fieldErrors.baseItems === undefined && (
+                    <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                      Cho phép từ 1 đến 20 sản phẩm
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -626,14 +687,28 @@ export default function AdminSettings() {
                     min={5}
                     max={1440}
                     value={form.paymentHoldMinutes}
+                    aria-invalid={fieldErrors.paymentHoldMinutes !== undefined}
                     onChange={function (event) {
                       updateField('paymentHoldMinutes', event.target.value)
                     }}
-                    className={cn(INPUT_CLASS, 'tabular-nums')}
+                    className={fieldInputClass(
+                      fieldErrors.paymentHoldMinutes !== undefined,
+                      'tabular-nums',
+                    )}
                   />
-                  <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                    Từ 5 đến 1.440 phút (tối đa 24 giờ)
-                  </p>
+                  {fieldErrors.paymentHoldMinutes !== undefined && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                    >
+                      {fieldErrors.paymentHoldMinutes}
+                    </p>
+                  )}
+                  {fieldErrors.paymentHoldMinutes === undefined && (
+                    <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                      Từ 5 đến 1.440 phút (tối đa 24 giờ)
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -646,14 +721,28 @@ export default function AdminSettings() {
                     min={1}
                     max={30}
                     value={form.autoCompleteDays}
+                    aria-invalid={fieldErrors.autoCompleteDays !== undefined}
                     onChange={function (event) {
                       updateField('autoCompleteDays', event.target.value)
                     }}
-                    className={cn(INPUT_CLASS, 'tabular-nums')}
+                    className={fieldInputClass(
+                      fieldErrors.autoCompleteDays !== undefined,
+                      'tabular-nums',
+                    )}
                   />
-                  <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                    Từ 1 đến 30 ngày sau khi giao hàng
-                  </p>
+                  {fieldErrors.autoCompleteDays !== undefined && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                    >
+                      {fieldErrors.autoCompleteDays}
+                    </p>
+                  )}
+                  {fieldErrors.autoCompleteDays === undefined && (
+                    <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                      Từ 1 đến 30 ngày sau khi giao hàng
+                    </p>
+                  )}
                 </div>
               </div>
             </section>
@@ -686,12 +775,24 @@ export default function AdminSettings() {
                     min={0}
                     step={1000}
                     value={form.codMinTotal}
+                    aria-invalid={fieldErrors.codMinTotal !== undefined}
                     onChange={function (event) {
                       updateField('codMinTotal', event.target.value)
                     }}
-                    className={cn(INPUT_CLASS, 'tabular-nums')}
+                    className={fieldInputClass(
+                      fieldErrors.codMinTotal !== undefined,
+                      'tabular-nums',
+                    )}
                   />
-                  {codMinPreview !== null && (
+                  {fieldErrors.codMinTotal !== undefined && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                    >
+                      {fieldErrors.codMinTotal}
+                    </p>
+                  )}
+                  {fieldErrors.codMinTotal === undefined && codMinPreview !== null && (
                     <p className="mt-1.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
                       {codMinPreview}
                     </p>
@@ -708,15 +809,29 @@ export default function AdminSettings() {
                     min={0}
                     step={1000}
                     value={form.codMaxTotal}
+                    aria-invalid={fieldErrors.codMaxTotal !== undefined}
                     onChange={function (event) {
                       updateField('codMaxTotal', event.target.value)
                     }}
-                    className={cn(INPUT_CLASS, 'tabular-nums')}
+                    className={fieldInputClass(
+                      fieldErrors.codMaxTotal !== undefined,
+                      'tabular-nums',
+                    )}
                   />
-                  <p className="mt-1.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
-                    0 = không giới hạn
-                    {codMaxPreview !== null && ` · ${codMaxPreview}`}
-                  </p>
+                  {fieldErrors.codMaxTotal !== undefined && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                    >
+                      {fieldErrors.codMaxTotal}
+                    </p>
+                  )}
+                  {fieldErrors.codMaxTotal === undefined && (
+                    <p className="mt-1.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                      0 = không giới hạn
+                      {codMaxPreview !== null && ` · ${codMaxPreview}`}
+                    </p>
+                  )}
                 </div>
               </div>
             </section>
@@ -892,7 +1007,7 @@ export default function AdminSettings() {
                     return (
                       <article
                         key={cardKey}
-                        className="rounded-2xl border border-zinc-200/80 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5"
+                        className="rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-white/10 dark:bg-white/5"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className={actionBadgeClass(item.action)}>
@@ -929,42 +1044,19 @@ export default function AdminSettings() {
                   })}
                 </div>
 
-                {/* Pagination */}
-                <div className="mt-5 flex flex-col items-center justify-between gap-3 border-t border-zinc-200/80 pt-4 sm:flex-row dark:border-white/10">
+                {/* Summary + Shared Pagination */}
+                <div className="mt-5 border-t border-zinc-200/80 pt-4 dark:border-white/10">
                   <p className="text-xs font-medium text-zinc-500 tabular-nums dark:text-zinc-400">
-                    Tổng {auditTotal} bản ghi · Trang {auditPage + 1} / {totalAuditPages}
+                    Tổng {auditTotal.toLocaleString('vi-VN')} bản ghi · Trang {auditPage + 1} /{' '}
+                    {totalAuditPages}
                   </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={auditPage <= 0}
-                      onClick={function () {
-                        setAuditPage(function (prev) {
-                          if (prev <= 0) {
-                            return 0
-                          }
-                          return prev - 1
-                        })
-                      }}
-                      className={secondaryButtonClass()}
-                    >
-                      <CaretLeft size={15} weight="bold" />
-                      <span>Trước</span>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={auditPage + 1 >= totalAuditPages}
-                      onClick={function () {
-                        setAuditPage(function (prev) {
-                          return prev + 1
-                        })
-                      }}
-                      className={secondaryButtonClass()}
-                    >
-                      <span>Sau</span>
-                      <CaretRight size={15} weight="bold" />
-                    </button>
-                  </div>
+                  <Pagination
+                    page={auditPage}
+                    totalPages={totalAuditPages}
+                    onPage={function (nextPage) {
+                      setAuditPage(nextPage)
+                    }}
+                  />
                 </div>
               </>
             )}

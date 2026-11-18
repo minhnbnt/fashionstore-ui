@@ -38,7 +38,7 @@ export default function ChatProductPickerModal({
   })
 
   return (
-    <Modal title={title} onClose={onClose} widthClass="max-w-lg">
+    <Modal title={title} onClose={onClose} widthClass="max-w-lg" closeOnBackdrop={true}>
       <div className="mt-3">
         <div className={CHAT_SEARCH_PILL_CLASS}>
           <MagnifyingGlass size={14} weight="bold" className="shrink-0 text-zinc-400" />
@@ -48,6 +48,7 @@ export default function ChatProductPickerModal({
             onChange={function (e) {
               setSearchQuery(e.target.value)
             }}
+            aria-label="Tìm sản phẩm của shop"
             placeholder="Tìm sản phẩm của shop..."
             className="w-full bg-transparent outline-none placeholder:text-zinc-400 dark:text-white"
           />

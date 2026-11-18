@@ -32,6 +32,13 @@ import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { uploadImage } from '@/lib/api/uploadImage'
 import { notify } from '@/lib/notifications'
+import {
+  cn,
+  FOCUS_RING_CLASS,
+  PANEL_CLASS,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from '@/lib/ui/styles'
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
   const target = event.currentTarget
@@ -150,9 +157,9 @@ function newVariantRow(
     sku,
     size,
     color,
-    price: 199000,
-    compareAtPrice: 250000,
-    stockQuantity: 50,
+    price: 0,
+    compareAtPrice: null,
+    stockQuantity: 0,
     isDefault,
     imageUploadId,
   }
@@ -168,9 +175,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     return Math.random().toString(36).substring(2, 6)
   })
   const [categoryId, setCategoryId] = useState('')
-  const [description, setDescription] = useState(
-    '### Đặc điểm nổi bật:\n- Chất liệu cao cấp, thoáng mát và co giãn nhẹ.\n- Phom dáng hiện đại, đường may tỉ mỉ, tôn dáng người mặc.\n- Phù hợp đi làm, đi chơi và dạo phố năng động.\n\n### Hướng dẫn giặt & bảo quản:\n- Giặt máy ở chế độ nhẹ nhàng với nước lạnh.\n- Không dùng chất tẩy rửa mạnh.\n- Phơi trong bóng râm, tránh ánh nắng trực tiếp.',
-  )
+  const [description, setDescription] = useState('')
 
   // 2. Media — item = {uploadId, url}: uploadId gửi request, url (object URL) để xem trước
   const [images, setImages] = useState<ProductMediaItem[]>([])
@@ -178,40 +183,32 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
   const [tryOnEnabled, setTryOnEnabled] = useState(false)
   const [garment, setGarment] = useState<ProductMediaValue | null>(null)
 
-  // 3. Classifications (Màu sắc & Kích cỡ), Bulk Apply & Variants
-  const [colors, setColors] = useState<string[]>(['Trắng', 'Đen'])
+  // 3. Classifications (Màu sắc & Kích cỡ), Bulk Apply & Variants — đồng bộ 1:1 ngay từ đầu
+  const [colors, setColors] = useState<string[]>(['Trắng'])
   const [customColor, setCustomColor] = useState('')
   const [colorSizesMap, setColorSizesMap] = useState<Record<string, string[]>>({
-    Trắng: ['M', 'L'],
-    Đen: ['M', 'L'],
+    Trắng: ['M'],
   })
   const [customColorSizeInputs, setCustomColorSizeInputs] = useState<Record<string, string>>({})
   const [sizeViewMode, setSizeViewMode] = useState<'by_color' | 'grid'>('by_color')
 
   // Bulk Apply state
   const [bulkTarget, setBulkTarget] = useState<string>('ALL')
-  const [bulkPrice, setBulkPrice] = useState('199.000')
-  const [bulkCompareAtPrice, setBulkCompareAtPrice] = useState('250.000')
-  const [bulkStock, setBulkStock] = useState('50')
+  const [bulkPrice, setBulkPrice] = useState('')
+  const [bulkCompareAtPrice, setBulkCompareAtPrice] = useState('')
+  const [bulkStock, setBulkStock] = useState('')
 
   const [variants, setVariants] = useState<VariantRow[]>(function () {
-    return [
-      newVariantRow(generateVariantSku('SP', 'Trắng', 'M'), 'M', 'Trắng', true),
-      newVariantRow(generateVariantSku('SP', 'Đen', 'L'), 'L', 'Đen', false),
-    ]
+    return [newVariantRow(generateVariantSku('SP', 'Trắng', 'M'), 'M', 'Trắng', true)]
   })
   const [colorImages, setColorImages] = useState<Record<string, ProductMediaItem>>({})
   const [uploadingColor, setUploadingColor] = useState<string | null>(null)
 
   // 4. Additional Info & Shipping
-  const [material, setMaterial] = useState('100% Cotton Organic')
-  const [origin, setOrigin] = useState('Việt Nam')
-  const [careInstructions, setCareInstructions] = useState(
-    'Giặt máy nước lạnh, không dùng thuốc tẩy clo, là ủi ở nhiệt độ trung bình dưới 150°C.',
-  )
-  const [sizeGuide, setSizeGuide] = useState(
-    'Size M: 1m60 - 1m68 (52 - 60kg)\nSize L: 1m68 - 1m75 (60 - 68kg)\nSize XL: 1m75 - 1m82 (68 - 76kg)',
-  )
+  const [material, setMaterial] = useState('')
+  const [origin, setOrigin] = useState('')
+  const [careInstructions, setCareInstructions] = useState('')
+  const [sizeGuide, setSizeGuide] = useState('')
   const [weightGrams, setWeightGrams] = useState<number>(250)
   const [lengthCm, setLengthCm] = useState<number>(25)
   const [widthCm, setWidthCm] = useState<number>(18)
@@ -330,9 +327,9 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             skuPrefix = name
           }
           const sku = generateVariantSku(skuPrefix, c, s)
-          const samplePrice = parseNumberFromDots(bulkPrice) ?? 199000
-          const sampleCompareAtPrice = parseNumberFromDots(bulkCompareAtPrice) ?? 250000
-          const sampleStock = parseNumberFromDots(bulkStock) ?? 50
+          const samplePrice = parseNumberFromDots(bulkPrice) ?? 0
+          const sampleCompareAtPrice = parseNumberFromDots(bulkCompareAtPrice)
+          const sampleStock = parseNumberFromDots(bulkStock) ?? 0
           const colorImg = colorImages[c] ?? null
 
           nextVariants.push({
@@ -651,11 +648,11 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         return
       }
       if (v.price <= 0) {
-        reportValidationError('Giá bán phải lớn hơn 0 ₫.')
+        reportValidationError(`Giá bán của biến thể SKU "${v.sku}" phải lớn hơn 0 ₫.`)
         return
       }
-      if (v.compareAtPrice !== null && v.compareAtPrice < 0) {
-        reportValidationError('Giá gốc không được âm.')
+      if (v.compareAtPrice !== null && v.compareAtPrice < v.price) {
+        reportValidationError(`Giá gốc của biến thể SKU "${v.sku}" không được nhỏ hơn giá bán.`)
         return
       }
       if (v.stockQuantity < 0) {
@@ -717,19 +714,19 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header Sticky Navigation */}
+      {/* Header Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200/80 pb-4 dark:border-white/10">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 shadow-xs transition hover:bg-zinc-50 dark:border-white/10 dark:bg-[#11182a] dark:text-zinc-300 dark:hover:bg-white/10"
+            className={cn(secondaryButtonClass(), 'px-4 py-2 text-xs')}
           >
             <ArrowLeft size={16} weight="bold" />
             Quay lại
           </button>
           <div>
-            <h2 className="text-base font-extrabold tracking-tight text-zinc-900 dark:text-white">
+            <h2 className="text-base font-extrabold tracking-tight text-[#17203a] dark:text-white">
               Thêm sản phẩm mới
             </h2>
           </div>
@@ -739,7 +736,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           <button
             type="button"
             onClick={onBack}
-            className="rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:bg-[#11182a] dark:text-zinc-300"
+            className={cn(secondaryButtonClass(), 'px-4 py-2 text-xs')}
           >
             Hủy
           </button>
@@ -747,7 +744,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             type="button"
             disabled={createProductMutation.isPending}
             onClick={handleSubmit}
-            className="btn-primary flex items-center gap-2 rounded-2xl px-5 py-2 text-xs font-bold shadow-md transition disabled:opacity-50"
+            className={cn(
+              primaryButtonClass(),
+              'flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold shadow-md disabled:opacity-50',
+            )}
           >
             {createProductMutation.isPending && (
               <SpinnerGap size={16} weight="bold" className="animate-spin" />
@@ -758,15 +758,42 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         </div>
       </div>
 
+      {/* Sticky 5-section quick-jump bar */}
+      <nav
+        aria-label="Chuyển nhanh mục biểu mẫu sản phẩm"
+        className="sticky top-20 z-20 flex items-center gap-1.5 overflow-x-auto rounded-full border border-zinc-200/90 bg-white/95 p-1.5 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-[#11182a]/95"
+      >
+        {[
+          { id: 'add-sec-basic', label: '1. Thông tin cơ bản' },
+          { id: 'add-sec-media', label: '2. Hình ảnh & Video' },
+          { id: 'add-sec-variants', label: '3. Phân loại & Tồn kho' },
+          { id: 'add-sec-shipping', label: '4. Thuộc tính & Đóng gói' },
+          { id: 'add-sec-status', label: '5. Trạng thái' },
+        ].map(function (sec) {
+          return (
+            <a
+              key={sec.id}
+              href={`#${sec.id}`}
+              className={cn(
+                'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold text-zinc-600 transition hover:bg-sky-50 hover:text-blue-700 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-sky-300',
+                FOCUS_RING_CLASS,
+              )}
+            >
+              {sec.label}
+            </a>
+          )
+        })}
+      </nav>
+
       {formError !== null && (
-        <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
-          <WarningCircle size={20} weight="fill" className="shrink-0 text-red-500" />
+        <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
+          <WarningCircle size={20} weight="fill" className="shrink-0 text-rose-500" />
           <span>{formError}</span>
         </div>
       )}
 
       {/* 1. Thông tin cơ bản */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+      <section id="add-sec-basic" className={cn(PANEL_CLASS, 'scroll-mt-36 p-6')}>
         <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
           1. Thông tin cơ bản
         </h3>
@@ -824,7 +851,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                 onChange={function (e) {
                   setCategoryId(e.target.value)
                 }}
-                className="mt-1.5 w-full rounded-full border border-zinc-300 p-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-3 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
               >
                 {categories.length === 0 && <option value="">Đang tải danh mục…</option>}
                 {categories.map(function (c) {
@@ -853,33 +880,35 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             />
           </div>
         </div>
-      </div>
+      </section>
 
       {/* 2. Media Uploader: Images (3-9), Video (<=60s), Garment Flat Lay (Try-On) */}
-      <ProductMediaUploader
-        images={images}
-        onImagesChange={setImages}
-        video={video}
-        onVideoChange={setVideo}
-        tryOnEnabled={tryOnEnabled}
-        onTryOnToggle={setTryOnEnabled}
-        garment={garment}
-        onGarmentChange={setGarment}
-      />
+      <section id="add-sec-media" className="scroll-mt-36">
+        <ProductMediaUploader
+          images={images}
+          onImagesChange={setImages}
+          video={video}
+          onVideoChange={setVideo}
+          tryOnEnabled={tryOnEnabled}
+          onTryOnToggle={setTryOnEnabled}
+          garment={garment}
+          onGarmentChange={setGarment}
+        />
+      </section>
 
       {/* 3. Phân loại biến thể (Size & Màu sắc) & Tồn kho */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+      <section id="add-sec-variants" className={cn(PANEL_CLASS, 'scroll-mt-36 p-6')}>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-4 dark:border-white/10">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
+              <h3 className="text-sm font-bold tracking-wider text-[#17203a] uppercase dark:text-white">
                 3. Phân loại biến thể (Size & Màu sắc) & Tồn kho
               </h3>
-              <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
+              <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 dark:bg-sky-500/20 dark:text-sky-300">
                 {variants.length} phân loại
               </span>
             </div>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
               Thiết lập màu sắc, kích cỡ, công cụ áp dụng giá hàng loạt và quản lý tồn kho theo biến
               thể.
             </p>
@@ -888,7 +917,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           <button
             type="button"
             onClick={handleAddVariant}
-            className="flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-100 dark:border-indigo-900/40 dark:bg-indigo-900/40 dark:text-indigo-400"
+            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25"
           >
             <Plus size={14} weight="bold" />
             Thêm dòng tùy biến
@@ -966,7 +995,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                   type="button"
                   disabled={isSelected}
                   onClick={() => handleAddColor(c)}
-                  className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold transition ${chipClass}`}
+                  className={`cursor-pointer rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition ${chipClass}`}
                 >
                   + {c}
                 </button>
@@ -1038,7 +1067,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         <button
                           type="button"
                           onClick={() => handleCopySizesToAllColors(colorName)}
-                          className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100 hover:text-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300"
+                          className="flex cursor-pointer items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-100 hover:text-blue-700 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:text-sky-300"
                           title={`Sao chép toàn bộ size của màu ${colorName} sang các màu khác`}
                         >
                           <Copy size={12} weight="bold" />
@@ -1052,14 +1081,15 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                       {sizesForThisColor.map((s) => (
                         <span
                           key={s}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 px-2.5 py-1 text-xs font-bold text-indigo-900 shadow-2xs dark:border-indigo-900/40 dark:bg-indigo-900/40 dark:text-indigo-300"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50/70 px-3 py-1 text-xs font-bold text-blue-800 shadow-2xs dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300"
                         >
                           {s}
                           <button
                             type="button"
                             onClick={() => handleRemoveSizeFromColor(colorName, s)}
-                            className="rounded-full p-0.5 text-indigo-400 hover:bg-indigo-100 hover:text-red-600 dark:hover:bg-indigo-900/40"
+                            className="cursor-pointer rounded-full p-0.5 text-blue-600 hover:bg-sky-100 hover:text-rose-600 dark:text-sky-300 dark:hover:bg-white/10"
                             title={`Xóa size ${s} của màu ${colorName}`}
+                            aria-label={`Xóa size ${s} của màu ${colorName}`}
                           >
                             <X size={12} weight="bold" />
                           </button>
@@ -1084,12 +1114,12 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                               handleAddSizeToColor(colorName, customInputVal)
                             }
                           }}
-                          className="w-24 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs outline-none focus:border-blue-600 focus:bg-white dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                          className="w-28 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs outline-none focus:border-blue-600 focus:bg-white dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
                         />
                         <button
                           type="button"
                           onClick={() => handleAddSizeToColor(colorName, customInputVal)}
-                          className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                          className="cursor-pointer rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
                         >
                           + Thêm
                         </button>
@@ -1197,14 +1227,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           const allSizesInVariants = Array.from(new Set(variants.map((v) => v.size)))
 
           return (
-            <div className="mt-4 rounded-2xl border border-indigo-200/80 bg-indigo-50/50 p-4 dark:border-indigo-900/40 dark:bg-indigo-900/20">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-indigo-900 dark:text-indigo-300">
+            <div className="mt-4 rounded-2xl border border-sky-200/80 bg-sky-50/50 p-4 dark:border-sky-500/30 dark:bg-sky-500/10">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[#17203a] dark:text-sky-200">
                 <div className="flex items-center gap-2">
-                  <Lightning
-                    size={16}
-                    weight="fill"
-                    className="text-indigo-600 dark:text-indigo-400"
-                  />
+                  <Lightning size={16} weight="fill" className="text-blue-700 dark:text-sky-300" />
                   <span>Áp dụng thông số hàng loạt ({variants.length} phân loại)</span>
                 </div>
 
@@ -1214,9 +1240,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                     Áp dụng cho:
                   </span>
                   <select
+                    aria-label="Áp dụng thông số cho"
                     value={bulkTarget}
                     onChange={(e) => setBulkTarget(e.target.value)}
-                    className="rounded-full border border-zinc-300 bg-white px-3 py-1 text-xs font-bold text-zinc-800 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                    className="rounded-full border border-zinc-300 bg-white px-3 py-1 text-xs font-bold text-[#17203a] outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-zinc-200"
                   >
                     <option value="ALL">Tất cả {variants.length} phân loại</option>
                     <optgroup label="Theo Màu sắc">
@@ -1304,7 +1331,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                 <button
                   type="button"
                   onClick={handleApplyBulk}
-                  className="btn-primary flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold shadow-xs transition"
+                  className={cn(
+                    primaryButtonClass(),
+                    'flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold shadow-xs',
+                  )}
                 >
                   <Lightning size={14} weight="bold" />
                   Áp dụng thông số
@@ -1334,7 +1364,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
                         src={colorMedia.url}
                         alt={colorName}
                         onError={handleImageError}
-                        className="h-10 w-10 rounded-lg object-cover"
+                        className="h-10 w-10 rounded-2xl object-cover"
                       />
                     )}
                     <div>
@@ -1517,10 +1547,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       {/* 4. Thông tin bổ sung & Vận chuyển */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+      <section id="add-sec-shipping" className={cn(PANEL_CLASS, 'scroll-mt-36 p-6')}>
         <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
           4. Thông tin bổ sung & Đóng gói vận chuyển
         </h3>
@@ -1685,10 +1715,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* 5. Trạng thái & Cơ chế phê duyệt */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+      <section id="add-sec-status" className={cn(PANEL_CLASS, 'scroll-mt-36 p-6')}>
         <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
           5. Trạng thái hiển thị & Kiểm duyệt
         </h3>
@@ -1765,14 +1795,14 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Footer Submit Button */}
       <div className="flex items-center justify-end gap-3 pt-2">
         <button
           type="button"
           onClick={onBack}
-          className="rounded-2xl border border-zinc-200 bg-white px-5 py-2.5 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:bg-[#11182a] dark:text-zinc-300"
+          className={cn(secondaryButtonClass(), 'px-5 py-2.5 text-xs')}
         >
           Hủy bỏ
         </button>
@@ -1780,7 +1810,10 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           type="button"
           disabled={createProductMutation.isPending}
           onClick={handleSubmit}
-          className="btn-primary flex items-center gap-2 rounded-2xl px-6 py-2.5 text-xs font-bold shadow-md transition disabled:opacity-50"
+          className={cn(
+            primaryButtonClass(),
+            'flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-bold shadow-md disabled:opacity-50',
+          )}
         >
           {createProductMutation.isPending && (
             <SpinnerGap size={16} weight="bold" className="animate-spin" />

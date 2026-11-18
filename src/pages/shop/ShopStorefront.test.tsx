@@ -36,6 +36,7 @@ function defaultShop(): ShopResponse {
 }
 
 vi.mock('@generated/endpoints/shops/shops', () => ({
+  getBySlugQueryKey: (slug: string) => [`/api/shops/${slug}`],
   useBySlug: vi.fn(() => ({
     data: {
       status: 200,

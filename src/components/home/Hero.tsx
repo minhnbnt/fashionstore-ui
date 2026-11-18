@@ -1,21 +1,13 @@
 import { Link } from 'react-router'
 
 import { useSearch } from '@generated/endpoints/search/search'
-import {
-  ArrowRight,
-  ArrowsLeftRight,
-  ArrowUpRight,
-  ShieldCheck,
-  Sparkle,
-  Storefront,
-  Truck,
-} from '@phosphor-icons/react'
+import { ArrowRight, ArrowUpRight, ShieldCheck, Sparkle, Storefront } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
 import { Skeleton } from '@/components/ui/Skeleton'
 import { PLACEHOLDER_IMAGE, takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { priceLabel } from '@/lib/format'
-import { cn, iconChipClass } from '@/lib/ui/styles'
+import { cn, FOCUS_RING_CLASS, iconChipClass } from '@/lib/ui/styles'
 
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 
@@ -169,7 +161,7 @@ function HeroProductShowcase(props: { items: ProductSummaryResponse[]; isPending
               {priceLabel(primary.minPrice)}
             </p>
           </div>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-900/10 text-indigo-900 transition group-hover:bg-blue-700 group-hover:text-white dark:bg-white/10 dark:text-sky-200 dark:group-hover:bg-sky-400 dark:group-hover:text-[#0a0f1e]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-700/10 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white dark:bg-white/10 dark:text-sky-200 dark:group-hover:bg-sky-400 dark:group-hover:text-[#0a0f1e]">
             <ArrowUpRight size={16} weight="bold" />
           </span>
         </div>
@@ -249,7 +241,7 @@ export default function Hero() {
 
   return (
     <section id="top" className="relative scroll-mt-24 overflow-hidden pt-[76px]">
-      <div className="hero-blob top-24 left-[-120px] h-96 w-96 bg-indigo-900/30" />
+      <div className="hero-blob top-24 left-[-120px] h-96 w-96 bg-indigo-800/25" />
       <div className="hero-blob top-40 right-[-100px] h-[28rem] w-[28rem] bg-sky-400/35" />
       <div className="hero-blob top-[420px] left-1/3 h-72 w-72 bg-blue-400/25" />
 
@@ -260,7 +252,7 @@ export default function Hero() {
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className="lg:col-span-6"
         >
-          <p className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.14em] text-indigo-900 uppercase dark:text-sky-200">
+          <p className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold tracking-[0.14em] text-blue-700 uppercase dark:text-sky-200">
             <Sparkle size={14} weight="fill" />
             Bộ sưu tập mới · DHMQ Marketplace
           </p>
@@ -278,36 +270,23 @@ export default function Hero() {
           <div className="mt-7 flex flex-wrap gap-3">
             <a
               href="#shop"
-              className="btn-primary inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold"
+              className={cn(
+                'btn-primary inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold',
+                FOCUS_RING_CLASS,
+              )}
             >
               Mua sắm ngay
               <ArrowRight size={16} weight="bold" />
             </a>
             <a
               href="#categories"
-              className="glass inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-[#17203a] transition hover:border-blue-300 dark:text-white dark:hover:border-sky-400/40"
+              className={cn(
+                'glass inline-flex items-center rounded-full px-7 py-3.5 text-sm font-semibold text-[#17203a] transition hover:border-blue-300 dark:text-white dark:hover:border-sky-400/40',
+                FOCUS_RING_CLASS,
+              )}
             >
               Xem danh mục
             </a>
-          </div>
-
-          <div className="mt-8 flex flex-wrap items-center gap-2.5">
-            <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200/80 bg-white/75 px-3.5 py-2 text-xs font-semibold text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200">
-              <Truck size={15} weight="duotone" className="text-blue-700 dark:text-sky-300" />
-              Miễn phí ship đơn từ 500K
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200/80 bg-white/75 px-3.5 py-2 text-xs font-semibold text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200">
-              <ArrowsLeftRight
-                size={15}
-                weight="duotone"
-                className="text-blue-700 dark:text-sky-300"
-              />
-              Đổi trả 30 ngày
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200/80 bg-white/75 px-3.5 py-2 text-xs font-semibold text-zinc-700 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200">
-              <ShieldCheck size={15} weight="duotone" className="text-blue-700 dark:text-sky-300" />
-              Gian hàng xác thực eKYC
-            </span>
           </div>
         </motion.div>
 

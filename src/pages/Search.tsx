@@ -1,22 +1,15 @@
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useFacets, useSearch } from '@generated/endpoints/search/search'
 import { SearchSort } from '@generated/model/searchSort'
-import {
-  CaretRight,
-  Funnel,
-  House,
-  Rows,
-  SquaresFour,
-  Trash,
-  TrendUp,
-  X,
-} from '@phosphor-icons/react'
+import { Funnel, Rows, SquaresFour, Trash, TrendUp, X } from '@phosphor-icons/react'
 import { keepPreviousData } from '@tanstack/react-query'
 
+import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/Breadcrumb'
 import { Drawer } from '@/components/ui/Drawer'
+import { ProductCard } from '@/components/ui/ProductCard'
 import { ProductCardSkeleton } from '@/components/ui/Skeleton'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
@@ -33,12 +26,12 @@ import {
   chipClass,
   cn,
   filterChipClass,
-  primaryButtonClass,
+  FOCUS_RING_CLASS,
+  secondaryButtonClass,
   segmentedItemClass,
   segmentedTrackClass,
 } from '@/lib/ui/styles'
 
-import { ProductCard } from '../components/home/Sections'
 import EmptySearchState from '../components/search/EmptySearchState'
 import FilterPanel from '../components/search/FilterPanel'
 import Pagination from '../components/search/Pagination'
@@ -90,7 +83,7 @@ function ActiveChips(props: {
   filters: SearchFilters
   categoryName: string | undefined
   onChange: (patch: Partial<SearchFilters>) => void
-  onClearAll: () => void
+  onClearFilters: () => void
 }) {
   const f = props.filters
   const chips: { key: string; label: string; patch: Partial<SearchFilters> }[] = []
@@ -120,9 +113,16 @@ function ActiveChips(props: {
   if (chips.length === 0) {
     return null
   }
+  const hasSidebarFilters =
+    f.category !== null ||
+    f.minPrice !== null ||
+    f.maxPrice !== null ||
+    f.size !== null ||
+    f.color !== null
+
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
-      <span className="text-xs font-semibold text-zinc-500">Đang lọc theo:</span>
+      <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Đang lọc theo:</span>
       {chips.map(function (chip) {
         return (
           <button
@@ -139,14 +139,19 @@ function ActiveChips(props: {
           </button>
         )
       })}
-      <button
-        type="button"
-        onClick={props.onClearAll}
-        className="flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
-      >
-        <Trash size={12} weight="bold" />
-        <span>Xóa tất cả</span>
-      </button>
+      {hasSidebarFilters && (
+        <button
+          type="button"
+          onClick={props.onClearFilters}
+          className={cn(
+            'flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10',
+            FOCUS_RING_CLASS,
+          )}
+        >
+          <Trash size={12} weight="bold" />
+          <span>Xóa bộ lọc</span>
+        </button>
+      )}
     </div>
   )
 }
@@ -237,50 +242,34 @@ export default function Search() {
 
   const filterCount = activeFilterCount(filters)
 
+  const breadcrumbItems: BreadcrumbItem[] = [{ label: 'Trang chủ', to: '/' }]
+  if (currentCategory !== undefined || filters.q !== null) {
+    breadcrumbItems.push({ label: 'Cửa hàng', to: '/search' })
+  } else {
+    breadcrumbItems.push({ label: 'Cửa hàng' })
+  }
+  if (currentCategory !== undefined && currentCategory.name !== undefined) {
+    if (filters.q !== null) {
+      breadcrumbItems.push({
+        label: currentCategory.name,
+        to: '/search?category=' + encodeURIComponent(currentCategory.slug ?? ''),
+      })
+    } else {
+      breadcrumbItems.push({ label: currentCategory.name })
+    }
+  }
+  if (filters.q !== null) {
+    breadcrumbItems.push({ label: `“${filters.q}”` })
+  }
+
   return (
-    <main className="mx-auto max-w-[1440px] px-4 pt-[100px] pb-20">
+    <main className="mx-auto max-w-[1400px] px-4 pt-24 pb-16">
       {/* 1. Breadcrumb navigation */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-zinc-500">
-        <Link
-          to="/"
-          className="flex items-center gap-1 font-semibold hover:text-sky-700 dark:hover:text-white"
-        >
-          <House size={14} weight="bold" />
-          <span>Trang chủ</span>
-        </Link>
-        <CaretRight size={12} weight="bold" className="text-zinc-400" />
-        <Link
-          to="/search"
-          onClick={function (e) {
-            if (filters.q === null && filters.category === null) {
-              e.preventDefault()
-            }
-          }}
-          className="font-semibold hover:text-sky-700 dark:hover:text-white"
-        >
-          Cửa hàng
-        </Link>
-        {currentCategory && (
-          <>
-            <CaretRight size={12} weight="bold" className="text-zinc-400" />
-            <span className="font-bold text-zinc-800 dark:text-zinc-200">
-              {currentCategory.name}
-            </span>
-          </>
-        )}
-        {filters.q && (
-          <>
-            <CaretRight size={12} weight="bold" className="text-zinc-400" />
-            <span className="max-w-xs truncate font-bold text-sky-700 dark:text-sky-300">
-              “{filters.q}”
-            </span>
-          </>
-        )}
-      </nav>
+      <Breadcrumb items={breadcrumbItems} showHomeIcon />
 
       {/* 2. Page Title Header & Subtitle */}
       <div className="mt-3">
-        <h1 className="text-2xl font-black tracking-tight text-zinc-900 md:text-3xl dark:text-white">
+        <h1 className="text-2xl font-black tracking-tight text-[#17203a] md:text-3xl dark:text-white">
           {pageTitle(filters, currentCategory)}
         </h1>
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -288,13 +277,13 @@ export default function Search() {
         </p>
       </div>
 
-      {/* Hot Search Pills Bar - Cố định ở dòng riêng, không bao giờ bị nhảy dòng */}
-      <div className="mt-3.5 flex flex-wrap items-center gap-2 border-b border-sky-100 pb-3.5 dark:border-white/10">
-        <span className="flex shrink-0 items-center gap-1 text-[11px] font-extrabold tracking-wider text-sky-700 uppercase dark:text-sky-400">
+      {/* Hot Search Pills Bar: single-line horizontal scroll on mobile, wrap on desktop */}
+      <div className="mt-3.5 flex items-center gap-2 border-b border-sky-100 pb-3.5 dark:border-white/10">
+        <span className="flex shrink-0 items-center gap-1 text-[11px] font-extrabold tracking-wider text-blue-700 uppercase dark:text-sky-300">
           <TrendUp size={13} weight="bold" />
           <span>Xu hướng:</span>
         </span>
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="no-scrollbar flex flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {HOT_SEARCH_TAGS.map(function (tag) {
             const isCurrent = filters.q?.toLowerCase() === tag.toLowerCase()
             return (
@@ -304,7 +293,7 @@ export default function Search() {
                 onClick={function () {
                   change({ q: tag, page: 0 })
                 }}
-                className={hotTagClass(isCurrent)}
+                className={cn(hotTagClass(isCurrent), 'shrink-0')}
               >
                 {tag}
               </button>
@@ -318,38 +307,16 @@ export default function Search() {
         filters={filters}
         categoryName={currentCategory?.name}
         onChange={change}
-        onClearAll={function () {
+        onClearFilters={function () {
           apply({ ...EMPTY_FILTERS, q: filters.q })
         }}
       />
 
       {/* 3. Main Body: Sidebar (280px) + Results Section */}
       <div className="mt-6 grid grid-cols-1 gap-7 lg:grid-cols-[280px_1fr]">
-        {/* Left Column: Filter Sidebar */}
-        <aside>
-          {/* Mobile Filter Toggle Button */}
-          <button
-            type="button"
-            aria-expanded={filtersOpen}
-            onClick={function () {
-              setFiltersOpen(true)
-            }}
-            className={cn(
-              primaryButtonClass(),
-              'flex w-full cursor-pointer items-center justify-center gap-2 rounded-full py-3 text-sm font-extrabold shadow-xs lg:hidden',
-            )}
-          >
-            <Funnel size={16} weight="bold" />
-            <span>Bộ lọc nâng cao</span>
-            {filterCount > 0 && (
-              <span className="rounded-full bg-white/25 px-2 py-0.5 text-xs text-white tabular-nums">
-                {filterCount}
-              </span>
-            )}
-          </button>
-
-          {/* Sticky Desktop Filter Panel */}
-          <div className="glass hidden rounded-3xl p-5 lg:sticky lg:top-28 lg:block">
+        {/* Left Column: Sticky Desktop Filter Sidebar */}
+        <aside className="hidden lg:block">
+          <div className="glass rounded-3xl p-5 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto">
             <FilterPanel
               filters={filters}
               categories={categories}
@@ -364,17 +331,42 @@ export default function Search() {
         </aside>
 
         {/* Right Column: Search Results & Tools */}
-        <section aria-label="Kết quả tìm kiếm">
-          {/* Thanh sắp xếp & bộ lọc nhanh */}
-          <div className="rounded-3xl border border-sky-100 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {/* Tabs sắp xếp */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="mr-1 text-xs font-extrabold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+        <section aria-label="Kết quả tìm kiếm" className="min-w-0">
+          {/* Compact Mobile Filter + Sort Toolbar & Desktop Sort Bar */}
+          <div className="rounded-3xl border border-zinc-200/90 bg-white/90 p-3 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+            <div className="flex items-center justify-between gap-2.5">
+              {/* Left: Mobile compact filter trigger + scrollable sort pills */}
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <button
+                  type="button"
+                  aria-expanded={filtersOpen}
+                  onClick={function () {
+                    setFiltersOpen(true)
+                  }}
+                  className={cn(
+                    secondaryButtonClass(),
+                    'shrink-0 gap-1.5 px-3.5 py-1.5 text-xs font-bold lg:hidden',
+                  )}
+                >
+                  <Funnel size={14} weight="bold" />
+                  <span>Bộ lọc</span>
+                  {filterCount > 0 && (
+                    <span className="btn-primary rounded-full px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums">
+                      {filterCount}
+                    </span>
+                  )}
+                </button>
+
+                <span className="mr-1 hidden shrink-0 text-xs font-extrabold tracking-wider text-zinc-500 uppercase lg:inline dark:text-zinc-400">
                   Sắp xếp theo:
                 </span>
 
-                <div className={cn(segmentedTrackClass(), 'flex-wrap')}>
+                <div
+                  className={cn(
+                    segmentedTrackClass(),
+                    'flex-nowrap overflow-x-auto sm:flex-wrap sm:overflow-visible',
+                  )}
+                >
                   {sortTabs.map(function (s) {
                     return (
                       <button
@@ -383,7 +375,7 @@ export default function Search() {
                         onClick={function () {
                           change({ sort: s })
                         }}
-                        className={sortTabClass(sortValue === s)}
+                        className={cn(sortTabClass(sortValue === s), 'shrink-0 whitespace-nowrap')}
                       >
                         {SORT_LABELS[s]}
                       </button>
@@ -392,18 +384,18 @@ export default function Search() {
                 </div>
               </div>
 
-              {/* Result Count & View Switcher */}
-              <div className="flex items-center gap-3">
+              {/* Right: Result Count & View Switcher */}
+              <div className="hidden shrink-0 items-center gap-3 sm:flex">
                 <p className="text-xs font-semibold text-zinc-500 tabular-nums dark:text-zinc-400">
                   {searchQuery.isSuccess && (
                     <>
-                      <span className="font-extrabold text-zinc-900 dark:text-white">{total}</span>{' '}
+                      <span className="font-extrabold text-[#17203a] dark:text-white">{total}</span>{' '}
                       sản phẩm
                     </>
                   )}
                 </p>
 
-                <div className={cn(segmentedTrackClass(), 'hidden sm:flex')}>
+                <div className={segmentedTrackClass()}>
                   <button
                     type="button"
                     title="Xem dạng lưới"
@@ -446,7 +438,7 @@ export default function Search() {
 
             {/* Error State */}
             {searchQuery.isError && (
-              <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-center text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10">
+              <div className="rounded-3xl border border-rose-200 bg-rose-50/80 p-6 text-center text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
                 {hookErrorMessage('search', searchQuery.error)}
               </div>
             )}
@@ -494,7 +486,13 @@ export default function Search() {
 
           {/* Pagination */}
           {items.length > 0 && (
-            <Pagination page={filters.page} totalPages={totalPages} onPage={goToPage} />
+            <Pagination
+              page={filters.page}
+              totalPages={totalPages}
+              totalItems={total}
+              pageSize={PAGE_SIZE}
+              onPage={goToPage}
+            />
           )}
         </section>
       </div>

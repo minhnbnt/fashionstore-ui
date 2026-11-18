@@ -26,6 +26,16 @@ vi.mock('@generated/endpoints/admin-settings/admin-settings', () => ({
   useListConfigAudit: vi.fn(),
 }))
 
+vi.mock('@generated/endpoints/admin-stats/admin-stats', () => ({
+  getGetAdminStatsQueryKey: vi.fn(() => ['/api/admin/stats'] as const),
+  useGetAdminStats: vi.fn(() => ({
+    data: undefined,
+    isSuccess: false,
+    isPending: false,
+    isError: false,
+  })),
+}))
+
 vi.mock('@/hooks/useSession', () => ({
   useSessionQuery: vi.fn(() => ({
     data: {

@@ -15,6 +15,7 @@ describe('canSeeTab', () => {
       'OVERVIEW',
       'PRODUCTS',
       'ADD_PRODUCT',
+      'EDIT_PRODUCT',
       'INVENTORY',
       'ORDERS',
       'RETURNS',
@@ -37,11 +38,19 @@ describe('canSeeTab', () => {
     expect(canSeeTab('STAFF', permissions, false)).toBe(false)
   })
 
-  it('staff có PRODUCT_WRITE thấy PRODUCTS và ADD_PRODUCT', () => {
+  it('staff có PRODUCT_WRITE thấy PRODUCTS, ADD_PRODUCT và EDIT_PRODUCT', () => {
     const permissions = ['PRODUCT_WRITE']
     expect(canSeeTab('PRODUCTS', permissions, false)).toBe(true)
     expect(canSeeTab('ADD_PRODUCT', permissions, false)).toBe(true)
+    expect(canSeeTab('EDIT_PRODUCT', permissions, false)).toBe(true)
     expect(canSeeTab('REVENUE', permissions, false)).toBe(false)
+  })
+
+  it('staff chỉ có PRODUCT_READ thấy PRODUCTS nhưng không thấy EDIT_PRODUCT', () => {
+    const permissions = ['PRODUCT_READ']
+    expect(canSeeTab('PRODUCTS', permissions, false)).toBe(true)
+    expect(canSeeTab('EDIT_PRODUCT', permissions, false)).toBe(false)
+    expect(canSeeTab('ADD_PRODUCT', permissions, false)).toBe(false)
   })
 
   it('staff có INVENTORY_READ thấy INVENTORY', () => {

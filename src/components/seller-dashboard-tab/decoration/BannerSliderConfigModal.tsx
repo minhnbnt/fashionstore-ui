@@ -128,7 +128,7 @@ export default function BannerSliderConfigModal({
         </div>
 
         {isMaxReached && (
-          <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-700 dark:bg-amber-950/20 dark:text-amber-300">
+          <p className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300">
             Đã đạt số lượng tối đa 5 banner quảng cáo theo quy định của sàn.
           </p>
         )}
@@ -159,8 +159,9 @@ export default function BannerSliderConfigModal({
                       type="button"
                       disabled={isFirst}
                       onClick={() => handleMoveSlide(index, 'UP')}
+                      aria-label="Di chuyển banner lên"
                       title="Di chuyển lên"
-                      className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 disabled:opacity-30 dark:hover:bg-white/10"
+                      className="cursor-pointer rounded-full p-1.5 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 disabled:opacity-30 dark:hover:bg-white/10"
                     >
                       <ArrowUp size={14} />
                     </button>
@@ -168,16 +169,18 @@ export default function BannerSliderConfigModal({
                       type="button"
                       disabled={isLast}
                       onClick={() => handleMoveSlide(index, 'DOWN')}
+                      aria-label="Di chuyển banner xuống"
                       title="Di chuyển xuống"
-                      className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 disabled:opacity-30 dark:hover:bg-white/10"
+                      className="cursor-pointer rounded-full p-1.5 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 disabled:opacity-30 dark:hover:bg-white/10"
                     >
                       <ArrowDown size={14} />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteSlide(slide.id)}
+                      aria-label="Xóa banner"
                       title="Xóa banner"
-                      className="rounded p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      className="cursor-pointer rounded-full p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/15"
                     >
                       <Trash size={14} />
                     </button>

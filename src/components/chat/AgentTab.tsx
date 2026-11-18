@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 
 import { useChat } from '@ai-sdk/react'
 import {
+  ArrowLeft,
   CaretDown,
   ChatCircleDots,
   MagnifyingGlass,
@@ -28,6 +29,7 @@ import { readAgentConfig } from '@/lib/ai/agent'
 import { deserializeAgentMessage, serializeAgentMessage } from '@/lib/ai/agentHistory'
 import { createAgentTransport } from '@/lib/ai/chatTransport'
 import { EMPTY_FILTERS, parseFilters, toQueryString, withFilter } from '@/lib/searchFilters'
+import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 import {
   bubbleClass,
@@ -60,6 +62,8 @@ export interface AgentTabProps {
   activeConversationId?: string | null
   /** Callback khi đổi cuộc trò chuyện. */
   onSelectConversation?: (id: string | null) => void
+  /** Callback quay lại danh sách hội thoại trên mobile (dùng cho trang /messages). */
+  onBack?: () => void
   /** Biến thể giao diện giữa khung popup nổi (dock) và trang toàn màn hình (page). */
   variant?: ChatSurfaceVariant
 }
@@ -144,7 +148,10 @@ function ShowProductsBlock(props: {
             onClick={function () {
               props.onApplyFilters(props.appliedParams as Partial<SearchFilters>)
             }}
-            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-sky-200 bg-sky-50/90 px-4 py-1.5 text-xs font-bold text-blue-700 transition hover:border-blue-500 hover:bg-sky-100 active:scale-[0.98] dark:border-sky-400/25 dark:bg-sky-500/10 dark:text-sky-300 dark:hover:bg-sky-500/20"
+            className={cn(
+              'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full border border-sky-200 bg-sky-50/90 px-4 py-1.5 text-xs font-bold text-blue-700 transition hover:border-blue-500 hover:bg-sky-100 active:scale-[0.98] dark:border-sky-400/25 dark:bg-sky-500/10 dark:text-sky-300 dark:hover:bg-sky-500/20',
+              FOCUS_RING_CLASS,
+            )}
           >
             <MagnifyingGlass size={13} weight="bold" />
             <span>Lọc trên trang</span>
@@ -222,6 +229,7 @@ export default function AgentTab(props: AgentTabProps) {
   }
 
   const [showConvDropdown, setShowConvDropdown] = useState(false)
+  const convDropdownRef = useRef<HTMLDivElement>(null)
 
   const messagesQuery = useAiMessages(activeConvId, isLoggedIn)
   const createConvMutation = useCreateAiConversation()
@@ -366,7 +374,7 @@ export default function AgentTab(props: AgentTabProps) {
   })
 
   useEffect(
-    function closeDropdownOnEscape() {
+    function closeDropdownOnEscapeOrOutsideClick() {
       if (!showConvDropdown) {
         return
       }
@@ -375,9 +383,21 @@ export default function AgentTab(props: AgentTabProps) {
           setShowConvDropdown(false)
         }
       }
+      function handlePointerDown(event: PointerEvent) {
+        const container = convDropdownRef.current
+        if (
+          container !== null &&
+          event.target instanceof Node &&
+          container.contains(event.target) === false
+        ) {
+          setShowConvDropdown(false)
+        }
+      }
       window.addEventListener('keydown', handleKey)
+      document.addEventListener('pointerdown', handlePointerDown)
       return function () {
         window.removeEventListener('keydown', handleKey)
+        document.removeEventListener('pointerdown', handlePointerDown)
       }
     },
     [showConvDropdown],
@@ -581,6 +601,19 @@ export default function AgentTab(props: AgentTabProps) {
       {isPageVariant && (
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200/70 bg-white/80 px-5 py-3.5 backdrop-blur-xs dark:border-white/10 dark:bg-[#11182a]/80">
           <div className="flex min-w-0 items-center gap-3">
+            {props.onBack !== undefined && (
+              <button
+                type="button"
+                onClick={props.onBack}
+                aria-label="Quay lại danh sách hội thoại AI"
+                className={cn(
+                  'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-500 transition hover:bg-[#f6f9ff] hover:text-[#17203a] active:scale-95 md:hidden dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white',
+                  FOCUS_RING_CLASS,
+                )}
+              >
+                <ArrowLeft size={16} weight="bold" />
+              </button>
+            )}
             <span className="btn-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl shadow-sm">
               <Sparkle size={18} weight="bold" />
             </span>
@@ -597,7 +630,10 @@ export default function AgentTab(props: AgentTabProps) {
       )}
 
       {!isPageVariant && isLoggedIn && (
-        <div className="relative shrink-0 border-b border-zinc-200/70 bg-white/75 px-3.5 py-2 text-xs backdrop-blur-xs dark:border-white/10 dark:bg-white/[0.03]">
+        <div
+          ref={convDropdownRef}
+          className="relative shrink-0 border-b border-zinc-200/70 bg-white/75 px-3.5 py-2 text-xs backdrop-blur-xs dark:border-white/10 dark:bg-white/[0.03]"
+        >
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
@@ -605,7 +641,10 @@ export default function AgentTab(props: AgentTabProps) {
                 setShowConvDropdown(!showConvDropdown)
               }}
               aria-expanded={showConvDropdown}
-              className="flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1 font-semibold text-[#17203a] transition hover:bg-[#f6f9ff] hover:text-blue-700 dark:text-slate-100 dark:hover:bg-white/10"
+              className={cn(
+                'flex min-w-0 cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 font-semibold text-[#17203a] transition hover:bg-[#f6f9ff] hover:text-blue-700 dark:text-slate-100 dark:hover:bg-white/10',
+                FOCUS_RING_CLASS,
+              )}
             >
               <ChatCircleDots
                 size={14}
@@ -623,7 +662,10 @@ export default function AgentTab(props: AgentTabProps) {
                 chat.setMessages([])
                 setShowConvDropdown(false)
               }}
-              className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1 text-[11px] font-bold text-[#17203a] shadow-2xs transition hover:border-blue-600 hover:text-blue-700 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:text-sky-300"
+              className={cn(
+                'inline-flex cursor-pointer items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1 text-[11px] font-bold text-[#17203a] shadow-2xs transition hover:border-blue-600 hover:text-blue-700 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:text-sky-300',
+                FOCUS_RING_CLASS,
+              )}
             >
               <Plus size={12} weight="bold" />
               <span>Đoạn chat mới</span>
@@ -656,7 +698,10 @@ export default function AgentTab(props: AgentTabProps) {
                         handleSetActiveConvId(c.id)
                         setShowConvDropdown(false)
                       }}
-                      className="min-w-0 flex-1 truncate text-left"
+                      className={cn(
+                        'min-w-0 flex-1 cursor-pointer truncate rounded text-left',
+                        FOCUS_RING_CLASS,
+                      )}
                     >
                       {c.title}
                     </button>
@@ -672,7 +717,10 @@ export default function AgentTab(props: AgentTabProps) {
                       }}
                       title="Xóa đoạn chat này"
                       aria-label={'Xóa cuộc trò chuyện ' + c.title}
-                      className="rounded-full p-1 text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-white/10 dark:hover:text-rose-400"
+                      className={cn(
+                        'cursor-pointer rounded-full p-1 text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-white/10 dark:hover:text-rose-400',
+                        FOCUS_RING_CLASS,
+                      )}
                     >
                       <Trash size={13} />
                     </button>
@@ -690,7 +738,10 @@ export default function AgentTab(props: AgentTabProps) {
           <span>Đăng nhập để lưu lại lịch sử tư vấn AI.</span>
           <Link
             to="/login"
-            className="shrink-0 font-bold text-indigo-700 hover:underline dark:text-sky-300"
+            className={cn(
+              'shrink-0 cursor-pointer rounded font-bold text-indigo-700 hover:underline dark:text-sky-300',
+              FOCUS_RING_CLASS,
+            )}
           >
             Đăng nhập
           </Link>
@@ -726,7 +777,10 @@ export default function AgentTab(props: AgentTabProps) {
                     onClick={function () {
                       submitPromptText(promptText)
                     }}
-                    className="rounded-full border border-zinc-300 bg-white/95 px-3.5 py-1.5 text-xs font-semibold text-[#17203a] shadow-2xs transition hover:border-blue-600 hover:bg-sky-50/80 hover:text-blue-700 active:scale-[0.97] disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:hover:border-sky-400 dark:hover:text-sky-300"
+                    className={cn(
+                      'cursor-pointer rounded-full border border-zinc-300 bg-white/95 px-3.5 py-1.5 text-xs font-semibold text-[#17203a] shadow-2xs transition hover:border-blue-600 hover:bg-sky-50/80 hover:text-blue-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:hover:border-sky-400 dark:hover:text-sky-300',
+                      FOCUS_RING_CLASS,
+                    )}
                   >
                     {promptText}
                   </button>
@@ -756,10 +810,13 @@ export default function AgentTab(props: AgentTabProps) {
       >
         <div className="flex items-center gap-2">
           <input
+            id="ai-chat-input"
+            name="prompt"
             value={input}
             onChange={function (e) {
               setInput(e.target.value)
             }}
+            aria-label="Nhập câu hỏi cho trợ lý AI"
             placeholder="Mô tả món bạn muốn tìm…"
             disabled={config === null}
             className={CHAT_INPUT_CLASS}
@@ -771,7 +828,10 @@ export default function AgentTab(props: AgentTabProps) {
               onClick={function () {
                 void chat.stop()
               }}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-rose-400 hover:text-rose-600 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:text-rose-300"
+              className={cn(
+                'flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-rose-400 hover:text-rose-600 active:scale-95 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:text-rose-300',
+                FOCUS_RING_CLASS,
+              )}
             >
               <Stop size={16} weight="bold" />
             </button>

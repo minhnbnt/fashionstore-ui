@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 import { getMeQueryKey, useChangeAvatar } from '@generated/endpoints/users/users'
 import { useQueryClient } from '@tanstack/react-query'
@@ -74,41 +73,38 @@ export default function AvatarUploader({ name, avatarUrl }: Props) {
         <UserAvatar name={name} size={48} src={src} />
       </button>
 
-      {open &&
-        // Portal ra body để thoát containing block của .glass (backdrop-filter làm fixed quy chiếu theo card).
-        createPortal(
-          <Modal
-            title="Ảnh đại diện"
-            widthClass="max-w-sm"
-            onClose={function () {
-              setOpen(false)
-            }}
-          >
-            <div className="mt-6 flex flex-col items-center gap-5">
-              <UserAvatar name={name} size={200} src={src} />
-              <button
-                type="button"
-                onClick={function () {
-                  inputRef.current?.click()
-                }}
-                disabled={uploading}
-                className="btn-primary cursor-pointer rounded-full px-6 py-2.5 text-sm font-bold shadow-md shadow-indigo-900/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {actionLabel}
-              </button>
-              {error !== null && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
-            </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              onChange={(event) => void handleFile(event)}
+      {open && (
+        <Modal
+          title="Ảnh đại diện"
+          widthClass="max-w-sm"
+          onClose={function () {
+            setOpen(false)
+          }}
+        >
+          <div className="mt-6 flex flex-col items-center gap-5">
+            <UserAvatar name={name} size={200} src={src} />
+            <button
+              type="button"
+              onClick={function () {
+                inputRef.current?.click()
+              }}
               disabled={uploading}
-              className="sr-only"
-            />
-          </Modal>,
-          document.body,
-        )}
+              className="btn-primary cursor-pointer rounded-full px-6 py-2.5 text-sm font-bold shadow-md shadow-indigo-900/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {actionLabel}
+            </button>
+            {error !== null && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
+          </div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            onChange={(event) => void handleFile(event)}
+            disabled={uploading}
+            className="sr-only"
+          />
+        </Modal>
+      )}
     </>
   )
 }

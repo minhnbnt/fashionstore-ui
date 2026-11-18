@@ -5,11 +5,19 @@ import { MagnifyingGlass, Storefront } from '@phosphor-icons/react'
 
 import AdminShell from '@/components/admin/AdminShell'
 import Pagination from '@/components/search/Pagination'
+import { TableRowsSkeleton } from '@/components/ui/Skeleton'
 import StatePanel from '@/components/ui/StatePanel'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { formatDateTime, pageCount } from '@/lib/admin/admin'
 import { takeData } from '@/lib/api/apiAdapters'
-import { CARD_CLASS, cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
+import {
+  cn,
+  FOCUS_RING_CLASS,
+  PANEL_CLASS,
+  primaryButtonClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from '@/lib/ui/styles'
 
 import type { AdminShopResponse } from '@generated/model/adminShopResponse'
 import type { ListAdminShopsParams } from '@generated/model/listAdminShopsParams'
@@ -101,9 +109,9 @@ export default function AdminShops() {
       title="Quản lý shop"
       description="Duyệt hồ sơ theo thứ tự nộp, theo dõi trạng thái và xử lý vi phạm."
       actions={
-        <div className="flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-800 dark:bg-indigo-400/10 dark:text-indigo-200">
+        <div className="flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-800 tabular-nums dark:bg-indigo-400/15 dark:text-sky-300">
           <Storefront size={17} weight="bold" />
-          {total} kết quả
+          {total.toLocaleString('vi-VN')} kết quả
         </div>
       }
     >
@@ -140,7 +148,7 @@ export default function AdminShops() {
         </div>
 
         <form onSubmit={submitSearch} className="flex max-w-2xl gap-2">
-          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2.5 focus-within:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400">
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/85 px-4 py-2.5 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/20 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400 dark:focus-within:ring-sky-400/25">
             <MagnifyingGlass size={17} className="shrink-0 text-zinc-500 dark:text-zinc-400" />
             <span className="sr-only">Tìm shop</span>
             <input
@@ -148,12 +156,12 @@ export default function AdminShops() {
               name="q"
               defaultValue={query}
               placeholder="Tên shop, slug hoặc email chủ shop"
-              className="w-full bg-transparent text-sm text-[#17203a] outline-none placeholder:text-zinc-400 dark:text-white"
+              className="w-full bg-transparent text-sm text-[#17203a] outline-none placeholder:text-zinc-500 dark:text-white dark:placeholder:text-zinc-400"
             />
           </label>
           <button
             type="submit"
-            className="btn-primary cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold"
+            className={cn(primaryButtonClass(), 'rounded-full px-5 py-2.5 text-sm font-bold')}
           >
             Tìm
           </button>
@@ -161,9 +169,7 @@ export default function AdminShops() {
       </div>
 
       <div className="mt-6">
-        {shopsQuery.isPending && (
-          <StatePanel title="Đang tải danh sách" description="Dữ liệu shop đang được cập nhật…" />
-        )}
+        {shopsQuery.isPending && <TableRowsSkeleton rows={6} columns={5} />}
         {shopsQuery.isError && (
           <StatePanel
             title="Không tải được danh sách"
@@ -177,68 +183,143 @@ export default function AdminShops() {
           />
         )}
         {shops.length > 0 && (
-          <div className={cn(CARD_CLASS, 'overflow-x-auto')}>
-            <table className="w-full min-w-[900px] text-left text-sm">
-              <thead className="bg-zinc-50 text-xs tracking-wide text-zinc-500 uppercase dark:bg-white/5 dark:text-zinc-400">
-                <tr>
-                  <th className="px-5 py-3 font-bold">Shop</th>
-                  <th className="px-5 py-3 font-bold">Chủ shop</th>
-                  <th className="px-5 py-3 font-bold">Trạng thái</th>
-                  <th className="px-5 py-3 font-bold">Nộp gần nhất</th>
-                  <th className="px-5 py-3 font-bold">Cập nhật</th>
-                  <th className="px-5 py-3 text-right font-bold">Chi tiết</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 bg-white/60 dark:divide-white/10 dark:bg-transparent">
-                {shops.map(function (shop) {
-                  if (shop.id === undefined) {
-                    return null
-                  }
-                  return (
-                    <tr
-                      key={shop.id}
-                      className="transition hover:bg-indigo-50/60 dark:hover:bg-white/5"
-                    >
-                      <td className="px-5 py-4">
-                        <p className="font-bold text-zinc-900 dark:text-zinc-100">{shop.name}</p>
-                        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+          <>
+            {/* Desktop table */}
+            <div className={cn(PANEL_CLASS, 'hidden overflow-x-auto p-0 md:block')}>
+              <table className="w-full min-w-[820px] text-left text-sm">
+                <thead className="border-b border-zinc-200/80 bg-zinc-50/80 text-xs tracking-wide text-zinc-500 uppercase dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+                  <tr>
+                    <th className="px-5 py-3.5 font-bold">Shop</th>
+                    <th className="px-5 py-3.5 font-bold">Chủ shop</th>
+                    <th className="px-5 py-3.5 font-bold">Trạng thái</th>
+                    <th className="px-5 py-3.5 font-bold">Nộp gần nhất</th>
+                    <th className="px-5 py-3.5 font-bold">Cập nhật</th>
+                    <th className="px-5 py-3.5 text-right font-bold">Chi tiết</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200/80 dark:divide-white/10">
+                  {shops.map(function (shop) {
+                    if (shop.id === undefined) {
+                      return null
+                    }
+                    return (
+                      <tr
+                        key={shop.id}
+                        className="transition hover:bg-sky-50/60 dark:hover:bg-white/5"
+                      >
+                        <td className="px-5 py-4">
+                          <p className="font-bold text-[#17203a] dark:text-[#e2e8f0]">
+                            {shop.name}
+                          </p>
+                          <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                            /{shop.slug}
+                          </p>
+                          {shop.statusReason !== undefined && shop.statusReason !== null && (
+                            <p className="mt-2 max-w-xs truncate text-xs text-rose-600 dark:text-rose-300">
+                              {shop.statusReason}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-5 py-4">
+                          <p className="font-medium text-[#17203a] dark:text-[#e2e8f0]">
+                            {shop.ownerName ?? 'Chưa có tên'}
+                          </p>
+                          <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                            {shop.ownerEmail ?? '—'}
+                          </p>
+                        </td>
+                        <td className="px-5 py-4">
+                          <StatusBadge status={shop.status} />
+                        </td>
+                        <td className="px-5 py-4 text-zinc-600 tabular-nums dark:text-zinc-300">
+                          {formatDateTime(shop.submittedAt)}
+                        </td>
+                        <td className="px-5 py-4 text-zinc-600 tabular-nums dark:text-zinc-300">
+                          {formatDateTime(shop.updatedAt)}
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          <Link
+                            to={'/admin/shops/' + shop.id}
+                            aria-label={`Mở hồ sơ shop ${shop.name ?? ''}`}
+                            className={cn(
+                              'inline-flex cursor-pointer rounded-full px-4 py-2 text-xs font-bold text-blue-700 transition hover:bg-sky-100 dark:text-sky-300 dark:hover:bg-white/10',
+                              FOCUS_RING_CLASS,
+                            )}
+                          >
+                            Mở hồ sơ
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="space-y-3 md:hidden">
+              {shops.map(function (shop) {
+                if (shop.id === undefined) {
+                  return null
+                }
+                return (
+                  <article key={shop.id} className={cn(PANEL_CLASS, 'space-y-3 p-4')}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-[#17203a] dark:text-[#e2e8f0]">
+                          {shop.name}
+                        </p>
+                        <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                           /{shop.slug}
                         </p>
-                        {shop.statusReason !== undefined && shop.statusReason !== null && (
-                          <p className="mt-2 max-w-xs truncate text-xs text-red-600 dark:text-red-300">
-                            {shop.statusReason}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-5 py-4">
-                        <p>{shop.ownerName ?? 'Chưa có tên'}</p>
-                        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                          {shop.ownerEmail ?? '—'}
-                        </p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <StatusBadge status={shop.status} />
-                      </td>
-                      <td className="px-5 py-4 text-zinc-600 dark:text-zinc-300">
+                      </div>
+                      <StatusBadge status={shop.status} />
+                    </div>
+
+                    <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-300">
+                      <p className="truncate">
+                        <span className="font-semibold text-zinc-500 dark:text-zinc-400">
+                          Chủ shop:{' '}
+                        </span>
+                        {shop.ownerName ?? 'Chưa có tên'} ({shop.ownerEmail ?? '—'})
+                      </p>
+                      <p className="tabular-nums">
+                        <span className="font-semibold text-zinc-500 dark:text-zinc-400">
+                          Nộp gần nhất:{' '}
+                        </span>
                         {formatDateTime(shop.submittedAt)}
-                      </td>
-                      <td className="px-5 py-4 text-zinc-600 dark:text-zinc-300">
+                      </p>
+                      <p className="tabular-nums">
+                        <span className="font-semibold text-zinc-500 dark:text-zinc-400">
+                          Cập nhật:{' '}
+                        </span>
                         {formatDateTime(shop.updatedAt)}
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        <Link
-                          to={'/admin/shops/' + shop.id}
-                          className="rounded-full px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 dark:text-indigo-200 dark:hover:bg-white/10"
-                        >
-                          Mở hồ sơ
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </p>
+                    </div>
+
+                    {shop.statusReason !== undefined && shop.statusReason !== null && (
+                      <p className="rounded-2xl bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+                        {shop.statusReason}
+                      </p>
+                    )}
+
+                    <div className="flex justify-end border-t border-zinc-200/80 pt-3 dark:border-white/10">
+                      <Link
+                        to={'/admin/shops/' + shop.id}
+                        aria-label={`Mở hồ sơ shop ${shop.name ?? ''}`}
+                        className={cn(
+                          'inline-flex cursor-pointer rounded-full bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 dark:bg-indigo-400/15 dark:text-sky-300 dark:hover:bg-indigo-400/25',
+                          FOCUS_RING_CLASS,
+                        )}
+                      >
+                        Mở hồ sơ
+                      </Link>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          </>
         )}
       </div>
 

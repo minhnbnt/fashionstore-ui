@@ -1,4 +1,4 @@
-import { cn, sidebarItemClass } from '@/lib/ui/styles'
+import { cn, sectionLabelClass, sidebarItemClass } from '@/lib/ui/styles'
 
 import type { MenuGroup, SellerTabId } from '@/types/seller'
 
@@ -41,7 +41,7 @@ export function SellerSidebarNav({ groups, activeTab, onSelectTab }: SellerSideb
       {groups.map(function (group) {
         return (
           <div key={group.groupTitle} className="space-y-1">
-            <span className="mb-1 block px-3 text-[10px] font-extrabold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            <span className={cn(sectionLabelClass(), 'mb-1 block px-3 text-[10px]')}>
               {group.groupTitle}
             </span>
             {group.items.map(function (item) {
@@ -62,10 +62,7 @@ export function SellerSidebarNav({ groups, activeTab, onSelectTab }: SellerSideb
                   onClick={function () {
                     onSelectTab(item.id)
                   }}
-                  className={cn(
-                    sidebarItemClass(isActive),
-                    'cursor-pointer justify-between px-3 py-2 text-xs focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none dark:focus-visible:ring-sky-400/40',
-                  )}
+                  className={cn(sidebarItemClass(isActive), 'justify-between px-3 py-2 text-xs')}
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
                     <Icon size={16} className={getNavIconClass(isActive)} />

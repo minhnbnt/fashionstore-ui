@@ -373,7 +373,7 @@ describe('SellerReviewsTab', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Số đánh giá' }))
-    expect(screen.getByText('Số lượt đánh giá')).toBeTruthy()
+    expect(screen.getAllByText('Số lượt đánh giá').length).toBeGreaterThanOrEqual(1)
 
     fireEvent.change(screen.getByLabelText('Từ ngày'), {
       target: { value: '2026-10-25' },
@@ -544,7 +544,7 @@ describe('clickable product & message buyer', () => {
       { data: { shopId: 'shop-1', buyerId: 'buyer-uuid-1' } },
       expect.anything(),
     )
-    expect(navigateMock).toHaveBeenCalledWith('/messages?tab=shop&id=conv-1')
+    expect(navigateMock).toHaveBeenCalledWith('/shop?shopId=shop-1&tab=chat&convId=conv-1')
   })
 })
 

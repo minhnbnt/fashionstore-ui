@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 import { getListQueryKey, useAdd, useUpdate } from '@generated/endpoints/addresses/addresses'
 import { useListProvinces, useListWards } from '@generated/endpoints/locations/locations'
@@ -300,7 +299,7 @@ export default function AddressFormModal(props: {
 
   const isMutating = addAddressMutation.isPending || updateAddressMutation.isPending
 
-  return createPortal(
+  return (
     <Modal title={modalTitle(props.mode)} onClose={props.onClose}>
       {/* Modal Form */}
       <form onSubmit={handleSubmitAddress} className="mt-4 space-y-4">
@@ -385,18 +384,20 @@ export default function AddressFormModal(props: {
                     setWard('')
                     setWardSearch('')
                   }}
-                  className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="cursor-pointer rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                   title="Xóa lựa chọn"
+                  aria-label="Xóa tỉnh/thành phố đã chọn"
                 >
                   <X size={12} weight="bold" />
                 </button>
               )}
               <button
                 type="button"
+                aria-label="Mở danh sách tỉnh/thành phố"
                 onClick={function () {
                   setProvinceDropdownOpen(!provinceDropdownOpen)
                 }}
-                className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="cursor-pointer rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               >
                 <CaretDown size={12} weight="bold" />
               </button>
@@ -480,8 +481,9 @@ export default function AddressFormModal(props: {
                     setWard('')
                     setWardSearch('')
                   }}
-                  className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="cursor-pointer rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                   title="Xóa lựa chọn"
+                  aria-label="Xóa phường/xã đã chọn"
                 >
                   <X size={12} weight="bold" />
                 </button>
@@ -489,10 +491,11 @@ export default function AddressFormModal(props: {
               <button
                 type="button"
                 disabled={provinceCode === ''}
+                aria-label="Mở danh sách phường/xã"
                 onClick={function () {
                   setWardDropdownOpen(!wardDropdownOpen)
                 }}
-                className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 disabled:opacity-50 dark:hover:text-zinc-200"
+                className="cursor-pointer rounded-full p-1 text-zinc-400 hover:text-zinc-600 disabled:opacity-50 dark:hover:text-zinc-200"
               >
                 <CaretDown size={12} weight="bold" />
               </button>
@@ -626,7 +629,6 @@ export default function AddressFormModal(props: {
           </button>
         </div>
       </form>
-    </Modal>,
-    document.body,
+    </Modal>
   )
 }

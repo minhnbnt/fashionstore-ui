@@ -4,7 +4,13 @@ import { CaretDown, CaretUp, Check, Funnel, Money, Tag, Trash } from '@phosphor-
 
 import { formatVnd } from '@/lib/format'
 import { PRICE_PRESETS } from '@/lib/searchFilters'
-import { cn, filterRowClass, iconChipClass, optionPillClass } from '@/lib/ui/styles'
+import {
+  cn,
+  filterRowClass,
+  FOCUS_RING_CLASS,
+  iconChipClass,
+  optionPillClass,
+} from '@/lib/ui/styles'
 
 import PriceInputs from './PriceInputs'
 
@@ -17,11 +23,15 @@ const COLOR_SWATCH_MAP: Record<string, string> = {
   đen: '#18181b',
   trắng: '#ffffff',
   be: '#e4d5b7',
+  nude: '#e8c8b0',
   hồng: '#f472b6',
   'hoa vàng': '#fbbf24',
   'hoa xanh': '#38bdf8',
   kem: '#fef3c7',
   rêu: '#4d7c0f',
+  'xanh lá': '#16a34a',
+  'xanh dương': '#2563eb',
+  navy: '#1e3a8a',
   xám: '#9ca3af',
   'xanh đậm': '#1e3a8a',
   'xanh nhạt': '#7dd3fc',
@@ -48,10 +58,14 @@ function AccordionGroup(props: {
     <section className="border-b border-sky-100 py-4 last:border-b-0 dark:border-white/10">
       <button
         type="button"
+        aria-expanded={open}
         onClick={function () {
           setOpen(!open)
         }}
-        className="group flex w-full cursor-pointer items-center justify-between text-left"
+        className={cn(
+          'group flex w-full cursor-pointer items-center justify-between rounded-xl text-left',
+          FOCUS_RING_CLASS,
+        )}
       >
         <div className="flex items-center gap-2">
           {props.icon && <span className={cn(iconChipClass())}>{props.icon}</span>}
@@ -148,10 +162,13 @@ export default function FilterPanel(props: {
           <button
             type="button"
             onClick={props.onClear}
-            className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-rose-600 hover:underline dark:text-rose-400"
+            className={cn(
+              'flex cursor-pointer items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10',
+              FOCUS_RING_CLASS,
+            )}
           >
             <Trash size={12} weight="bold" />
-            <span>Xóa tất cả</span>
+            <span>Xóa bộ lọc</span>
           </button>
         )}
       </div>
@@ -294,20 +311,6 @@ export default function FilterPanel(props: {
             })}
           </div>
         </AccordionGroup>
-      )}
-
-      {/* Footer Clear All */}
-      {hasAnyFilter && (
-        <div className="pt-3">
-          <button
-            type="button"
-            onClick={props.onClear}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white/80 py-2.5 text-xs font-extrabold text-zinc-700 transition hover:bg-sky-50 hover:text-zinc-900 dark:border-white/15 dark:bg-white/5 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
-          >
-            <Trash size={14} weight="bold" />
-            <span>Xóa tất cả</span>
-          </button>
-        </div>
       )}
     </div>
   )

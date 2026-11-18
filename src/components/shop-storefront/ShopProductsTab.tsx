@@ -1,27 +1,23 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
 
 import {
   useGetShopCategories,
   useGetShopProducts,
 } from '@generated/endpoints/shops-catalog/shops-catalog'
-import {
-  Funnel,
-  Package,
-  MagnifyingGlass,
-  X,
-  CaretLeft,
-  CaretRight,
-  Sparkle,
-} from '@phosphor-icons/react'
+import { Funnel, MagnifyingGlass, Package, Sparkle, X } from '@phosphor-icons/react'
 
+import Pagination from '@/components/search/Pagination'
+import { ProductCard, type ProductCardItem } from '@/components/ui/ProductCard'
+import { ProductCardSkeleton } from '@/components/ui/Skeleton'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import {
-  hookErrorMessage,
-  urlOrPlaceholder,
-  PLACEHOLDER_IMAGE,
-  takeData,
-} from '@/lib/api/apiAdapters'
-import { formatVnd } from '@/lib/format'
+  CARD_CLASS,
+  cn,
+  FOCUS_RING_CLASS,
+  optionPillClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from '@/lib/ui/styles'
 
 import type { PageResponseProductResponse } from '@generated/model/pageResponseProductResponse'
 import type { ProductResponse } from '@generated/model/productResponse'
@@ -44,22 +40,19 @@ const PRODUCT_SORT_OPTIONS: Array<{ key: ProductSortKey; label: string }> = [
   { key: 'PRICE_DESC', label: 'Giá giảm dần' },
 ]
 
-function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
-  e.currentTarget.onerror = null
-  e.currentTarget.src = PLACEHOLDER_IMAGE
-}
-
-function getProductDisplayInfo(p: ProductResponse) {
-  let imageSrc = PLACEHOLDER_IMAGE
+function toProductCardItem(p: ProductResponse): ProductCardItem {
+  let defaultImageUrl: string | null = null
   if (p.images !== undefined && p.images.length > 0) {
     const firstImg = p.images[0]
     if (firstImg?.url !== undefined && firstImg.url !== '') {
-      imageSrc = urlOrPlaceholder(firstImg.url)
+      defaultImageUrl = firstImg.url
     }
   }
 
-  let minPrice = 0
-  let comparePrice: number | null = null
+  let minPrice: number | null = null
+  let compareAtPrice: number | null = null
+  let totalStock: number | null = null
+
   if (p.variants !== undefined && p.variants.length > 0) {
     const prices = p.variants.map((v) => v.price ?? 0).filter((pr) => pr > 0)
     if (prices.length > 0) {
@@ -69,24 +62,26 @@ function getProductDisplayInfo(p: ProductResponse) {
     if (
       defaultVar?.compareAtPrice !== undefined &&
       defaultVar.compareAtPrice !== null &&
+      minPrice !== null &&
       defaultVar.compareAtPrice > minPrice
     ) {
-      comparePrice = defaultVar.compareAtPrice
+      compareAtPrice = defaultVar.compareAtPrice
     }
-  }
-
-  let discountPercent = 0
-  if (comparePrice !== null && comparePrice > minPrice && minPrice > 0) {
-    discountPercent = Math.round((1 - minPrice / comparePrice) * 100)
+    const hasStockInfo = p.variants.some((v) => v.stockQuantity !== undefined)
+    if (hasStockInfo) {
+      totalStock = p.variants.reduce((acc, v) => acc + (v.stockQuantity ?? 0), 0)
+    }
   }
 
   return {
     id: p.id ?? '',
     name: p.name ?? 'Sản phẩm',
-    imageSrc,
+    defaultImageUrl,
     minPrice,
-    comparePrice,
-    discountPercent,
+    compareAtPrice,
+    averageRating: p.averageRating,
+    reviewCount: p.reviewCount,
+    totalStock,
   }
 }
 
@@ -106,11 +101,14 @@ export default function ShopProductsTab({
     category: selectedCategoryId,
     page: 0,
   })
-  const pageSize = 12
+  const pageSize = 15
 
   const filterChanged =
     pageState.search !== searchQuery || pageState.category !== selectedCategoryId
-  const page = filterChanged ? 0 : pageState.page
+  let page = pageState.page
+  if (filterChanged) {
+    page = 0
+  }
 
   const updatePage = (next: number) => {
     setPageState({ search: searchQuery, category: selectedCategoryId, page: next })
@@ -157,7 +155,8 @@ export default function ShopProductsTab({
 
   const products = pageData?.items ?? []
   const totalItems = pageData?.total ?? 0
-  const totalPages = Math.ceil(totalItems / (pageData?.size ?? pageSize))
+  const resolvedPageSize = pageData?.size ?? pageSize
+  const totalPages = Math.ceil(totalItems / resolvedPageSize)
 
   const handleCategoryClick = (catId: string | undefined) => {
     updatePage(0)
@@ -175,9 +174,9 @@ export default function ShopProductsTab({
     <div className="space-y-6">
       {/* Search keyword banner if active */}
       {searchQuery !== '' && (
-        <div className="flex items-center justify-between rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-xs text-indigo-900 sm:px-5 dark:border-indigo-900/50 dark:bg-indigo-950/30 dark:text-indigo-200">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-sky-200 bg-sky-50/80 px-4 py-3 text-xs text-sky-900 sm:px-5 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-200">
           <div className="flex items-center gap-2">
-            <MagnifyingGlass size={16} className="text-indigo-600 dark:text-indigo-400" />
+            <MagnifyingGlass size={16} className="text-blue-700 dark:text-sky-300" />
             <span>
               Kết quả tìm kiếm cho: <strong>&ldquo;{searchQuery}&rdquo;</strong> ({totalItems} sản
               phẩm)
@@ -187,10 +186,13 @@ export default function ShopProductsTab({
             <button
               type="button"
               onClick={onClearSearch}
-              className="flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200"
+              className={cn(
+                'flex cursor-pointer items-center gap-1 rounded-full font-bold text-blue-700 hover:underline dark:text-sky-300',
+                FOCUS_RING_CLASS,
+              )}
             >
               <span>Xóa bộ lọc tìm kiếm</span>
-              <X size={14} />
+              <X size={14} weight="bold" />
             </button>
           )}
         </div>
@@ -199,35 +201,24 @@ export default function ShopProductsTab({
       {/* Category Pills Filter Bar */}
       {categories.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          {(() => {
-            let allClass =
-              'border border-zinc-200 bg-white text-zinc-600 hover:border-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300'
-            if (selectedCategoryId === undefined) {
-              allClass = 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
-            }
-            return (
-              <button
-                type="button"
-                onClick={() => handleCategoryClick(undefined)}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${allClass}`}
-              >
-                Tất cả danh mục
-              </button>
-            )
-          })()}
+          <button
+            type="button"
+            onClick={() => handleCategoryClick(undefined)}
+            className={cn(
+              optionPillClass(selectedCategoryId === undefined),
+              'shrink-0 px-4 py-1.5 text-xs',
+            )}
+          >
+            Tất cả danh mục
+          </button>
           {categories.map((c) => {
             const isSelected = selectedCategoryId === c.id
-            let catClass =
-              'border border-zinc-200 bg-white text-zinc-600 hover:border-indigo-300 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300'
-            if (isSelected) {
-              catClass = 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
-            }
             return (
               <button
                 key={c.id}
                 type="button"
                 onClick={() => handleCategoryClick(c.id)}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${catClass}`}
+                className={cn(optionPillClass(isSelected), 'shrink-0 px-4 py-1.5 text-xs')}
               >
                 <span>{c.name}</span>
                 <span> ({c.productCount})</span>
@@ -238,63 +229,47 @@ export default function ShopProductsTab({
       )}
 
       {/* Top Filter and Sort Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-zinc-200/80 bg-white/80 p-4 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+      <div className={cn(CARD_CLASS, 'flex flex-wrap items-center justify-between gap-4 p-4')}>
         <div className="flex items-center gap-2">
-          <Package size={20} className="text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+          <Package size={20} className="text-blue-700 dark:text-sky-300" />
+          <h2 className="text-sm font-bold text-[#17203a] tabular-nums dark:text-zinc-100">
             Sản phẩm ({totalItems})
           </h2>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <div className="flex items-center gap-2 overflow-x-auto">
+          <span className="flex shrink-0 items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
             <Funnel size={14} />
             Sắp xếp:
           </span>
-          <div className="flex rounded-full bg-zinc-100 p-1 dark:bg-white/10">
-            {PRODUCT_SORT_OPTIONS.map((opt) => {
-              const isActive = sort === opt.key
-              let sortBtnClass =
-                'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white'
-              if (isActive) {
-                sortBtnClass =
-                  'bg-white text-indigo-600 shadow-sm dark:bg-[#11182a] dark:text-indigo-400'
-              }
-              return (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => handleSortChange(opt.key)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${sortBtnClass}`}
-                >
-                  {opt.label}
-                </button>
-              )
-            })}
+          <div className={cn(segmentedTrackClass(), 'shrink-0')}>
+            {PRODUCT_SORT_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => handleSortChange(opt.key)}
+                className={cn(segmentedItemClass(sort === opt.key), 'whitespace-nowrap')}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Loading State */}
       {productsQuery.isLoading && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="animate-pulse rounded-2xl border border-zinc-200/80 bg-white p-3 dark:border-white/10 dark:bg-[#11182a]"
-            >
-              <div className="aspect-square w-full rounded-xl bg-zinc-200 dark:bg-white/10" />
-              <div className="mt-3 h-3 w-3/4 rounded bg-zinc-200 dark:bg-white/10" />
-              <div className="mt-2 h-4 w-1/2 rounded bg-zinc-200 dark:bg-white/10" />
-            </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {Array.from({ length: 10 }).map((_, idx) => (
+            <ProductCardSkeleton key={idx} />
           ))}
         </div>
       )}
 
       {/* Error State — API lỗi thì nói thẳng, không nhầm là "không có kết quả" */}
       {productsQuery.isError && (
-        <div className="rounded-3xl border border-red-200 bg-red-50/60 p-8 text-center dark:border-red-900/50 dark:bg-red-950/20">
-          <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+        <div className="rounded-3xl border border-rose-200 bg-rose-50/70 p-8 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
+          <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">
             {hookErrorMessage('shops-catalog', productsQuery.error)}
           </p>
         </div>
@@ -302,12 +277,12 @@ export default function ShopProductsTab({
 
       {/* Empty State */}
       {!productsQuery.isLoading && !productsQuery.isError && products.length === 0 && (
-        <div className="rounded-3xl border border-dashed border-zinc-200 bg-white/50 p-12 text-center dark:border-white/10 dark:bg-white/5">
+        <div className="rounded-3xl border border-dashed border-zinc-200 bg-white/60 p-12 text-center dark:border-white/10 dark:bg-white/5">
           <Sparkle size={36} className="mx-auto text-zinc-300 dark:text-zinc-600" />
-          <h3 className="mt-3 text-base font-bold text-zinc-800 dark:text-zinc-200">
+          <h3 className="mt-3 text-base font-bold text-[#17203a] dark:text-zinc-200">
             Không tìm thấy sản phẩm nào phù hợp
           </h3>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             Vui lòng thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc danh mục.
           </p>
           {(searchQuery !== '' || selectedCategoryId !== undefined) && (
@@ -318,7 +293,10 @@ export default function ShopProductsTab({
                 if (onClearSearch) onClearSearch()
                 if (onSelectCategory) onSelectCategory(undefined)
               }}
-              className="btn-primary mt-4 rounded-full px-5 py-2 text-xs font-semibold"
+              className={cn(
+                'btn-primary mt-4 cursor-pointer rounded-full px-5 py-2 text-xs font-semibold',
+                FOCUS_RING_CLASS,
+              )}
             >
               Xem tất cả sản phẩm
             </button>
@@ -328,74 +306,22 @@ export default function ShopProductsTab({
 
       {/* Product Grid */}
       {!productsQuery.isLoading && products.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {products.map((p) => {
-            const info = getProductDisplayInfo(p)
-            return (
-              <Link
-                key={info.id}
-                to={`/product/${info.id}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white transition-all hover:-translate-y-1 hover:border-indigo-300 hover:shadow-lg dark:border-white/10 dark:bg-[#11182a]"
-              >
-                <div className="relative aspect-square w-full overflow-hidden bg-zinc-100 dark:bg-white/10">
-                  <img
-                    src={info.imageSrc}
-                    alt={info.name}
-                    onError={handleImageError}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  {info.discountPercent > 0 && (
-                    <span className="absolute top-2 right-2 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
-                      -{info.discountPercent}%
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-1 flex-col justify-between p-3">
-                  <h3 className="line-clamp-2 text-xs font-semibold text-zinc-800 transition-colors group-hover:text-indigo-600 dark:text-zinc-200 dark:group-hover:text-indigo-400">
-                    {info.name}
-                  </h3>
-                  <div className="mt-3 flex items-baseline justify-between">
-                    <span className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400">
-                      {formatVnd(info.minPrice)}
-                    </span>
-                    {info.comparePrice !== null && (
-                      <span className="text-[10px] text-zinc-400 line-through">
-                        {formatVnd(info.comparePrice)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            )
-          })}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {products.map((p) => (
+            <ProductCard key={p.id} item={toProductCardItem(p)} showShop={false} />
+          ))}
         </div>
       )}
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-4">
-          <button
-            type="button"
-            disabled={page === 0}
-            onClick={() => updatePage(Math.max(0, page - 1))}
-            className="flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
-          >
-            <CaretLeft size={14} />
-            Trước
-          </button>
-          <span className="px-3 text-xs text-zinc-500 dark:text-zinc-400">
-            Trang {page + 1} / {totalPages}
-          </span>
-          <button
-            type="button"
-            disabled={page >= totalPages - 1}
-            onClick={() => updatePage(page + 1)}
-            className="flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
-          >
-            Sau
-            <CaretRight size={14} />
-          </button>
-        </div>
+      {/* Shared Pagination Controls */}
+      {!productsQuery.isLoading && products.length > 0 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={resolvedPageSize}
+          onPage={updatePage}
+        />
       )}
     </div>
   )

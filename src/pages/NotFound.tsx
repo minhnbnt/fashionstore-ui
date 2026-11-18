@@ -2,14 +2,14 @@ import { Link } from 'react-router'
 
 import { Compass, House, MagnifyingGlass } from '@phosphor-icons/react'
 
-import { cn, iconChipClass, secondaryButtonClass } from '@/lib/ui/styles'
+import { cn, FOCUS_RING_CLASS, iconChipClass, secondaryButtonClass } from '@/lib/ui/styles'
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-[72dvh] max-w-[1400px] items-center justify-center px-4 pt-28 pb-16">
-      <div className="glass relative w-full max-w-xl overflow-hidden rounded-3xl p-8 text-center md:p-12">
+    <main className="mx-auto flex min-h-[72dvh] max-w-[1400px] items-center justify-center px-4 pt-24 pb-16">
+      <div className="glass relative w-full max-w-xl overflow-hidden rounded-3xl border border-zinc-200/90 p-8 text-center md:p-12 dark:border-white/10">
         <div className="pointer-events-none absolute -top-20 -right-20 h-52 w-52 rounded-full bg-sky-400/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-20 h-52 w-52 rounded-full bg-indigo-900/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-20 h-52 w-52 rounded-full bg-blue-700/15 blur-3xl" />
 
         <div className="relative flex flex-col items-center">
           <span className={cn(iconChipClass(), 'h-16 w-16 rounded-2xl shadow-sm')}>
@@ -32,12 +32,18 @@ export default function NotFound() {
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Link
               to="/"
-              className="btn-primary inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold"
+              className={cn(
+                'btn-primary inline-flex cursor-pointer items-center gap-2 rounded-full px-6 py-3 text-sm font-bold',
+                FOCUS_RING_CLASS,
+              )}
             >
               <House size={16} weight="bold" />
               Về trang chủ
             </Link>
-            <Link to="/search" className={cn(secondaryButtonClass(), 'px-6 py-3 text-sm')}>
+            <Link
+              to="/search"
+              className={cn(secondaryButtonClass(), 'px-6 py-3 text-sm', FOCUS_RING_CLASS)}
+            >
               <MagnifyingGlass size={16} weight="bold" />
               Tìm kiếm sản phẩm
             </Link>

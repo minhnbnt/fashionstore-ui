@@ -139,7 +139,7 @@ export default function ReviewReplyTemplateModal({
       </div>
 
       {errorMessage !== null && (
-        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
           <WarningCircle size={16} weight="bold" />
           <span>{errorMessage}</span>
         </div>
@@ -255,7 +255,7 @@ export default function ReviewReplyTemplateModal({
                       onClick={function () {
                         deleteMutation.mutate({ templateId: tpl.id })
                       }}
-                      className="inline-flex items-center gap-1 rounded-full border border-red-200 px-2.5 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-rose-200 px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/15"
                     >
                       <Trash size={13} />
                       Xóa

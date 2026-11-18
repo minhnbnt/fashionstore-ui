@@ -14,18 +14,22 @@ import {
   Plus,
   ShieldCheck,
   ShoppingBag,
+  Storefront,
   Truck,
+  WarningCircle,
 } from '@phosphor-icons/react'
 
-import { takeData } from '@/lib/api/apiAdapters'
+import AddressFormModal from '@/components/account/AddressFormModal'
+import Modal from '@/components/Modal'
+import Breadcrumb from '@/components/ui/Breadcrumb'
+import { PageSkeleton } from '@/components/ui/Skeleton'
+import { useCart } from '@/hooks/useCart'
+import { useSessionQuery } from '@/hooks/useSession'
+import { fallbackImageOnError, takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { formatFullAddress, formatVnd } from '@/lib/format'
 import { notify } from '@/lib/notifications'
-import { cn, INPUT_CLASS } from '@/lib/ui/styles'
-
-import AddressFormModal from '../../components/account/AddressFormModal'
-import Modal from '../../components/Modal'
-import { useCart } from '../../hooks/useCart'
-import { useSessionQuery } from '../../hooks/useSession'
+import { groupCartByShop } from '@/lib/shop/cartView'
+import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 import type { AddressResponse } from '@generated/model/addressResponse'
 import type { CartCheckoutRequest } from '@generated/model/cartCheckoutRequest'
@@ -45,6 +49,13 @@ function stepPillClass(status: 'active' | 'done' | 'upcoming'): string {
     return 'inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-xs font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300'
   }
   return 'inline-flex items-center gap-1.5 rounded-full border border-zinc-200/80 bg-white/70 px-3.5 py-1.5 text-xs font-semibold text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400'
+}
+
+function radioIndicatorClass(selected: boolean): string {
+  if (selected) {
+    return 'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 border-blue-600 dark:border-sky-400'
+  }
+  return 'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 border-zinc-300 dark:border-white/25'
 }
 
 function CheckoutSteps(props: { hasAddress: boolean }) {
@@ -93,7 +104,6 @@ export default function Checkout() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
-  const [buyerNote, setBuyerNote] = useState('')
 
   const addressesQuery = useList({
     query: {
@@ -125,6 +135,12 @@ export default function Checkout() {
     }
   }
 
+  const missingPhone =
+    currentAddress !== null &&
+    (currentAddress.phoneNumber === undefined ||
+      currentAddress.phoneNumber === null ||
+      currentAddress.phoneNumber.trim() === '')
+
   // Chi tinh tren mon duoc chon khi co ?variantIds=, khong thi ca gio.
   let orderItems = cart.items
   if (wanted.length > 0) {
@@ -132,6 +148,8 @@ export default function Checkout() {
       return wanted.includes(item.variantId ?? '')
     })
   }
+
+  const shopGroups = groupCartByShop(orderItems)
 
   let selectedSubtotal = 0
   for (const item of orderItems) {
@@ -153,7 +171,15 @@ export default function Checkout() {
 
     const fullAddr = formatFullAddress(currentAddress)
     const nameToUse = currentAddress.recipientName || session?.user.email || 'Khách Hàng'
-    const phoneToUse = currentAddress.phoneNumber || '0900000000'
+    const rawPhone = (currentAddress.phoneNumber ?? '').trim()
+    let phoneToUse = rawPhone
+    if (rawPhone === '') {
+      notify.warning(
+        'Địa chỉ nhận hàng chưa có số điện thoại',
+        'Vui lòng cập nhật SĐT trong Sổ địa chỉ để shipper liên lạc thuận tiện hơn.',
+      )
+      phoneToUse = '0900000000'
+    }
 
     const payload: CartCheckoutRequest = {
       shippingName: nameToUse,
@@ -181,10 +207,10 @@ export default function Checkout() {
 
   if (!cart.isLoggedIn) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-24 text-center md:pt-36">
+      <main className="mx-auto max-w-6xl px-4 pt-24 pb-16 text-center">
         <div className="glass mx-auto max-w-md rounded-3xl p-8">
           <ShoppingBag size={48} className="mx-auto text-blue-600 dark:text-sky-300" />
-          <h1 className="mt-4 text-2xl font-extrabold tracking-tight">Thanh Toán Đơn Hàng</h1>
+          <h1 className="mt-4 text-2xl font-extrabold tracking-tight">Thanh toán đơn hàng</h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
             Vui lòng đăng nhập để tiến hành đặt hàng.
           </p>
@@ -200,9 +226,13 @@ export default function Checkout() {
     )
   }
 
+  if (orderItems.length === 0 && (cart.isLoading || cart.isFetching)) {
+    return <PageSkeleton />
+  }
+
   if (orderItems.length === 0) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-32 pb-24 text-center md:pt-36">
+      <main className="mx-auto max-w-6xl px-4 pt-24 pb-16 text-center">
         <div className="glass mx-auto max-w-md rounded-3xl p-8">
           <h1 className="text-2xl font-extrabold tracking-tight">
             Không có sản phẩm để thanh toán
@@ -223,7 +253,17 @@ export default function Checkout() {
   }
 
   return (
-    <main className="mx-auto max-w-[1200px] px-4 pt-32 pb-24 md:pt-36">
+    <main className="mx-auto max-w-6xl px-4 pt-24 pb-28 lg:pb-16">
+      <Breadcrumb
+        items={[
+          { label: 'Trang chủ', to: '/' },
+          { label: 'Giỏ hàng', to: '/cart' },
+          { label: 'Thanh toán' },
+        ]}
+        showHomeIcon={true}
+        className="mb-4"
+      />
+
       {/* Header trang thanh toán */}
       <div className="border-b border-zinc-200/70 pb-5 dark:border-white/10">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -247,7 +287,7 @@ export default function Checkout() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Cột trái: Địa chỉ & Sản phẩm */}
         <div className="space-y-6 lg:col-span-8">
-          {/* Khối Địa Chỉ Nhận Hàng */}
+          {/* Khối Địa chỉ nhận hàng */}
           <div className="glass rounded-3xl p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -255,7 +295,7 @@ export default function Checkout() {
                   <MapPin size={16} weight="fill" />
                 </span>
                 <span className="text-sm font-extrabold text-[#17203a] dark:text-[#e2e8f0]">
-                  Địa Chỉ Nhận Hàng
+                  Địa chỉ nhận hàng
                 </span>
               </div>
               <button
@@ -267,15 +307,18 @@ export default function Checkout() {
                     setFormOpen(true)
                   }
                 }}
-                className="cursor-pointer text-xs font-bold text-blue-700 hover:underline dark:text-sky-300"
+                className={cn(
+                  'cursor-pointer rounded-full px-2 py-1 text-xs font-bold text-blue-700 hover:underline dark:text-sky-300',
+                  FOCUS_RING_CLASS,
+                )}
               >
                 {addresses.length > 0 && 'Thay Đổi'}
-                {addresses.length === 0 && 'Thêm Mới'}
+                {addresses.length === 0 && 'Thêm mới'}
               </button>
             </div>
 
             {currentAddress !== null && (
-              <div className="mt-4 space-y-1.5">
+              <div className="mt-4 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-extrabold text-[#17203a] dark:text-white">
                     {currentAddress.recipientName || session?.user.email}
@@ -313,6 +356,16 @@ export default function Checkout() {
                 <p className="text-xs text-zinc-600 dark:text-zinc-300">
                   {formatFullAddress(currentAddress)}
                 </p>
+
+                {missingPhone && (
+                  <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200">
+                    <WarningCircle size={16} weight="fill" className="mt-0.5 shrink-0" />
+                    <span>
+                      Địa chỉ này chưa có số điện thoại liên hệ. Bạn nên cập nhật số điện thoại để
+                      shipper dễ dàng liên lạc khi giao hàng.
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -329,76 +382,83 @@ export default function Checkout() {
                   className="btn-primary mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-full px-5 py-2 text-xs font-bold"
                 >
                   <Plus size={14} weight="bold" />
-                  <span>Thêm Địa Chỉ Mới</span>
+                  <span>Thêm địa chỉ mới</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Danh Sách Sản Phẩm Đặt Mua */}
+          {/* Danh sách sản phẩm đặt mua nhóm theo shop */}
           <div className="glass rounded-3xl p-6">
             <h2 className="text-sm font-extrabold text-[#17203a] dark:text-white">
               Sản Phẩm Đặt Mua ({orderItems.length})
             </h2>
 
-            <div className="mt-4 divide-y divide-zinc-200/70 dark:divide-white/10">
-              {orderItems.map(function (item) {
-                const lineTotal = (item.unitPrice ?? 0) * (item.quantity ?? 1)
+            <div className="mt-4 space-y-5">
+              {shopGroups.map(function (group, groupIdx) {
                 return (
-                  <div key={item.variantId} className="flex items-center gap-4 py-3">
-                    <div className="min-w-0 flex-1">
-                      {item.productId !== undefined && (
-                        <Link
-                          to={`/product/${item.productId}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block truncate text-sm font-bold text-[#17203a] transition hover:text-blue-700 hover:underline dark:text-white dark:hover:text-sky-300"
-                          title="Xem chi tiết sản phẩm (mở tab mới)"
-                        >
-                          {item.productName}
-                        </Link>
-                      )}
-                      {item.productId === undefined && (
-                        <p className="truncate text-sm font-bold text-[#17203a] dark:text-white">
-                          {item.productName}
-                        </p>
-                      )}
-                      <p className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
-                        {item.variantLabel} × {item.quantity}
-                      </p>
+                  <div key={group.shopId || `shop-group-${groupIdx}`}>
+                    {group.shopName !== '' && (
+                      <div className="mb-2 flex items-center gap-1.5 border-b border-zinc-200/70 pb-2 text-xs font-extrabold text-[#17203a] dark:border-white/10 dark:text-white">
+                        <Storefront
+                          size={15}
+                          weight="bold"
+                          className="shrink-0 text-blue-700 dark:text-sky-300"
+                        />
+                        <span>{group.shopName}</span>
+                      </div>
+                    )}
+
+                    <div className="divide-y divide-zinc-200/70 dark:divide-white/10">
+                      {group.items.map(function (item) {
+                        const lineTotal = (item.unitPrice ?? 0) * (item.quantity ?? 1)
+                        return (
+                          <div key={item.variantId} className="flex items-center gap-3.5 py-3">
+                            <img
+                              src={urlOrPlaceholder(item.imageUrl)}
+                              alt={item.productName ?? 'Sản phẩm'}
+                              loading="lazy"
+                              onError={fallbackImageOnError}
+                              className="h-14 w-14 shrink-0 rounded-2xl border border-zinc-200/80 bg-zinc-100 object-cover dark:border-white/10 dark:bg-white/5"
+                            />
+                            <div className="min-w-0 flex-1">
+                              {item.productId !== undefined && (
+                                <Link
+                                  to={`/product/${item.productId}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="block truncate text-sm font-bold text-[#17203a] transition hover:text-blue-700 hover:underline dark:text-white dark:hover:text-sky-300"
+                                  title="Xem chi tiết sản phẩm (mở tab mới)"
+                                >
+                                  {item.productName}
+                                </Link>
+                              )}
+                              {item.productId === undefined && (
+                                <p className="truncate text-sm font-bold text-[#17203a] dark:text-white">
+                                  {item.productName}
+                                </p>
+                              )}
+                              <p className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                                {item.variantLabel} × {item.quantity}
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-sm font-extrabold text-[#17203a] tabular-nums dark:text-zinc-100">
+                              {formatVnd(lineTotal)}
+                            </span>
+                          </div>
+                        )
+                      })}
                     </div>
-                    <span className="text-sm font-extrabold text-[#17203a] tabular-nums dark:text-zinc-100">
-                      {formatVnd(lineTotal)}
-                    </span>
                   </div>
                 )
               })}
             </div>
-
-            {/* Lời nhắn cho người bán */}
-            <div className="mt-4 border-t border-zinc-200/70 pt-4 dark:border-white/10">
-              <label
-                htmlFor="buyer-note"
-                className="block text-xs font-bold text-zinc-600 dark:text-zinc-300"
-              >
-                Lời nhắn cho người bán (tùy chọn)
-              </label>
-              <input
-                id="buyer-note"
-                value={buyerNote}
-                onChange={function (e) {
-                  setBuyerNote(e.target.value)
-                }}
-                placeholder="Lưu ý giao hàng, khung giờ nhận..."
-                className={cn(INPUT_CLASS, 'mt-2 text-xs')}
-              />
-            </div>
           </div>
 
-          {/* Phương Thức Vận Chuyển & Thanh Toán */}
+          {/* Phương thức vận chuyển & thanh toán */}
           <div className="glass rounded-3xl p-6">
             <h2 className="text-sm font-extrabold text-[#17203a] dark:text-white">
-              Phương Thức Vận Chuyển &amp; Thanh Toán
+              Phương thức vận chuyển &amp; thanh toán
             </h2>
 
             <div className="mt-4 space-y-3">
@@ -409,7 +469,7 @@ export default function Checkout() {
                   </span>
                   <div>
                     <p className="font-extrabold text-[#17203a] dark:text-white">
-                      Vận chuyển Tiêu chuẩn (Toàn quốc)
+                      Vận chuyển tiêu chuẩn (Toàn quốc)
                     </p>
                     <p className="text-zinc-600 dark:text-zinc-300">
                       Dự kiến nhận hàng trong 2-3 ngày
@@ -452,10 +512,10 @@ export default function Checkout() {
           </div>
         </div>
 
-        {/* Cột phải: Bảng Tổng Kết Thanh Toán */}
+        {/* Cột phải: Bảng tổng kết thanh toán */}
         <div className="lg:col-span-4">
           <div className="glass sticky top-24 rounded-3xl p-6">
-            <h2 className="text-base font-extrabold tracking-tight">Chi Tiết Thanh Toán</h2>
+            <h2 className="text-base font-extrabold tracking-tight">Chi tiết thanh toán</h2>
 
             <div className="mt-5 space-y-3 text-xs">
               <div className="flex justify-between">
@@ -488,7 +548,10 @@ export default function Checkout() {
               id="btn-confirm-order"
               onClick={handlePlaceOrder}
               disabled={cart.checkout.isPending || currentAddress === null}
-              className="btn-primary mt-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full py-4 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
+              className={cn(
+                'btn-primary mt-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full py-4 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
+                FOCUS_RING_CLASS,
+              )}
             >
               {cart.checkout.isPending && <span>Đang xử lý đặt hàng…</span>}
               {!cart.checkout.isPending && <span>Đặt Hàng (COD)</span>}
@@ -502,6 +565,32 @@ export default function Checkout() {
         </div>
       </div>
 
+      {/* Sticky Mobile Place Order Bar */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200/90 bg-white/95 px-4 py-3 shadow-2xl backdrop-blur-md lg:hidden dark:border-white/10 dark:bg-[#11182a]/95">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+              Thanh toán COD
+            </p>
+            <p className="truncate text-base font-extrabold text-blue-700 tabular-nums dark:text-sky-300">
+              Tổng: {formatVnd(finalTotal)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handlePlaceOrder}
+            disabled={cart.checkout.isPending || currentAddress === null}
+            className={cn(
+              'btn-primary shrink-0 cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
+              FOCUS_RING_CLASS,
+            )}
+          >
+            {cart.checkout.isPending && <span>Đang xử lý…</span>}
+            {!cart.checkout.isPending && <span>Đặt hàng ngay</span>}
+          </button>
+        </div>
+      </div>
+
       {/* Modal Chọn Địa Chỉ Có Sẵn */}
       {pickerOpen && (
         <Modal
@@ -510,36 +599,42 @@ export default function Checkout() {
             setPickerOpen(false)
           }}
         >
-          <div className="mt-4 max-h-72 space-y-3 overflow-y-auto">
+          <fieldset className="mt-4 max-h-72 space-y-3 overflow-y-auto">
+            <legend className="sr-only">Danh sách địa chỉ nhận hàng</legend>
             {addresses.map(function (a) {
               const isSelected = (selectedAddressId ?? currentAddress?.id) === a.id
               let itemClass =
-                'flex w-full cursor-pointer items-start gap-3 rounded-2xl border border-zinc-300 bg-white/80 p-4 text-left text-xs transition hover:border-blue-600 dark:border-white/15 dark:bg-white/5 dark:hover:border-sky-400'
+                'flex w-full cursor-pointer items-start gap-3 rounded-2xl border border-zinc-300 bg-white/80 p-4 text-left text-xs transition hover:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/40 dark:border-white/15 dark:bg-white/5 dark:hover:border-sky-400 dark:focus-within:ring-sky-400/45'
               if (isSelected) {
                 itemClass =
-                  'flex w-full cursor-pointer items-start gap-3 rounded-2xl border border-blue-600 bg-blue-600/5 p-4 text-left text-xs transition dark:border-sky-400 dark:bg-white/10'
+                  'flex w-full cursor-pointer items-start gap-3 rounded-2xl border border-blue-600 bg-blue-600/5 p-4 text-left text-xs transition focus-within:ring-2 focus-within:ring-blue-600/40 dark:border-sky-400 dark:bg-white/10 dark:focus-within:ring-sky-400/45'
               }
               return (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={function () {
-                    if (a.id !== undefined) {
-                      setSelectedAddressId(a.id)
-                      setPickerOpen(false)
-                    }
-                  }}
-                  className={itemClass}
-                >
+                <label key={a.id} className={itemClass}>
                   <input
                     type="radio"
+                    name="checkout-shipping-address"
                     checked={isSelected}
-                    readOnly
-                    aria-label="Chọn địa chỉ giao hàng này"
-                    className="mt-0.5 cursor-pointer accent-blue-600 dark:accent-sky-400"
+                    onChange={function () {
+                      if (a.id !== undefined) {
+                        setSelectedAddressId(a.id)
+                        setPickerOpen(false)
+                      }
+                    }}
+                    onClick={function () {
+                      if (isSelected) {
+                        setPickerOpen(false)
+                      }
+                    }}
+                    className="sr-only"
                   />
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                  <span aria-hidden="true" className={radioIndicatorClass(isSelected)}>
+                    {isSelected && (
+                      <span className="h-2 w-2 rounded-full bg-blue-600 dark:bg-sky-400" />
+                    )}
+                  </span>
+                  <span className="block min-w-0 flex-1 space-y-1">
+                    <span className="flex flex-wrap items-center gap-2">
                       <span className="font-bold text-[#17203a] dark:text-white">
                         {a.recipientName || 'Khách hàng'}
                       </span>
@@ -551,13 +646,15 @@ export default function Checkout() {
                           Mặc định
                         </span>
                       )}
-                    </div>
-                    <p className="text-zinc-600 dark:text-zinc-300">{formatFullAddress(a)}</p>
-                  </div>
-                </button>
+                    </span>
+                    <span className="block text-zinc-600 dark:text-zinc-300">
+                      {formatFullAddress(a)}
+                    </span>
+                  </span>
+                </label>
               )
             })}
-          </div>
+          </fieldset>
 
           <div className="mt-5 border-t border-zinc-200/70 pt-4 dark:border-white/10">
             <button
@@ -569,7 +666,7 @@ export default function Checkout() {
               className="btn-primary flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full py-2.5 text-xs font-bold"
             >
               <Plus size={14} weight="bold" />
-              <span>Thêm Địa Chỉ Mới</span>
+              <span>Thêm địa chỉ mới</span>
             </button>
           </div>
         </Modal>

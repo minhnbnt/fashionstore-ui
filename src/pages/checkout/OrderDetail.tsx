@@ -29,6 +29,7 @@ import {
 import {
   ArrowCounterClockwise,
   ArrowLeft,
+  ChatCircleDots,
   CheckCircle,
   MapPin,
   Star,
@@ -36,6 +37,7 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import AccountLayout from '@/components/account/AccountLayout'
 import CancelOrderModal from '@/components/order/CancelOrderModal'
 import OrderProgressStepper from '@/components/order/OrderProgressStepper'
 import ReorderResultModal from '@/components/order/ReorderResultModal'
@@ -76,6 +78,25 @@ import type { ReviewResponse } from '@generated/model/reviewResponse'
 
 function isBlockingReturn(status: string | null | undefined): boolean {
   return status === 'REQUESTED' || status === 'APPROVED' || status === 'COMPLETED'
+}
+
+function returnReasonLabel(reason: string | null | undefined): string {
+  if (reason === 'DAMAGED') {
+    return 'Sản phẩm bị hư hỏng / lỗi'
+  }
+  if (reason === 'WRONG_ITEM') {
+    return 'Giao sai sản phẩm / size / màu'
+  }
+  if (reason === 'NOT_AS_DESCRIBED') {
+    return 'Không đúng mô tả'
+  }
+  if (reason === 'CHANGE_MIND') {
+    return 'Đổi ý / không còn nhu cầu'
+  }
+  if (reason === 'OTHER') {
+    return 'Lý do khác'
+  }
+  return reason ?? 'Không rõ'
 }
 
 export default function OrderDetail() {
@@ -355,11 +376,28 @@ export default function OrderDetail() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {Boolean(order.shopId) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent('fashionstore:open-chat', {
+                        detail: { shopId: order.shopId, shopName: order.shopName },
+                      }),
+                    )
+                  }}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50/80 px-4 py-2 text-xs font-bold text-blue-700 transition hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25"
+                >
+                  <ChatCircleDots size={15} weight="bold" />
+                  <span>Chat với Shop</span>
+                </button>
+              )}
+
               {canCancel(order.status) && (
                 <button
                   type="button"
                   onClick={() => setCancelOpen(true)}
-                  className="rounded-full border border-red-300 px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/15"
+                  className="cursor-pointer rounded-full border border-rose-300 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/15"
                 >
                   Hủy đơn hàng
                 </button>
@@ -442,7 +480,7 @@ export default function OrderDetail() {
             )}
 
           {order.status === 'CANCELLED' && Boolean(order.cancelReason) && (
-            <div className="rounded-2xl border border-red-200 bg-red-50/60 p-3.5 text-xs text-red-800 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-3.5 text-xs text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200">
               <p className="font-bold">
                 Lý do hủy ({actorLabel(order.cancelledBy)}):{' '}
                 {cancelReasonLabel(order.cancelReason, order.cancelledBy)}
@@ -565,7 +603,7 @@ export default function OrderDetail() {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-bold text-zinc-900 dark:text-white">
-                        Lý do: {ret.reason}
+                        Lý do: {returnReasonLabel(ret.reason)}
                       </span>
                       {badge !== null && (
                         <span className={`rounded-full px-2.5 py-0.5 font-bold ${badge.className}`}>
@@ -670,7 +708,14 @@ export default function OrderDetail() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
+    <AccountLayout
+      breadcrumbs={[
+        { label: 'Trang chủ', to: '/' },
+        { label: 'Tài khoản', to: '/account' },
+        { label: 'Đơn hàng của tôi', to: '/account/orders' },
+        { label: 'Chi tiết đơn hàng' },
+      ]}
+    >
       <Link
         to="/account/orders"
         className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:underline dark:text-sky-300"
@@ -679,6 +724,6 @@ export default function OrderDetail() {
         Quay lại danh sách đơn
       </Link>
       {body}
-    </main>
+    </AccountLayout>
   )
 }

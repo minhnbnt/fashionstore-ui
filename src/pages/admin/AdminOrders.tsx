@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import {
@@ -21,6 +21,7 @@ import AdminOrderDetailPanel from '@/components/admin/AdminOrderDetailPanel'
 import AdminShell from '@/components/admin/AdminShell'
 import CancelOrderDialog from '@/components/admin/dialogs/CancelOrderDialog'
 import Pagination from '@/components/search/Pagination'
+import { TableRowsSkeleton } from '@/components/ui/Skeleton'
 import { formatDateTime } from '@/lib/admin/productModeration'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
@@ -37,7 +38,16 @@ import {
   statusLabel,
   tabCount,
 } from '@/lib/order/orderMonitoring'
-import { cn, PANEL_CLASS, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
+import {
+  cn,
+  filterChipClass,
+  FOCUS_RING_CLASS,
+  INPUT_CLASS,
+  PANEL_CLASS,
+  primaryButtonClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from '@/lib/ui/styles'
 
 import type { OrderAlertFilter, OrderStatusFilter } from '@/lib/order/orderMonitoring'
 import type { AdminOrderResponse } from '@generated/model/adminOrderResponse'
@@ -163,10 +173,17 @@ function AlertCard({
 }) {
   const CardIcon = ALERT_ICONS[alert.value]
   const hasAlerts = count !== undefined && count > 0
-  let cardClass =
-    'glass flex flex-col gap-2 rounded-3xl p-4 text-left transition hover:ring-2 hover:ring-amber-300'
+  let cardClass = cn(
+    PANEL_CLASS,
+    'flex cursor-pointer flex-col gap-2 p-4 text-left transition hover:ring-2 hover:ring-amber-300',
+    FOCUS_RING_CLASS,
+  )
   if (selected) {
-    cardClass = 'glass flex flex-col gap-2 rounded-3xl p-4 text-left ring-2 ring-amber-500'
+    cardClass = cn(
+      PANEL_CLASS,
+      'flex cursor-pointer flex-col gap-2 p-4 text-left ring-2 ring-amber-500',
+      FOCUS_RING_CLASS,
+    )
   }
   let iconClass =
     'flex h-9 w-9 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-500 dark:bg-white/10 dark:text-zinc-400'
@@ -189,7 +206,9 @@ function AlertCard({
           <CardIcon size={18} weight="bold" />
         </span>
       </span>
-      <span className="text-3xl font-extrabold tracking-tighter tabular-nums">{countText}</span>
+      <span className="text-3xl font-extrabold tracking-tighter text-[#17203a] tabular-nums dark:text-[#e2e8f0]">
+        {countText}
+      </span>
       <span className="text-xs text-zinc-500 dark:text-zinc-400">{alert.hint}</span>
     </button>
   )
@@ -210,10 +229,16 @@ function OrderRow({
   const hasAlert = order.alert !== null && order.alert !== undefined
 
   return (
-    <li className="flex flex-col gap-3 rounded-2xl bg-white/70 p-3 sm:flex-row sm:items-center dark:bg-white/5">
-      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
+    <li className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-3 sm:flex-row sm:items-center dark:border-white/10 dark:bg-white/5">
+      <button
+        type="button"
+        onClick={onOpen}
+        className={cn('min-w-0 flex-1 cursor-pointer rounded-2xl text-left', FOCUS_RING_CLASS)}
+      >
         <span className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-bold hover:underline">{order.code}</span>
+          <span className="text-sm font-bold text-[#17203a] hover:underline dark:text-[#e2e8f0]">
+            {order.code}
+          </span>
           <span className={statusBadgeClass(order.status)}>{statusLabel(order.status)}</span>
           {hasAlert && (
             <span className="flex w-fit items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
@@ -230,7 +255,7 @@ function OrderRow({
           {itemCount > 1 && <span> · {itemCount} sản phẩm</span>}
         </span>
         {order.status === 'CANCELLED' && (
-          <span className="block truncate text-xs text-red-700 dark:text-red-300">
+          <span className="block truncate text-xs text-rose-700 dark:text-rose-300">
             Hủy bởi {cancelledByLabel(order.cancelledBy)}
           </span>
         )}
@@ -238,7 +263,9 @@ function OrderRow({
 
       <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
         <div className="flex flex-col items-start gap-0.5 sm:items-end">
-          <span className="text-sm font-bold tabular-nums">{formatVnd(order.total ?? 0)}</span>
+          <span className="text-sm font-bold text-[#17203a] tabular-nums dark:text-[#e2e8f0]">
+            {formatVnd(order.total ?? 0)}
+          </span>
           <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
             {formatDateTime(order.createdAt)}
           </span>
@@ -252,7 +279,10 @@ function OrderRow({
           <button
             type="button"
             onClick={onCancel}
-            className="flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+            className={cn(
+              'flex cursor-pointer items-center gap-1.5 rounded-full border border-rose-300 px-4 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/15',
+              FOCUS_RING_CLASS,
+            )}
           >
             <XCircle size={14} weight="bold" />
             Hủy
@@ -277,13 +307,28 @@ export default function AdminOrders() {
   }
 
   const [draft, setDraft] = useState(filters.q)
+  const [syncedQ, setSyncedQ] = useState(filters.q)
+  if (syncedQ !== filters.q) {
+    setSyncedQ(filters.q)
+    setDraft(filters.q)
+  }
   const [openId, setOpenId] = useState<string | null>(null)
   const [cancelTarget, setCancelTarget] = useState<AdminOrderResponse | null>(null)
-  const [now] = useState(() => new Date())
+  const [now, setNow] = useState(() => new Date())
   const queryClient = useQueryClient()
   const listQuery = useListAdminOrders(listParamsOf(filters))
   const summaryQuery = useGetAdminOrderSummary(summaryParamsOf(filters))
   const rangeProblem = dateRangeError(filters.from, filters.to)
+
+  // Làm mới mốc tính thời gian SLA mỗi 60 giây
+  useEffect(function () {
+    const timer = window.setInterval(function () {
+      setNow(new Date())
+    }, 60_000)
+    return function () {
+      window.clearInterval(timer)
+    }
+  }, [])
 
   let summary: AdminOrderSummaryResponse | undefined
   if (summaryQuery.isSuccess) {
@@ -300,6 +345,11 @@ export default function AdminOrders() {
       next.set(key, value)
     }
     setSearchParams(next)
+  }
+
+  function clearAllFilters() {
+    setDraft('')
+    setSearchParams(new URLSearchParams())
   }
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
@@ -327,23 +377,24 @@ export default function AdminOrders() {
     void queryClient.invalidateQueries({ predicate: (query) => isAdminOrderKey(query.queryKey) })
   }
 
-  let listBody = (
-    <div className="space-y-2" aria-busy="true">
-      {[0, 1, 2, 3].map(function (index) {
-        return (
-          <div
-            key={index}
-            className="h-[84px] animate-pulse rounded-2xl bg-white/60 dark:bg-white/5"
-          />
-        )
-      })}
-    </div>
-  )
+  const hasAnyFilter =
+    filters.status !== 'ALL' ||
+    filters.alert !== null ||
+    filters.q !== '' ||
+    filters.from !== '' ||
+    filters.to !== '' ||
+    filters.shopId !== '' ||
+    filters.buyerId !== ''
+
+  let listBody: React.ReactNode = <TableRowsSkeleton rows={5} columns={4} />
   let totalPages = 0
   let total = 0
   if (listQuery.isError) {
     listBody = (
-      <p className="text-sm text-red-600 dark:text-red-400">
+      <p
+        role="alert"
+        className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+      >
         {hookErrorMessage('adminOrders', listQuery.error)}
       </p>
     )
@@ -360,7 +411,7 @@ export default function AdminOrders() {
     )
     if (items.length > 0) {
       listBody = (
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {items.map(function (order) {
             return (
               <OrderRow
@@ -376,11 +427,6 @@ export default function AdminOrders() {
       )
     }
   }
-
-  const chipClass =
-    'flex cursor-pointer items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 font-semibold dark:bg-white/10'
-  const dateInputClass =
-    'rounded-full border border-zinc-300 bg-white/80 px-3 py-2 text-sm text-[#17203a] outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white dark:focus:border-sky-400'
 
   return (
     <AdminShell
@@ -435,20 +481,24 @@ export default function AdminOrders() {
 
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <form onSubmit={handleSearch} className="flex w-full items-center gap-2 lg:w-auto">
-            <label className="flex flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2 focus-within:border-blue-600 lg:w-96 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400">
-              <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
+            <label className="flex flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/85 px-4 py-2 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/20 lg:w-96 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400 dark:focus-within:ring-sky-400/25">
+              <MagnifyingGlass
+                size={16}
+                weight="bold"
+                className="shrink-0 text-zinc-500 dark:text-zinc-400"
+              />
               <input
                 type="search"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="Mã đơn, tên/SĐT người nhận, shop, email"
                 aria-label="Tìm đơn hàng"
-                className="w-full bg-transparent text-sm text-[#17203a] outline-none placeholder:text-zinc-400 dark:text-white"
+                className="w-full bg-transparent text-sm text-[#17203a] outline-none placeholder:text-zinc-500 dark:text-white dark:placeholder:text-zinc-400"
               />
             </label>
             <button
               type="submit"
-              className="btn-primary cursor-pointer rounded-full px-4 py-2 text-sm font-bold"
+              className={cn(primaryButtonClass(), 'rounded-full px-4 py-2 text-sm font-bold')}
             >
               Tìm
             </button>
@@ -462,7 +512,7 @@ export default function AdminOrders() {
                 value={filters.from}
                 max={filters.to || undefined}
                 onChange={(event) => updateUrl({ from: event.target.value, page: null })}
-                className={dateInputClass}
+                className={cn(INPUT_CLASS, 'w-auto px-3 py-2')}
               />
             </label>
             <label className="flex items-center gap-2">
@@ -472,14 +522,16 @@ export default function AdminOrders() {
                 value={filters.to}
                 min={filters.from || undefined}
                 onChange={(event) => updateUrl({ to: event.target.value, page: null })}
-                className={dateInputClass}
+                className={cn(INPUT_CLASS, 'w-auto px-3 py-2')}
               />
             </label>
           </div>
         </div>
 
         {rangeProblem !== null && (
-          <p className="mb-3 text-xs text-red-600 dark:text-red-400">{rangeProblem}</p>
+          <p role="alert" className="mb-3 text-xs font-medium text-rose-600 dark:text-rose-400">
+            {rangeProblem}
+          </p>
         )}
 
         <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
@@ -490,7 +542,7 @@ export default function AdminOrders() {
             <button
               type="button"
               onClick={() => updateUrl({ alert: null, page: null })}
-              className={chipClass}
+              className={filterChipClass()}
             >
               {alertLabel(filters.alert)} · trễ lâu nhất trước
               <X size={12} weight="bold" />
@@ -500,7 +552,7 @@ export default function AdminOrders() {
             <button
               type="button"
               onClick={() => updateUrl({ shopId: null, page: null })}
-              className={chipClass}
+              className={filterChipClass()}
             >
               Đang lọc theo 1 shop
               <X size={12} weight="bold" />
@@ -510,7 +562,7 @@ export default function AdminOrders() {
             <button
               type="button"
               onClick={() => updateUrl({ buyerId: null, page: null })}
-              className={chipClass}
+              className={filterChipClass()}
             >
               Đang lọc theo 1 người mua
               <X size={12} weight="bold" />
@@ -520,10 +572,23 @@ export default function AdminOrders() {
             <button
               type="button"
               onClick={() => updateUrl({ from: null, to: null, page: null })}
-              className={chipClass}
+              className={filterChipClass()}
             >
               Bỏ lọc ngày
               <X size={12} weight="bold" />
+            </button>
+          )}
+          {hasAnyFilter && (
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className={cn(
+                'ml-auto inline-flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-xs font-bold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/15',
+                FOCUS_RING_CLASS,
+              )}
+            >
+              <X size={12} weight="bold" />
+              Xóa tất cả bộ lọc
             </button>
           )}
         </div>

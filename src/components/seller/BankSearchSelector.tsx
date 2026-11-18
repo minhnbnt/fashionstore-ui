@@ -21,6 +21,7 @@ export interface BankSearchSelectorProps {
   disabled?: boolean
   error?: string
   idPrefix?: string
+  fallbackBankLabel?: string
 }
 
 function optionItemClass(isSelected: boolean): string {
@@ -37,6 +38,7 @@ export default function BankSearchSelector({
   disabled = false,
   error,
   idPrefix = 'bank',
+  fallbackBankLabel = '',
 }: BankSearchSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -61,23 +63,31 @@ export default function BankSearchSelector({
     }
   }, [isOpen])
 
-  // Close on outside click
+  // Close on outside click or Escape key
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false)
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleKeyDown)
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen])
 
   const filteredBanks = filterBanks(banks, search)
   const selectedBank = banks.find((b) => b.bin === selectedBankBin)
+  const hasFallbackLabel = selectedBank === undefined && fallbackBankLabel.trim() !== ''
 
   return (
     <div ref={containerRef} className="relative">
@@ -85,7 +95,7 @@ export default function BankSearchSelector({
         htmlFor={`${idPrefix}-select-trigger`}
         className="block text-xs font-bold text-zinc-700 dark:text-zinc-300"
       >
-        Ngân hàng thụ hưởng <span className="text-red-500">*</span>
+        Ngân hàng thụ hưởng <span className="text-rose-600 dark:text-rose-400">*</span>
       </label>
 
       {/* Trigger Button */}
@@ -93,8 +103,10 @@ export default function BankSearchSelector({
         id={`${idPrefix}-select-trigger`}
         type="button"
         disabled={disabled}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
         onClick={handleToggleOpen}
-        className="mt-1 flex w-full items-center justify-between rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs font-medium text-zinc-900 transition outline-none hover:border-blue-500 focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+        className="mt-1 flex w-full items-center justify-between rounded-full border border-zinc-300 bg-white/80 px-3.5 py-2 text-xs font-medium text-zinc-900 transition outline-none hover:border-blue-500 focus:border-blue-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:bg-white/10 dark:text-white"
       >
         <div className="flex min-w-0 items-center gap-2.5">
           {selectedBank && selectedBank.logo && (
@@ -102,20 +114,25 @@ export default function BankSearchSelector({
               src={selectedBank.logo}
               alt={selectedBank.shortName}
               onError={handleImageError}
-              className="h-6 w-6 shrink-0 rounded bg-white object-contain p-0.5 shadow-xs"
+              className="h-6 w-6 shrink-0 rounded-full bg-white object-contain p-0.5 shadow-xs"
             />
           )}
           {selectedBank && !selectedBank.logo && (
             <Bank size={18} className="shrink-0 text-blue-600 dark:text-sky-400" />
           )}
-          {!selectedBank && <Bank size={18} className="shrink-0 text-zinc-400" />}
+          {!selectedBank && hasFallbackLabel && (
+            <Bank size={18} className="shrink-0 text-blue-600 dark:text-sky-400" />
+          )}
+          {!selectedBank && !hasFallbackLabel && (
+            <Bank size={18} className="shrink-0 text-zinc-400" />
+          )}
 
           {selectedBank && (
             <div className="flex min-w-0 items-center gap-1.5 truncate">
               <span className="font-bold text-zinc-900 dark:text-white">
                 {selectedBank.shortName}
               </span>
-              <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400">
+              <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400">
                 {selectedBank.code}
               </span>
               <span className="truncate text-[11px] text-zinc-400 dark:text-zinc-500">
@@ -124,7 +141,13 @@ export default function BankSearchSelector({
             </div>
           )}
 
-          {!selectedBank && (
+          {!selectedBank && hasFallbackLabel && (
+            <span className="truncate font-bold text-zinc-900 dark:text-white">
+              {fallbackBankLabel}
+            </span>
+          )}
+
+          {!selectedBank && !hasFallbackLabel && (
             <span className="text-zinc-400 dark:text-zinc-500">
               Chọn ngân hàng (hơn 50+ ngân hàng Napas)...
             </span>
@@ -134,7 +157,7 @@ export default function BankSearchSelector({
         <CaretDown size={14} className="shrink-0 text-zinc-400" />
       </button>
 
-      {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
+      {error && <p className="mt-1 text-[11px] text-rose-600 dark:text-rose-400">{error}</p>}
 
       {/* Dropdown Menu with Search */}
       {isOpen && (
@@ -157,8 +180,9 @@ export default function BankSearchSelector({
               {search.length > 0 && (
                 <button
                   type="button"
+                  aria-label="Xóa từ khóa tìm ngân hàng"
                   onClick={() => setSearch('')}
-                  className="absolute top-2 right-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="absolute top-2 right-2.5 rounded-full p-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                 >
                   <X size={14} />
                 </button>
@@ -194,7 +218,7 @@ export default function BankSearchSelector({
                         src={b.logo}
                         alt={b.shortName}
                         onError={handleImageError}
-                        className="h-6 w-6 shrink-0 rounded bg-white object-contain p-0.5 shadow-2xs"
+                        className="h-6 w-6 shrink-0 rounded-full bg-white object-contain p-0.5 shadow-2xs"
                       />
                     )}
                     {!b.logo && <Bank size={16} className="shrink-0 text-zinc-400" />}
@@ -204,7 +228,7 @@ export default function BankSearchSelector({
                         <span className="font-bold text-zinc-900 dark:text-white">
                           {b.shortName}
                         </span>
-                        <span className="py-0.2 rounded bg-zinc-100 px-1 text-[9px] font-semibold text-zinc-500 dark:bg-white/10 dark:text-zinc-300">
+                        <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[9px] font-semibold text-zinc-500 dark:bg-white/10 dark:text-zinc-300">
                           {b.code}
                         </span>
                         <span className="text-[10px] text-zinc-400">BIN: {b.bin}</span>
@@ -216,7 +240,11 @@ export default function BankSearchSelector({
                   </div>
 
                   {isSelected && (
-                    <Check size={16} weight="bold" className="shrink-0 text-blue-600" />
+                    <Check
+                      size={16}
+                      weight="bold"
+                      className="shrink-0 text-blue-600 dark:text-sky-400"
+                    />
                   )}
                 </button>
               )

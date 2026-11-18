@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom'
 
 import { X } from '@phosphor-icons/react'
 
-import { cn } from '@/lib/ui/styles'
+import { isTopOverlay, popOverlay, pushOverlay } from '@/components/ui/overlayStack'
+import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -56,6 +57,7 @@ export function Drawer(props: DrawerProps) {
         return
       }
 
+      const token = pushOverlay()
       const previous = document.activeElement
       const panel = panelRef.current
       if (panel !== null && panel.contains(document.activeElement) === false) {
@@ -63,6 +65,9 @@ export function Drawer(props: DrawerProps) {
       }
 
       function handleKey(event: KeyboardEvent) {
+        if (isTopOverlay(token) === false) {
+          return
+        }
         if (event.key === 'Escape') {
           closeRef.current()
           return
@@ -98,6 +103,7 @@ export function Drawer(props: DrawerProps) {
       document.body.style.overflow = 'hidden'
 
       return function () {
+        popOverlay(token)
         document.removeEventListener('keydown', handleKey)
         document.body.style.overflow = previousOverflow
         if (previous instanceof HTMLElement) {
@@ -115,13 +121,13 @@ export function Drawer(props: DrawerProps) {
   const side = props.side ?? 'right'
 
   const content = (
-    <div className={cn('fixed inset-0 z-[80] flex', wrapperAlignmentClass(side))}>
+    <div className={cn('fixed inset-0 z-[70] flex', wrapperAlignmentClass(side))}>
       <button
         type="button"
         aria-label="Đóng bảng trượt"
         tabIndex={-1}
         onClick={props.onClose}
-        className="fixed inset-0 bg-zinc-950/55 backdrop-blur-sm"
+        className="fixed inset-0 cursor-pointer bg-zinc-950/55 backdrop-blur-sm"
       />
       <dialog
         ref={panelRef}
@@ -130,7 +136,7 @@ export function Drawer(props: DrawerProps) {
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'static relative z-10 m-0 flex flex-col overflow-hidden border border-white/30 bg-white text-[#17203a] shadow-2xl outline-none dark:border-white/10 dark:bg-[#11182a] dark:text-[#e2e8f0]',
+          'static z-10 m-0 flex flex-col overflow-hidden border border-zinc-200/80 bg-white text-[#17203a] shadow-2xl outline-none dark:border-white/10 dark:bg-[#11182a] dark:text-[#e2e8f0]',
           panelLayoutClass(side, props.widthClass),
         )}
       >
@@ -142,9 +148,12 @@ export function Drawer(props: DrawerProps) {
             type="button"
             aria-label="Đóng"
             onClick={props.onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-zinc-100 dark:hover:bg-white/10"
+            className={cn(
+              'flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-600 transition hover:bg-zinc-100 hover:text-[#17203a] dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white',
+              FOCUS_RING_CLASS,
+            )}
           >
-            <X size={18} />
+            <X size={18} weight="bold" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto overscroll-contain p-6">{props.children}</div>

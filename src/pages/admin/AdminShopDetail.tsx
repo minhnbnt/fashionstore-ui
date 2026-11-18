@@ -13,7 +13,6 @@ import {
 import { getGetAdminStatsQueryKey } from '@generated/endpoints/admin-stats/admin-stats'
 import { getListAdminUsersQueryKey } from '@generated/endpoints/admin-users/admin-users'
 import {
-  ArrowLeft,
   Bank,
   CheckCircle,
   Clock,
@@ -27,21 +26,29 @@ import {
   Phone,
   Storefront,
   User,
+  Warning,
   XCircle,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import AdminShell from '@/components/admin/AdminShell'
 import HistoryTimeline from '@/components/admin/dashboard/HistoryTimeline'
-import ConfirmDialog from '@/components/admin/dialogs/ConfirmDialog'
 import ReasonDialog from '@/components/admin/dialogs/ReasonDialog'
-import Modal from '@/components/Modal'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import MediaLightbox from '@/components/ui/MediaLightbox'
+import { TableRowsSkeleton } from '@/components/ui/Skeleton'
 import StatePanel from '@/components/ui/StatePanel'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { adminErrorMessage, formatDateTime } from '@/lib/admin/admin'
-import { PLACEHOLDER_IMAGE, urlOrPlaceholder, takeData } from '@/lib/api/apiAdapters'
+import { PLACEHOLDER_IMAGE, takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { notify } from '@/lib/notifications'
-import { PANEL_CLASS } from '@/lib/ui/styles'
+import {
+  badgeToneClass,
+  cn,
+  FOCUS_RING_CLASS,
+  PANEL_CLASS,
+  primaryButtonClass,
+} from '@/lib/ui/styles'
 
 import type { ConfirmAction, ReasonAction } from '@/types/admin'
 import type { AdminShopDetailResponse } from '@generated/model/adminShopDetailResponse'
@@ -61,13 +68,52 @@ const SUSPEND_REASONS = [
   'Cần tạm dừng để xác minh khiếu nại của khách hàng',
 ]
 
+/** Chuẩn hóa họ tên tiếng Việt (bỏ dấu, đ→d, thường hóa, gom khoảng trắng) để đối soát chính xác. */
+function normalizePersonName(value: string | null | undefined): string {
+  if (value === null || value === undefined) {
+    return ''
+  }
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function kycStatusMeta(status: string | null | undefined): {
+  label: string
+  tone: 'success' | 'warning' | 'danger' | 'neutral'
+} {
+  if (status === 'VERIFIED') {
+    return { label: 'Đã xác minh', tone: 'success' }
+  }
+  if (status === 'PENDING_REVIEW' || status === 'PENDING') {
+    return { label: 'Chờ xác minh', tone: 'warning' }
+  }
+  if (status === 'REJECTED') {
+    return { label: 'Từ chối định danh', tone: 'danger' }
+  }
+  if (status === 'UNSUBMITTED' || status === 'NOT_SUBMITTED') {
+    return { label: 'Chưa nộp hồ sơ', tone: 'neutral' }
+  }
+  return { label: status ?? 'Chưa cập nhật', tone: 'neutral' }
+}
+
+interface LightboxPhoto {
+  title: string
+  url: string
+}
+
 export default function AdminShopDetail() {
   const params = useParams()
   const id = params.id ?? ''
   const queryClient = useQueryClient()
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
   const [reasonAction, setReasonAction] = useState<ReasonAction | null>(null)
-  const [previewModal, setPreviewModal] = useState<{ title: string; url: string } | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   const detailQuery = useGetAdminShop(id, { query: { enabled: id !== '' } })
 
@@ -137,29 +183,64 @@ export default function AdminShopDetail() {
   const orderCount = detail?.orderCount ?? 0
   const history = detail?.history ?? []
 
+  // Danh sách ảnh eKYC hiện có để hỗ trợ xem phóng to + chuyển qua lại bằng MediaLightbox
+  const kycPhotos: LightboxPhoto[] = []
+  if (shop?.idFrontUrl) {
+    kycPhotos.push({
+      title: 'Mặt trước CCCD — ' + (shop.legalName ?? ''),
+      url: urlOrPlaceholder(shop.idFrontUrl),
+    })
+  }
+  if (shop?.idBackUrl) {
+    kycPhotos.push({
+      title: 'Mặt sau CCCD — ' + (shop.legalName ?? ''),
+      url: urlOrPlaceholder(shop.idBackUrl),
+    })
+  }
+  if (shop?.idSelfieUrl) {
+    kycPhotos.push({
+      title: 'Selfie cầm CCCD — ' + (shop.legalName ?? ''),
+      url: urlOrPlaceholder(shop.idSelfieUrl),
+    })
+  }
+  if (shop?.businessCertUrl) {
+    kycPhotos.push({
+      title: 'Giấy phép kinh doanh — ' + (shop.name ?? ''),
+      url: urlOrPlaceholder(shop.businessCertUrl),
+    })
+  }
+
+  function openPhoto(url: string) {
+    const idx = kycPhotos.findIndex(function (item) {
+      return item.url === url
+    })
+    if (idx >= 0) {
+      setLightboxIndex(idx)
+    }
+  }
+
+  // Đối soát thực sự giữa tên chủ tài khoản ngân hàng và họ tên trên CCCD
+  const normalizedBankHolder = normalizePersonName(shop?.bankHolder)
+  const normalizedLegalName = normalizePersonName(shop?.legalName)
+  const hasBothNames = normalizedBankHolder !== '' && normalizedLegalName !== ''
+  const bankMatchesLegal = hasBothNames && normalizedBankHolder === normalizedLegalName
+
   let confirmTitle = ''
   let confirmDescription = ''
   let confirmLabel = ''
   let confirmPending = false
-  let confirmError: string | undefined
   if (confirmAction === 'approve') {
     confirmTitle = 'Duyệt shop này?'
     confirmDescription =
       'Shop sẽ xuất hiện trên sàn và chủ shop được cấp quyền truy cập kênh người bán.'
     confirmLabel = 'Duyệt shop'
     confirmPending = approve.isPending
-    if (approve.isError) {
-      confirmError = adminErrorMessage(approve.error)
-    }
   }
   if (confirmAction === 'reinstate') {
     confirmTitle = 'Mở lại shop?'
     confirmDescription = 'Shop sẽ hiển thị trở lại và có thể nhận đơn hàng mới.'
     confirmLabel = 'Mở lại shop'
     confirmPending = reinstate.isPending
-    if (reinstate.isError) {
-      confirmError = adminErrorMessage(reinstate.error)
-    }
   }
 
   let reasonTitle = ''
@@ -217,7 +298,10 @@ export default function AdminShopDetail() {
           onClick={function () {
             setReasonAction('reject')
           }}
-          className="cursor-pointer rounded-full border border-rose-200 px-4 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50 dark:border-rose-400/20 dark:text-rose-300 dark:hover:bg-rose-500/10"
+          className={cn(
+            'cursor-pointer rounded-full border border-rose-300 px-4 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/15',
+            FOCUS_RING_CLASS,
+          )}
         >
           Từ chối
         </button>
@@ -226,7 +310,7 @@ export default function AdminShopDetail() {
           onClick={function () {
             setConfirmAction('approve')
           }}
-          className="btn-primary cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold"
+          className={cn(primaryButtonClass(), 'rounded-full px-5 py-2.5 text-sm font-bold')}
         >
           Duyệt shop
         </button>
@@ -240,7 +324,10 @@ export default function AdminShopDetail() {
         onClick={function () {
           setReasonAction('suspend')
         }}
-        className="cursor-pointer rounded-full border border-rose-200 px-4 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50 dark:border-rose-400/20 dark:text-rose-300 dark:hover:bg-rose-500/10"
+        className={cn(
+          'cursor-pointer rounded-full border border-rose-300 px-4 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50 dark:border-rose-400/30 dark:text-rose-300 dark:hover:bg-rose-500/15',
+          FOCUS_RING_CLASS,
+        )}
       >
         Tạm khóa shop
       </button>
@@ -253,30 +340,52 @@ export default function AdminShopDetail() {
         onClick={function () {
           setConfirmAction('reinstate')
         }}
-        className="btn-primary cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold"
+        className={cn(primaryButtonClass(), 'rounded-full px-5 py-2.5 text-sm font-bold')}
       >
         Mở lại shop
       </button>
     )
   }
 
+  const pageTitle = shop?.name ?? 'Chi tiết shop'
+  const kycBadge = kycStatusMeta(shop?.kycStatus)
+  let activePhoto: LightboxPhoto | undefined
+  if (lightboxIndex !== null) {
+    activePhoto = kycPhotos[lightboxIndex]
+  }
+  let handleLightboxPrev: (() => void) | undefined
+  let handleLightboxNext: (() => void) | undefined
+  if (kycPhotos.length > 1) {
+    handleLightboxPrev = function () {
+      setLightboxIndex(function (prev) {
+        if (prev === null || prev <= 0) {
+          return kycPhotos.length - 1
+        }
+        return prev - 1
+      })
+    }
+    handleLightboxNext = function () {
+      setLightboxIndex(function (prev) {
+        if (prev === null || prev >= kycPhotos.length - 1) {
+          return 0
+        }
+        return prev + 1
+      })
+    }
+  }
+
   return (
     <AdminShell
-      title={shop?.name ?? 'Chi tiết shop'}
+      title={pageTitle}
       description="Kiểm tra hồ sơ, chủ sở hữu và toàn bộ lịch sử kiểm duyệt."
       actions={actions}
+      breadcrumbs={[
+        { label: 'Quản trị', to: '/admin' },
+        { label: 'Gian hàng', to: '/admin/shops' },
+        { label: pageTitle },
+      ]}
     >
-      <Link
-        to="/admin/shops"
-        className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-indigo-700 hover:underline dark:text-indigo-200"
-      >
-        <ArrowLeft size={16} weight="bold" />
-        Quay lại danh sách
-      </Link>
-
-      {detailQuery.isPending && (
-        <StatePanel title="Đang tải hồ sơ" description="Thông tin shop đang được cập nhật…" />
-      )}
+      {detailQuery.isPending && <TableRowsSkeleton rows={5} columns={3} />}
       {detailQuery.isError && (
         <StatePanel
           title="Không mở được hồ sơ shop"
@@ -318,12 +427,14 @@ export default function AdminShopDetail() {
                     />
                   )}
                   {!shop.logoUrl && (
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-sky-300">
                       <Storefront size={25} weight="bold" />
                     </span>
                   )}
                   <div>
-                    <h2 className="text-xl font-extrabold tracking-tight">{shop.name}</h2>
+                    <h2 className="text-xl font-extrabold tracking-tight text-[#17203a] dark:text-[#e2e8f0]">
+                      {shop.name}
+                    </h2>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">/{shop.slug}</p>
                   </div>
                 </div>
@@ -359,11 +470,13 @@ export default function AdminShopDetail() {
               )}
 
               {shop.statusReason !== undefined && shop.statusReason !== null && (
-                <div className="mt-5 rounded-2xl bg-red-50 px-4 py-3 dark:bg-red-500/10">
-                  <p className="text-xs font-bold tracking-wide text-red-700 uppercase dark:text-red-200">
+                <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 dark:border-rose-500/30 dark:bg-rose-500/15">
+                  <p className="text-xs font-bold tracking-wide text-rose-700 uppercase dark:text-rose-300">
                     Lý do trạng thái hiện tại
                   </p>
-                  <p className="mt-1 text-sm text-red-800 dark:text-red-100">{shop.statusReason}</p>
+                  <p className="mt-1 text-sm text-rose-800 dark:text-rose-200">
+                    {shop.statusReason}
+                  </p>
                 </div>
               )}
 
@@ -372,48 +485,61 @@ export default function AdminShopDetail() {
                   <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
                     Lần nộp gần nhất
                   </dt>
-                  <dd className="mt-1 text-sm font-semibold">{formatDateTime(shop.submittedAt)}</dd>
+                  <dd className="mt-1 text-sm font-semibold tabular-nums">
+                    {formatDateTime(shop.submittedAt)}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
                     Được duyệt lúc
                   </dt>
-                  <dd className="mt-1 text-sm font-semibold">{formatDateTime(shop.approvedAt)}</dd>
+                  <dd className="mt-1 text-sm font-semibold tabular-nums">
+                    {formatDateTime(shop.approvedAt)}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
                     Ngày tạo
                   </dt>
-                  <dd className="mt-1 text-sm font-semibold">{formatDateTime(shop.createdAt)}</dd>
+                  <dd className="mt-1 text-sm font-semibold tabular-nums">
+                    {formatDateTime(shop.createdAt)}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
                     Cập nhật gần nhất
                   </dt>
-                  <dd className="mt-1 text-sm font-semibold">{formatDateTime(shop.updatedAt)}</dd>
+                  <dd className="mt-1 text-sm font-semibold tabular-nums">
+                    {formatDateTime(shop.updatedAt)}
+                  </dd>
                 </div>
               </dl>
             </section>
 
             {/* Section: Hồ sơ định danh eKYC */}
-            <section className="rounded-3xl border border-zinc-200 bg-white/65 p-5 dark:border-white/10 dark:bg-white/5">
-              <div className="flex items-center justify-between">
+            <section className={PANEL_CLASS}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-sky-300">
                     <IdentificationCard size={20} weight="bold" />
                   </span>
                   <div>
-                    <h3 className="font-extrabold tracking-tight">
+                    <h2 className="font-extrabold tracking-tight text-[#17203a] dark:text-[#e2e8f0]">
                       Hồ sơ pháp lý &amp; Định danh eKYC
-                    </h3>
+                    </h2>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
                       Giấy tờ tùy thân và xác thực danh tính chủ shop
                     </p>
                   </div>
                 </div>
                 {shop.kycStatus && (
-                  <span className="rounded-full bg-indigo-50 px-3 py-1 font-mono text-xs font-bold text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200">
-                    {shop.kycStatus}
+                  <span
+                    className={cn(
+                      'rounded-full px-3 py-1 text-xs font-bold',
+                      badgeToneClass(kycBadge.tone),
+                    )}
+                  >
+                    {kycBadge.label}
                   </span>
                 )}
               </div>
@@ -423,7 +549,7 @@ export default function AdminShopDetail() {
                   <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
                     Họ và tên thật
                   </dt>
-                  <dd className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
+                  <dd className="mt-1 text-sm font-bold text-[#17203a] dark:text-white">
                     {shop.legalName || 'Chưa cung cấp'}
                   </dd>
                 </div>
@@ -431,7 +557,7 @@ export default function AdminShopDetail() {
                   <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
                     Số CCCD / CMND
                   </dt>
-                  <dd className="mt-1 font-mono text-sm font-bold text-zinc-900 dark:text-white">
+                  <dd className="mt-1 font-mono text-sm font-bold text-[#17203a] dark:text-white">
                     {shop.idNumber || 'Chưa cung cấp'}
                   </dd>
                 </div>
@@ -460,16 +586,16 @@ export default function AdminShopDetail() {
               </dl>
 
               <div className="mt-5">
-                <h4 className="text-xs font-bold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+                <h3 className="text-xs font-bold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
                   Ảnh giấy tờ định danh đã tải lên
-                </h4>
+                </h3>
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-2 dark:border-white/10 dark:bg-white/5">
                     <p className="mb-2 text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
                       Mặt trước CCCD
                     </p>
                     {shop.idFrontUrl && (
-                      <div className="group relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-black/5">
+                      <div className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-black/5">
                         <img
                           src={urlOrPlaceholder(shop.idFrontUrl)}
                           alt="Mặt trước CCCD"
@@ -482,15 +608,16 @@ export default function AdminShopDetail() {
                         />
                         <button
                           type="button"
+                          aria-label="Phóng to ảnh mặt trước CCCD"
                           onClick={function () {
-                            setPreviewModal({
-                              title: 'Mặt trước CCCD — ' + (shop.legalName ?? ''),
-                              url: urlOrPlaceholder(shop.idFrontUrl),
-                            })
+                            openPhoto(urlOrPlaceholder(shop.idFrontUrl))
                           }}
-                          className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition duration-200 group-hover:opacity-100"
+                          className={cn(
+                            'absolute inset-0 flex cursor-pointer items-center justify-center rounded-2xl bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100 focus-visible:opacity-100',
+                            FOCUS_RING_CLASS,
+                          )}
                         >
-                          <span className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow">
+                          <span className="flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow">
                             <Eye size={14} weight="bold" />
                             Phóng to
                           </span>
@@ -498,7 +625,9 @@ export default function AdminShopDetail() {
                       </div>
                     )}
                     {!shop.idFrontUrl && (
-                      <p className="py-6 text-center text-xs text-zinc-400">Chưa tải ảnh</p>
+                      <p className="py-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                        Chưa tải ảnh
+                      </p>
                     )}
                   </div>
 
@@ -507,7 +636,7 @@ export default function AdminShopDetail() {
                       Mặt sau CCCD
                     </p>
                     {shop.idBackUrl && (
-                      <div className="group relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-black/5">
+                      <div className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-black/5">
                         <img
                           src={urlOrPlaceholder(shop.idBackUrl)}
                           alt="Mặt sau CCCD"
@@ -520,15 +649,16 @@ export default function AdminShopDetail() {
                         />
                         <button
                           type="button"
+                          aria-label="Phóng to ảnh mặt sau CCCD"
                           onClick={function () {
-                            setPreviewModal({
-                              title: 'Mặt sau CCCD — ' + (shop.legalName ?? ''),
-                              url: urlOrPlaceholder(shop.idBackUrl),
-                            })
+                            openPhoto(urlOrPlaceholder(shop.idBackUrl))
                           }}
-                          className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition duration-200 group-hover:opacity-100"
+                          className={cn(
+                            'absolute inset-0 flex cursor-pointer items-center justify-center rounded-2xl bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100 focus-visible:opacity-100',
+                            FOCUS_RING_CLASS,
+                          )}
                         >
-                          <span className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow">
+                          <span className="flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow">
                             <Eye size={14} weight="bold" />
                             Phóng to
                           </span>
@@ -536,7 +666,9 @@ export default function AdminShopDetail() {
                       </div>
                     )}
                     {!shop.idBackUrl && (
-                      <p className="py-6 text-center text-xs text-zinc-400">Chưa tải ảnh</p>
+                      <p className="py-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                        Chưa tải ảnh
+                      </p>
                     )}
                   </div>
 
@@ -545,7 +677,7 @@ export default function AdminShopDetail() {
                       Ảnh selfie cầm CCCD
                     </p>
                     {shop.idSelfieUrl && (
-                      <div className="group relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-black/5">
+                      <div className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-black/5">
                         <img
                           src={urlOrPlaceholder(shop.idSelfieUrl)}
                           alt="Selfie cầm CCCD"
@@ -558,15 +690,16 @@ export default function AdminShopDetail() {
                         />
                         <button
                           type="button"
+                          aria-label="Phóng to ảnh selfie cầm CCCD"
                           onClick={function () {
-                            setPreviewModal({
-                              title: 'Selfie cầm CCCD — ' + (shop.legalName ?? ''),
-                              url: urlOrPlaceholder(shop.idSelfieUrl),
-                            })
+                            openPhoto(urlOrPlaceholder(shop.idSelfieUrl))
                           }}
-                          className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition duration-200 group-hover:opacity-100"
+                          className={cn(
+                            'absolute inset-0 flex cursor-pointer items-center justify-center rounded-2xl bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100 focus-visible:opacity-100',
+                            FOCUS_RING_CLASS,
+                          )}
                         >
-                          <span className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow">
+                          <span className="flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow">
                             <Eye size={14} weight="bold" />
                             Phóng to
                           </span>
@@ -574,7 +707,9 @@ export default function AdminShopDetail() {
                       </div>
                     )}
                     {!shop.idSelfieUrl && (
-                      <p className="py-6 text-center text-xs text-zinc-400">Chưa tải ảnh</p>
+                      <p className="py-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                        Chưa tải ảnh
+                      </p>
                     )}
                   </div>
 
@@ -583,7 +718,7 @@ export default function AdminShopDetail() {
                       <p className="mb-2 text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
                         Giấy phép kinh doanh (Tùy chọn)
                       </p>
-                      <div className="group relative aspect-[16/9] max-h-60 w-full overflow-hidden rounded-xl bg-black/5">
+                      <div className="group relative aspect-[16/9] max-h-60 w-full overflow-hidden rounded-2xl bg-black/5">
                         <img
                           src={urlOrPlaceholder(shop.businessCertUrl)}
                           alt="Giấy phép kinh doanh"
@@ -596,15 +731,16 @@ export default function AdminShopDetail() {
                         />
                         <button
                           type="button"
+                          aria-label="Phóng to giấy phép kinh doanh"
                           onClick={function () {
-                            setPreviewModal({
-                              title: 'Giấy phép kinh doanh — ' + (shop.name ?? ''),
-                              url: urlOrPlaceholder(shop.businessCertUrl),
-                            })
+                            openPhoto(urlOrPlaceholder(shop.businessCertUrl))
                           }}
-                          className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition duration-200 group-hover:opacity-100"
+                          className={cn(
+                            'absolute inset-0 flex cursor-pointer items-center justify-center rounded-2xl bg-black/45 opacity-0 transition duration-200 group-hover:opacity-100 focus-visible:opacity-100',
+                            FOCUS_RING_CLASS,
+                          )}
                         >
-                          <span className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow">
+                          <span className="flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-zinc-900 shadow">
                             <Eye size={14} weight="bold" />
                             Phóng to
                           </span>
@@ -617,15 +753,15 @@ export default function AdminShopDetail() {
             </section>
 
             {/* Section: Thông tin ngân hàng đối soát */}
-            <section className="rounded-3xl border border-zinc-200 bg-white/65 p-5 dark:border-white/10 dark:bg-white/5">
+            <section className={PANEL_CLASS}>
               <div className="flex items-center gap-2.5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200">
+                <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-sky-300">
                   <Bank size={20} weight="bold" />
                 </span>
                 <div>
-                  <h3 className="font-extrabold tracking-tight">
+                  <h2 className="font-extrabold tracking-tight text-[#17203a] dark:text-[#e2e8f0]">
                     Tài khoản ngân hàng nhận thanh toán
-                  </h3>
+                  </h2>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     Đối soát và chuyển khoản doanh thu định kỳ
                   </p>
@@ -637,7 +773,7 @@ export default function AdminShopDetail() {
                   <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
                     Ngân hàng
                   </dt>
-                  <dd className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
+                  <dd className="mt-1 text-sm font-bold text-[#17203a] dark:text-white">
                     {shop.bankName || 'Chưa cung cấp'}
                   </dd>
                 </div>
@@ -645,7 +781,7 @@ export default function AdminShopDetail() {
                   <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
                     Số tài khoản
                   </dt>
-                  <dd className="mt-1 font-mono text-sm font-bold text-zinc-900 dark:text-white">
+                  <dd className="mt-1 font-mono text-sm font-bold text-[#17203a] dark:text-white">
                     {shop.bankAccount || 'Chưa cung cấp'}
                   </dd>
                 </div>
@@ -653,42 +789,85 @@ export default function AdminShopDetail() {
                   <dt className="font-bold text-zinc-500 uppercase dark:text-zinc-400">
                     Tên chủ tài khoản
                   </dt>
-                  <dd className="mt-1 text-sm font-bold text-zinc-900 dark:text-white">
+                  <dd className="mt-1 text-sm font-bold text-[#17203a] dark:text-white">
                     {shop.bankHolder || 'Chưa cung cấp'}
                   </dd>
                 </div>
               </dl>
 
-              <div className="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">
-                <CheckCircle
-                  size={16}
-                  weight="fill"
-                  className="shrink-0 text-emerald-600 dark:text-emerald-400"
-                />
-                <span>
-                  Bảo mật 2 lớp: Tên chủ tài khoản ngân hàng ({shop.bankHolder || '—'}) trùng khớp
-                  với Họ tên trên CCCD ({shop.legalName || '—'}).
-                </span>
-              </div>
+              {bankMatchesLegal && (
+                <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300">
+                  <CheckCircle
+                    size={16}
+                    weight="fill"
+                    className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                  />
+                  <span>
+                    Đối soát trùng khớp: Tên chủ tài khoản ngân hàng ({shop.bankHolder}) khớp với Họ
+                    tên trên CCCD ({shop.legalName}).
+                  </span>
+                </div>
+              )}
+
+              {hasBothNames && bankMatchesLegal === false && (
+                <div
+                  role="alert"
+                  className="mt-3 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-semibold text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+                >
+                  <Warning
+                    size={16}
+                    weight="fill"
+                    className="mt-0.5 shrink-0 text-rose-600 dark:text-rose-400"
+                  />
+                  <span>
+                    Cảnh báo lệch thông tin: Tên chủ tài khoản ngân hàng ({shop.bankHolder}) KHÔNG
+                    trùng khớp với Họ tên trên CCCD ({shop.legalName}). Vui lòng xác minh kỹ trước
+                    khi duyệt.
+                  </span>
+                </div>
+              )}
+
+              {hasBothNames === false && (
+                <div
+                  role="alert"
+                  className="mt-3 flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs font-semibold text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300"
+                >
+                  <Warning
+                    size={16}
+                    weight="fill"
+                    className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400"
+                  />
+                  <span>
+                    Chưa đủ dữ liệu đối soát: Thiếu tên chủ tài khoản ngân hàng hoặc Họ tên trên
+                    CCCD. Không thể tự động xác thực trùng khớp.
+                  </span>
+                </div>
+              )}
             </section>
 
             <section className="grid gap-4 sm:grid-cols-2">
-              <article className="rounded-3xl border border-zinc-200 bg-white/65 p-5 dark:border-white/10 dark:bg-white/5">
-                <Cube size={22} className="text-indigo-700 dark:text-indigo-200" />
-                <p className="mt-3 text-3xl font-extrabold tracking-tighter">{productCount}</p>
+              <article className={PANEL_CLASS}>
+                <Cube size={22} className="text-blue-700 dark:text-sky-300" />
+                <p className="mt-3 text-3xl font-extrabold tracking-tighter tabular-nums">
+                  {productCount.toLocaleString('vi-VN')}
+                </p>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">Sản phẩm mọi trạng thái</p>
               </article>
-              <article className="rounded-3xl border border-zinc-200 bg-white/65 p-5 dark:border-white/10 dark:bg-white/5">
-                <Package size={22} className="text-indigo-700 dark:text-indigo-200" />
-                <p className="mt-3 text-3xl font-extrabold tracking-tighter">{orderCount}</p>
+              <article className={PANEL_CLASS}>
+                <Package size={22} className="text-blue-700 dark:text-sky-300" />
+                <p className="mt-3 text-3xl font-extrabold tracking-tighter tabular-nums">
+                  {orderCount.toLocaleString('vi-VN')}
+                </p>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">Đơn hàng mọi trạng thái</p>
               </article>
             </section>
           </div>
 
           <div className="space-y-5">
-            <section className="rounded-3xl border border-zinc-200 bg-white/65 p-5 dark:border-white/10 dark:bg-white/5">
-              <h2 className="font-extrabold tracking-tight">Chủ sở hữu</h2>
+            <section className={PANEL_CLASS}>
+              <h2 className="font-extrabold tracking-tight text-[#17203a] dark:text-[#e2e8f0]">
+                Chủ sở hữu
+              </h2>
               <div className="mt-4 space-y-3 text-sm">
                 <p className="flex items-center gap-2">
                   <User size={17} className="text-zinc-500 dark:text-zinc-400" />
@@ -706,37 +885,42 @@ export default function AdminShopDetail() {
               {shop.ownerId !== undefined && shop.ownerId !== null && (
                 <Link
                   to={'/admin/users/' + shop.ownerId}
-                  className="mt-5 inline-flex rounded-full bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-800 hover:bg-indigo-100 dark:bg-indigo-400/10 dark:text-indigo-200"
+                  className={cn(
+                    'mt-5 inline-flex cursor-pointer rounded-full bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-800 transition hover:bg-indigo-100 dark:bg-indigo-400/15 dark:text-sky-300 dark:hover:bg-indigo-400/25',
+                    FOCUS_RING_CLASS,
+                  )}
                 >
                   Mở hồ sơ chủ shop
                 </Link>
               )}
             </section>
 
-            <section className="rounded-3xl border border-zinc-200 bg-white/65 p-5 dark:border-white/10 dark:bg-white/5">
+            <section className={PANEL_CLASS}>
               <div className="mb-4 flex items-center gap-2">
-                <Clock size={20} className="text-indigo-700 dark:text-indigo-200" />
-                <h2 className="font-extrabold tracking-tight">Lịch sử trạng thái</h2>
+                <Clock size={20} className="text-blue-700 dark:text-sky-300" />
+                <h2 className="font-extrabold tracking-tight text-[#17203a] dark:text-[#e2e8f0]">
+                  Lịch sử trạng thái
+                </h2>
               </div>
               <HistoryTimeline items={history} />
             </section>
 
             {shop.status === 'REJECTED' && (
-              <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5 text-sm dark:border-white/10 dark:bg-white/5">
-                <div className="flex items-center gap-2 font-bold">
-                  <XCircle size={19} className="text-red-600 dark:text-red-300" />
+              <div className="rounded-3xl border border-rose-200 bg-rose-50/80 p-5 text-sm dark:border-rose-500/30 dark:bg-rose-500/10">
+                <div className="flex items-center gap-2 font-bold text-rose-800 dark:text-rose-300">
+                  <XCircle size={19} weight="bold" />
                   Đang chờ chủ shop chỉnh sửa
                 </div>
-                <p className="mt-2 text-zinc-600 dark:text-zinc-300">
+                <p className="mt-2 text-zinc-700 dark:text-zinc-300">
                   Chủ shop có thể cập nhật hồ sơ rồi gửi duyệt lại. Khi đó hồ sơ sẽ xếp cuối hàng
                   đợi.
                 </p>
               </div>
             )}
             {shop.status === 'APPROVED' && (
-              <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm dark:border-emerald-400/20 dark:bg-emerald-400/10">
-                <div className="flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-200">
-                  <CheckCircle size={19} />
+              <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm dark:border-emerald-500/30 dark:bg-emerald-500/15">
+                <div className="flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-300">
+                  <CheckCircle size={19} weight="bold" />
                   Shop đang hoạt động
                 </div>
               </div>
@@ -750,12 +934,10 @@ export default function AdminShopDetail() {
         title={confirmTitle}
         description={confirmDescription}
         confirmLabel={confirmLabel}
-        pending={confirmPending}
-        error={confirmError}
-        onClose={function () {
-          if (confirmPending === false) {
-            setConfirmAction(null)
-          }
+        variant="primary"
+        isPending={confirmPending}
+        onCancel={function () {
+          setConfirmAction(null)
         }}
         onConfirm={confirmModeration}
       />
@@ -776,39 +958,18 @@ export default function AdminShopDetail() {
         onConfirm={submitReason}
       />
 
-      {previewModal !== null && (
-        <Modal
-          title={previewModal.title}
-          widthClass="max-w-4xl"
+      {activePhoto !== undefined && lightboxIndex !== null && (
+        <MediaLightbox
+          open
+          src={activePhoto.url}
+          alt={activePhoto.title}
+          caption={activePhoto.title}
           onClose={function () {
-            setPreviewModal(null)
+            setLightboxIndex(null)
           }}
-        >
-          <div className="mt-3 space-y-3">
-            <div className="flex justify-end">
-              <a
-                href={previewModal.url}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-full bg-indigo-50 px-3.5 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 dark:bg-white/10 dark:text-sky-300 dark:hover:bg-white/15"
-              >
-                Mở ảnh gốc
-              </a>
-            </div>
-            <div className="max-h-[70vh] overflow-auto rounded-2xl bg-black/5">
-              <img
-                src={previewModal.url}
-                alt={previewModal.title}
-                onError={function (e) {
-                  if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
-                    e.currentTarget.src = PLACEHOLDER_IMAGE
-                  }
-                }}
-                className="mx-auto max-h-[70vh] w-auto object-contain"
-              />
-            </div>
-          </div>
-        </Modal>
+          onPrev={handleLightboxPrev}
+          onNext={handleLightboxNext}
+        />
       )}
     </AdminShell>
   )

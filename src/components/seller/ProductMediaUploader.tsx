@@ -123,6 +123,20 @@ export default function ProductMediaUploader({
     }
   }
 
+  function handleSetCover(index: number) {
+    if (index <= 0 || index >= images.length) {
+      return
+    }
+    const chosen = images[index]
+    if (chosen === undefined) {
+      return
+    }
+    const remaining = images.filter(function (_, i) {
+      return i !== index
+    })
+    onImagesChange([chosen, ...remaining])
+  }
+
   function handleRemoveImage(index: number) {
     const removed = images[index]
     if (removed !== undefined && removed.url.startsWith('blob:')) {
@@ -257,30 +271,28 @@ export default function ProductMediaUploader({
   return (
     <div className="space-y-6">
       {errorMessage !== null && (
-        <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
-          <WarningCircle size={18} weight="fill" className="shrink-0 text-red-500" />
+        <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
+          <WarningCircle size={18} weight="fill" className="shrink-0 text-rose-500" />
           <span>{errorMessage}</span>
         </div>
       )}
 
       {/* A. Upload ảnh sản phẩm (3 - 9 ảnh) */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+      <div className="rounded-3xl border border-zinc-200/90 bg-white/95 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
+              <h3 className="text-sm font-bold tracking-wider text-[#17203a] uppercase dark:text-white">
                 Ảnh sản phẩm (Gallery)
               </h3>
-              <span className="font-bold text-red-500">*</span>
+              <span className="font-bold text-rose-500">*</span>
               <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
                 {images.length}/9 ảnh
               </span>
             </div>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
               Tối thiểu 3 ảnh, tối đa 9 ảnh. Kéo hoặc dùng nút mũi tên để đổi thứ tự. Ảnh đầu tiên
-              là{' '}
-              <strong className="text-indigo-600 dark:text-indigo-400">Ảnh đại diện (Cover)</strong>
-              .
+              là <strong className="text-blue-700 dark:text-sky-300">Ảnh đại diện (Cover)</strong>.
             </p>
           </div>
 
@@ -290,7 +302,7 @@ export default function ProductMediaUploader({
             onClick={function () {
               imageInputRef.current?.click()
             }}
-            className="btn-primary flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-bold shadow-xs transition disabled:opacity-50"
+            className="btn-primary flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold shadow-xs transition disabled:opacity-50"
           >
             {isUploadingImages && <SpinnerGap size={14} weight="bold" className="animate-spin" />}
             {isUploadingImages === false && <UploadSimple size={14} weight="bold" />}
@@ -309,7 +321,7 @@ export default function ProductMediaUploader({
         </div>
 
         {images.length < 3 && (
-          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-3 text-xs text-amber-800 dark:border-amber-900/30 dark:bg-amber-950/30 dark:text-amber-300">
+          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300">
             <WarningCircle size={16} weight="fill" className="shrink-0 text-amber-500" />
             <span>
               Chưa đủ số lượng ảnh tối thiểu! Vui lòng tải lên thêm ít nhất {3 - images.length} ảnh
@@ -333,15 +345,28 @@ export default function ProductMediaUploader({
                   className="h-full w-full object-cover"
                 />
 
-                {/* Cover badge for index 0 */}
+                {/* Cover badge for index 0, or 1-click Set Cover button for non-cover images */}
                 {index === 0 && (
-                  <span className="absolute top-2 left-2 rounded-lg bg-gradient-to-r from-[#312e81] to-[#1d4ed8] px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs">
+                  <span className="absolute top-2 left-2 rounded-full bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] px-2.5 py-0.5 text-[10px] font-extrabold text-white shadow-xs">
                     Ảnh bìa (Cover)
                   </span>
                 )}
 
+                {index > 0 && (
+                  <button
+                    type="button"
+                    aria-label="Đặt làm ảnh bìa"
+                    onClick={function () {
+                      handleSetCover(index)
+                    }}
+                    className="absolute top-2 left-2 cursor-pointer rounded-full bg-[#11182a]/80 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs backdrop-blur-xs transition hover:bg-blue-700"
+                  >
+                    Đặt làm ảnh bìa
+                  </button>
+                )}
+
                 {/* Controls overlay */}
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/60 p-1.5 opacity-90 transition group-hover:opacity-100">
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/60 p-1.5 opacity-95 transition group-hover:opacity-100">
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
@@ -349,8 +374,9 @@ export default function ProductMediaUploader({
                       onClick={function () {
                         handleMoveImage(index, 'left')
                       }}
+                      aria-label="Chuyển sang trái"
                       title="Chuyển sang trái"
-                      className="rounded-full bg-white/20 p-1 text-white hover:bg-white/40 disabled:opacity-20"
+                      className="cursor-pointer rounded-full bg-white/20 p-1 text-white hover:bg-white/40 disabled:cursor-not-allowed disabled:opacity-20"
                     >
                       <ArrowLeft size={12} weight="bold" />
                     </button>
@@ -360,8 +386,9 @@ export default function ProductMediaUploader({
                       onClick={function () {
                         handleMoveImage(index, 'right')
                       }}
+                      aria-label="Chuyển sang phải"
                       title="Chuyển sang phải"
-                      className="rounded-full bg-white/20 p-1 text-white hover:bg-white/40 disabled:opacity-20"
+                      className="cursor-pointer rounded-full bg-white/20 p-1 text-white hover:bg-white/40 disabled:cursor-not-allowed disabled:opacity-20"
                     >
                       <ArrowRight size={12} weight="bold" />
                     </button>
@@ -372,8 +399,9 @@ export default function ProductMediaUploader({
                     onClick={function () {
                       handleRemoveImage(index)
                     }}
+                    aria-label="Xóa ảnh này"
                     title="Xóa ảnh này"
-                    className="rounded-full bg-red-600/80 p-1 text-white hover:bg-red-600"
+                    className="cursor-pointer rounded-full bg-rose-600/90 p-1 text-white hover:bg-rose-600"
                   >
                     <Trash size={12} weight="bold" />
                   </button>
@@ -388,7 +416,7 @@ export default function ProductMediaUploader({
               onClick={function () {
                 imageInputRef.current?.click()
               }}
-              className="flex aspect-3/4 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 text-zinc-400 transition hover:border-blue-600 hover:text-indigo-500 dark:border-white/10 dark:hover:border-indigo-400"
+              className="flex aspect-3/4 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-300 text-zinc-400 transition hover:border-blue-600 hover:text-blue-700 dark:border-white/15 dark:hover:border-sky-400 dark:hover:text-sky-300"
             >
               <UploadSimple size={24} weight="bold" />
               <span className="mt-2 text-xs font-semibold">Tải thêm ảnh</span>
@@ -399,21 +427,17 @@ export default function ProductMediaUploader({
       </div>
 
       {/* B. Video sản phẩm (Tối đa 1 video, <= 60s) */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
-        <div className="flex items-center justify-between">
+      <div className="rounded-3xl border border-zinc-200/90 bg-white/95 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <VideoCamera
-                size={18}
-                weight="bold"
-                className="text-indigo-600 dark:text-indigo-400"
-              />
-              <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
+              <VideoCamera size={18} weight="bold" className="text-blue-700 dark:text-sky-300" />
+              <h3 className="text-sm font-bold tracking-wider text-[#17203a] uppercase dark:text-white">
                 Video giới thiệu sản phẩm (Tùy chọn)
               </h3>
             </div>
-            <p className="mt-1 text-xs text-zinc-500">
-              Tối đa 1 video, thời lượng không quá 60 giây. Giúp tăng tỷ lệ chốt đơn tới 40%.
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              Tối đa 1 video, thời lượng không quá 60 giây để khách xem rõ chất liệu và phom dáng.
             </p>
           </div>
 
@@ -424,7 +448,7 @@ export default function ProductMediaUploader({
               onClick={function () {
                 videoInputRef.current?.click()
               }}
-              className="flex items-center gap-1.5 rounded-2xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-bold text-[#17203a] transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
             >
               {isUploadingVideo && <SpinnerGap size={14} weight="bold" className="animate-spin" />}
               {isUploadingVideo === false && <VideoCamera size={14} weight="bold" />}
@@ -494,14 +518,14 @@ export default function ProductMediaUploader({
                     </p>
                   )}
                   {uploadError !== null && (
-                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400">
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-rose-600 dark:text-rose-400">
                       <WarningCircle size={16} weight="bold" />
                       <span>{uploadError}</span>
                       <button
                         type="button"
                         disabled={isUploadingVideo}
                         onClick={() => void handleRetryUploadVideo()}
-                        className="rounded-lg border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+                        className="cursor-pointer rounded-full border border-rose-200 bg-rose-50 px-3 py-0.5 text-[11px] font-bold text-rose-700 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
                       >
                         Thử tải lại
                       </button>
@@ -517,7 +541,7 @@ export default function ProductMediaUploader({
                       onClick={function () {
                         videoInputRef.current?.click()
                       }}
-                      className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                      className="flex cursor-pointer items-center gap-1.5 rounded-full border border-zinc-300 bg-white px-3.5 py-1.5 text-xs font-bold text-[#17203a] transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
                     >
                       <VideoCamera size={14} weight="bold" />
                       Thay đổi video
@@ -526,7 +550,7 @@ export default function ProductMediaUploader({
                       type="button"
                       disabled={isUploadingVideo}
                       onClick={handleRemoveVideo}
-                      className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400"
+                      className="flex cursor-pointer items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3.5 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
                     >
                       <Trash size={14} weight="bold" />
                       Gỡ video
@@ -539,22 +563,22 @@ export default function ProductMediaUploader({
       </div>
 
       {/* C. Ảnh Garment (Trải phẳng trên nền trắng) dùng cho Virtual Try-On */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
-        <div className="flex items-center justify-between">
+      <div className="rounded-3xl border border-zinc-200/90 bg-white/95 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-50 text-blue-700 dark:bg-sky-500/15 dark:text-sky-300">
               <Sparkle size={20} weight="fill" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold tracking-wider text-zinc-900 uppercase dark:text-white">
+                <h3 className="text-sm font-bold tracking-wider text-[#17203a] uppercase dark:text-white">
                   Thử đồ ảo AI (Virtual Try-On)
                 </h3>
-                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-extrabold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">
+                <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-extrabold text-blue-700 dark:bg-sky-500/20 dark:text-sky-300">
                   AI Feature
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-zinc-500">
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                 Cho phép khách hàng thử đồ ảo trực tiếp lên ảnh của họ trên trang sản phẩm.
               </p>
             </div>
@@ -572,15 +596,15 @@ export default function ProductMediaUploader({
               }}
               className="peer sr-only"
             />
-            <div className="peer h-6 w-11 rounded-full bg-zinc-200 peer-checked:bg-indigo-600 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full dark:bg-white/10" />
+            <div className="peer h-6 w-11 rounded-full bg-zinc-200 peer-checked:bg-blue-600 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full dark:bg-white/10" />
           </label>
         </div>
 
         {tryOnEnabled && (
-          <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-900/30 dark:bg-indigo-950/20">
+          <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50/50 p-4 dark:border-sky-500/30 dark:bg-sky-500/10">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               {garment !== null && (
-                <div className="relative aspect-3/4 w-32 overflow-hidden rounded-xl border border-indigo-200 bg-white shadow-xs dark:border-indigo-800">
+                <div className="relative aspect-3/4 w-32 overflow-hidden rounded-2xl border border-sky-200 bg-white shadow-xs dark:border-sky-500/30">
                   <img
                     src={garment.url}
                     alt="Ảnh Garment phẳng nền trắng"
@@ -589,10 +613,12 @@ export default function ProductMediaUploader({
                   />
                   <button
                     type="button"
+                    aria-label="Xóa ảnh garment"
+                    title="Xóa ảnh garment"
                     onClick={function () {
                       onGarmentChange(null)
                     }}
-                    className="absolute top-1 right-1 rounded-full bg-red-600/80 p-1 text-white hover:bg-red-600"
+                    className="absolute top-1 right-1 cursor-pointer rounded-full bg-rose-600/90 p-1 text-white hover:bg-rose-600"
                   >
                     <Trash size={12} weight="bold" />
                   </button>
@@ -606,7 +632,7 @@ export default function ProductMediaUploader({
                   onClick={function () {
                     garmentInputRef.current?.click()
                   }}
-                  className="flex aspect-3/4 w-32 flex-col items-center justify-center rounded-xl border-2 border-dashed border-indigo-300 bg-white p-2 text-center text-indigo-600 transition hover:border-indigo-500 disabled:opacity-50 dark:border-indigo-800 dark:bg-white/5 dark:text-indigo-400"
+                  className="flex aspect-3/4 w-32 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-sky-300 bg-white p-2 text-center text-blue-700 transition hover:border-blue-600 disabled:opacity-50 dark:border-sky-500/40 dark:bg-white/5 dark:text-sky-300"
                 >
                   {isUploadingGarment && (
                     <SpinnerGap size={20} weight="bold" className="animate-spin" />

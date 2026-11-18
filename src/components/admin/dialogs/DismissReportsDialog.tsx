@@ -7,7 +7,13 @@ import Modal from '@/components/Modal'
 import { REASON_MAX } from '@/lib/admin/productModeration'
 import { hookErrorMessage } from '@/lib/api/apiAdapters'
 import { notify } from '@/lib/notifications'
-import { cn, LABEL_CLASS, secondaryButtonClass, TEXTAREA_CLASS } from '@/lib/ui/styles'
+import {
+  cn,
+  LABEL_CLASS,
+  secondaryButtonClass,
+  successButtonClass,
+  TEXTAREA_CLASS,
+} from '@/lib/ui/styles'
 
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
 
@@ -85,7 +91,10 @@ export default function DismissReportsDialog({ product, onClose, onDone }: Props
         />
 
         {dismiss.isError && (
-          <p className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-200">
+          <p
+            role="alert"
+            className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200"
+          >
             {hookErrorMessage('adminProductDismiss', dismiss.error)}
           </p>
         )}
@@ -95,7 +104,7 @@ export default function DismissReportsDialog({ product, onClose, onDone }: Props
             type="button"
             onClick={handleClose}
             disabled={dismiss.isPending}
-            className={cn(secondaryButtonClass(), 'cursor-pointer px-5 py-2.5')}
+            className={cn(secondaryButtonClass(), 'px-5 py-2.5')}
           >
             Hủy
           </button>
@@ -103,7 +112,7 @@ export default function DismissReportsDialog({ product, onClose, onDone }: Props
             type="button"
             onClick={handleConfirm}
             disabled={dismiss.isPending}
-            className="cursor-pointer rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className={cn(successButtonClass(), 'px-5 py-2.5')}
           >
             {dismiss.isPending && <span>Đang xử lý…</span>}
             {dismiss.isPending === false && <span>Không vi phạm</span>}

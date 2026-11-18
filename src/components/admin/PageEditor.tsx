@@ -10,6 +10,7 @@ import {
 } from '@generated/endpoints/admin-pages/admin-pages'
 import { ArrowLeft, ArrowSquareOut, Eye, EyeSlash, FloppyDisk, Trash } from '@phosphor-icons/react'
 
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import {
   FOOTER_GROUP_OPTIONS,
@@ -19,10 +20,15 @@ import {
   slugify,
 } from '@/lib/content/siteContent'
 import { notify } from '@/lib/notifications'
-import { cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
+import {
+  cn,
+  FOCUS_RING_CLASS,
+  primaryButtonClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from '@/lib/ui/styles'
 
 import Markdown from '../Markdown'
-import ConfirmDialog from './dialogs/ConfirmDialog'
 import {
   ERROR_CLASS,
   HINT_CLASS,
@@ -76,6 +82,7 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
   const [slugTouched, setSlugTouched] = useState(page !== null)
   const [mode, setMode] = useState<'write' | 'preview'>('write')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmLeave, setConfirmLeave] = useState(false)
   const create = useCreatePage()
   const update = useUpdatePage()
   const publish = usePublishPage()
@@ -83,7 +90,8 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
   const remove = useDeletePage()
 
   const saved = formFrom(page)
-  const dirty = page === null || sameForm(form, saved) === false
+  const hasEdits = sameForm(form, saved) === false
+  const dirty = page === null || hasEdits
   const slugProblem = form.slug !== '' && SLUG_PATTERN.test(form.slug) === false
   const metaLength = (form.metaDescription ?? '').trim().length
   const canSave =
@@ -108,9 +116,13 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
   if (unpublish.isError) {
     error = hookErrorMessage('adminPageStatus', unpublish.error)
   }
-  let deleteError: string | null = null
-  if (remove.isError) {
-    deleteError = hookErrorMessage('adminPageStatus', remove.error)
+
+  function handleBackClick() {
+    if (hasEdits) {
+      setConfirmLeave(true)
+      return
+    }
+    onBack()
   }
 
   function setTitle(title: string) {
@@ -191,7 +203,7 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
   }
   let writePaneClass = ''
   let previewPaneClass =
-    'max-h-[560px] overflow-y-auto rounded-2xl border border-zinc-100 bg-white p-5 dark:border-white/10 dark:bg-[#0a0f1e]'
+    'max-h-[560px] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 dark:border-white/10 dark:bg-[#0a0f1e]'
   if (mode === 'preview') {
     writePaneClass = 'hidden lg:block'
   }
@@ -204,8 +216,11 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-sm font-bold text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+          onClick={handleBackClick}
+          className={cn(
+            'flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-sm font-bold text-zinc-600 transition hover:text-[#17203a] dark:text-zinc-300 dark:hover:text-white',
+            FOCUS_RING_CLASS,
+          )}
         >
           <ArrowLeft size={16} weight="bold" />
           Danh sách trang
@@ -220,7 +235,10 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
             <Link
               to={`/pages/${page?.slug ?? ''}`}
               target="_blank"
-              className="flex items-center gap-1 rounded-full px-3 py-2 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-300"
+              className={cn(
+                'flex cursor-pointer items-center gap-1 rounded-full px-3 py-2 text-xs font-bold text-blue-700 hover:underline dark:text-sky-300',
+                FOCUS_RING_CLASS,
+              )}
             >
               Xem trang
               <ArrowSquareOut size={14} weight="bold" />
@@ -230,7 +248,10 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              className="flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+              className={cn(
+                'flex cursor-pointer items-center gap-1.5 rounded-full border border-rose-300 px-4 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/15',
+                FOCUS_RING_CLASS,
+              )}
             >
               <Trash size={14} weight="bold" />
               Xóa
@@ -242,7 +263,10 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
               onClick={handleStatus}
               disabled={busy || dirty}
               title={statusHint}
-              className="flex items-center gap-1.5 rounded-full border border-indigo-200 px-4 py-2 text-xs font-bold text-indigo-600 transition hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
+              className={cn(
+                'flex cursor-pointer items-center gap-1.5 rounded-full border border-indigo-200 px-4 py-2 text-xs font-bold text-blue-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-sky-500/30 dark:text-sky-300 dark:hover:bg-sky-500/10',
+                FOCUS_RING_CLASS,
+              )}
             >
               <StatusIcon size={14} weight="bold" />
               {statusLabel}
@@ -252,7 +276,10 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
             type="button"
             onClick={handleSave}
             disabled={canSave === false || busy || dirty === false}
-            className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold disabled:opacity-50"
+            className={cn(
+              primaryButtonClass(),
+              'flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50',
+            )}
           >
             <FloppyDisk size={14} weight="bold" />
             Lưu
@@ -265,7 +292,11 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
           Có thay đổi chưa lưu.{published && ' Trang đang xuất bản: lưu xong khách thấy ngay.'}
         </p>
       )}
-      {error !== null && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error !== null && (
+        <p role="alert" className="mb-3 text-sm font-medium text-rose-600 dark:text-rose-400">
+          {error}
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <label className="block">
@@ -280,8 +311,8 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
         </label>
         <label className="block">
           <span className={LABEL_CLASS}>Đường dẫn</span>
-          <div className="flex items-center rounded-full border border-zinc-300 bg-white/80 pl-4 text-sm focus-within:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400">
-            <span className="shrink-0 text-zinc-400">/pages/</span>
+          <div className="flex items-center rounded-full border border-zinc-300 bg-white/85 pl-4 text-sm focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/20 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400 dark:focus-within:ring-sky-400/25">
+            <span className="shrink-0 text-zinc-500 dark:text-zinc-400">/pages/</span>
             <input
               value={form.slug}
               onChange={(event) => {
@@ -294,10 +325,12 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
             />
           </div>
           {slugProblem && (
-            <span className={ERROR_CLASS}>Chỉ chữ thường không dấu, số, nối bằng dấu -.</span>
+            <span role="alert" className={ERROR_CLASS}>
+              Chỉ chữ thường không dấu, số, nối bằng dấu -.
+            </span>
           )}
           {published && slugProblem === false && form.slug !== saved.slug && (
-            <span className={ERROR_CLASS}>
+            <span role="alert" className={ERROR_CLASS}>
               Đổi đường dẫn làm link cũ (đã chia sẻ) không mở được nữa.
             </span>
           )}
@@ -378,30 +411,42 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
         </div>
       </div>
 
-      {confirmDelete && page?.id !== undefined && (
-        <ConfirmDialog
-          open
-          danger
-          title="Xóa trang"
-          description={`Xóa hẳn trang nháp "${page.title ?? ''}"?`}
-          confirmLabel="Xóa trang"
-          pending={remove.isPending}
-          error={deleteError ?? undefined}
-          onClose={() => setConfirmDelete(false)}
-          onConfirm={() => {
-            if (page.id === undefined) {
-              return
-            }
-            remove.mutate(
-              { id: page.id },
-              {
-                onSuccess: () => onDeleted(`Đã xóa trang "${page.title ?? ''}".`),
-                onError: (err) => notify.fromError(err, 'adminPageStatus'),
-              },
-            )
-          }}
-        />
-      )}
+      <ConfirmDialog
+        open={confirmDelete && page?.id !== undefined}
+        variant="danger"
+        title="Xóa trang"
+        description={`Xóa hẳn trang nháp "${page?.title ?? ''}"?`}
+        confirmLabel="Xóa trang"
+        isPending={remove.isPending}
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={() => {
+          if (page?.id === undefined) {
+            return
+          }
+          const pageTitle = page.title ?? ''
+          remove.mutate(
+            { id: page.id },
+            {
+              onSuccess: () => onDeleted(`Đã xóa trang "${pageTitle}".`),
+              onError: (err) => notify.fromError(err, 'adminPageStatus'),
+            },
+          )
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmLeave}
+        variant="danger"
+        title="Rời khỏi trình soạn thảo?"
+        description="Bạn có thay đổi chưa lưu. Nếu quay lại danh sách trang ngay lúc này, các chỉnh sửa chưa lưu sẽ bị mất."
+        confirmLabel="Rời đi"
+        cancelLabel="Tiếp tục soạn"
+        onCancel={() => setConfirmLeave(false)}
+        onConfirm={() => {
+          setConfirmLeave(false)
+          onBack()
+        }}
+      />
     </div>
   )
 }

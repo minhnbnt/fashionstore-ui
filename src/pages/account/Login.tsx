@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router'
 
 import {
@@ -90,7 +90,9 @@ export default function Login() {
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -106,19 +108,8 @@ export default function Login() {
   const googleSignIn = useSignInWithGoogle()
   const oauthError = searchParams.get('error')
 
-  useEffect(
-    function () {
-      if (oauthError !== null && oauthError !== '') {
-        notify.error('Đăng nhập Google thất bại', 'Vui lòng thử lại hoặc dùng email và mật khẩu.', {
-          id: 'oauth-error',
-        })
-      }
-    },
-    [oauthError],
-  )
-
   if (isPending) {
-    return <p className="mx-auto max-w-[1400px] px-4 py-24 text-center">Đang tải…</p>
+    return <p className="mx-auto max-w-6xl px-4 py-24 text-center">Đang tải…</p>
   }
 
   if (session !== null && session !== undefined) {
@@ -131,8 +122,17 @@ export default function Login() {
   const busy = signIn.isPending || signUp.isPending || reset.isPending || googleSignIn.isPending
 
   let inputType = 'password'
+  let passwordToggleLabel = 'Hiện mật khẩu'
   if (showPassword) {
     inputType = 'text'
+    passwordToggleLabel = 'Ẩn mật khẩu'
+  }
+
+  let confirmInputType = 'password'
+  let confirmToggleLabel = 'Hiện xác nhận mật khẩu'
+  if (showConfirmPassword) {
+    confirmInputType = 'text'
+    confirmToggleLabel = 'Ẩn xác nhận mật khẩu'
   }
 
   let autoComplete = 'new-password'
@@ -142,6 +142,7 @@ export default function Login() {
 
   function handleMode(next: Mode) {
     setMode(next)
+    setConfirmPassword('')
     setFormError(null)
     setNotice(null)
     signIn.reset()
@@ -154,15 +155,11 @@ export default function Login() {
 
     if (mode === 'forgot') {
       if (email.trim() === '') {
-        const msg = 'Vui lòng nhập email.'
-        setFormError(msg)
-        notify.warning(msg, undefined, { id: 'login-validation' })
+        setFormError('Vui lòng nhập email.')
         return
       }
       if (email.includes('@') === false) {
-        const msg = 'Email chưa đúng định dạng.'
-        setFormError(msg)
-        notify.warning(msg, undefined, { id: 'login-validation' })
+        setFormError('Email chưa đúng định dạng.')
         return
       }
       setFormError(null)
@@ -171,15 +168,9 @@ export default function Login() {
           setNotice(
             'Liên kết đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.',
           )
-          notify.success(
-            'Đã gửi liên kết đặt lại mật khẩu',
-            'Vui lòng kiểm tra hộp thư email của bạn.',
-          )
         },
         onError: function (err) {
-          const msg = friendlyAuthError(err)
-          setFormError(msg)
-          notify.error(msg, undefined, { id: 'auth-error' })
+          setFormError(friendlyAuthError(err))
         },
       })
       return
@@ -188,8 +179,17 @@ export default function Login() {
     const invalid = validateLoginInput(email, password)
     if (invalid !== null) {
       setFormError(invalid)
-      notify.warning(invalid, undefined, { id: 'login-validation' })
       return
+    }
+    if (mode === 'signup') {
+      if (confirmPassword === '') {
+        setFormError('Vui lòng xác nhận lại mật khẩu.')
+        return
+      }
+      if (confirmPassword !== password) {
+        setFormError('Mật khẩu xác nhận không khớp.')
+        return
+      }
     }
     setFormError(null)
     setNotice(null)
@@ -206,9 +206,7 @@ export default function Login() {
           }
         },
         onError: function (err) {
-          const msg = friendlyAuthError(err)
-          setFormError(msg)
-          notify.error(msg, undefined, { id: 'auth-error' })
+          setFormError(friendlyAuthError(err))
         },
       })
       return
@@ -224,28 +222,24 @@ export default function Login() {
           return
         }
         setNotice('Tài khoản đã được tạo. Vui lòng kiểm tra email để xác nhận.')
-        notify.success('Tạo tài khoản thành công', 'Vui lòng kiểm tra email để xác nhận tài khoản.')
       },
       onError: function (err) {
-        const msg = friendlyAuthError(err)
-        setFormError(msg)
-        notify.error(msg, undefined, { id: 'auth-error' })
+        setFormError(friendlyAuthError(err))
       },
     })
   }
 
   function handleGoogleSignIn() {
+    setFormError(null)
     googleSignIn.mutate(undefined, {
       onError: function (err) {
-        const msg = friendlyAuthError(err)
-        setFormError(msg)
-        notify.error(msg, undefined, { id: 'auth-error' })
+        setFormError(friendlyAuthError(err))
       },
     })
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
+    <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
       <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
         <aside className="relative hidden overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-blue-700 to-sky-400 p-8 text-white lg:flex lg:flex-col">
           <div className="hero-blob top-[-80px] right-[-80px] h-64 w-64 bg-white/20" />
@@ -296,9 +290,15 @@ export default function Login() {
 
         <div className="glass rounded-3xl p-6 md:p-8">
           {mode !== 'forgot' && (
-            <div className={cn(segmentedTrackClass(), 'w-full')}>
+            <div
+              role="tablist"
+              aria-label="Chọn chế độ tài khoản"
+              className={cn(segmentedTrackClass(), 'w-full')}
+            >
               <button
                 type="button"
+                role="tab"
+                aria-selected={mode === 'login'}
                 onClick={function () {
                   handleMode('login')
                 }}
@@ -311,6 +311,8 @@ export default function Login() {
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={mode === 'signup'}
                 onClick={function () {
                   handleMode('signup')
                 }}
@@ -357,18 +359,23 @@ export default function Login() {
                 <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
               </div>
 
-              {oauthError !== null && (
-                <p className="mb-3 rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
-                  Đăng nhập Google thất bại. Vui lòng thử lại.
+              {oauthError !== null && oauthError !== '' && (
+                <p
+                  role="alert"
+                  className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+                >
+                  Đăng nhập Google thất bại. Vui lòng thử lại hoặc dùng email và mật khẩu.
                 </p>
               )}
             </>
           )}
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-            <label className="block text-sm font-bold">
+            <label htmlFor="login-email" className="block text-sm font-bold">
               Email
               <input
+                id="login-email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={function (e) {
@@ -381,10 +388,12 @@ export default function Login() {
             </label>
 
             {mode !== 'forgot' && (
-              <label className="block text-sm font-bold">
+              <label htmlFor="login-password" className="block text-sm font-bold">
                 Mật khẩu
                 <span className="relative mt-1 block">
                   <input
+                    id="login-password"
+                    name="password"
                     type={inputType}
                     value={password}
                     onChange={function (e) {
@@ -396,7 +405,7 @@ export default function Login() {
                   />
                   <button
                     type="button"
-                    aria-label="Hiện mật khẩu"
+                    aria-label={passwordToggleLabel}
                     onClick={function () {
                       setShowPassword(function (prev) {
                         return !prev
@@ -411,8 +420,44 @@ export default function Login() {
               </label>
             )}
 
+            {mode === 'signup' && (
+              <label htmlFor="login-confirm-password" className="block text-sm font-bold">
+                Xác nhận mật khẩu
+                <span className="relative mt-1 block">
+                  <input
+                    id="login-confirm-password"
+                    name="confirmPassword"
+                    type={confirmInputType}
+                    value={confirmPassword}
+                    onChange={function (e) {
+                      setConfirmPassword(e.target.value)
+                    }}
+                    placeholder="Nhập lại mật khẩu"
+                    autoComplete="new-password"
+                    className={cn(INPUT_CLASS, 'pr-11 font-normal')}
+                  />
+                  <button
+                    type="button"
+                    aria-label={confirmToggleLabel}
+                    onClick={function () {
+                      setShowConfirmPassword(function (prev) {
+                        return !prev
+                      })
+                    }}
+                    className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded-full p-1 text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                  >
+                    {showConfirmPassword && <EyeSlash size={18} />}
+                    {showConfirmPassword === false && <Eye size={18} />}
+                  </button>
+                </span>
+              </label>
+            )}
+
             {formError !== null && (
-              <p className="rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-300">
+              <p
+                role="alert"
+                className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+              >
                 {formError}
               </p>
             )}

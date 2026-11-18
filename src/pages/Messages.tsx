@@ -21,6 +21,7 @@ import { useAiConversations, useDeleteAiConversation } from '@/hooks/useAiHistor
 import { useSessionQuery } from '@/hooks/useSession'
 import { takeData } from '@/lib/api/apiAdapters'
 import { formatDateTime } from '@/lib/format'
+import { cn, FOCUS_RING_CLASS, segmentedTrackClass } from '@/lib/ui/styles'
 
 import type { ChatConversationResponse } from '@generated/model/chatConversationResponse'
 
@@ -48,6 +49,7 @@ export default function Messages() {
     initialAiConvId = idParam
   }
   const [activeAiConvId, setActiveAiConvId] = useState<string | null>(initialAiConvId)
+  const [mobileAiPane, setMobileAiPane] = useState<'auto' | 'list' | 'chat'>('auto')
   const [shopSearch, setShopSearch] = useState('')
 
   // Queries
@@ -87,6 +89,12 @@ export default function Messages() {
   })
 
   function handleTabChange(tab: MessagesTab) {
+    if (tab === 'shop') {
+      setMobileAiPane('list')
+    } else {
+      setActiveAiConvId(null)
+      setMobileAiPane('auto')
+    }
     setSearchParams(function (prev) {
       const next = new URLSearchParams(prev)
       next.set('tab', tab)
@@ -116,6 +124,7 @@ export default function Messages() {
 
   function handleSelectAiConv(id: string | null) {
     setActiveAiConvId(id)
+    setMobileAiPane('chat')
     setSearchParams(function (prev) {
       const next = new URLSearchParams(prev)
       next.set('tab', 'ai')
@@ -128,17 +137,37 @@ export default function Messages() {
     })
   }
 
+  function handleBackFromAiChat() {
+    setMobileAiPane('list')
+  }
+
   function handleDeleteAiConv(e: React.MouseEvent, id: string) {
     e.stopPropagation()
     deleteAiConv.mutate(id)
     if (activeAiConvId === id) {
-      handleSelectAiConv(null)
+      setActiveAiConvId(null)
+      setMobileAiPane('list')
+      setSearchParams(function (prev) {
+        const next = new URLSearchParams(prev)
+        next.set('tab', 'ai')
+        next.delete('id')
+        return next
+      })
+    }
+  }
+
+  let showAiChatOnMobile = false
+  if (mobileAiPane === 'chat') {
+    showAiChatOnMobile = true
+  } else if (mobileAiPane === 'auto') {
+    if (activeAiConvId !== null || isLoggedIn === false) {
+      showAiChatOnMobile = true
     }
   }
 
   const hideLeftOnMobile =
     (activeTab === 'shop' && selectedShopConv !== undefined) ||
-    (activeTab === 'ai' && activeAiConvId !== null)
+    (activeTab === 'ai' && showAiChatOnMobile)
 
   let leftColumnClass =
     'flex w-full shrink-0 flex-col border-r border-zinc-200/70 bg-white/60 md:w-80 lg:w-96 dark:border-white/10 dark:bg-white/[0.02]'
@@ -152,18 +181,26 @@ export default function Messages() {
     rightColumnClass = 'hidden h-full min-w-0 flex-1 flex-col overflow-hidden md:flex'
   }
 
-  let shopTabButtonClass =
-    'flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-semibold text-zinc-600 transition hover:text-[#17203a] dark:text-zinc-300 dark:hover:text-white'
+  let shopTabButtonClass = cn(
+    'flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full py-2 text-xs font-semibold text-zinc-600 transition hover:text-[#17203a] dark:text-zinc-300 dark:hover:text-white',
+    FOCUS_RING_CLASS,
+  )
   if (activeTab === 'shop') {
-    shopTabButtonClass =
-      'btn-primary flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold shadow-xs'
+    shopTabButtonClass = cn(
+      'btn-primary flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold shadow-xs',
+      FOCUS_RING_CLASS,
+    )
   }
 
-  let aiTabButtonClass =
-    'flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-semibold text-zinc-600 transition hover:text-[#17203a] dark:text-zinc-300 dark:hover:text-white'
+  let aiTabButtonClass = cn(
+    'flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full py-2 text-xs font-semibold text-zinc-600 transition hover:text-[#17203a] dark:text-zinc-300 dark:hover:text-white',
+    FOCUS_RING_CLASS,
+  )
   if (activeTab === 'ai') {
-    aiTabButtonClass =
-      'btn-primary flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold shadow-xs'
+    aiTabButtonClass = cn(
+      'btn-primary flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold shadow-xs',
+      FOCUS_RING_CLASS,
+    )
   }
 
   let emptyShopTitle = 'Đăng nhập để xem và gửi tin nhắn cho các shop'
@@ -173,14 +210,15 @@ export default function Messages() {
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-[1400px] flex-col px-4 pt-20 pb-4 md:pt-24 md:pb-6">
-      <div className="glass flex flex-1 overflow-hidden rounded-3xl bg-white/88 shadow-xl dark:bg-[#11182a]/92">
+      <div className="glass flex flex-1 overflow-hidden rounded-3xl border border-zinc-200/90 bg-white/88 shadow-xl dark:border-white/10 dark:bg-[#11182a]/92">
         {/* Left Column */}
         <div className={leftColumnClass}>
           {/* Top Switcher */}
           <div className="border-b border-zinc-200/70 p-3.5 dark:border-white/10">
-            <div className="flex rounded-full bg-zinc-100/90 p-1 dark:bg-white/5">
+            <div className={cn(segmentedTrackClass(), 'w-full')}>
               <button
                 type="button"
+                aria-pressed={activeTab === 'shop'}
                 onClick={function () {
                   handleTabChange('shop')
                 }}
@@ -191,6 +229,7 @@ export default function Messages() {
               </button>
               <button
                 type="button"
+                aria-pressed={activeTab === 'ai'}
                 onClick={function () {
                   handleTabChange('ai')
                 }}
@@ -218,7 +257,10 @@ export default function Messages() {
                   </p>
                   <Link
                     to="/login"
-                    className="btn-primary mt-4 rounded-full px-5 py-2 text-xs font-bold active:scale-95"
+                    className={cn(
+                      'btn-primary mt-4 cursor-pointer rounded-full px-5 py-2 text-xs font-bold active:scale-95',
+                      FOCUS_RING_CLASS,
+                    )}
                   >
                     Đăng nhập ngay
                   </Link>
@@ -236,6 +278,7 @@ export default function Messages() {
                         onChange={function (e) {
                           setShopSearch(e.target.value)
                         }}
+                        aria-label="Tìm kiếm shop"
                         placeholder="Tìm kiếm shop..."
                         className="w-full bg-transparent outline-none placeholder:text-zinc-400 dark:text-white"
                       />
@@ -251,11 +294,15 @@ export default function Messages() {
                     {filteredShopConvs.map(function (c) {
                       const convId = c.id ?? ''
                       const isSelected = convId === idParam
-                      let itemClass =
-                        'flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-[#f6f9ff] dark:hover:bg-white/5'
+                      let itemClass = cn(
+                        'flex w-full cursor-pointer items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-[#f6f9ff] dark:hover:bg-white/5',
+                        FOCUS_RING_CLASS,
+                      )
                       if (isSelected) {
-                        itemClass =
-                          'flex w-full items-center gap-3 rounded-2xl bg-indigo-50/90 p-3 text-left ring-1 ring-indigo-200/80 transition dark:bg-white/10 dark:ring-white/15'
+                        itemClass = cn(
+                          'flex w-full cursor-pointer items-center gap-3 rounded-2xl bg-indigo-50/90 p-3 text-left ring-1 ring-indigo-200/80 transition dark:bg-white/10 dark:ring-white/15',
+                          FOCUS_RING_CLASS,
+                        )
                       }
 
                       let unreadText = ''
@@ -294,7 +341,7 @@ export default function Messages() {
                                 {formatChatPreview(c.lastMessageText) || 'Bắt đầu cuộc trò chuyện'}
                               </p>
                               {unreadText !== '' && (
-                                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">
+                                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white tabular-nums">
                                   {unreadText}
                                 </span>
                               )}
@@ -320,7 +367,10 @@ export default function Messages() {
                   </p>
                   <Link
                     to="/login"
-                    className="mt-2.5 inline-flex items-center gap-1.5 font-bold text-indigo-700 hover:underline dark:text-sky-300"
+                    className={cn(
+                      'mt-2.5 inline-flex cursor-pointer items-center gap-1.5 rounded font-bold text-indigo-700 hover:underline dark:text-sky-300',
+                      FOCUS_RING_CLASS,
+                    )}
                   >
                     <SignIn size={14} weight="bold" />
                     <span>Đăng nhập ngay</span>
@@ -334,7 +384,10 @@ export default function Messages() {
                   onClick={function () {
                     handleSelectAiConv(null)
                   }}
-                  className="btn-primary flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold active:scale-[0.98]"
+                  className={cn(
+                    'btn-primary flex w-full cursor-pointer items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold active:scale-[0.98]',
+                    FOCUS_RING_CLASS,
+                  )}
                 >
                   <Plus size={14} weight="bold" />
                   <span>Đoạn chat mới</span>
@@ -364,7 +417,10 @@ export default function Messages() {
                           onClick={function () {
                             handleSelectAiConv(c.id)
                           }}
-                          className="min-w-0 flex-1 text-left"
+                          className={cn(
+                            'min-w-0 flex-1 cursor-pointer rounded text-left',
+                            FOCUS_RING_CLASS,
+                          )}
                         >
                           <p className="truncate text-[13px] font-bold text-[#17203a] dark:text-white">
                             {c.title}
@@ -379,7 +435,10 @@ export default function Messages() {
                             handleDeleteAiConv(e, c.id)
                           }}
                           aria-label="Xóa đoạn chat"
-                          className="rounded-full p-1.5 text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-white/10 dark:hover:text-rose-400"
+                          className={cn(
+                            'cursor-pointer rounded-full p-1.5 text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-white/10 dark:hover:text-rose-400',
+                            FOCUS_RING_CLASS,
+                          )}
                         >
                           <Trash size={14} />
                         </button>
@@ -428,6 +487,7 @@ export default function Messages() {
               <AgentTab
                 activeConversationId={activeAiConvId}
                 onSelectConversation={handleSelectAiConv}
+                onBack={handleBackFromAiChat}
                 variant="page"
               />
             </div>

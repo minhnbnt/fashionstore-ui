@@ -139,10 +139,10 @@ export default function BannerFormDialog({ banner, defaultPlacement, onClose, on
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {PLACEMENT_OPTIONS.map(function (item) {
             let itemClass =
-              'flex cursor-pointer flex-col gap-0.5 rounded-2xl border border-zinc-200 px-3.5 py-2.5 transition hover:border-indigo-300 dark:border-white/10'
+              'flex cursor-pointer flex-col gap-0.5 rounded-2xl border border-zinc-300 bg-white/85 px-3.5 py-2.5 transition hover:border-blue-400 dark:border-white/15 dark:bg-white/5 dark:hover:border-sky-400/50'
             if (item.value === placement) {
               itemClass =
-                'flex cursor-pointer flex-col gap-0.5 rounded-2xl border border-indigo-500 bg-indigo-50 px-3.5 py-2.5 transition dark:bg-indigo-500/10'
+                'flex cursor-pointer flex-col gap-0.5 rounded-2xl border border-blue-600 bg-sky-50 px-3.5 py-2.5 transition dark:border-sky-400 dark:bg-sky-500/15'
             }
             return (
               <label key={item.value} className={itemClass}>
@@ -213,7 +213,7 @@ export default function BannerFormDialog({ banner, defaultPlacement, onClose, on
             className={INPUT_CLASS}
           />
           {linkProblem && (
-            <span className={ERROR_CLASS}>
+            <span role="alert" className={ERROR_CLASS}>
               Link phải bắt đầu bằng / hoặc http(s)://, không có khoảng trắng.
             </span>
           )}

@@ -22,12 +22,18 @@ export default function Home() {
       <BannerCarousel />
       <LogoStrip />
       <CategoryBento
+        activeSlug={category?.slug ?? null}
         onSelect={function (c) {
           setCategory(c)
           document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' })
         }}
       />
-      <ProductGrid category={category} />
+      <ProductGrid
+        category={category}
+        onClearCategory={function () {
+          setCategory(null)
+        }}
+      />
       <BannerStrip />
       <DealMarquee />
       <Editorial />

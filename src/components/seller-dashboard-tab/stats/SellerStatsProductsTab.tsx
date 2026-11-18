@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 import {
   useGetLowConversionProducts,
   useGetOutOfStockProducts,
@@ -15,9 +13,11 @@ import {
 } from '@phosphor-icons/react'
 
 import { BarChart } from '@/components/ui/charts'
-import { PLACEHOLDER_IMAGE, urlOrPlaceholder, takeData } from '@/lib/api/apiAdapters'
+import { DashboardSkeleton } from '@/components/ui/Skeleton'
+import { PLACEHOLDER_IMAGE, takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import { productAnalyticsItems } from '@/lib/seller/sellerStatsAdapters'
+import { badgeToneClass, cn, dangerButtonClass, PANEL_CLASS } from '@/lib/ui/styles'
 
 import type { ProductAnalyticsItem } from '@/types/seller'
 
@@ -40,15 +40,7 @@ function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
   }
 }
 
-function slowDaysClass(active: boolean): string {
-  if (active) {
-    return 'btn-primary shadow-sm'
-  }
-  return 'text-zinc-500 dark:text-zinc-400'
-}
-
 export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props) {
-  const [slowDays, setSlowDays] = useState(30)
   const isEnabled = shopId !== ''
 
   const topSellingQuery = useGetTopSellingProducts(
@@ -56,22 +48,28 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
     { limit: 10 },
     { query: { enabled: isEnabled } },
   )
-
   const lowConversionQuery = useGetLowConversionProducts(
     shopId,
     { limit: 10 },
     { query: { enabled: isEnabled } },
   )
-
   const outOfStockQuery = useGetOutOfStockProducts(shopId, { query: { enabled: isEnabled } })
-
   const slowMovingQuery = useGetSlowMovingProducts(
     shopId,
     { limit: 10 },
     { query: { enabled: isEnabled } },
   )
 
-  // Adapters
+  if (topSellingQuery.isPending && lowConversionQuery.isPending) {
+    return <DashboardSkeleton />
+  }
+
+  const hasError =
+    topSellingQuery.isError ||
+    lowConversionQuery.isError ||
+    outOfStockQuery.isError ||
+    slowMovingQuery.isError
+
   let topSelling: ProductAnalyticsItem[] = []
   if (topSellingQuery.data !== undefined) {
     topSelling = productAnalyticsItems(takeData(topSellingQuery.data))
@@ -92,24 +90,26 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
     slowMoving = productAnalyticsItems(takeData(slowMovingQuery.data))
   }
 
-  const topBarData = topSelling.slice(0, 5).map((p, index) => ({
-    label: p.productName,
-    value: p.totalRevenue,
-    subLabel: `Đã bán ${p.totalSold}`,
-    rank: index + 1,
-    color: '#6366f1',
-  }))
+  const topBarData = topSelling.slice(0, 5).map(function (p, index) {
+    return {
+      label: p.productName,
+      value: p.totalRevenue,
+      subLabel: `Đã bán ${p.totalSold}`,
+      rank: index + 1,
+      color: '#1d4ed8',
+    }
+  })
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-2 rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+      <div className={cn(PANEL_CLASS, 'flex flex-col gap-2 p-6')}>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
+          <span className={cn('rounded-full px-3 py-1 text-xs font-bold', badgeToneClass('info'))}>
             Hiệu Suất Sản Phẩm
           </span>
         </div>
-        <h2 className="text-xl font-black text-zinc-900 dark:text-white">
+        <h2 className="text-xl font-black text-[#17203a] dark:text-white">
           Phân Tích & Tối Ưu Sản Phẩm
         </h2>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -118,15 +118,22 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
         </p>
       </div>
 
+      {hasError && (
+        <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
+          <WarningCircle size={16} weight="bold" className="shrink-0" />
+          <span>Không thể tải đầy đủ dữ liệu phân tích sản phẩm. Vui lòng thử lại sau.</span>
+        </div>
+      )}
+
       {/* Top sản phẩm bán chạy nhất */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+      <div className={cn(PANEL_CLASS, 'p-6')}>
         <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/40">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
               <Sparkle size={18} weight="bold" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+              <h3 className="text-base font-bold text-[#17203a] dark:text-white">
                 Top sản phẩm bán chạy nhất
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -136,9 +143,8 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
           </div>
         </div>
 
-        {/* Bar chart overview for top 5 */}
         {topBarData.length > 0 && (
-          <div className="mb-6 rounded-2xl bg-zinc-50/60 p-4 dark:bg-white/5">
+          <div className="mb-6 rounded-2xl bg-zinc-50/70 p-4 dark:bg-white/5">
             <h4 className="mb-3 text-xs font-bold text-zinc-700 dark:text-zinc-300">
               Biểu đồ doanh thu Top 5
             </h4>
@@ -146,7 +152,6 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
           </div>
         )}
 
-        {/* Table top selling */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
@@ -160,7 +165,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
-              {topSelling.map((item, index) => {
+              {topSelling.map(function (item, index) {
                 let rankClass = 'bg-zinc-100 text-zinc-700 dark:bg-white/10 dark:text-zinc-300'
                 if (index === 0) {
                   rankClass = 'bg-amber-500 text-white font-bold'
@@ -169,14 +174,17 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                   rankClass = 'bg-slate-400 text-white font-bold'
                 }
                 if (index === 2) {
-                  rankClass = 'bg-orange-500 text-white font-bold'
+                  rankClass = 'bg-amber-700 text-white font-bold'
                 }
 
                 return (
                   <tr key={item.productId} className="hover:bg-zinc-50/50 dark:hover:bg-white/5">
                     <td className="py-3">
                       <span
-                        className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${rankClass}`}
+                        className={cn(
+                          'inline-flex h-6 w-6 items-center justify-center rounded-full text-xs',
+                          rankClass,
+                        )}
                       >
                         {index + 1}
                       </span>
@@ -187,9 +195,9 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                           src={resolveProductImage(item.imageUrl)}
                           alt={item.productName}
                           onError={handleImageError}
-                          className="h-10 w-10 shrink-0 rounded-xl object-cover"
+                          className="h-10 w-10 shrink-0 rounded-2xl object-cover"
                         />
-                        <span className="line-clamp-2 font-semibold text-zinc-900 dark:text-white">
+                        <span className="line-clamp-2 font-semibold text-[#17203a] dark:text-white">
                           {item.productName}
                         </span>
                       </div>
@@ -197,13 +205,13 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                     <td className="py-3 text-right font-medium text-zinc-700 tabular-nums dark:text-zinc-300">
                       {item.totalSold}
                     </td>
-                    <td className="py-3 text-right font-bold text-indigo-600 tabular-nums dark:text-indigo-400">
+                    <td className="py-3 text-right font-bold text-blue-700 tabular-nums dark:text-sky-300">
                       {formatVnd(item.totalRevenue)}
                     </td>
                     <td className="py-3 text-right text-zinc-500 tabular-nums dark:text-zinc-400">
                       {item.viewCount.toLocaleString('vi-VN')}
                     </td>
-                    <td className="py-3 text-right font-semibold text-zinc-900 tabular-nums dark:text-white">
+                    <td className="py-3 text-right font-semibold text-[#17203a] tabular-nums dark:text-white">
                       {item.currentStock}
                     </td>
                   </tr>
@@ -211,31 +219,34 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
               })}
             </tbody>
           </table>
+
+          {topSelling.length === 0 && (
+            <div className="py-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
+              Chưa có dữ liệu sản phẩm bán chạy.
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Grid: Sản phẩm xem nhiều mua ít + Sản phẩm hết hàng & Tồn kho lâu */}
+      {/* Grid: Sản phẩm xem nhiều mua ít + Sản phẩm tồn kho chậm */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Sản phẩm xem nhiều mua ít (Tỷ lệ chuyển đổi thấp) */}
-        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/40">
-                <TrendDown size={18} weight="bold" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                  Xem nhiều mua ít
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Cần tối ưu giá bán, hình ảnh hoặc voucher kích cầu
-                </p>
-              </div>
+        <div className={cn(PANEL_CLASS, 'p-6')}>
+          <div className="mb-4 flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+              <TrendDown size={18} weight="bold" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#17203a] dark:text-white">
+                Xem nhiều mua ít
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Cần tối ưu giá bán, hình ảnh hoặc mô tả sản phẩm
+              </p>
             </div>
           </div>
 
           {lowConversion.length === 0 && (
-            <div className="py-8 text-center text-xs text-zinc-400 dark:text-zinc-500">
+            <div className="py-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
               Không có sản phẩm nào có tỷ lệ chuyển đổi bất thường
             </div>
           )}
@@ -252,7 +263,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
-                  {lowConversion.map((item) => {
+                  {lowConversion.map(function (item) {
                     const convPercent = Math.round(item.conversionRate * 100 * 10) / 10
                     return (
                       <tr
@@ -265,9 +276,9 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                               src={resolveProductImage(item.imageUrl)}
                               alt={item.productName}
                               onError={handleImageError}
-                              className="h-8 w-8 shrink-0 rounded-lg object-cover"
+                              className="h-9 w-9 shrink-0 rounded-2xl object-cover"
                             />
-                            <span className="line-clamp-1 max-w-[160px] font-medium text-zinc-800 dark:text-zinc-200">
+                            <span className="line-clamp-1 max-w-[160px] font-medium text-[#17203a] dark:text-zinc-200">
                               {item.productName}
                             </span>
                           </div>
@@ -278,7 +289,7 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                         <td className="py-2.5 text-right font-medium text-zinc-800 tabular-nums dark:text-zinc-200">
                           {item.totalSold}
                         </td>
-                        <td className="py-2.5 text-right font-bold text-rose-500 tabular-nums">
+                        <td className="py-2.5 text-right font-bold text-rose-600 tabular-nums dark:text-rose-400">
                           {convPercent}%
                         </td>
                       </tr>
@@ -290,49 +301,36 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
           )}
         </div>
 
-        {/* Sản phẩm tồn kho lâu ngày */}
-        <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/40">
+        {/* Sản phẩm tồn kho chậm */}
+        <div className={cn(PANEL_CLASS, 'p-6')}>
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
                 <ClockCounterClockwise size={18} weight="bold" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                  Tồn kho lâu ngày
+                <h3 className="text-base font-bold text-[#17203a] dark:text-white">
+                  Tồn kho chậm luân chuyển
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Sản phẩm chưa phát sinh đơn hàng mới trong thời gian dài
+                  Top 10 sản phẩm tồn kho cao nhưng chưa phát sinh đơn hàng gần đây
                 </p>
               </div>
             </div>
 
-            {/* Filter 30/60/90 days */}
-            <div className="flex rounded-full bg-zinc-100 p-0.5 dark:bg-white/5">
-              <button
-                type="button"
-                onClick={() => setSlowDays(30)}
-                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${slowDaysClass(
-                  slowDays === 30,
-                )}`}
-              >
-                30 ngày
-              </button>
-              <button
-                type="button"
-                onClick={() => setSlowDays(60)}
-                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${slowDaysClass(
-                  slowDays === 60,
-                )}`}
-              >
-                60 ngày
-              </button>
-            </div>
+            <span
+              className={cn(
+                'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold',
+                badgeToneClass('warning'),
+              )}
+            >
+              Top 10
+            </span>
           </div>
 
           {slowMoving.length === 0 && (
-            <div className="py-8 text-center text-xs text-zinc-400 dark:text-zinc-500">
-              Không có sản phẩm nào bị ứ đọng tồn kho quá {slowDays} ngày
+            <div className="py-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
+              Không có sản phẩm nào đang bị ứ đọng tồn kho
             </div>
           )}
 
@@ -348,34 +346,44 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
-                  {slowMoving.map((item) => (
-                    <tr key={item.productId} className="hover:bg-zinc-50/50 dark:hover:bg-white/5">
-                      <td className="py-2.5">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={resolveProductImage(item.imageUrl)}
-                            alt={item.productName}
-                            onError={handleImageError}
-                            className="h-8 w-8 shrink-0 rounded-lg object-cover"
-                          />
-                          <span className="line-clamp-1 max-w-[160px] font-medium text-zinc-800 dark:text-zinc-200">
-                            {item.productName}
+                  {slowMoving.map(function (item) {
+                    return (
+                      <tr
+                        key={item.productId}
+                        className="hover:bg-zinc-50/50 dark:hover:bg-white/5"
+                      >
+                        <td className="py-2.5">
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={resolveProductImage(item.imageUrl)}
+                              alt={item.productName}
+                              onError={handleImageError}
+                              className="h-9 w-9 shrink-0 rounded-2xl object-cover"
+                            />
+                            <span className="line-clamp-1 max-w-[160px] font-medium text-[#17203a] dark:text-zinc-200">
+                              {item.productName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 text-right font-semibold text-[#17203a] tabular-nums dark:text-white">
+                          {item.currentStock}
+                        </td>
+                        <td className="py-2.5 text-right text-zinc-500 tabular-nums dark:text-zinc-400">
+                          {item.viewCount}
+                        </td>
+                        <td className="py-2.5 text-right">
+                          <span
+                            className={cn(
+                              'rounded-full px-2.5 py-0.5 text-[10px] font-bold',
+                              badgeToneClass('warning'),
+                            )}
+                          >
+                            Xả kho / Sale
                           </span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 text-right font-semibold text-zinc-900 tabular-nums dark:text-white">
-                        {item.currentStock}
-                      </td>
-                      <td className="py-2.5 text-right text-zinc-500 tabular-nums dark:text-zinc-400">
-                        {item.viewCount}
-                      </td>
-                      <td className="py-2.5 text-right">
-                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                          Xả kho / Sale
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -383,12 +391,12 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
         </div>
       </div>
 
-      {/* Sản phẩm hết hàng thường xuyên (Cảnh báo tồn kho) */}
+      {/* Sản phẩm hết hàng */}
       {outOfStock.length > 0 && (
-        <div className="rounded-3xl border border-rose-200/80 bg-rose-50/50 p-6 shadow-sm dark:border-rose-900/40 dark:bg-rose-950/20">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500 text-white">
+        <div className="rounded-3xl border border-rose-200/80 bg-rose-50/50 p-6 shadow-sm dark:border-rose-500/30 dark:bg-rose-500/10">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-600 text-white">
                 <WarningCircle size={18} weight="bold" />
               </div>
               <div>
@@ -404,8 +412,10 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
             {onNavigateTab !== undefined && (
               <button
                 type="button"
-                onClick={() => onNavigateTab('inventory', { filter: 'low_stock' })}
-                className="flex items-center gap-1.5 rounded-full bg-rose-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700"
+                onClick={function () {
+                  onNavigateTab('inventory', { filter: 'low_stock' })
+                }}
+                className={cn(dangerButtonClass(), 'px-4 py-2 text-xs')}
               >
                 <Package size={14} weight="bold" />
                 Vào kho hàng
@@ -414,28 +424,30 @@ export default function SellerStatsProductsTab({ shopId, onNavigateTab }: Props)
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {outOfStock.map((item) => (
-              <div
-                key={item.productId}
-                className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-white p-3.5 shadow-sm dark:border-rose-800/40 dark:bg-[#11182a]"
-              >
-                <img
-                  src={resolveProductImage(item.imageUrl)}
-                  alt={item.productName}
-                  onError={handleImageError}
-                  className="h-11 w-11 shrink-0 rounded-xl object-cover grayscale"
-                />
-                <div className="flex-1 overflow-hidden">
-                  <p className="truncate text-xs font-semibold text-zinc-900 dark:text-white">
-                    {item.productName}
-                  </p>
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    Đã từng bán: {item.totalSold} | Tồn:{' '}
-                    <span className="font-bold text-rose-600 dark:text-rose-400">0</span>
-                  </p>
+            {outOfStock.map(function (item) {
+              return (
+                <div
+                  key={item.productId}
+                  className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-white p-3.5 shadow-xs dark:border-rose-500/30 dark:bg-[#11182a]"
+                >
+                  <img
+                    src={resolveProductImage(item.imageUrl)}
+                    alt={item.productName}
+                    onError={handleImageError}
+                    className="h-11 w-11 shrink-0 rounded-2xl object-cover grayscale"
+                  />
+                  <div className="flex-1 overflow-hidden">
+                    <p className="truncate text-xs font-semibold text-[#17203a] dark:text-white">
+                      {item.productName}
+                    </p>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      Đã từng bán: {item.totalSold} | Tồn:{' '}
+                      <span className="font-bold text-rose-600 dark:text-rose-400">0</span>
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

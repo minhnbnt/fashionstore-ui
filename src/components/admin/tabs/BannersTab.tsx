@@ -8,11 +8,13 @@ import {
 import { PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { TableRowsSkeleton } from '@/components/ui/Skeleton'
 import {
   hookErrorMessage,
-  urlOrPlaceholder,
   PLACEHOLDER_IMAGE,
   takeData,
+  urlOrPlaceholder,
 } from '@/lib/api/apiAdapters'
 import {
   PLACEMENT_OPTIONS,
@@ -23,10 +25,15 @@ import {
   scheduleWindowLabel,
 } from '@/lib/content/siteContent'
 import { notify } from '@/lib/notifications'
-import { cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
+import {
+  cn,
+  FOCUS_RING_CLASS,
+  primaryButtonClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from '@/lib/ui/styles'
 
 import BannerFormDialog from '../dialogs/BannerFormDialog'
-import ConfirmDialog from '../dialogs/ConfirmDialog'
 
 import type { BannerPlacementValue } from '@/lib/content/siteContent'
 import type { BannerResponse } from '@generated/model/bannerResponse'
@@ -96,20 +103,18 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
     )
   }
 
-  let deleteError: string | null = null
-  if (remove.isError) {
-    deleteError = hookErrorMessage('adminContent', remove.error)
-  }
-
   let defaultPlacement: BannerPlacementValue = 'HOME_CAROUSEL'
   if (filter !== 'ALL') {
     defaultPlacement = filter
   }
 
-  let body = <div className="h-40 animate-pulse rounded-2xl bg-white/60 dark:bg-white/5" />
+  let body: React.ReactNode = <TableRowsSkeleton rows={3} columns={3} />
   if (listQuery.isError) {
     body = (
-      <p className="text-sm text-red-600 dark:text-red-400">
+      <p
+        role="alert"
+        className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+      >
         {hookErrorMessage('adminContent', listQuery.error)}
       </p>
     )
@@ -123,7 +128,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
     )
     if (banners.length > 0) {
       body = (
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {banners.map(function (banner) {
             let toggleLabel = 'Bật'
             if (banner.active === true) {
@@ -132,7 +137,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
             return (
               <li
                 key={banner.id}
-                className="flex flex-col gap-3 rounded-2xl bg-white/70 p-3 md:flex-row md:items-center dark:bg-white/5"
+                className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-3 md:flex-row md:items-center dark:border-white/10 dark:bg-white/5"
               >
                 <img
                   src={urlOrPlaceholder(banner.imageUrl)}
@@ -143,11 +148,13 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
                   onError={(event) => {
                     event.currentTarget.src = PLACEHOLDER_IMAGE
                   }}
-                  className="aspect-[3/1] w-full shrink-0 rounded-xl object-cover md:w-44"
+                  className="aspect-[3/1] w-full shrink-0 rounded-2xl object-cover md:w-44"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2">
-                    <span className="truncate text-sm font-bold">{banner.title}</span>
+                    <span className="truncate text-sm font-bold text-[#17203a] dark:text-[#e2e8f0]">
+                      {banner.title}
+                    </span>
                     <span className={scheduleBadgeClass(banner.scheduleState)}>
                       {scheduleLabel(banner.scheduleState)}
                     </span>
@@ -157,7 +164,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
                     {scheduleWindowLabel(banner.startsAt ?? undefined, banner.endsAt ?? undefined)}
                   </p>
                   {(banner.linkUrl ?? '') !== '' && (
-                    <p className="mt-0.5 truncate text-xs text-indigo-600 dark:text-indigo-300">
+                    <p className="mt-0.5 truncate text-xs text-blue-700 dark:text-sky-300">
                       {banner.linkUrl}
                     </p>
                   )}
@@ -167,23 +174,32 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
                     type="button"
                     onClick={() => toggle(banner)}
                     disabled={update.isPending}
-                    className="rounded-full border border-zinc-200 px-4 py-2 text-xs font-bold transition hover:bg-zinc-50 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/10"
+                    className={cn(
+                      'cursor-pointer rounded-full border border-zinc-300 bg-white/85 px-4 py-2 text-xs font-bold text-[#17203a] transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-[#e2e8f0] dark:hover:bg-white/15',
+                      FOCUS_RING_CLASS,
+                    )}
                   >
                     {toggleLabel}
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditing(banner)}
-                    aria-label={`Sửa ${banner.title ?? ''}`}
-                    className="rounded-full border border-indigo-200 p-2 text-indigo-600 transition hover:bg-indigo-50 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
+                    aria-label={`Sửa banner ${banner.title ?? ''}`}
+                    className={cn(
+                      'cursor-pointer rounded-full border border-indigo-200 p-2 text-blue-700 transition hover:bg-sky-50 dark:border-sky-500/30 dark:text-sky-300 dark:hover:bg-sky-500/10',
+                      FOCUS_RING_CLASS,
+                    )}
                   >
                     <PencilSimple size={16} weight="bold" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setDeleting(banner)}
-                    aria-label={`Xóa ${banner.title ?? ''}`}
-                    className="rounded-full border border-red-200 p-2 text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+                    aria-label={`Xóa banner ${banner.title ?? ''}`}
+                    className={cn(
+                      'cursor-pointer rounded-full border border-rose-200 p-2 text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/15',
+                      FOCUS_RING_CLASS,
+                    )}
                   >
                     <Trash size={16} weight="bold" />
                   </button>
@@ -223,7 +239,10 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
         <button
           type="button"
           onClick={() => setCreating(true)}
-          className="btn-primary flex w-fit cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold"
+          className={cn(
+            primaryButtonClass(),
+            'flex w-fit items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold',
+          )}
         >
           <Plus size={16} weight="bold" />
           Thêm banner
@@ -231,7 +250,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
       </div>
 
       {update.isError && (
-        <p className="mb-3 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mb-3 text-sm font-medium text-rose-600 dark:text-rose-400">
           {hookErrorMessage('adminContent', update.error)}
         </p>
       )}
@@ -250,30 +269,28 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
         />
       )}
 
-      {deleting !== null && (
-        <ConfirmDialog
-          open
-          danger
-          title="Xóa banner"
-          description={`Xóa hẳn banner "${deleting.title ?? ''}"? Muốn ẩn tạm thời thì bấm "Tắt" thay vì xóa.`}
-          confirmLabel="Xóa banner"
-          pending={remove.isPending}
-          error={deleteError ?? undefined}
-          onClose={() => setDeleting(null)}
-          onConfirm={() => {
-            if (deleting.id === undefined) {
-              return
-            }
-            remove.mutate(
-              { id: deleting.id },
-              {
-                onSuccess: () => refresh(`Đã xóa banner "${deleting.title ?? ''}".`),
-                onError: (err) => notify.fromError(err, 'adminContent'),
-              },
-            )
-          }}
-        />
-      )}
+      <ConfirmDialog
+        open={deleting !== null}
+        variant="danger"
+        title="Xóa banner"
+        description={`Xóa hẳn banner "${deleting?.title ?? ''}"? Muốn ẩn tạm thời thì bấm "Tắt" thay vì xóa.`}
+        confirmLabel="Xóa banner"
+        isPending={remove.isPending}
+        onCancel={() => setDeleting(null)}
+        onConfirm={() => {
+          if (deleting === null || deleting.id === undefined) {
+            return
+          }
+          const title = deleting.title ?? ''
+          remove.mutate(
+            { id: deleting.id },
+            {
+              onSuccess: () => refresh(`Đã xóa banner "${title}".`),
+              onError: (err) => notify.fromError(err, 'adminContent'),
+            },
+          )
+        }}
+      />
     </div>
   )
 }

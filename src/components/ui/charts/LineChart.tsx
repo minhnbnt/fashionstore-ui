@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import { niceCeiling } from '@/lib/admin/adminStats'
 import { formatVnd } from '@/lib/format'
@@ -110,10 +110,11 @@ export function LineChart({
   formatAxisValue,
   maxY,
 }: LineChartProps) {
+  const chartUid = useId().replace(/:/g, '')
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
-  let strokeColor = '#6366f1'
+  let strokeColor = '#1d4ed8'
   if (color !== undefined && color !== '') {
     strokeColor = color
   }
@@ -283,7 +284,8 @@ export function LineChart({
       gridSteps.push(step)
     }
   }
-  const gradId = `line-grad-${strokeColor.replace('#', '')}`
+  const gradId = `line-grad-${chartUid}`
+  const glowId = `line-glow-${chartUid}`
 
   const hasHeader = currentLabel !== undefined || comparisonLabel !== undefined
 
@@ -372,16 +374,18 @@ export function LineChart({
 
       <div ref={containerRef} className="relative min-h-0 w-full flex-1 overflow-hidden">
         <svg
+          aria-label={currentLabel ?? 'Biểu đồ xu hướng'}
           viewBox={`0 0 ${viewWidth} ${viewHeight}`}
           className="block h-full w-full overflow-hidden"
         >
+          <title>{currentLabel ?? 'Biểu đồ xu hướng'}</title>
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={strokeColor} stopOpacity="0.28" />
               <stop offset="60%" stopColor={strokeColor} stopOpacity="0.08" />
               <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
             </linearGradient>
-            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
               <feDropShadow
                 dx="0"
                 dy="2"
@@ -443,7 +447,7 @@ export function LineChart({
               strokeWidth="3.2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              filter="url(#glow)"
+              filter={`url(#${glowId})`}
             />
           )}
 

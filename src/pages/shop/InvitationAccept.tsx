@@ -134,6 +134,12 @@ export default function InvitationAccept() {
   const isAccepted = invitation.status === 'ACCEPTED'
   const isExpiredOrRevoked = invitation.status === 'EXPIRED' || invitation.status === 'REVOKED'
 
+  const loggedInEmail = (session?.user?.email ?? '').trim()
+  const invitedEmail = (invitation.email ?? '').trim()
+  const isLoggedIn = loggedInEmail !== ''
+  const isEmailMismatch =
+    isLoggedIn && invitedEmail !== '' && loggedInEmail.toLowerCase() !== invitedEmail.toLowerCase()
+
   function handleAccept() {
     setErrorMessage(null)
     acceptMutation.mutate({ token: token ?? '' })
@@ -196,6 +202,27 @@ export default function InvitationAccept() {
           </div>
         </div>
 
+        {isPending && isEmailMismatch && (
+          <div
+            role="alert"
+            className="mt-4 flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50/90 p-3.5 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200"
+          >
+            <WarningCircle
+              size={18}
+              weight="fill"
+              className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400"
+            />
+            <div className="space-y-1">
+              <p className="font-bold">Email tài khoản không khớp với lời mời</p>
+              <p className="leading-relaxed">
+                Lời mời này dành cho email <strong>{invitedEmail}</strong>, nhưng bạn đang đăng nhập
+                bằng <strong>{loggedInEmail}</strong>. Vui lòng đăng xuất và đăng nhập đúng tài
+                khoản được mời để tiếp tục.
+              </p>
+            </div>
+          </div>
+        )}
+
         {errorMessage && (
           <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
             <WarningCircle size={16} className="mt-0.5 shrink-0" />
@@ -231,12 +258,29 @@ export default function InvitationAccept() {
           </div>
         )}
 
-        {isPending && (
+        {isPending && !isLoggedIn && (
+          <div className="mt-6 flex flex-col gap-3">
+            <Link
+              to="/login"
+              state={{ from: `/invitations/${token}` }}
+              className="btn-primary flex w-full cursor-pointer items-center justify-center gap-2 rounded-full py-3 text-sm font-bold shadow-lg"
+            >
+              <span>Đăng nhập để chấp nhận lời mời</span>
+              <ArrowRight size={16} weight="bold" />
+            </Link>
+            <p className="text-center text-xs text-zinc-600 dark:text-zinc-300">
+              Vui lòng đăng nhập bằng email{' '}
+              <strong className="text-[#17203a] dark:text-[#e2e8f0]">{invitedEmail}</strong>
+            </p>
+          </div>
+        )}
+
+        {isPending && isLoggedIn && (
           <div className="mt-6 flex flex-col gap-3">
             <button
               type="button"
               onClick={handleAccept}
-              disabled={acceptMutation.isPending}
+              disabled={acceptMutation.isPending || isEmailMismatch}
               className="btn-primary flex w-full cursor-pointer items-center justify-center gap-2 rounded-full py-3 text-sm font-bold shadow-lg transition disabled:cursor-not-allowed disabled:opacity-50"
             >
               {acceptMutation.isPending && <span>Đang xử lý…</span>}

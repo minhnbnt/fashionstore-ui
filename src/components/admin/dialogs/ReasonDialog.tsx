@@ -4,6 +4,7 @@ import Modal from '@/components/Modal'
 import {
   cn,
   dangerButtonClass,
+  FOCUS_RING_CLASS,
   LABEL_CLASS,
   primaryButtonClass,
   secondaryButtonClass,
@@ -54,10 +55,10 @@ function OpenReasonDialog(props: Omit<ReasonDialogProps, 'open'>) {
 
   let confirmClass = cn(
     primaryButtonClass(),
-    'cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
+    'rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
   )
   if (props.danger === true) {
-    confirmClass = cn(dangerButtonClass(), 'cursor-pointer px-5 py-2.5')
+    confirmClass = cn(dangerButtonClass(), 'px-5 py-2.5')
   }
 
   return (
@@ -74,7 +75,10 @@ function OpenReasonDialog(props: Omit<ReasonDialogProps, 'open'>) {
                 onClick={function () {
                   setReason(suggestion)
                 }}
-                className="cursor-pointer rounded-full border border-indigo-200 px-3 py-1.5 text-left text-xs font-semibold text-indigo-800 transition hover:bg-indigo-50 dark:border-indigo-300/20 dark:text-indigo-200 dark:hover:bg-white/10"
+                className={cn(
+                  'cursor-pointer rounded-full border border-indigo-200 px-3 py-1.5 text-left text-xs font-semibold text-indigo-800 transition hover:bg-indigo-50 dark:border-sky-400/25 dark:text-sky-300 dark:hover:bg-white/10',
+                  FOCUS_RING_CLASS,
+                )}
               >
                 {suggestion}
               </button>
@@ -103,7 +107,10 @@ function OpenReasonDialog(props: Omit<ReasonDialogProps, 'open'>) {
         </div>
 
         {props.error !== undefined && (
-          <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-200">
+          <p
+            role="alert"
+            className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200"
+          >
             {props.error}
           </p>
         )}
@@ -113,7 +120,7 @@ function OpenReasonDialog(props: Omit<ReasonDialogProps, 'open'>) {
             type="button"
             onClick={handleClose}
             disabled={props.pending}
-            className={cn(secondaryButtonClass(), 'cursor-pointer px-4 py-2.5')}
+            className={cn(secondaryButtonClass(), 'px-4 py-2.5')}
           >
             Hủy
           </button>

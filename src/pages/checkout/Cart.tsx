@@ -14,12 +14,14 @@ import {
   Truck,
 } from '@phosphor-icons/react'
 
+import Breadcrumb from '@/components/ui/Breadcrumb'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { hookErrorMessage, urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import { notify } from '@/lib/notifications'
 import { classifyPriceChange, groupCartByShop, stockState } from '@/lib/shop/cartView'
+import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 import { useCart } from '../../hooks/useCart'
 import { useWishlist } from '../../hooks/useWishlist'
@@ -38,6 +40,9 @@ export default function Cart() {
   // Giu dang "loai tru" de item moi them vao mac dinh duoc tick.
   const [excluded, setExcluded] = useState<string[]>([])
   const [confirmState, setConfirmState] = useState<CartConfirmState>(null)
+  const [pendingUpdateVariantId, setPendingUpdateVariantId] = useState<string | null>(null)
+  const [pendingRemoveVariantId, setPendingRemoveVariantId] = useState<string | null>(null)
+  const [pendingWishlistVariantId, setPendingWishlistVariantId] = useState<string | null>(null)
   const navigate = useNavigate()
 
   // Nhom theo shop theo dac ta 1.4.1, mon het hang khong the chon.
@@ -126,11 +131,15 @@ export default function Cart() {
   }
 
   function handleUpdateQty(variantId: string, nextQuantity: number) {
+    setPendingUpdateVariantId(variantId)
     updateQuantity.mutate(
       { variantId, data: { quantity: nextQuantity } },
       {
         onError: function (err) {
           notify.fromError(err, 'cart', 'Không thể cập nhật số lượng')
+        },
+        onSettled: function () {
+          setPendingUpdateVariantId(null)
         },
       },
     )
@@ -138,6 +147,7 @@ export default function Cart() {
 
   function handleRemove(variantId: string, successMessage?: string) {
     const resolvedSuccess = successMessage ?? 'Đã xoá sản phẩm khỏi giỏ hàng'
+    setPendingRemoveVariantId(variantId)
     removeItem.mutate(
       { variantId },
       {
@@ -146,6 +156,9 @@ export default function Cart() {
         },
         onError: function (err) {
           notify.fromError(err, 'cart', 'Không thể xoá sản phẩm khỏi giỏ hàng')
+        },
+        onSettled: function () {
+          setPendingRemoveVariantId(null)
         },
       },
     )
@@ -218,6 +231,7 @@ export default function Cart() {
       handleRemove(variantId, 'Đã chuyển sản phẩm sang Yêu thích')
       return
     }
+    setPendingWishlistVariantId(variantId)
     wishlist.toggle.mutate(
       { data: { productId } },
       {
@@ -230,6 +244,9 @@ export default function Cart() {
             'wishlist',
             'Không thể chuyển sản phẩm sang Yêu thích. Vui lòng thử lại.',
           )
+        },
+        onSettled: function () {
+          setPendingWishlistVariantId(null)
         },
       },
     )
@@ -245,7 +262,7 @@ export default function Cart() {
 
   if (isError) {
     body = (
-      <p className="text-sm text-red-600 dark:text-red-400">{hookErrorMessage('cart', error)}</p>
+      <p className="text-sm text-rose-600 dark:text-rose-400">{hookErrorMessage('cart', error)}</p>
     )
   }
 
@@ -311,9 +328,14 @@ export default function Cart() {
           <div className="space-y-6">
             {shopGroups.map(function (group) {
               const shopIds: string[] = []
+              let shopSubtotal = 0
               for (const item of group.items) {
+                const vId = item.variantId ?? ''
                 if (item.variantId !== undefined && stockState(item) !== 'out') {
                   shopIds.push(item.variantId)
+                  if (excluded.includes(vId) === false) {
+                    shopSubtotal += (item.unitPrice ?? 0) * (item.quantity ?? 0)
+                  }
                 }
               }
               const shopSelected =
@@ -324,7 +346,7 @@ export default function Cart() {
 
               return (
                 <div key={group.shopId}>
-                  <div className="flex items-center justify-between gap-3 border-b border-zinc-200/70 pb-2 dark:border-white/10">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200/70 pb-2 dark:border-white/10">
                     <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
                       <input
                         type="checkbox"
@@ -341,9 +363,14 @@ export default function Cart() {
                       />
                       {group.shopName}
                     </label>
-                    <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
-                      {group.items.length} sản phẩm
-                    </span>
+                    <div className="flex items-center gap-3 text-xs tabular-nums">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        {group.items.length} sản phẩm
+                      </span>
+                      <span className="font-bold text-blue-700 dark:text-sky-300">
+                        Tạm tính: {formatVnd(shopSubtotal)}
+                      </span>
+                    </div>
                   </div>
 
                   <ul className="divide-y divide-zinc-200/70 dark:divide-white/10">
@@ -357,6 +384,12 @@ export default function Cart() {
                       const priceChange = classifyPriceChange(item)
                       const priceAtAdded = item.priceAtAdded ?? 0
                       const favorited = wishlist.isFavorited(item.productId)
+                      const isUpdatingItem =
+                        updateQuantity.isPending && pendingUpdateVariantId === variantId
+                      const isRemovingItem =
+                        removeItem.isPending && pendingRemoveVariantId === variantId
+                      const isMovingItem =
+                        wishlist.toggle.isPending && pendingWishlistVariantId === variantId
 
                       let rowClass = 'flex gap-3 py-4'
                       if (state === 'out') {
@@ -457,7 +490,7 @@ export default function Cart() {
                             )}
 
                             {state === 'out' && (
-                              <p className="mt-1 text-xs font-semibold text-red-600 dark:text-red-400">
+                              <p className="mt-1 text-xs font-semibold text-rose-600 dark:text-rose-400">
                                 Hết hàng
                               </p>
                             )}
@@ -472,9 +505,7 @@ export default function Cart() {
                                 <button
                                   type="button"
                                   aria-label="Giảm số lượng"
-                                  disabled={
-                                    quantity <= 1 || state === 'out' || updateQuantity.isPending
-                                  }
+                                  disabled={quantity <= 1 || state === 'out' || isUpdatingItem}
                                   onClick={() => handleUpdateQty(variantId, quantity - 1)}
                                   className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10"
                                 >
@@ -486,9 +517,7 @@ export default function Cart() {
                                 <button
                                   type="button"
                                   aria-label="Tăng số lượng"
-                                  disabled={
-                                    quantity >= stock || state === 'out' || updateQuantity.isPending
-                                  }
+                                  disabled={quantity >= stock || state === 'out' || isUpdatingItem}
                                   onClick={() => handleUpdateQty(variantId, quantity + 1)}
                                   className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10"
                                 >
@@ -499,7 +528,7 @@ export default function Cart() {
                               <button
                                 type="button"
                                 aria-label="Chuyển sang Yêu thích"
-                                disabled={wishlist.toggle.isPending}
+                                disabled={isMovingItem || isRemovingItem}
                                 onClick={function () {
                                   moveToWishlist(item)
                                 }}
@@ -511,7 +540,7 @@ export default function Cart() {
                               <button
                                 type="button"
                                 aria-label="Xoá sản phẩm"
-                                disabled={removeItem.isPending}
+                                disabled={isRemovingItem}
                                 onClick={() => handleRemove(variantId)}
                                 className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-rose-500/10"
                               >
@@ -636,7 +665,12 @@ export default function Cart() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pt-[110px] pb-16">
+    <main className="mx-auto max-w-6xl px-4 pt-24 pb-28 lg:pb-16">
+      <Breadcrumb
+        items={[{ label: 'Trang chủ', to: '/' }, { label: 'Giỏ hàng' }]}
+        showHomeIcon={true}
+        className="mb-4"
+      />
       <div className="mb-6 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] shadow-lg">
           <ShoppingBag size={22} weight="bold" className="text-white" />
@@ -644,6 +678,34 @@ export default function Cart() {
         <h1 className="text-2xl font-extrabold tracking-tighter">Giỏ hàng</h1>
       </div>
       {body}
+
+      {/* Sticky Mobile Checkout Bar */}
+      {isLoading === false && items.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200/90 bg-white/95 px-4 py-3 shadow-2xl backdrop-blur-md lg:hidden dark:border-white/10 dark:bg-[#11182a]/95">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+                Tạm tính ({selectedCount} sản phẩm)
+              </p>
+              <p className="truncate text-base font-extrabold text-blue-700 tabular-nums dark:text-sky-300">
+                {formatVnd(selectedTotal)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={goCheckout}
+              disabled={selected.length === 0}
+              className={cn(
+                'btn-primary shrink-0 cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
+                FOCUS_RING_CLASS,
+              )}
+            >
+              Thanh toán ({selected.length})
+            </button>
+          </div>
+        </div>
+      )}
+
       <ConfirmDialog
         open={confirmState !== null}
         title={dialogTitle}

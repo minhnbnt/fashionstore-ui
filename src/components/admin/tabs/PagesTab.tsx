@@ -4,6 +4,7 @@ import { useGetAdminPage, useListAdminPages } from '@generated/endpoints/admin-p
 import { FileText, Plus } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import { TableRowsSkeleton } from '@/components/ui/Skeleton'
 import { formatDateTime } from '@/lib/admin/productModeration'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import {
@@ -12,6 +13,7 @@ import {
   pageStatusLabel,
   queryKeyStartsWith,
 } from '@/lib/content/siteContent'
+import { cn, FOCUS_RING_CLASS, primaryButtonClass } from '@/lib/ui/styles'
 
 import PageEditor from '../PageEditor'
 
@@ -36,13 +38,16 @@ function ExistingPageEditor({
   const query = useGetAdminPage(id)
   if (query.isError) {
     return (
-      <p className="text-sm text-red-600 dark:text-red-400">
+      <p
+        role="alert"
+        className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+      >
         {hookErrorMessage('adminContent', query.error)}
       </p>
     )
   }
   if (query.isSuccess === false) {
-    return <div className="h-96 animate-pulse rounded-2xl bg-white/60 dark:bg-white/5" />
+    return <TableRowsSkeleton rows={5} columns={2} />
   }
   const page = takeData(query.data)
   // key theo updatedAt: lưu xong form nạp lại đúng bản trên server
@@ -101,10 +106,13 @@ export default function PagesTab({ onNotice }: { onNotice: (message: string) => 
     )
   }
 
-  let body = <div className="h-40 animate-pulse rounded-2xl bg-white/60 dark:bg-white/5" />
+  let body: React.ReactNode = <TableRowsSkeleton rows={4} columns={3} />
   if (listQuery.isError) {
     body = (
-      <p className="text-sm text-red-600 dark:text-red-400">
+      <p
+        role="alert"
+        className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+      >
         {hookErrorMessage('adminContent', listQuery.error)}
       </p>
     )
@@ -118,18 +126,26 @@ export default function PagesTab({ onNotice }: { onNotice: (message: string) => 
     )
     if (pages.length > 0) {
       body = (
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {pages.map(function (page) {
             return (
               <li key={page.id}>
                 <button
                   type="button"
                   onClick={() => setEditor({ id: page.id ?? null })}
-                  className="flex w-full flex-col gap-2 rounded-2xl bg-white/70 p-3 text-left transition hover:bg-white sm:flex-row sm:items-center dark:bg-white/5 dark:hover:bg-white/10"
+                  className={cn(
+                    'flex w-full cursor-pointer flex-col gap-2 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-3 text-left transition hover:border-blue-300 hover:bg-sky-50/60 sm:flex-row sm:items-center dark:border-white/10 dark:bg-white/5 dark:hover:border-sky-400/40 dark:hover:bg-white/10',
+                    FOCUS_RING_CLASS,
+                  )}
                 >
-                  <FileText size={22} className="hidden shrink-0 text-indigo-500 sm:block" />
+                  <FileText
+                    size={22}
+                    className="hidden shrink-0 text-blue-700 sm:block dark:text-sky-300"
+                  />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold">{page.title}</span>
+                    <span className="block truncate text-sm font-bold text-[#17203a] dark:text-[#e2e8f0]">
+                      {page.title}
+                    </span>
                     <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
                       /pages/{page.slug} · {footerGroupLabel(page.footerGroup)} · Thứ tự{' '}
                       {page.sortOrder}
@@ -161,7 +177,10 @@ export default function PagesTab({ onNotice }: { onNotice: (message: string) => 
         <button
           type="button"
           onClick={() => setEditor({ id: null })}
-          className="btn-primary flex w-fit shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold"
+          className={cn(
+            primaryButtonClass(),
+            'flex w-fit shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold',
+          )}
         >
           <Plus size={16} weight="bold" />
           Thêm trang

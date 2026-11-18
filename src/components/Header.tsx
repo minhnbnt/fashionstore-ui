@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useMyConversations } from '@generated/endpoints/chat/chat'
@@ -29,8 +29,10 @@ import { useTheme } from '@/hooks/useTheme'
 import { takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { notify } from '@/lib/notifications'
 import {
+  badgeToneClass,
   chipClass,
   cn,
+  FOCUS_RING_CLASS,
   iconChipClass,
   INPUT_CLASS,
   menuItemClass,
@@ -53,7 +55,12 @@ import type { CategoryResponse } from '@generated/model/categoryResponse'
 function RoleBadge({ role }: { role: string }) {
   if (role === 'admin') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-500/20 dark:text-red-300">
+      <span
+        className={cn(
+          badgeToneClass('danger'),
+          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold',
+        )}
+      >
         <ShieldCheck size={11} weight="bold" />
         Admin
       </span>
@@ -61,16 +68,34 @@ function RoleBadge({ role }: { role: string }) {
   }
   if (role === 'shop') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-600 dark:bg-violet-500/20 dark:text-violet-300">
+      <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:border-indigo-400/30 dark:bg-indigo-500/15 dark:text-indigo-300">
         <Storefront size={11} weight="bold" />
         Shop
       </span>
     )
   }
   return (
-    <span className="inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-600 dark:bg-sky-500/20 dark:text-sky-300">
+    <span
+      className={cn(
+        badgeToneClass('info'),
+        'inline-flex rounded-full px-2 py-0.5 text-xs font-bold',
+      )}
+    >
       Khách hàng
     </span>
+  )
+}
+
+function desktopNavLinkClass(active: boolean): string {
+  if (active) {
+    return cn(
+      'cursor-pointer rounded-full bg-indigo-50/90 px-3 py-1.5 font-bold whitespace-nowrap text-blue-700 transition dark:bg-white/10 dark:text-sky-300',
+      FOCUS_RING_CLASS,
+    )
+  }
+  return cn(
+    'cursor-pointer rounded-full px-2.5 py-1.5 whitespace-nowrap text-zinc-600 transition hover:bg-sky-50/80 hover:text-blue-700 dark:text-zinc-300 dark:hover:bg-white/5 dark:hover:text-sky-300',
+    FOCUS_RING_CLASS,
   )
 }
 
@@ -102,10 +127,23 @@ function MenuLink(props: {
 export default function Header() {
   const { data: session } = useSessionQuery()
   const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
   const signOut = useSignOut()
   const { totalQuantity } = useCart()
   const { count: wishlistCount } = useWishlist()
   const { theme, toggle: toggleTheme } = useTheme()
+
+  const isSearchPage = location.pathname === '/search'
+  let activeCategorySlug = ''
+  if (isSearchPage) {
+    activeCategorySlug = searchParams.get('category') ?? ''
+  }
+  const isAllCategoriesActive = isSearchPage && activeCategorySlug === ''
+  let allAriaCurrent: 'page' | undefined = undefined
+  if (isAllCategoriesActive) {
+    allAriaCurrent = 'page'
+  }
 
   let themeKnobStyle: React.CSSProperties = {}
   if (theme === 'dark') {
@@ -262,6 +300,17 @@ export default function Header() {
     setMobileNavOpen(false)
   }
 
+  let userMenuTriggerClass = cn(
+    'flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-zinc-300/90 bg-white/85 px-2.5 text-sm font-bold text-[#17203a] transition hover:border-blue-600/40 hover:bg-sky-50 hover:text-blue-700 active:scale-[0.98] sm:px-3.5 dark:border-white/15 dark:bg-white/10 dark:text-zinc-100 dark:hover:bg-white/15',
+    FOCUS_RING_CLASS,
+  )
+  if (isLoggedIn) {
+    userMenuTriggerClass = cn(
+      'flex h-10 w-10 cursor-pointer items-center justify-center rounded-full transition hover:bg-indigo-100 active:scale-[0.98] dark:hover:bg-white/10',
+      FOCUS_RING_CLASS,
+    )
+  }
+
   return (
     <header className="fixed inset-x-0 top-0 z-50">
       <div className="mx-auto max-w-[1400px] px-4">
@@ -273,7 +322,10 @@ export default function Header() {
             onClick={function () {
               setMobileNavOpen(true)
             }}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-zinc-700 transition hover:bg-sky-100 lg:hidden dark:text-zinc-200 dark:hover:bg-white/10"
+            className={cn(
+              'flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-700 transition hover:bg-sky-100 lg:hidden dark:text-zinc-200 dark:hover:bg-white/10',
+              FOCUS_RING_CLASS,
+            )}
           >
             <List size={20} weight="bold" />
           </button>
@@ -281,7 +333,10 @@ export default function Header() {
           {/* Brand wordmark */}
           <Link
             to="/"
-            className="flex shrink-0 items-center gap-1 text-xl font-extrabold tracking-tighter md:text-2xl"
+            className={cn(
+              'flex shrink-0 cursor-pointer items-center gap-1 rounded-full text-xl font-extrabold tracking-tighter md:text-2xl',
+              FOCUS_RING_CLASS,
+            )}
           >
             <span>DHMQ</span>
             <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-indigo-900 to-sky-400" />
@@ -290,19 +345,33 @@ export default function Header() {
           {/* Desktop category nav */}
           <nav
             aria-label="Danh mục chính"
-            className="ml-4 hidden items-center gap-5 text-sm font-medium lg:flex"
+            className="ml-3 hidden items-center gap-1 text-sm font-medium lg:flex"
           >
-            {categories.slice(0, 6).map(function (c) {
+            {categories.slice(0, 5).map(function (c) {
+              const slug = c.slug ?? ''
+              const isActive = isSearchPage && slug !== '' && activeCategorySlug === slug
+              let ariaCurrent: 'page' | undefined = undefined
+              if (isActive) {
+                ariaCurrent = 'page'
+              }
               return (
                 <Link
                   key={c.id}
-                  to={'/search?category=' + encodeURIComponent(c.slug ?? '')}
-                  className="whitespace-nowrap text-zinc-600 transition hover:text-blue-700 dark:text-zinc-300 dark:hover:text-sky-300"
+                  to={'/search?category=' + encodeURIComponent(slug)}
+                  aria-current={ariaCurrent}
+                  className={desktopNavLinkClass(isActive)}
                 >
                   {c.name}
                 </Link>
               )
             })}
+            <Link
+              to="/search"
+              aria-current={allAriaCurrent}
+              className={desktopNavLinkClass(isAllCategoriesActive)}
+            >
+              Tất cả
+            </Link>
           </nav>
 
           {/* Desktop search bar */}
@@ -312,6 +381,9 @@ export default function Header() {
           >
             <MagnifyingGlass size={16} weight="bold" className="shrink-0" />
             <input
+              id="header-search-input"
+              name="q"
+              aria-label="Tìm kiếm sản phẩm"
               value={keyword}
               onChange={function (e) {
                 setKeyword(e.target.value)
@@ -330,7 +402,10 @@ export default function Header() {
               onClick={function () {
                 setMobileSearchOpen(true)
               }}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-700 transition hover:bg-sky-100 md:hidden dark:text-zinc-200 dark:hover:bg-white/10"
+              className={cn(
+                'flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-zinc-700 transition hover:bg-sky-100 md:hidden dark:text-zinc-200 dark:hover:bg-white/10',
+                FOCUS_RING_CLASS,
+              )}
             >
               <MagnifyingGlass size={20} weight="bold" />
             </button>
@@ -339,18 +414,41 @@ export default function Header() {
             <Link
               to={sellerChannelPath}
               id="header-seller-link"
-              className="hidden items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-50/80 px-3 py-1.5 text-xs font-bold whitespace-nowrap text-indigo-800 transition hover:bg-indigo-100 sm:flex dark:border-white/15 dark:bg-white/10 dark:text-sky-200 dark:hover:bg-white/15"
+              className={cn(
+                'hidden cursor-pointer items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-50/80 px-3 py-1.5 text-xs font-bold whitespace-nowrap text-indigo-800 transition hover:bg-indigo-100 sm:flex dark:border-white/15 dark:bg-white/10 dark:text-sky-200 dark:hover:bg-white/15',
+                FOCUS_RING_CLASS,
+              )}
             >
               <Storefront size={14} weight="bold" />
               <span>Kênh Người Bán</span>
             </Link>
+
+            {/* Guest Desktop Theme Toggle */}
+            {isLoggedIn === false && (
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label="Đổi giao diện sáng tối"
+                title="Đổi giao diện sáng tối"
+                className={cn(
+                  'hidden h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-700 transition hover:bg-sky-100 active:scale-[0.98] md:flex dark:text-zinc-200 dark:hover:bg-white/10',
+                  FOCUS_RING_CLASS,
+                )}
+              >
+                {theme === 'dark' && <Sun size={18} weight="bold" />}
+                {theme !== 'dark' && <Moon size={18} weight="bold" />}
+              </button>
+            )}
 
             {/* Messages Link */}
             <Link
               to="/messages"
               id="header-messages-link"
               aria-label="Tin nhắn"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10"
+              className={cn(
+                'relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full transition hover:bg-sky-100 dark:hover:bg-white/10',
+                FOCUS_RING_CLASS,
+              )}
             >
               <ChatCircleDots size={20} />
               {isLoggedIn && totalUnread > 0 && (
@@ -367,7 +465,25 @@ export default function Header() {
             {/* Notification Bell */}
             <NotificationBell categories={['ORDER', 'ACTIVITY']} />
 
-            {/* User avatar / dropdown */}
+            {/* Cart link */}
+            <Link
+              to="/cart"
+              aria-label="Giỏ hàng"
+              className={cn(
+                'btn-primary relative flex h-10 w-10 cursor-pointer items-center justify-center gap-2 rounded-full text-sm font-semibold sm:h-auto sm:w-auto sm:px-4 sm:py-2.5',
+                FOCUS_RING_CLASS,
+              )}
+            >
+              <ShoppingBag size={18} weight="fill" />
+              <span className="hidden sm:inline">Giỏ</span>
+              {totalQuantity > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-extrabold text-indigo-700 tabular-nums shadow">
+                  {totalQuantity}
+                </span>
+              )}
+            </Link>
+
+            {/* User avatar / login & account dropdown (rightmost) */}
             <div className="relative" ref={accountMenuContainerRef}>
               <button
                 type="button"
@@ -377,18 +493,24 @@ export default function Header() {
                 aria-expanded={menu.open}
                 aria-controls="account-menu"
                 onClick={handleAvatarClick}
-                className="flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-indigo-100 active:scale-[0.98] dark:hover:bg-white/10"
+                className={userMenuTriggerClass}
               >
                 {isLoggedIn && session.user.email !== undefined && (
                   <UserAvatar name={session.user.email} size={28} src={avatarSrc} />
                 )}
-                {(!isLoggedIn || session.user.email === undefined) && <User size={20} />}
+                {isLoggedIn && session.user.email === undefined && <User size={20} />}
+                {isLoggedIn === false && (
+                  <>
+                    <User size={18} weight="bold" />
+                    <span className="hidden whitespace-nowrap sm:inline">Đăng nhập</span>
+                  </>
+                )}
               </button>
 
               {menu.open && isLoggedIn && (
                 <div
                   id="account-menu"
-                  className="absolute top-full right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-3xl border border-white/30 bg-white/95 shadow-xl backdrop-blur-md motion-safe:transition-[opacity,translate,scale] motion-safe:duration-150 motion-safe:ease-out dark:border-white/15 dark:bg-[#0a0f1e] dark:shadow-indigo-500/10 motion-safe:starting:translate-y-1 motion-safe:starting:scale-[0.96] motion-safe:starting:opacity-0"
+                  className="fixed inset-x-4 top-[76px] z-50 origin-top-right overflow-hidden rounded-3xl border border-zinc-200/90 bg-white/95 shadow-xl backdrop-blur-md motion-safe:transition-[opacity,translate,scale] motion-safe:duration-150 motion-safe:ease-out sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-80 dark:border-white/15 dark:bg-[#0a0f1e] dark:shadow-indigo-500/10 motion-safe:starting:translate-y-1 motion-safe:starting:scale-[0.96] motion-safe:starting:opacity-0"
                 >
                   {/* Identity card */}
                   <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3 dark:border-white/10">
@@ -489,9 +611,12 @@ export default function Header() {
                       id="btn-sign-out"
                       onClick={handleSignOut}
                       disabled={signOut.isPending}
-                      className="group flex w-full items-center gap-2.5 px-3.5 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+                      className={cn(
+                        'group flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-sm font-bold text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-500/10',
+                        FOCUS_RING_CLASS,
+                      )}
                     >
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-red-50 dark:bg-red-500/10">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-500/10">
                         <SignOut size={16} weight="bold" />
                       </span>
                       {signOut.isPending && <span>Đang đăng xuất…</span>}
@@ -501,21 +626,6 @@ export default function Header() {
                 </div>
               )}
             </div>
-
-            {/* Cart link */}
-            <Link
-              to="/cart"
-              aria-label="Giỏ hàng"
-              className="btn-primary relative flex items-center gap-2 rounded-full px-3.5 py-2.5 text-sm font-semibold sm:px-4"
-            >
-              <ShoppingBag size={18} weight="fill" />
-              <span className="hidden sm:inline">Giỏ</span>
-              {totalQuantity > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-extrabold text-indigo-700 tabular-nums shadow">
-                  {totalQuantity}
-                </span>
-              )}
-            </Link>
           </div>
         </div>
       </div>
@@ -673,9 +783,12 @@ export default function Header() {
                 type="button"
                 onClick={handleSignOut}
                 disabled={signOut.isPending}
-                className="mt-2 flex w-full items-center gap-2.5 rounded-full px-3.5 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+                className={cn(
+                  'mt-2 flex w-full cursor-pointer items-center gap-2.5 rounded-full px-3.5 py-2 text-sm font-bold text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-500/10',
+                  FOCUS_RING_CLASS,
+                )}
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-red-50 dark:bg-red-500/10">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-500/10">
                   <SignOut size={16} weight="bold" />
                 </span>
                 {signOut.isPending && <span>Đang đăng xuất…</span>}
@@ -705,6 +818,9 @@ export default function Header() {
               />
               <input
                 ref={mobileSearchInputRef}
+                id="mobile-search-input"
+                name="q"
+                aria-label="Tìm kiếm sản phẩm"
                 value={keyword}
                 onChange={function (e) {
                   setKeyword(e.target.value)
@@ -715,7 +831,10 @@ export default function Header() {
             </div>
             <button
               type="submit"
-              className="btn-primary shrink-0 rounded-full px-5 py-2.5 text-sm font-bold"
+              className={cn(
+                'btn-primary shrink-0 cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold',
+                FOCUS_RING_CLASS,
+              )}
             >
               Tìm kiếm
             </button>

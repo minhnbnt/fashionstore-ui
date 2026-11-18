@@ -15,6 +15,7 @@ import {
 
 import UserAvatar from '@/components/UserAvatar'
 import { urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { CARD_CLASS, cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
 
@@ -22,9 +23,15 @@ export type StorefrontTab = 'HOME' | 'PRODUCTS' | 'ABOUT'
 
 function getTabButtonClass(currentTab: StorefrontTab, targetTab: StorefrontTab): string {
   if (currentTab === targetTab) {
-    return 'flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition-all border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+    return cn(
+      'flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap border-b-2 border-blue-700 px-5 py-3 text-sm font-bold text-blue-700 transition-all dark:border-sky-400 dark:text-sky-300',
+      FOCUS_RING_CLASS,
+    )
   }
-  return 'flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition-all border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+  return cn(
+    'flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-5 py-3 text-sm font-bold text-zinc-500 transition-all hover:text-[#17203a] dark:text-zinc-400 dark:hover:text-white',
+    FOCUS_RING_CLASS,
+  )
 }
 
 interface ShopStorefrontHeaderProps {
@@ -32,6 +39,7 @@ interface ShopStorefrontHeaderProps {
   activeTab: StorefrontTab
   onTabChange: (tab: StorefrontTab) => void
   isFollowing?: boolean
+  isFollowPending?: boolean
   onToggleFollow?: () => void
   onOpenChat?: () => void
   searchQuery?: string
@@ -43,6 +51,7 @@ export default function ShopStorefrontHeader({
   activeTab,
   onTabChange,
   isFollowing = false,
+  isFollowPending = false,
   onToggleFollow,
   onOpenChat,
   searchQuery,
@@ -108,7 +117,7 @@ export default function ShopStorefrontHeader({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+    <div className={cn(CARD_CLASS, 'relative overflow-hidden')}>
       {/* Cover Banner with Gradient Overlay */}
       <div className="relative h-48 w-full overflow-hidden bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] md:h-64">
         {hasBanner && (
@@ -124,7 +133,7 @@ export default function ShopStorefrontHeader({
         {/* Top Badges */}
         <div className="absolute top-4 right-4 flex items-center gap-2">
           {isMall && (
-            <span className="flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-xs font-extrabold tracking-wider text-white uppercase shadow-md">
+            <span className="flex items-center gap-1 rounded-full bg-rose-600 px-3 py-1 text-xs font-extrabold tracking-wider text-white uppercase shadow-md">
               <ShieldCheck size={16} weight="fill" />
               DHMQ Mall
             </span>
@@ -164,7 +173,7 @@ export default function ShopStorefrontHeader({
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-extrabold tracking-tight text-zinc-900 sm:text-2xl dark:text-white">
+                <h1 className="text-xl font-extrabold tracking-tight text-[#17203a] sm:text-2xl dark:text-white">
                   {shop.name}
                 </h1>
                 <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 font-mono text-xs text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
@@ -174,17 +183,17 @@ export default function ShopStorefrontHeader({
 
               {/* Stats badges */}
               <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-600 dark:text-zinc-300">
-                <span className="flex items-center gap-1 font-semibold text-amber-500">
-                  <Star size={15} weight="fill" />
+                <span className="flex items-center gap-1 font-semibold text-amber-500 tabular-nums">
+                  <Star size={15} weight="fill" className="text-amber-400" />
                   {ratingDisplay}
                   <span className="font-normal text-zinc-400">({shop.ratingCount} đánh giá)</span>
                 </span>
                 <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                <span className="font-medium">
+                <span className="font-medium tabular-nums">
                   <strong>{shop.followerCount}</strong> Người theo dõi
                 </span>
                 <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
                   <Clock size={14} />
                   {`Chuẩn bị hàng: ${shop.processingDays} ngày`}
                 </span>
@@ -204,8 +213,13 @@ export default function ShopStorefrontHeader({
             {onToggleFollow && (
               <button
                 type="button"
+                disabled={isFollowPending}
                 onClick={onToggleFollow}
-                className={`flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-bold shadow-sm transition-all ${followButtonClass}`}
+                className={cn(
+                  'flex cursor-pointer items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-bold shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-60',
+                  FOCUS_RING_CLASS,
+                  followButtonClass,
+                )}
               >
                 <Heart size={16} weight={heartWeight} className={heartClass} />
                 {isFollowing && 'Đang theo dõi'}
@@ -217,7 +231,10 @@ export default function ShopStorefrontHeader({
               <button
                 type="button"
                 onClick={onOpenChat}
-                className="flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-5 py-2.5 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
+                className={cn(
+                  'flex cursor-pointer items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/80 px-5 py-2.5 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-100 dark:border-sky-400/30 dark:bg-sky-400/10 dark:text-sky-300 dark:hover:bg-sky-400/20',
+                  FOCUS_RING_CLASS,
+                )}
               >
                 <ChatCircleDots size={16} />
                 Chat với Shop
@@ -228,9 +245,11 @@ export default function ShopStorefrontHeader({
 
         {/* Tab Navigation & Internal Search */}
         <div className="mt-6 flex flex-col gap-3 border-b border-zinc-200/80 pb-2 sm:flex-row sm:items-center sm:justify-between sm:pb-0 dark:border-white/10">
-          <div className="flex overflow-x-auto">
+          <div role="tablist" aria-label="Điều hướng gian hàng" className="flex overflow-x-auto">
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'HOME'}
               onClick={() => onTabChange('HOME')}
               className={getTabButtonClass(activeTab, 'HOME')}
             >
@@ -240,6 +259,8 @@ export default function ShopStorefrontHeader({
 
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'PRODUCTS'}
               onClick={() => onTabChange('PRODUCTS')}
               className={getTabButtonClass(activeTab, 'PRODUCTS')}
             >
@@ -249,6 +270,8 @@ export default function ShopStorefrontHeader({
 
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === 'ABOUT'}
               onClick={() => onTabChange('ABOUT')}
               className={getTabButtonClass(activeTab, 'ABOUT')}
             >
@@ -260,12 +283,17 @@ export default function ShopStorefrontHeader({
           {/* Internal Shop Search Bar */}
           <form onSubmit={handleSearchSubmit} className="relative mb-2 flex items-center sm:mb-0">
             <input
+              id="shop-storefront-search"
+              name="shopSearch"
               type="text"
               placeholder="Tìm trong Shop này..."
               aria-label="Tìm trong Shop"
               value={searchInput}
               onChange={(e) => setLocalSearch(e.target.value)}
-              className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-1.5 pr-8 pl-9 text-xs transition-colors focus:border-indigo-500 focus:bg-white focus:outline-none sm:w-60 dark:border-white/10 dark:bg-white/5 dark:focus:bg-[#11182a]"
+              className={cn(
+                'w-full rounded-full border border-zinc-300 bg-white/85 py-1.5 pr-8 pl-9 text-xs text-[#17203a] transition-colors placeholder:text-zinc-400 focus:border-blue-600 focus:outline-none sm:w-60 dark:border-white/15 dark:bg-white/10 dark:text-white dark:focus:border-sky-400',
+                FOCUS_RING_CLASS,
+              )}
             />
             <MagnifyingGlass size={15} className="absolute left-3 text-zinc-400" />
             {searchInput !== '' && (
@@ -273,7 +301,7 @@ export default function ShopStorefrontHeader({
                 type="button"
                 onClick={handleClearSearch}
                 aria-label="Xóa từ khóa tìm kiếm"
-                className="absolute right-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="absolute right-2.5 cursor-pointer text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               >
                 <X size={13} />
               </button>

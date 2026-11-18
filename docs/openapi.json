@@ -28259,6 +28259,39 @@
             "type": ["number", "null"],
             "format": "double",
             "description": "Khoảng cách BM25, càng nhỏ càng khớp. Null khi không có từ khóa"
+          },
+          "compareAtPrice": {
+            "type": ["integer", "null"],
+            "format": "int64",
+            "description": "Giá gốc cao nhất khi có khuyến mãi (VND), null nếu không giảm giá"
+          },
+          "averageRating": {
+            "type": ["number", "null"],
+            "format": "double",
+            "description": "Điểm đánh giá trung bình (1-5), null nếu chưa có đánh giá"
+          },
+          "reviewCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng số lượt đánh giá"
+          },
+          "soldCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng số lượng sản phẩm đã bán (đơn chưa hủy)"
+          },
+          "shopName": {
+            "type": ["string", "null"],
+            "description": "Tên gian hàng bán sản phẩm"
+          },
+          "shopSlug": {
+            "type": ["string", "null"],
+            "description": "Slug gian hàng để dẫn tới trang storefront"
+          },
+          "totalStock": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Tổng số lượng tồn kho của các biến thể"
           }
         }
       },

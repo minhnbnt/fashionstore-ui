@@ -4,11 +4,12 @@ import { Link } from 'react-router'
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useSearch } from '@generated/endpoints/search/search'
 import { useListPageLinks } from '@generated/endpoints/site-content/site-content'
+import { SearchSort } from '@generated/model/searchSort'
 import {
   ArrowRight,
   ArrowsLeftRight,
   BaseballCap,
-  CheckCircle,
+  ChartLineUp,
   CoatHanger,
   CreditCard,
   Dress,
@@ -22,28 +23,37 @@ import {
   Tag,
   Truck,
   TShirt,
+  X,
 } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ProductCard } from '@/components/ui/ProductCard'
 import { ProductCardSkeleton, Skeleton } from '@/components/ui/Skeleton'
-import {
-  hookErrorMessage,
-  PLACEHOLDER_IMAGE,
-  takeData,
-  urlOrPlaceholder,
-} from '@/lib/api/apiAdapters'
-import { priceLabel } from '@/lib/format'
+import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { notify } from '@/lib/notifications'
-import { CARD_CLASS, cn, iconChipClass, secondaryButtonClass } from '@/lib/ui/styles'
-
-import WishlistButton from '../WishlistButton'
+import {
+  cn,
+  FOCUS_RING_CLASS,
+  iconChipClass,
+  secondaryButtonClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from '@/lib/ui/styles'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 import type { PublicPageLinkResponse } from '@generated/model/publicPageLinkResponse'
 
+export { ProductCard } from '@/components/ui/ProductCard'
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const HOME_SORT_OPTIONS: { value: SearchSort; label: string }[] = [
+  { value: SearchSort.NEWEST, label: 'Mới về' },
+  { value: SearchSort.PRICE_ASC, label: 'Giá tăng dần' },
+  { value: SearchSort.PRICE_DESC, label: 'Giá giảm dần' },
+]
 
 function Reveal(props: { children: React.ReactNode; delay?: number }) {
   const reduce = useReducedMotion()
@@ -60,13 +70,6 @@ function Reveal(props: { children: React.ReactNode; delay?: number }) {
       {props.children}
     </motion.div>
   )
-}
-
-function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
-  const target = event.currentTarget
-  if (target.src !== PLACEHOLDER_IMAGE) {
-    target.src = PLACEHOLDER_IMAGE
-  }
 }
 
 function renderCategoryIcon(slug: string | undefined, name: string | undefined, size: number) {
@@ -138,7 +141,10 @@ export function LogoStrip() {
   )
 }
 
-export function CategoryBento(props: { onSelect: (category: CategoryResponse) => void }) {
+export function CategoryBento(props: {
+  onSelect: (category: CategoryResponse) => void
+  activeSlug?: string | null
+}) {
   const categoriesQuery = useListCategories()
   const payload = categoriesQuery.data
 
@@ -171,6 +177,9 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
     return null
   }
 
+  const firstActive =
+    props.activeSlug !== null && props.activeSlug !== undefined && first.slug === props.activeSlug
+
   return (
     <section id="categories" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 py-12">
       <Reveal>
@@ -185,7 +194,10 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
           </div>
           <Link
             to="/search"
-            className="inline-flex items-center gap-1 text-sm font-bold text-blue-700 hover:underline dark:text-sky-300"
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full text-sm font-bold text-blue-700 hover:underline dark:text-sky-300',
+              FOCUS_RING_CLASS,
+            )}
           >
             Tất cả danh mục
             <ArrowRight size={14} weight="bold" />
@@ -197,10 +209,16 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
         <button
           type="button"
           aria-label={'Lọc danh mục ' + (first.name ?? '')}
+          aria-pressed={firstActive}
           onClick={function () {
             props.onSelect(first)
           }}
-          className="glass group relative col-span-2 flex min-h-[220px] cursor-pointer flex-col justify-between overflow-hidden rounded-3xl p-6 text-left transition hover:border-blue-400/50 hover:shadow-xl hover:shadow-indigo-900/10 lg:col-span-4 lg:row-span-2 lg:min-h-[360px] lg:p-8 dark:hover:border-sky-400/40 dark:hover:shadow-black/50"
+          className={cn(
+            'glass group relative col-span-2 flex min-h-[220px] cursor-pointer flex-col justify-between overflow-hidden rounded-3xl p-6 text-left transition hover:border-blue-400/50 hover:shadow-xl hover:shadow-indigo-900/10 lg:col-span-4 lg:row-span-2 lg:min-h-[360px] lg:p-8 dark:hover:border-sky-400/40 dark:hover:shadow-black/50',
+            FOCUS_RING_CLASS,
+            firstActive &&
+              'border-blue-600 ring-2 ring-blue-600/70 dark:border-sky-400 dark:ring-sky-400/70',
+          )}
         >
           <div
             className={cn(
@@ -214,9 +232,16 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
             <span className={cn(iconChipClass(), 'h-14 w-14 rounded-2xl shadow-xs')}>
               {renderCategoryIcon(first.slug, first.name, 28)}
             </span>
-            <span className="rounded-full border border-indigo-200/80 bg-white/80 px-3 py-1 text-xs font-bold text-indigo-900 dark:border-white/15 dark:bg-white/10 dark:text-sky-200">
-              Xu hướng
-            </span>
+            {firstActive && (
+              <span className="btn-primary rounded-full px-3 py-1 text-xs font-bold">
+                Đang chọn
+              </span>
+            )}
+            {firstActive === false && (
+              <span className="rounded-full border border-indigo-200/80 bg-white/80 px-3 py-1 text-xs font-bold text-blue-700 dark:border-white/15 dark:bg-white/10 dark:text-sky-200">
+                Xu hướng
+              </span>
+            )}
           </div>
 
           <div className="relative mt-8">
@@ -235,15 +260,25 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
         </button>
 
         {rest.map(function (c, idx) {
+          const isActive =
+            props.activeSlug !== null &&
+            props.activeSlug !== undefined &&
+            c.slug === props.activeSlug
           return (
             <button
               key={c.id}
               type="button"
               aria-label={'Lọc danh mục ' + (c.name ?? '')}
+              aria-pressed={isActive}
               onClick={function () {
                 props.onSelect(c)
               }}
-              className="glass group relative flex min-h-[164px] cursor-pointer flex-col justify-between overflow-hidden rounded-3xl p-5 text-left transition hover:border-blue-400/50 hover:shadow-lg hover:shadow-indigo-900/10 lg:col-span-2 lg:min-h-[172px] dark:hover:border-sky-400/40 dark:hover:shadow-black/50"
+              className={cn(
+                'glass group relative flex min-h-[164px] cursor-pointer flex-col justify-between overflow-hidden rounded-3xl p-5 text-left transition hover:border-blue-400/50 hover:shadow-lg hover:shadow-indigo-900/10 lg:col-span-2 lg:min-h-[172px] dark:hover:border-sky-400/40 dark:hover:shadow-black/50',
+                FOCUS_RING_CLASS,
+                isActive &&
+                  'border-blue-600 ring-2 ring-blue-600/70 dark:border-sky-400 dark:ring-sky-400/70',
+              )}
             >
               <div
                 className={cn(
@@ -251,9 +286,16 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
                   categorySurfaceAccent(idx + 1),
                 )}
               />
-              <span className={cn(iconChipClass(), 'relative h-11 w-11 rounded-2xl shadow-xs')}>
-                {renderCategoryIcon(c.slug, c.name, 22)}
-              </span>
+              <div className="relative flex items-start justify-between gap-2">
+                <span className={cn(iconChipClass(), 'h-11 w-11 rounded-2xl shadow-xs')}>
+                  {renderCategoryIcon(c.slug, c.name, 22)}
+                </span>
+                {isActive && (
+                  <span className="btn-primary rounded-full px-2.5 py-0.5 text-[11px] font-bold">
+                    Đang chọn
+                  </span>
+                )}
+              </div>
 
               <div className="relative mt-5">
                 <p className="line-clamp-1 text-base font-extrabold tracking-tight text-[#17203a] lg:text-lg dark:text-white">
@@ -276,62 +318,16 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
   )
 }
 
-export function ProductCard(props: { item: ProductSummaryResponse }) {
-  const p = props.item
-  const productId = p.id ?? ''
-  const productHref = '/product/' + productId
-
-  return (
-    <article
-      className={cn(
-        CARD_CLASS,
-        'group flex h-full flex-col overflow-hidden transition-shadow duration-300 hover:shadow-xl hover:shadow-indigo-900/10 dark:hover:shadow-black/50',
-      )}
-    >
-      <div className="relative overflow-hidden bg-zinc-100/80 dark:bg-white/5">
-        <Link to={productHref} className="block overflow-hidden">
-          <img
-            src={urlOrPlaceholder(p.defaultImageUrl)}
-            alt={p.name ?? 'Sản phẩm DHMQ'}
-            loading="lazy"
-            width={600}
-            height={750}
-            onError={handleImageError}
-            className="aspect-[4/5] w-full object-cover group-hover:scale-[1.03] motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out"
-          />
-        </Link>
-        <WishlistButton productId={p.id} />
-      </div>
-
-      <div className="flex flex-1 flex-col p-4">
-        <Link to={productHref} className="block">
-          <h3 className="line-clamp-2 min-h-[2.5rem] text-sm leading-snug font-bold text-[#17203a] transition-colors group-hover:text-blue-700 dark:text-[#e2e8f0] dark:group-hover:text-sky-300">
-            {p.name}
-          </h3>
-        </Link>
-
-        <div className="mt-auto flex items-center justify-between gap-2 pt-3">
-          <span className="text-base font-extrabold tracking-tight text-blue-700 tabular-nums dark:text-sky-300">
-            {priceLabel(p.minPrice)}
-          </span>
-          <Link
-            to={productHref}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-indigo-50/90 px-3 py-1.5 text-xs font-bold text-indigo-800 transition-colors group-hover:bg-blue-700 group-hover:text-white dark:bg-white/10 dark:text-sky-200 dark:group-hover:bg-sky-400 dark:group-hover:text-[#0a0f1e]"
-          >
-            Chi tiết
-            <ArrowRight size={12} weight="bold" />
-          </Link>
-        </div>
-      </div>
-    </article>
-  )
-}
-
 // Lưới trang chủ: chưa chọn danh mục thì hiện hàng mới về, chọn rồi thì lọc theo danh mục đó.
-export function ProductGrid(props: { category: CategoryResponse | null; limit?: number }) {
+export function ProductGrid(props: {
+  category: CategoryResponse | null
+  onClearCategory?: () => void
+  limit?: number
+}) {
+  const [sort, setSort] = useState<SearchSort>(SearchSort.NEWEST)
   const limit = props.limit ?? 8
   const slug = props.category?.slug
-  const searchQuery = useSearch({ category: slug, limit })
+  const searchQuery = useSearch({ category: slug, limit, sort })
   const payload = searchQuery.data
   let items: ProductSummaryResponse[] = []
   let total = 0
@@ -354,16 +350,55 @@ export function ProductGrid(props: { category: CategoryResponse | null; limit?: 
   return (
     <section id="shop" className="mx-auto max-w-[1400px] scroll-mt-24 px-4 pb-12">
       <Reveal>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">{title}</h2>
-          <Link
-            to={seeAll}
-            className="flex items-center gap-1 text-sm font-bold text-blue-700 hover:underline dark:text-sky-300"
-          >
-            Xem tất cả
-            {total > 0 && <span className="tabular-nums">({total})</span>}
-            <ArrowRight size={14} weight="bold" />
-          </Link>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-3xl font-extrabold tracking-tighter md:text-4xl">{title}</h2>
+            {props.category !== null && props.onClearCategory !== undefined && (
+              <button
+                type="button"
+                onClick={props.onClearCategory}
+                className={cn(
+                  'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-800 transition hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25',
+                  FOCUS_RING_CLASS,
+                )}
+              >
+                <X size={12} weight="bold" />
+                <span>Xem tất cả mới về</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className={cn(segmentedTrackClass(), 'overflow-x-auto')}>
+              {HOME_SORT_OPTIONS.map(function (opt) {
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    aria-pressed={sort === opt.value}
+                    onClick={function () {
+                      setSort(opt.value)
+                    }}
+                    className={cn(segmentedItemClass(sort === opt.value), 'whitespace-nowrap')}
+                  >
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            <Link
+              to={seeAll}
+              className={cn(
+                'flex items-center gap-1 rounded-full text-sm font-bold text-blue-700 hover:underline dark:text-sky-300',
+                FOCUS_RING_CLASS,
+              )}
+            >
+              Xem tất cả
+              {total > 0 && <span className="tabular-nums">({total})</span>}
+              <ArrowRight size={14} weight="bold" />
+            </Link>
+          </div>
         </div>
       </Reveal>
 
@@ -387,13 +422,24 @@ export function ProductGrid(props: { category: CategoryResponse | null; limit?: 
             title="Chưa có sản phẩm trong danh mục này"
             description="Các gian hàng DHMQ đang cập nhật thêm mẫu mới. Bạn có thể xem toàn bộ sản phẩm đang mở bán."
             action={
-              <Link
-                to="/search"
-                className="btn-primary inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold"
-              >
-                Xem tất cả sản phẩm
-                <ArrowRight size={15} weight="bold" />
-              </Link>
+              <div className="flex flex-wrap justify-center gap-2.5">
+                {props.category !== null && props.onClearCategory !== undefined && (
+                  <button
+                    type="button"
+                    onClick={props.onClearCategory}
+                    className={secondaryButtonClass()}
+                  >
+                    Quay lại Mới về
+                  </button>
+                )}
+                <Link
+                  to="/search"
+                  className="btn-primary inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold"
+                >
+                  Xem tất cả sản phẩm
+                  <ArrowRight size={15} weight="bold" />
+                </Link>
+              </div>
             }
           />
         </div>
@@ -441,17 +487,17 @@ export function DealMarquee() {
 export function Editorial() {
   return (
     <section className="mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-8 px-4 py-12 lg:grid-cols-2">
-      {/* Architectural DHMQ Marketplace visual card (no external mock images) */}
+      {/* Architectural DHMQ Marketplace visual card (Mở gian hàng & DHMQ AI) */}
       <Reveal>
         <div className="glass relative overflow-hidden rounded-3xl p-7 lg:p-10">
-          <div className="pointer-events-none absolute -top-16 -left-16 h-56 w-56 rounded-full bg-indigo-900/20 blur-3xl dark:bg-indigo-500/25" />
+          <div className="pointer-events-none absolute -top-16 -left-16 h-56 w-56 rounded-full bg-indigo-800/15 blur-3xl dark:bg-indigo-500/20" />
           <div className="pointer-events-none absolute -right-12 -bottom-16 h-56 w-56 rounded-full bg-sky-400/25 blur-3xl dark:bg-sky-400/20" />
 
           <div className="relative space-y-5">
             <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-white/80 px-3.5 py-1.5 text-xs font-bold text-indigo-900 dark:border-white/15 dark:bg-white/10 dark:text-sky-200">
+              <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-white/80 px-3.5 py-1.5 text-xs font-bold text-blue-700 dark:border-white/15 dark:bg-white/10 dark:text-sky-200">
                 <Storefront size={14} weight="bold" />
-                Hệ sinh thái DHMQ
+                Mở gian hàng & DHMQ AI
               </span>
               <span className="text-lg font-extrabold tracking-tighter text-[#17203a] dark:text-white">
                 DHMQ<span className="text-sky-400">.</span>
@@ -461,37 +507,39 @@ export function Editorial() {
             <div className="space-y-3">
               <div className="flex items-start gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
                 <span className={cn(iconChipClass(), 'h-10 w-10 rounded-xl')}>
-                  <ShieldCheck size={20} weight="duotone" />
-                </span>
-                <div>
-                  <p className="text-sm font-extrabold">Xác thực gian hàng eKYC</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-                    Mọi thương hiệu đều được duyệt hồ sơ rõ ràng trước khi mở bán sản phẩm.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
-                <span className={cn(iconChipClass(), 'h-10 w-10 rounded-xl')}>
                   <Sparkle size={20} weight="duotone" />
                 </span>
                 <div>
-                  <p className="text-sm font-extrabold">Tư vấn phối đồ bằng DHMQ AI</p>
+                  <p className="text-sm font-extrabold">Trợ lý phối đồ DHMQ AI</p>
                   <p className="mt-0.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-                    Gợi ý sản phẩm đúng phom, đúng màu sắc và tầm giá trực tiếp từ kho thật.
+                    Mô tả phong cách, dịp mặc hoặc ngân sách — AI đề xuất ngay trang phục khớp gu
+                    trực tiếp từ kho hàng thật.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
                 <span className={cn(iconChipClass(), 'h-10 w-10 rounded-xl')}>
-                  <CheckCircle size={20} weight="duotone" />
+                  <Storefront size={20} weight="duotone" />
+                </span>
+                <div>
+                  <p className="text-sm font-extrabold">Trang trí gian hàng chuẩn thương hiệu</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
+                    Tự thiết kế banner, bộ sưu tập và video lookbook để nổi bật bản sắc riêng của
+                    thương hiệu.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 dark:border-white/10 dark:bg-white/5">
+                <span className={cn(iconChipClass(), 'h-10 w-10 rounded-xl')}>
+                  <ChartLineUp size={20} weight="duotone" />
                 </span>
                 <div>
                   <p className="text-sm font-extrabold">Quản lý bán hàng tập trung</p>
                   <p className="mt-0.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-                    Đăng sản phẩm, theo dõi đơn hàng, tồn kho và trò chuyện khách mua trên một bảng
-                    điều khiển.
+                    Đăng sản phẩm, đồng bộ tồn kho, xử lý đơn hàng và trò chuyện khách mua trên một
+                    bảng điều khiển duy nhất.
                   </p>
                 </div>
               </div>
@@ -502,48 +550,24 @@ export function Editorial() {
 
       <Reveal delay={0.08}>
         <div>
-          <p className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-50/80 px-3.5 py-1 text-xs font-bold text-indigo-900 dark:border-white/15 dark:bg-white/10 dark:text-sky-200">
-            DHMQ Marketplace
+          <p className="inline-flex items-center gap-1.5 rounded-full border border-sky-200/80 bg-sky-50/80 px-3.5 py-1 text-xs font-bold text-blue-700 dark:border-white/15 dark:bg-white/10 dark:text-sky-200">
+            Dành cho thương hiệu & tín đồ thời trang
           </p>
           <h2 className="mt-4 text-3xl font-extrabold tracking-tighter md:text-4xl">
-            Mua sắm thông minh, <span className="text-gradient">mở gian hàng dễ dàng</span>
+            Phối đồ chuẩn gu với AI, <span className="text-gradient">mở gian hàng dễ dàng</span>
           </h2>
           <p className="mt-3 max-w-[56ch] leading-relaxed text-zinc-600 dark:text-zinc-300">
-            Kết nối người yêu thời trang với các thương hiệu tuyển chọn — mua nhanh minh bạch, vận
-            hành gian hàng chuyên nghiệp ngay trên một nền tảng thống nhất.
+            Tìm nhanh trang phục ưng ý cùng trợ lý DHMQ AI, hoặc đưa bộ sưu tập của thương hiệu bạn
+            tiếp cận hàng nghìn khách hàng yêu thời trang mỗi ngày.
           </p>
-
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-3xl border border-zinc-200/80 bg-white/75 p-4 text-center dark:border-white/10 dark:bg-white/5">
-              <Truck
-                size={22}
-                weight="duotone"
-                className="mx-auto text-indigo-800 dark:text-indigo-300"
-              />
-              <p className="mt-2 text-xs font-bold">Giao nhanh toàn quốc</p>
-            </div>
-            <div className="rounded-3xl border border-zinc-200/80 bg-white/75 p-4 text-center dark:border-white/10 dark:bg-white/5">
-              <ArrowsLeftRight
-                size={22}
-                weight="duotone"
-                className="mx-auto text-blue-700 dark:text-sky-300"
-              />
-              <p className="mt-2 text-xs font-bold">Đổi trả 30 ngày</p>
-            </div>
-            <div className="rounded-3xl border border-zinc-200/80 bg-white/75 p-4 text-center dark:border-white/10 dark:bg-white/5">
-              <ShieldCheck
-                size={22}
-                weight="duotone"
-                className="mx-auto text-blue-600 dark:text-sky-400"
-              />
-              <p className="mt-2 text-xs font-bold">Gian hàng xác thực</p>
-            </div>
-          </div>
 
           <div className="mt-7 flex flex-wrap gap-3">
             <Link
               to="/search"
-              className="btn-primary inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold"
+              className={cn(
+                'btn-primary inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold',
+                FOCUS_RING_CLASS,
+              )}
             >
               Khám phá sản phẩm
               <ArrowRight size={16} weight="bold" />
@@ -665,9 +689,14 @@ export function Footer() {
     setEmail('')
   }
 
+  let footerGridClass = 'mx-auto grid max-w-[1400px] grid-cols-2 gap-8 md:grid-cols-5'
+  if (policyLinks.length === 0) {
+    footerGridClass = 'mx-auto grid max-w-[1400px] grid-cols-2 gap-8 md:grid-cols-4'
+  }
+
   return (
-    <footer className="rounded-t-[2.5rem] bg-zinc-950 px-6 pt-10 pb-8 text-zinc-300 md:px-10 md:pt-12">
-      <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-8 md:grid-cols-5">
+    <footer className="rounded-t-[2.5rem] bg-[#070b16] px-6 pt-10 pb-8 text-zinc-300 md:px-10 md:pt-12">
+      <div className={footerGridClass}>
         <div>
           <p className="text-2xl font-extrabold tracking-tighter text-white">
             DHMQ<span className="text-sky-400">.</span>
@@ -708,15 +737,21 @@ export function Footer() {
               </Link>
             </li>
             <FooterPageLinks links={supportLinks} />
-            <li>028 3861 4613</li>
+            <li>
+              <a href="tel:02838614613" className="transition hover:text-white">
+                028 3861 4613
+              </a>
+            </li>
           </ul>
         </div>
-        <div>
-          <p className="text-sm font-bold text-white">Chính sách</p>
-          <ul className="mt-3 space-y-2 text-sm">
-            <FooterPageLinks links={policyLinks} />
-          </ul>
-        </div>
+        {policyLinks.length > 0 && (
+          <div>
+            <p className="text-sm font-bold text-white">Chính sách</p>
+            <ul className="mt-3 space-y-2 text-sm">
+              <FooterPageLinks links={policyLinks} />
+            </ul>
+          </div>
+        )}
         <div className="col-span-2 md:col-span-1">
           <p className="text-sm font-bold text-white">Nhận ưu đãi</p>
           <p className="mt-1.5 text-xs text-zinc-400">
@@ -728,7 +763,10 @@ export function Footer() {
             onSubmit={handleNewsletterSubmit}
           >
             <input
+              id="footer-newsletter-email"
+              name="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={function (e) {
                 setEmail(e.target.value)
@@ -739,7 +777,7 @@ export function Footer() {
             />
             <button
               type="submit"
-              className="btn-primary shrink-0 rounded-full px-5 py-2 text-sm font-bold"
+              className="btn-primary shrink-0 cursor-pointer rounded-full px-5 py-2 text-sm font-bold"
             >
               Gửi
             </button>

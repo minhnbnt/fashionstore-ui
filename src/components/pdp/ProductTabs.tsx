@@ -36,7 +36,7 @@ import type { ReviewResponse } from '@generated/model/reviewResponse'
 function Stars(props: { value: number; size?: number }) {
   const s = props.size || 14
   return (
-    <span className="flex items-center gap-0.5 text-sky-400">
+    <span className="flex items-center gap-0.5 text-amber-400">
       {[1, 2, 3, 4, 5].map(function (i) {
         if (i <= Math.round(props.value)) {
           return <Star key={i} size={s} weight="fill" />
@@ -188,9 +188,15 @@ export default function ProductTabs(props: { product: ProductResponse }) {
 
   return (
     <section className="mt-10 rounded-3xl border border-zinc-200/80 bg-white/80 p-6 dark:border-white/10 dark:bg-[#11182a]">
-      <div className={cn(segmentedTrackClass(), 'inline-flex flex-wrap')}>
+      <div
+        role="tablist"
+        aria-label="Thông tin sản phẩm"
+        className={cn(segmentedTrackClass(), 'inline-flex flex-wrap')}
+      >
         <button
           type="button"
+          role="tab"
+          aria-selected={tab === 'mo-ta'}
           onClick={function () {
             setTab('mo-ta')
           }}
@@ -200,6 +206,8 @@ export default function ProductTabs(props: { product: ProductResponse }) {
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={tab === 'thong-so'}
           onClick={function () {
             setTab('thong-so')
           }}
@@ -209,6 +217,8 @@ export default function ProductTabs(props: { product: ProductResponse }) {
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={tab === 'danh-gia'}
           onClick={function () {
             setTab('danh-gia')
           }}
@@ -372,7 +382,7 @@ export default function ProductTabs(props: { product: ProductResponse }) {
             <p className="text-sm text-zinc-500 dark:text-zinc-400">Đang tải đánh giá…</p>
           )}
           {reviewsQuery.isPending === false && reviewsQuery.isError && (
-            <p className="text-sm text-red-600 dark:text-red-400">
+            <p className="text-sm text-rose-600 dark:text-rose-400">
               {apiErrorMessage('productDetail', reviewsErrorStatus(reviewsQuery.error))}
             </p>
           )}
