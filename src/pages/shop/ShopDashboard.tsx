@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router'
 import { useSellerConversations } from '@generated/endpoints/chat/chat'
 import { useList5 } from '@generated/endpoints/seller-orders/seller-orders'
 import { useInventory } from '@generated/endpoints/seller-products-inventory/seller-products-inventory'
+import { useGetSellerQnaStats } from '@generated/endpoints/seller-q-a/seller-q-a'
 import { useList4 } from '@generated/endpoints/seller-returns/seller-returns'
 import { useGetMyShops } from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
 import { useMine } from '@generated/endpoints/shops/shops'
@@ -27,6 +28,7 @@ import {
   SellerOverviewTab,
   SellerProductsTab,
   SellerProfileTab,
+  SellerQnaTab,
   SellerReturnsTab,
   SellerRevenueTab,
   SellerReviewsTab,
@@ -162,6 +164,7 @@ export default function ShopDashboard() {
   const canSeeReturns = canSeeTab('RETURNS', permissions, isOwner)
   const canSeeInventory = canSeeTab('INVENTORY', permissions, isOwner)
   const canSeeChat = canSeeTab('CHAT', permissions, isOwner)
+  const canSeeQna = canSeeTab('QNA', permissions, isOwner)
 
   const ordersQuery = useList5({ shopId }, { query: { enabled: shopReady && canSeeOrders } })
   const returnsQuery = useList4({ shopId }, { query: { enabled: shopReady && canSeeReturns } })
@@ -171,6 +174,10 @@ export default function ShopDashboard() {
   const conversationsQuery = useSellerConversations(
     { shopId },
     { query: { enabled: shopReady && canSeeChat } },
+  )
+  const qnaStatsQuery = useGetSellerQnaStats(
+    { shopId },
+    { query: { enabled: shopReady && canSeeQna } },
   )
 
   const activeTab = parseSellerTab(searchParams.get('tab'))
@@ -290,6 +297,14 @@ export default function ShopDashboard() {
     }
   }
 
+  let unansweredQnaCount = 0
+  if (qnaStatsQuery.data !== undefined) {
+    const qnaStats = takeData(qnaStatsQuery.data)
+    if (qnaStats && typeof qnaStats.unansweredCount === 'number') {
+      unansweredQnaCount = qnaStats.unansweredCount
+    }
+  }
+
   const profile: ShopProfileData = emptyProfile(shopName)
   if (currentShop !== null) {
     Object.assign(profile, shopProfile(currentShop))
@@ -304,6 +319,7 @@ export default function ShopDashboard() {
       returnRequestsCount={pendingReturnsCount}
       lowStockCount={lowStockCount}
       unreadChatCount={unreadChatCount}
+      unansweredQnaCount={unansweredQnaCount}
       permissions={permissions}
       isOwner={isOwner}
       shopId={shopId}
@@ -412,6 +428,14 @@ export default function ShopDashboard() {
       )}
 
       {isTabAllowed && activeTab === 'REVIEWS' && <SellerReviewsTab key={shopId} shopId={shopId} />}
+
+      {isTabAllowed && activeTab === 'QNA' && (
+        <SellerQnaTab
+          key={shopId}
+          shopId={shopId}
+          initialQuestionId={searchParams.get('questionId') ?? undefined}
+        />
+      )}
 
       {isTabAllowed && activeTab === 'CHAT' && (
         <SellerChatTab
