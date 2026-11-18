@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
 import {
@@ -47,6 +47,23 @@ export default function ProductQnaSection(props: ProductQnaSectionProps) {
   const [questionInput, setQuestionInput] = useState('')
   const [questionError, setQuestionError] = useState<string | null>(null)
   const [showAskConfirm, setShowAskConfirm] = useState(false)
+
+  const prevProductIdRef = useRef(productId)
+  useEffect(
+    function () {
+      if (prevProductIdRef.current !== productId) {
+        prevProductIdRef.current = productId
+        setSearchInput('')
+        setActiveKeyword('')
+        setPage(0)
+        setExtraQuestions([])
+        setQuestionInput('')
+        setQuestionError(null)
+        setShowAskConfirm(false)
+      }
+    },
+    [productId],
+  )
 
   const queryClient = useQueryClient()
   const { data: session } = useSessionQuery()
@@ -97,6 +114,11 @@ export default function ProductQnaSection(props: ProductQnaSectionProps) {
   function handleClearSearch() {
     setSearchInput('')
     setActiveKeyword('')
+    setPage(0)
+    setExtraQuestions([])
+  }
+
+  function handleItemMutated() {
     setPage(0)
     setExtraQuestions([])
   }
@@ -308,6 +330,7 @@ export default function ProductQnaSection(props: ProductQnaSectionProps) {
                 canAnswerAsBuyer={canAnswerAsBuyer}
                 maxContentLength={maxContentLength}
                 isHighlighted={isHighlighted}
+                onMutated={handleItemMutated}
               />
             )
           })}

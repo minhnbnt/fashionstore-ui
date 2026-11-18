@@ -2,7 +2,7 @@
 import { MemoryRouter, Route, Routes } from 'react-router'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
@@ -436,6 +436,7 @@ describe('ProductQnaSection — PDP Q&A Component', () => {
               total: 5,
               page: 1,
               size: 2,
+              canAnswerAsBuyer: true,
             },
           },
           isPending: false,
@@ -471,5 +472,275 @@ describe('ProductQnaSection — PDP Q&A Component', () => {
       expect.any(Object),
     )
     expect(screen.getByText('Câu hỏi trang 2')).toBeTruthy()
+  })
+
+  it('9. Product ID change resets search keyword, pagination page, and accumulated extraQuestions', async () => {
+    mockUseListProductQuestions.mockImplementation(function (productId, params) {
+      if (productId === 'prod-200') {
+        return {
+          data: {
+            status: 200,
+            data: {
+              items: [
+                {
+                  id: 'q-new-1',
+                  productId: 'prod-200',
+                  askerDisplayName: 'Người dùng mới',
+                  content: 'Câu hỏi sản phẩm 200',
+                  answers: [],
+                },
+              ],
+              total: 1,
+              page: 0,
+              size: 10,
+            },
+          },
+          isPending: false,
+          isError: false,
+          error: null,
+        }
+      }
+      if (params && params.page === 1) {
+        return {
+          data: {
+            status: 200,
+            data: {
+              items: [
+                {
+                  id: 'q-page-2',
+                  productId: 'prod-100',
+                  content: 'Câu hỏi trang 2',
+                  answers: [],
+                },
+              ],
+              total: 5,
+              page: 1,
+              size: 2,
+              canAnswerAsBuyer: true,
+            },
+          },
+          isPending: false,
+          isError: false,
+          error: null,
+        }
+      }
+      return {
+        data: {
+          status: 200,
+          data: {
+            items: sampleQuestions(),
+            total: 5,
+            page: 0,
+            size: 2,
+          },
+        },
+        isPending: false,
+        isError: false,
+        error: null,
+      }
+    })
+
+    const user = userEvent.setup()
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/product/prod-100']}>
+          <ProductQnaSection productId="prod-100" />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    const searchInput = screen.getByPlaceholderText('Tìm kiếm câu hỏi hoặc câu trả lời...')
+    await user.type(searchInput, 'form rộng{enter}')
+
+    const loadMoreBtn = screen.getByRole('button', { name: 'Tải thêm câu hỏi' })
+    await user.click(loadMoreBtn)
+    expect(screen.getByText('Câu hỏi trang 2')).toBeTruthy()
+
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/product/prod-200']}>
+          <ProductQnaSection productId="prod-200" />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    const updatedSearchInput = screen.getByPlaceholderText(
+      'Tìm kiếm câu hỏi hoặc câu trả lời...',
+    ) as HTMLInputElement
+    expect(updatedSearchInput.value).toBe('')
+
+    expect(mockUseListProductQuestions).toHaveBeenCalledWith(
+      'prod-200',
+      expect.objectContaining({ page: 0 }),
+      expect.any(Object),
+    )
+    expect(screen.getByText('Câu hỏi sản phẩm 200')).toBeTruthy()
+    expect(screen.queryByText('Câu hỏi trang 2')).toBeNull()
+  })
+
+  it('10. Mutating an item while page > 0 resets pagination page and clears accumulated extraQuestions', async () => {
+    mockUseListProductQuestions.mockImplementation(function (_productId, params) {
+      if (params && params.page === 1) {
+        return {
+          data: {
+            status: 200,
+            data: {
+              items: [
+                {
+                  id: 'q-page-2',
+                  productId: 'prod-100',
+                  askerDisplayName: 'Người dùng B',
+                  content: 'Câu hỏi trang 2',
+                  status: 'UNANSWERED',
+                  mine: true,
+                  canEdit: true,
+                  canDelete: true,
+                  createdAt: '2026-11-07T10:00:00Z',
+                  answers: [],
+                },
+              ],
+              total: 5,
+              page: 1,
+              size: 2,
+              canAnswerAsBuyer: true,
+            },
+          },
+          isPending: false,
+          isError: false,
+          error: null,
+        }
+      }
+      return {
+        data: {
+          status: 200,
+          data: {
+            items: sampleQuestions(),
+            total: 5,
+            page: 0,
+            size: 2,
+          },
+        },
+        isPending: false,
+        isError: false,
+        error: null,
+      }
+    })
+
+    const user = userEvent.setup()
+    renderQnaSection()
+
+    // Advance to page 1 via load more
+    const loadMoreBtn = screen.getByRole('button', { name: 'Tải thêm câu hỏi' })
+    await user.click(loadMoreBtn)
+    expect(screen.getByText('Câu hỏi trang 2')).toBeTruthy()
+
+    // Delete question q-2
+    const deleteBtns = screen.getAllByRole('button', { name: 'Xóa' })
+    await user.click(deleteBtns[0])
+
+    const confirmDeleteBtn = screen.getByRole('button', { name: 'Xóa câu hỏi' })
+    await user.click(confirmDeleteBtn)
+
+    expect(mockDeleteQuestionMutate).toHaveBeenCalled()
+
+    // Trigger onSuccess callback of delete mutation
+    const deleteCallArgs = mockDeleteQuestionMutate.mock.calls[0] as unknown[]
+    const callbacks = deleteCallArgs[1] as { onSuccess: () => void }
+    await act(async () => {
+      callbacks.onSuccess()
+    })
+
+    // Verify useListProductQuestions is invoked for page 0
+    expect(mockUseListProductQuestions).toHaveBeenLastCalledWith(
+      'prod-100',
+      expect.objectContaining({ page: 0 }),
+      expect.any(Object),
+    )
+  })
+
+  it('11. Creating or editing an answer while page > 0 resets pagination page and syncs the list', async () => {
+    mockUseListProductQuestions.mockImplementation(function (_productId, params) {
+      if (params && params.page === 1) {
+        return {
+          data: {
+            status: 200,
+            data: {
+              items: [
+                {
+                  id: 'q-page-2',
+                  productId: 'prod-100',
+                  askerDisplayName: 'Người dùng B',
+                  content: 'Câu hỏi trang 2',
+                  status: 'UNANSWERED',
+                  mine: false,
+                  canEdit: false,
+                  canDelete: false,
+                  createdAt: '2026-11-07T10:00:00Z',
+                  answers: [],
+                },
+              ],
+              total: 5,
+              page: 1,
+              size: 2,
+              canAnswerAsBuyer: true,
+            },
+          },
+          isPending: false,
+          isError: false,
+          error: null,
+        }
+      }
+      return {
+        data: {
+          status: 200,
+          data: {
+            items: sampleQuestions(),
+            total: 5,
+            page: 0,
+            size: 2,
+            canAnswerAsBuyer: true,
+          },
+        },
+        isPending: false,
+        isError: false,
+        error: null,
+      }
+    })
+
+    const user = userEvent.setup()
+    renderQnaSection()
+
+    // Advance to page 1 via load more
+    const loadMoreBtn = screen.getByRole('button', { name: 'Tải thêm câu hỏi' })
+    await user.click(loadMoreBtn)
+    expect(screen.getByText('Câu hỏi trang 2')).toBeTruthy()
+
+    // Reply to question q-1 (from page 0, held in extraQuestions)
+    const replyBtns = screen.getAllByRole('button', { name: 'Trả lời câu hỏi' })
+    await user.click(replyBtns[0])
+
+    const answerInput = screen.getByPlaceholderText('Nhập câu trả lời của bạn...')
+    await user.type(answerInput, 'Đúng vậy form chuẩn.')
+    const sendAnswerBtn = screen.getByRole('button', { name: 'Gửi câu trả lời' })
+    await user.click(sendAnswerBtn)
+
+    expect(mockCreateAnswerMutate).toHaveBeenCalled()
+
+    const answerCallArgs = mockCreateAnswerMutate.mock.calls[0] as unknown[]
+    const callbacks = answerCallArgs[1] as { onSuccess: () => void }
+    await act(async () => {
+      callbacks.onSuccess()
+    })
+
+    // Verify useListProductQuestions is invoked for page 0
+    expect(mockUseListProductQuestions).toHaveBeenLastCalledWith(
+      'prod-100',
+      expect.objectContaining({ page: 0 }),
+      expect.any(Object),
+    )
   })
 })

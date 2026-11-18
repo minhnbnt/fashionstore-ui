@@ -44,6 +44,7 @@ interface ProductQnaItemProps {
   canAnswerAsBuyer: boolean
   maxContentLength: number
   isHighlighted: boolean
+  onMutated?: () => void
 }
 
 function answerContainerClass(role?: string): string {
@@ -58,6 +59,7 @@ function AnswerItem(props: {
   productId: string
   questionId: string
   maxContentLength: number
+  onMutated?: () => void
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [content, setContent] = useState(props.answer.content ?? '')
@@ -100,6 +102,9 @@ function AnswerItem(props: {
           void queryClient.invalidateQueries({
             queryKey: getListProductQuestionsQueryKey(props.productId),
           })
+          if (props.onMutated !== undefined) {
+            props.onMutated()
+          }
         },
         onError: function () {
           notify.error('Không thể cập nhật câu trả lời. Vui lòng thử lại sau.')
@@ -122,6 +127,9 @@ function AnswerItem(props: {
           void queryClient.invalidateQueries({
             queryKey: getListProductQuestionsQueryKey(props.productId),
           })
+          if (props.onMutated !== undefined) {
+            props.onMutated()
+          }
         },
         onError: function () {
           notify.error('Không thể xóa câu trả lời. Vui lòng thử lại sau.')
@@ -322,6 +330,9 @@ export default function ProductQnaItem(props: ProductQnaItemProps) {
           void queryClient.invalidateQueries({
             queryKey: getListProductQuestionsQueryKey(props.productId),
           })
+          if (props.onMutated !== undefined) {
+            props.onMutated()
+          }
         },
         onError: function () {
           notify.error('Không thể cập nhật câu hỏi. Vui lòng thử lại sau.')
@@ -343,6 +354,9 @@ export default function ProductQnaItem(props: ProductQnaItemProps) {
           void queryClient.invalidateQueries({
             queryKey: getListProductQuestionsQueryKey(props.productId),
           })
+          if (props.onMutated !== undefined) {
+            props.onMutated()
+          }
         },
         onError: function () {
           notify.error('Không thể xóa câu hỏi. Vui lòng thử lại sau.')
@@ -377,6 +391,9 @@ export default function ProductQnaItem(props: ProductQnaItemProps) {
           void queryClient.invalidateQueries({
             queryKey: getListProductQuestionsQueryKey(props.productId),
           })
+          if (props.onMutated !== undefined) {
+            props.onMutated()
+          }
         },
         onError: function () {
           notify.error('Không thể gửi câu trả lời. Vui lòng thử lại sau.')
@@ -534,6 +551,7 @@ export default function ProductQnaItem(props: ProductQnaItemProps) {
                 productId={props.productId}
                 questionId={q.id ?? ''}
                 maxContentLength={props.maxContentLength}
+                onMutated={props.onMutated}
               />
             )
           })}

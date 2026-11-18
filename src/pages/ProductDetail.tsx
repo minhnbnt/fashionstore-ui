@@ -142,7 +142,7 @@ export default function ProductDetail() {
         <PdpShopCard shopId={product.shopId} />
       )}
       <ProductTabs product={product} />
-      <ProductQnaSection productId={productId} />
+      <ProductQnaSection key={'qna-' + productId} productId={productId} />
       <div className="mt-10">
         <RelatedProducts category={category} currentId={productId} />
       </div>
