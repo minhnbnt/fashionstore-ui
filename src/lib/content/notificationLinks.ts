@@ -5,7 +5,9 @@ export function getTargetNotificationLink(item: NotificationResponse): string | 
     return null
   }
   let link = item.link
-  if (link.startsWith('/shop') && !link.includes('orderId=')) {
+  const isQnaLink = link.includes('tab=qna')
+  const isQnaType = item.type !== undefined && item.type !== null && item.type.startsWith('QNA_')
+  if (link.startsWith('/shop') && !link.includes('orderId=') && !isQnaLink && !isQnaType) {
     let orderCode: string | null = null
 
     if (item.title !== undefined && item.title !== null) {
@@ -59,6 +61,9 @@ export function realtimeInvalidationKeys(notificationType: string | undefined): 
       ['/api/seller/returns'],
       ['/api/seller/shops'],
     )
+  }
+  if (notificationType.startsWith('QNA_')) {
+    keys.push(['/api/seller/qna'], ['/api/products'])
   }
   return keys
 }

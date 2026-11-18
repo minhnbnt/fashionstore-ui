@@ -13,6 +13,7 @@ import {
   Package,
   PaintBrushBroad,
   PlusCircle,
+  Question,
   ShieldCheck,
   ShoppingCart,
   SignOut,
@@ -47,6 +48,7 @@ interface SellerLayoutProps {
   returnRequestsCount: number
   lowStockCount: number
   unreadChatCount: number
+  unansweredQnaCount?: number
   permissions?: string[]
   isOwner?: boolean
   shopId?: string
@@ -115,6 +117,12 @@ function getPageMeta(activeTab: SellerTabId): PageMeta {
     return {
       title: 'Đánh giá từ người mua',
       description: 'Phản hồi đánh giá, quản lý mẫu trả lời nhanh và theo dõi xu hướng điểm sao.',
+    }
+  }
+  if (activeTab === 'QNA') {
+    return {
+      title: 'Hỏi đáp sản phẩm (Q&A)',
+      description: 'Quản lý, lọc và giải đáp câu hỏi của khách hàng về sản phẩm của gian hàng.',
     }
   }
   if (activeTab === 'CHAT') {
@@ -236,6 +244,9 @@ function buildBreadcrumbs(
   if (activeTab === 'REVIEWS') {
     return [root, { label: 'Chăm sóc khách hàng' }, { label: 'Đánh giá từ người mua' }]
   }
+  if (activeTab === 'QNA') {
+    return [root, { label: 'Chăm sóc khách hàng' }, { label: 'Hỏi đáp sản phẩm' }]
+  }
   if (activeTab === 'CHAT') {
     return [root, { label: 'Chăm sóc khách hàng' }, { label: 'Tin nhắn CSKH' }]
   }
@@ -257,6 +268,7 @@ export function SellerLayout({
   returnRequestsCount,
   lowStockCount,
   unreadChatCount,
+  unansweredQnaCount = 0,
   permissions = [],
   isOwner = false,
   shopId,
@@ -361,6 +373,13 @@ export function SellerLayout({
           id: 'REVIEWS',
           label: 'Đánh giá từ người mua',
           icon: Star,
+        },
+        {
+          id: 'QNA',
+          label: 'Hỏi đáp sản phẩm',
+          icon: Question,
+          badgeCount: unansweredQnaCount,
+          badgeColor: 'bg-blue-700',
         },
         {
           id: 'CHAT',
