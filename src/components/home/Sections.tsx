@@ -14,6 +14,7 @@ import {
 } from '@/lib/api/apiAdapters'
 import { priceLabel } from '@/lib/format'
 
+import SimilarityBadge from '../search/SimilarityBadge'
 import UserAvatar from '../UserAvatar'
 import WishlistButton from '../WishlistButton'
 
@@ -143,7 +144,7 @@ export function CategoryBento(props: { onSelect: (category: CategoryResponse) =>
   )
 }
 
-export function ProductCard(props: { item: ProductSummaryResponse }) {
+export function ProductCard(props: { item: ProductSummaryResponse; similarity?: number }) {
   const p = props.item
   const navigate = useNavigate()
   return (
@@ -165,6 +166,7 @@ export function ProductCard(props: { item: ProductSummaryResponse }) {
           />
         </Link>
         <WishlistButton productId={p.id} />
+        {props.similarity !== undefined && <SimilarityBadge similarity={props.similarity} />}
       </div>
       <div className="p-4">
         <Link to={'/product/' + p.id}>

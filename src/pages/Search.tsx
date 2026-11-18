@@ -16,7 +16,7 @@ import {
 } from '@phosphor-icons/react'
 import { keepPreviousData } from '@tanstack/react-query'
 
-import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
+import { hookErrorMessage, imageHitToSummary, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import {
   activeFilterCount,
@@ -39,11 +39,13 @@ import {
 import { ProductCard } from '../components/home/Sections'
 import EmptySearchState from '../components/search/EmptySearchState'
 import FilterPanel from '../components/search/FilterPanel'
+import ImageSearchPanel from '../components/search/ImageSearchPanel'
 import Pagination from '../components/search/Pagination'
 import ProductRow from '../components/search/ProductRow'
 
 import type { SearchFilters } from '@/types/search'
 import type { CategoryResponse } from '@generated/model/categoryResponse'
+import type { ImageSearchHit } from '@generated/model/imageSearchHit'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 import type { SearchFacetsResponse } from '@generated/model/searchFacetsResponse'
 
@@ -154,6 +156,32 @@ export default function Search() {
   const filters = parseFilters(params)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+  // Chế độ ảnh dẫn xuất từ URL (?by-image=1) để mở từ nút camera trên header,
+  // refresh không mất; chuyển mode ghi/xóa param nhưng giữ nguyên filter của text mode.
+  const isImageMode = params.get('by-image') === '1'
+  const [imageHits, setImageHits] = useState<ImageSearchHit[]>([])
+  const [imageSearched, setImageSearched] = useState(false)
+
+  function setMode(next: 'text' | 'image'): void {
+    const nextParams = new URLSearchParams(params)
+    if (next === 'image') {
+      nextParams.set('by-image', '1')
+    } else {
+      nextParams.delete('by-image')
+    }
+    setParams(nextParams)
+  }
+
+  function handleImageResults(hits: ImageSearchHit[]): void {
+    setImageHits(hits)
+    setImageSearched(true)
+  }
+
+  function handleImageClear(): void {
+    setImageHits([])
+    setImageSearched(false)
+  }
 
   const searchQuery = useSearch(toApiParams(filters, PAGE_SIZE), {
     query: { placeholderData: keepPreviousData },
@@ -291,226 +319,282 @@ export default function Search() {
         </p>
       </div>
 
-      {/* Hot Search Pills Bar - Cố định ở dòng riêng, không bao giờ bị nhảy dòng */}
-      <div className="mt-3.5 flex flex-wrap items-center gap-2 border-b border-sky-100 pb-3.5 dark:border-white/10">
-        <span className="flex shrink-0 items-center gap-1 text-[11px] font-extrabold tracking-wider text-sky-700 uppercase dark:text-sky-400">
-          <TrendUp size={13} weight="bold" />
-          <span>Xu hướng:</span>
-        </span>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {HOT_SEARCH_TAGS.map(function (tag) {
-            const isCurrent = filters.q?.toLowerCase() === tag.toLowerCase()
-            return (
-              <button
-                key={tag}
-                type="button"
-                onClick={function () {
-                  change({ q: tag, page: 0 })
-                }}
-                className={hotTagClass(isCurrent)}
-              >
-                {tag}
-              </button>
-            )
-          })}
+      <div className="mt-3 flex items-center gap-2">
+        <div className={cn(segmentedTrackClass(), 'flex-wrap')}>
+          <button
+            type="button"
+            aria-pressed={isImageMode === false}
+            onClick={function () {
+              handleImageClear()
+              setMode('text')
+            }}
+            className={segmentedItemClass(isImageMode === false)}
+          >
+            Tìm bằng từ khóa
+          </button>
+          <button
+            type="button"
+            aria-pressed={isImageMode}
+            onClick={function () {
+              setMode('image')
+            }}
+            className={segmentedItemClass(isImageMode)}
+          >
+            Tìm bằng ảnh
+          </button>
         </div>
       </div>
 
-      {/* Active Filter Chips */}
-      <ActiveChips
-        filters={filters}
-        categoryName={currentCategory?.name}
-        onChange={change}
-        onClearAll={function () {
-          apply({ ...EMPTY_FILTERS, q: filters.q })
-        }}
-      />
-
-      {/* 3. Main Body: Sidebar (280px) + Results Section */}
-      <div className="mt-6 grid grid-cols-1 gap-7 lg:grid-cols-[280px_1fr]">
-        {/* Left Column: Filter Sidebar */}
-        <aside>
-          {/* Mobile Filter Toggle Button */}
-          <button
-            type="button"
-            aria-expanded={filtersOpen}
-            onClick={function () {
-              setFiltersOpen(!filtersOpen)
-            }}
-            className={cn(
-              primaryButtonClass(),
-              'flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-extrabold shadow-xs lg:hidden',
-            )}
-          >
-            <Funnel size={16} weight="bold" />
-            <span>Bộ lọc nâng cao</span>
-            {filterCount > 0 && (
-              <span className="rounded-full bg-white/25 px-2 py-0.5 text-xs text-white">
-                {filterCount}
-              </span>
-            )}
-          </button>
-
-          {/* Sticky Desktop Filter Panel */}
-          <div
-            className={
-              'glass mt-3 rounded-3xl p-5 lg:sticky lg:top-28 lg:mt-0 lg:block ' +
-              filterPanelVisibility
-            }
-          >
-            <FilterPanel
-              filters={filters}
-              categories={categories}
-              facets={facets}
-              onChange={change}
-              onClear={function () {
-                apply({ ...EMPTY_FILTERS, q: filters.q })
-              }}
-              totalCount={total}
-            />
-          </div>
-        </aside>
-
-        {/* Right Column: Search Results & Tools */}
-        <section aria-label="Kết quả tìm kiếm">
-          {/* Thanh sắp xếp & bộ lọc nhanh */}
-          <div className="rounded-3xl border border-sky-100 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {/* Tabs sắp xếp */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="mr-1 text-xs font-extrabold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                  Sắp xếp theo:
-                </span>
-
-                <div className={cn(segmentedTrackClass(), 'flex-wrap')}>
-                  {sortTabs.map(function (s) {
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={function () {
-                          change({ sort: s })
-                        }}
-                        className={sortTabClass(sortValue === s)}
-                      >
-                        {SORT_LABELS[s]}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Result Count & View Switcher */}
-              <div className="flex items-center gap-3">
-                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                  {searchQuery.isSuccess && (
-                    <>
-                      <span className="font-extrabold text-zinc-900 dark:text-white">{total}</span>{' '}
-                      sản phẩm
-                    </>
-                  )}
-                </p>
-
-                <div className={cn(segmentedTrackClass(), 'hidden sm:flex')}>
+      {isImageMode === false && (
+        <>
+          {/* Hot Search Pills Bar - Cố định ở dòng riêng, không bao giờ bị nhảy dòng */}
+          <div className="mt-3.5 flex flex-wrap items-center gap-2 border-b border-sky-100 pb-3.5 dark:border-white/10">
+            <span className="flex shrink-0 items-center gap-1 text-[11px] font-extrabold tracking-wider text-sky-700 uppercase dark:text-sky-400">
+              <TrendUp size={13} weight="bold" />
+              <span>Xu hướng:</span>
+            </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {HOT_SEARCH_TAGS.map(function (tag) {
+                const isCurrent = filters.q?.toLowerCase() === tag.toLowerCase()
+                return (
                   <button
+                    key={tag}
                     type="button"
-                    title="Xem dạng lưới"
                     onClick={function () {
-                      setViewMode('grid')
+                      change({ q: tag, page: 0 })
                     }}
-                    className={viewTabClass(viewMode === 'grid')}
+                    className={hotTagClass(isCurrent)}
                   >
-                    <SquaresFour size={16} weight="bold" />
+                    {tag}
                   </button>
-                  <button
-                    type="button"
-                    title="Xem dạng danh sách"
-                    onClick={function () {
-                      setViewMode('list')
-                    }}
-                    className={viewTabClass(viewMode === 'list')}
-                  >
-                    <Rows size={16} weight="bold" />
-                  </button>
-                </div>
-              </div>
+                )
+              })}
             </div>
           </div>
 
-          {/* Product Grid Area */}
-          <div className="mt-5">
-            {/* Loading State */}
-            {searchQuery.isPending && (
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 xl:gap-5">
-                {Array.from({ length: 8 }).map(function (_, i) {
-                  return (
-                    <div
-                      key={i}
-                      className="animate-pulse rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5"
-                    >
-                      <div className="aspect-[4/5] rounded-2xl bg-zinc-200 dark:bg-white/10" />
-                      <div className="mt-4 h-4 w-3/4 rounded-full bg-zinc-200 dark:bg-white/10" />
-                      <div className="mt-2 h-4 w-1/2 rounded-full bg-zinc-200 dark:bg-white/10" />
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+          {/* Active Filter Chips */}
+          <ActiveChips
+            filters={filters}
+            categoryName={currentCategory?.name}
+            onChange={change}
+            onClearAll={function () {
+              apply({ ...EMPTY_FILTERS, q: filters.q })
+            }}
+          />
+        </>
+      )}
 
-            {/* Error State */}
-            {searchQuery.isError && (
-              <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-center text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10">
-                {hookErrorMessage('search', searchQuery.error)}
-              </div>
-            )}
+      {isImageMode && (
+        <>
+          <ImageSearchPanel onResults={handleImageResults} onClear={handleImageClear} />
+          {imageSearched && imageHits.length === 0 && (
+            <p className="mt-6 text-center text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+              Không tìm thấy sản phẩm giống ảnh này.
+            </p>
+          )}
+          {imageHits.length > 0 && (
+            <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 xl:gap-5">
+              {imageHits.map(function (hit) {
+                return (
+                  <ProductCard
+                    key={hit.id}
+                    item={imageHitToSummary(hit)}
+                    similarity={hit.similarity ?? 0}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
+      {isImageMode === false && (
+        <div className="mt-6 grid grid-cols-1 gap-7 lg:grid-cols-[280px_1fr]">
+          {/* Left Column: Filter Sidebar */}
+          <aside>
+            {/* Mobile Filter Toggle Button */}
+            <button
+              type="button"
+              aria-expanded={filtersOpen}
+              onClick={function () {
+                setFiltersOpen(!filtersOpen)
+              }}
+              className={cn(
+                primaryButtonClass(),
+                'flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-extrabold shadow-xs lg:hidden',
+              )}
+            >
+              <Funnel size={16} weight="bold" />
+              <span>Bộ lọc nâng cao</span>
+              {filterCount > 0 && (
+                <span className="rounded-full bg-white/25 px-2 py-0.5 text-xs text-white">
+                  {filterCount}
+                </span>
+              )}
+            </button>
 
-            {/* Empty State: card rỗng + mẹo + gợi ý sản phẩm */}
-            {searchQuery.isSuccess && items.length === 0 && (
-              <EmptySearchState
-                filterCount={filterCount}
-                recommendedItems={recommendedItems}
-                onResetAll={function () {
-                  apply(EMPTY_FILTERS)
-                }}
-                onClearFilters={function () {
+            {/* Sticky Desktop Filter Panel */}
+            <div
+              className={
+                'glass mt-3 rounded-3xl p-5 lg:sticky lg:top-28 lg:mt-0 lg:block ' +
+                filterPanelVisibility
+              }
+            >
+              <FilterPanel
+                filters={filters}
+                categories={categories}
+                facets={facets}
+                onChange={change}
+                onClear={function () {
                   apply({ ...EMPTY_FILTERS, q: filters.q })
                 }}
+                totalCount={total}
               />
-            )}
+            </div>
+          </aside>
 
-            {/* Successful Search Results */}
-            {items.length > 0 && viewMode === 'grid' && (
-              <div
-                className={
-                  'grid grid-cols-2 gap-4 transition-opacity md:grid-cols-3 xl:grid-cols-4 xl:gap-5 ' +
-                  resultsOpacityClass(searchQuery.isPlaceholderData)
-                }
-              >
-                {items.map(function (p) {
-                  return <ProductCard key={p.id} item={p} />
-                })}
-              </div>
-            )}
-            {items.length > 0 && viewMode === 'list' && (
-              <div
-                className={
-                  'flex flex-col gap-3 transition-opacity ' +
-                  resultsOpacityClass(searchQuery.isPlaceholderData)
-                }
-              >
-                {items.map(function (p) {
-                  return <ProductRow key={p.id} item={p} />
-                })}
-              </div>
-            )}
-          </div>
+          {/* Right Column: Search Results & Tools */}
+          <section aria-label="Kết quả tìm kiếm">
+            {/* Thanh sắp xếp & bộ lọc nhanh */}
+            <div className="rounded-3xl border border-sky-100 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {/* Tabs sắp xếp */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="mr-1 text-xs font-extrabold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                    Sắp xếp theo:
+                  </span>
 
-          {/* Pagination */}
-          {items.length > 0 && (
-            <Pagination page={filters.page} totalPages={totalPages} onPage={goToPage} />
-          )}
-        </section>
-      </div>
+                  <div className={cn(segmentedTrackClass(), 'flex-wrap')}>
+                    {sortTabs.map(function (s) {
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={function () {
+                            change({ sort: s })
+                          }}
+                          className={sortTabClass(sortValue === s)}
+                        >
+                          {SORT_LABELS[s]}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Result Count & View Switcher */}
+                <div className="flex items-center gap-3">
+                  <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    {searchQuery.isSuccess && (
+                      <>
+                        <span className="font-extrabold text-zinc-900 dark:text-white">
+                          {total}
+                        </span>{' '}
+                        sản phẩm
+                      </>
+                    )}
+                  </p>
+
+                  <div className={cn(segmentedTrackClass(), 'hidden sm:flex')}>
+                    <button
+                      type="button"
+                      title="Xem dạng lưới"
+                      onClick={function () {
+                        setViewMode('grid')
+                      }}
+                      className={viewTabClass(viewMode === 'grid')}
+                    >
+                      <SquaresFour size={16} weight="bold" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Xem dạng danh sách"
+                      onClick={function () {
+                        setViewMode('list')
+                      }}
+                      className={viewTabClass(viewMode === 'list')}
+                    >
+                      <Rows size={16} weight="bold" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Product Grid Area */}
+            <div className="mt-5">
+              {/* Loading State */}
+              {searchQuery.isPending && (
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 xl:gap-5">
+                  {Array.from({ length: 8 }).map(function (_, i) {
+                    return (
+                      <div
+                        key={i}
+                        className="animate-pulse rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5"
+                      >
+                        <div className="aspect-[4/5] rounded-2xl bg-zinc-200 dark:bg-white/10" />
+                        <div className="mt-4 h-4 w-3/4 rounded-full bg-zinc-200 dark:bg-white/10" />
+                        <div className="mt-2 h-4 w-1/2 rounded-full bg-zinc-200 dark:bg-white/10" />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Error State */}
+              {searchQuery.isError && (
+                <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-center text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10">
+                  {hookErrorMessage('search', searchQuery.error)}
+                </div>
+              )}
+
+              {/* Empty State: card rỗng + mẹo + gợi ý sản phẩm */}
+              {searchQuery.isSuccess && items.length === 0 && (
+                <EmptySearchState
+                  filterCount={filterCount}
+                  recommendedItems={recommendedItems}
+                  onResetAll={function () {
+                    apply(EMPTY_FILTERS)
+                  }}
+                  onClearFilters={function () {
+                    apply({ ...EMPTY_FILTERS, q: filters.q })
+                  }}
+                />
+              )}
+
+              {/* Successful Search Results */}
+              {items.length > 0 && viewMode === 'grid' && (
+                <div
+                  className={
+                    'grid grid-cols-2 gap-4 transition-opacity md:grid-cols-3 xl:grid-cols-4 xl:gap-5 ' +
+                    resultsOpacityClass(searchQuery.isPlaceholderData)
+                  }
+                >
+                  {items.map(function (p) {
+                    return <ProductCard key={p.id} item={p} />
+                  })}
+                </div>
+              )}
+              {items.length > 0 && viewMode === 'list' && (
+                <div
+                  className={
+                    'flex flex-col gap-3 transition-opacity ' +
+                    resultsOpacityClass(searchQuery.isPlaceholderData)
+                  }
+                >
+                  {items.map(function (p) {
+                    return <ProductRow key={p.id} item={p} />
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {items.length > 0 && (
+              <Pagination page={filters.page} totalPages={totalPages} onPage={goToPage} />
+            )}
+          </section>
+        </div>
+      )}
     </main>
   )
 }

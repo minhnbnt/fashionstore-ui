@@ -1,7 +1,9 @@
 import { ApiError } from './apiFetch'
 
 import type { PriceInfo, SuccessStatus } from '@/types/product'
+import type { ImageSearchHit } from '@generated/model/imageSearchHit'
 import type { ProductResponse } from '@generated/model/productResponse'
+import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 
 export const PLACEHOLDER_IMAGE = 'https://picsum.photos/seed/net-noimage/600/750'
 
@@ -56,6 +58,12 @@ const ERROR_MESSAGES: Record<string, Record<number, string>> = {
   },
   search: {
     400: 'Bộ lọc tìm kiếm chưa hợp lệ.',
+  },
+  imageSearch: {
+    400: 'Ảnh không hợp lệ. Vui lòng chọn ảnh khác.',
+    413: 'Ảnh quá lớn. Dung lượng tối đa là 8 MB.',
+    415: 'Định dạng không được hỗ trợ. Hãy dùng JPG, PNG hoặc WebP.',
+    503: 'Dịch vụ tìm kiếm đang bận. Vui lòng thử lại sau.',
   },
   adminStats: {
     403: 'Bạn không có quyền xem số liệu quản trị.',
@@ -204,6 +212,10 @@ export function hookErrorMessage(endpoint: string, error: unknown): string {
   return apiErrorMessage(endpoint, 0)
 }
 
+export function imageSearchErrorText(err: unknown): string {
+  return hookErrorMessage('imageSearch', err)
+}
+
 /** Message lỗi thân thiện từ BE (apiFetch đã map detail/message vào ApiError.message), lỗi lạ thì fallback */
 export function apiErrorText(err: unknown, fallback: string): string {
   if (err instanceof ApiError && err.message.trim() !== '') {
@@ -216,5 +228,16 @@ export function apiErrorText(err: unknown, fallback: string): string {
 export function fallbackImageOnError(event: { currentTarget: HTMLImageElement }): void {
   if (event.currentTarget.src !== PLACEHOLDER_IMAGE) {
     event.currentTarget.src = PLACEHOLDER_IMAGE
+  }
+}
+
+/** Map hit của endpoint ảnh sang shape card dùng chung; không bịa field BM25 (rank). */
+export function imageHitToSummary(hit: ImageSearchHit): ProductSummaryResponse {
+  return {
+    id: hit.id,
+    name: hit.name,
+    slug: hit.slug,
+    minPrice: hit.minPrice,
+    defaultImageUrl: hit.defaultImageUrl,
   }
 }
