@@ -85,6 +85,19 @@ describe('ImageSearchPanel', () => {
     expect(onResults).toHaveBeenCalledWith([{ id: 'p1' }])
   })
 
+  it('gui onResults rong khi API khong tra item nao', async () => {
+    mutateAsync.mockResolvedValueOnce({ data: { items: [] }, status: 200 })
+    renderPanel()
+    const file = png('ao.png', 2048)
+    fireEvent.change(input(), { target: { files: [file] } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm sản phẩm giống ảnh' }))
+
+    await waitFor(function () {
+      expect(onResults).toHaveBeenCalledWith([])
+    })
+  })
+
   it('hien thong diep 413 va 503', async () => {
     renderPanel()
     fireEvent.change(input(), { target: { files: [png('ao.png', 2048)] } })

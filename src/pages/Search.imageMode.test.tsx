@@ -27,6 +27,9 @@ vi.mock('@/components/search/ImageSearchPanel', () => ({
         <button type="button" onClick={() => props.onResults([{ id: 'p1' }])}>
           tra ket qua
         </button>
+        <button type="button" onClick={() => props.onResults([])}>
+          tra ket qua rong
+        </button>
         <button type="button" onClick={() => props.onClear()}>
           xoa ket qua
         </button>
@@ -83,6 +86,18 @@ describe('Search — che do tim bang anh', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tìm bằng từ khóa' }))
     fireEvent.click(screen.getByRole('button', { name: 'Tìm bằng ảnh' }))
     expect(screen.queryByText('card p1')).toBeNull()
+  })
+
+  it('hien thong bao khi tim bang anh khong co ket qua', () => {
+    render(
+      <MemoryRouter initialEntries={['/search?by-image=1']}>
+        <Search />
+      </MemoryRouter>,
+    )
+
+    expect(screen.queryByText('Không tìm thấy sản phẩm giống ảnh này.')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'tra ket qua rong' }))
+    expect(screen.getByText('Không tìm thấy sản phẩm giống ảnh này.')).toBeTruthy()
   })
 
   it('mo /search?by-image=1 thi vao ngay che do anh', () => {
