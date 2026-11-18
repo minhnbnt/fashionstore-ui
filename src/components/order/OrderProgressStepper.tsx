@@ -1,4 +1,4 @@
-import { CheckCircle, Clock, Package, Receipt, Truck, XCircle } from '@phosphor-icons/react'
+import { CheckCircle, MapPin, Package, Receipt, Truck, XCircle } from '@phosphor-icons/react'
 
 import { formatDateTime } from '@/lib/format'
 import { returnStatusMeta } from '@/lib/order/orderStatus'
@@ -91,12 +91,22 @@ function stepIcon(key: string) {
     return <Truck size={16} weight="bold" />
   }
   if (key === 'DELIVERED') {
-    return <CheckCircle size={16} weight="bold" />
+    return <MapPin size={16} weight="bold" />
   }
   if (key === 'RECEIVED') {
-    return <Clock size={16} weight="bold" />
+    return <CheckCircle size={16} weight="bold" />
   }
   return <Receipt size={16} weight="bold" />
+}
+
+function resolveCurrentStep(steps: StepDef[]): { index: number; label: string } {
+  let idx = 0
+  for (let i = 0; i < steps.length; i += 1) {
+    if (steps[i].active) {
+      idx = i
+    }
+  }
+  return { index: idx + 1, label: steps[idx]?.label ?? '' }
 }
 
 function circleClass(step: StepDef): string {
@@ -115,7 +125,7 @@ export default function OrderProgressStepper(props: Props) {
   if (props.status === 'CANCELLED') {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-800 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-200">
+        <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200">
           <XCircle size={20} weight="bold" className="shrink-0" />
           <div>
             <p className="font-bold">Đơn hàng đã hủy</p>
@@ -125,7 +135,7 @@ export default function OrderProgressStepper(props: Props) {
           </div>
         </div>
         {returnMeta !== null && (
-          <div className="inline-flex rounded-full border border-white/10 px-3 py-1 text-xs font-bold">
+          <div className="inline-flex rounded-full border border-zinc-200/80 px-3 py-1 text-xs font-bold dark:border-white/10">
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${returnMeta.className}`}
             >
@@ -139,6 +149,7 @@ export default function OrderProgressStepper(props: Props) {
 
   const steps = resolveSteps(props)
   const percent = progressPercent(steps)
+  const currentStep = resolveCurrentStep(steps)
   let wrapperSpacing = 'space-y-4'
   if (props.compact) {
     wrapperSpacing = 'space-y-2.5'
@@ -174,22 +185,42 @@ export default function OrderProgressStepper(props: Props) {
         </div>
       </div>
 
-      {/* Mobile vertical stepper */}
-      <div className="space-y-2 sm:hidden">
-        {steps.map((step) => (
-          <div key={step.key} className="flex items-center gap-3">
-            <div className={circleClass(step)}>{stepIcon(step.key)}</div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-zinc-900 dark:text-white">{step.label}</p>
-              {!props.compact && Boolean(step.time) && (
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {formatDateTime(step.time)}
-                </p>
-              )}
-            </div>
+      {/* Mobile compact single-row progress bar */}
+      {props.compact && (
+        <div className="space-y-1.5 sm:hidden">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="font-bold text-[#17203a] dark:text-white">{currentStep.label}</span>
+            <span className="font-semibold text-zinc-500 tabular-nums dark:text-zinc-400">
+              Bước {currentStep.index}/{steps.length}
+            </span>
           </div>
-        ))}
-      </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-white/10">
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-all duration-300 motion-reduce:transition-none"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Mobile vertical stepper (full mode) */}
+      {!props.compact && (
+        <div className="space-y-2 sm:hidden">
+          {steps.map((step) => (
+            <div key={step.key} className="flex items-center gap-3">
+              <div className={circleClass(step)}>{stepIcon(step.key)}</div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-zinc-900 dark:text-white">{step.label}</p>
+                {Boolean(step.time) && (
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    {formatDateTime(step.time)}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {!props.compact && returnMeta !== null && (
         <div className="flex items-center justify-between gap-2 rounded-2xl border border-sky-100 bg-white/70 px-3.5 py-2 dark:border-white/10 dark:bg-white/5">

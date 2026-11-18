@@ -8,33 +8,46 @@ import {
   useSaveDraft,
 } from '@generated/endpoints/seller-decoration/seller-decoration'
 import {
-  PaintBrushBroad,
-  DeviceMobile,
-  Desktop,
-  Plus,
-  Trash,
-  ArrowUp,
-  ArrowDown,
   ArrowClockwise,
+  ArrowDown,
+  ArrowUp,
+  Broadcast,
+  Desktop,
+  DeviceMobile,
+  DotsSixVertical,
   Eye,
   EyeSlash,
-  CheckCircle,
   FloppyDisk,
-  Broadcast,
-  Image as ImageIcon,
-  SquaresFour,
-  VideoCamera,
   Gear,
-  DotsSixVertical,
+  Image as ImageIcon,
+  Lightbulb,
+  PaintBrushBroad,
+  Plus,
+  SquaresFour,
+  Trash,
+  VideoCamera,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import UserAvatar from '@/components/UserAvatar'
-import { takeData, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 import { reorderBlocks } from '@/lib/seller/decoration'
 import { decorationBlocks, decorationDraftJson } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
+import {
+  badgeToneClass,
+  cn,
+  FOCUS_RING_CLASS,
+  INPUT_CLASS,
+  PANEL_CLASS,
+  primaryButtonClass,
+  secondaryButtonClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from '@/lib/ui/styles'
 
 import BannerSliderConfigModal from './decoration/BannerSliderConfigModal'
 import CollectionConfigModal from './decoration/CollectionConfigModal'
@@ -42,14 +55,21 @@ import VideoConfigModal from './decoration/VideoConfigModal'
 
 import type { DecorationBlock } from '@/types/seller'
 
-function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
-  e.currentTarget.onerror = null
-  e.currentTarget.src = PLACEHOLDER_IMAGE
-}
-
-// Id block chỉ dùng cho React key — sinh ở module-level để khỏi gọi Date.now trong render
 function newBlockId(): string {
   return `block-${Date.now()}`
+}
+
+function getCollectionBadgeLabel(collectionType?: DecorationBlock['collectionType']): string {
+  if (collectionType === 'BEST_SELLER') {
+    return 'BÁN CHẠY'
+  }
+  if (collectionType === 'SALE_OFF') {
+    return 'GIẢM SỐC'
+  }
+  if (collectionType === 'CUSTOM') {
+    return 'TUYỂN CHỌN'
+  }
+  return 'MỚI NHẤT'
 }
 
 interface SellerDecorationTabProps {
@@ -65,12 +85,15 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [newBlockType, setNewBlockType] = useState<DecorationBlock['type']>('BANNER_SLIDER')
   const [newBlockTitle, setNewBlockTitle] = useState('')
-  const [saveSuccessMsg, setSaveSuccessMsg] = useState('')
+  const [isPublishingWithSave, setIsPublishingWithSave] = useState(false)
 
   const [editingBlock, setEditingBlock] = useState<DecorationBlock | null>(null)
   const [isSliderModalOpen, setIsSliderModalOpen] = useState(false)
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false)
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
+
+  const [deleteTargetBlock, setDeleteTargetBlock] = useState<DecorationBlock | null>(null)
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
 
   const decorationQuery = useGetDecoration(shopId, { query: { enabled: shopId !== '' } })
 
@@ -78,7 +101,9 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
-        setDraftBlocks(null)
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể lưu bản nháp thiết kế gian hàng.')
       },
     },
   })
@@ -87,6 +112,10 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
         setDraftBlocks(null)
+        notify.success('Đã xuất bản giao diện lên trang gian hàng chính thức!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể xuất bản giao diện gian hàng.')
       },
     },
   })
@@ -95,6 +124,11 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
         setDraftBlocks(null)
+        setShowDiscardConfirm(false)
+        notify.info('Đã bỏ các thay đổi chưa lưu, quay lại bản nháp trên hệ thống.')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể bỏ thay đổi bản nháp.')
       },
     },
   })
@@ -162,13 +196,21 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
     setDragOverIdx(null)
   }
 
-  const handleDelete = (id: string) => {
-    const updated = blocks.filter((b) => b.id !== id)
+  const handleConfirmDelete = () => {
+    if (deleteTargetBlock === null) {
+      return
+    }
+    const updated = blocks.filter((b) => b.id !== deleteTargetBlock.id)
     setDraftBlocks(updated)
+    setDeleteTargetBlock(null)
+    notify.info('Đã xóa module khỏi bản nháp bố cục.')
   }
 
   const handleAddBlock = () => {
-    if (!newBlockTitle.trim()) return
+    if (!newBlockTitle.trim()) {
+      notify.warning('Vui lòng nhập tên tiêu đề module.')
+      return
+    }
     const newBlock: DecorationBlock = {
       id: newBlockId(),
       type: newBlockType,
@@ -186,7 +228,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
     setDraftBlocks([...blocks, newBlock])
     setNewBlockTitle('')
     setIsAddModalOpen(false)
-    setSaveSuccessMsg('Đã thêm module trang trí mới vào bố cục!')
+    notify.success('Đã thêm module trang trí mới vào bố cục!')
   }
 
   const handleSaveConfig = (updated: DecorationBlock) => {
@@ -201,32 +243,252 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
     setIsSliderModalOpen(false)
     setIsCollectionModalOpen(false)
     setIsVideoModalOpen(false)
-    setSaveSuccessMsg(`Đã cập nhật cấu hình module ${updated.title}!`)
+    notify.success(`Đã cập nhật cấu hình module ${updated.title}!`)
   }
 
   const handleSaveDraft = () => {
-    saveDraftMutation.mutate({ shopId, data: { layoutJson: decorationDraftJson(blocks) } })
-    setSaveSuccessMsg('Đã gửi lưu bản nháp thiết kế gian hàng!')
+    saveDraftMutation.mutate(
+      { shopId, data: { layoutJson: decorationDraftJson(blocks) } },
+      {
+        onSuccess: function () {
+          setDraftBlocks(null)
+          notify.success('Đã lưu bản nháp thiết kế gian hàng!')
+        },
+      },
+    )
   }
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
+    if (hasLocalChanges) {
+      setIsPublishingWithSave(true)
+      try {
+        await saveDraftMutation.mutateAsync({
+          shopId,
+          data: { layoutJson: decorationDraftJson(blocks) },
+        })
+        publishMutation.mutate({ shopId })
+      } catch {
+        // Error notification already triggered by saveDraftMutation onError
+      } finally {
+        setIsPublishingWithSave(false)
+      }
+      return
+    }
     publishMutation.mutate({ shopId })
-    setSaveSuccessMsg('Đã gửi xuất bản giao diện lên trang gian hàng chính thức!')
   }
 
-  const handleDiscard = () => {
+  const handleConfirmDiscard = () => {
     discardDraftMutation.mutate({ shopId })
-    setSaveSuccessMsg('Đã bỏ các thay đổi chưa lưu, quay lại bản nháp trên hệ thống.')
+  }
+
+  const isBusy =
+    saveDraftMutation.isPending ||
+    publishMutation.isPending ||
+    discardDraftMutation.isPending ||
+    isPublishingWithSave
+
+  let deleteBlockDescription = 'Bạn có chắc muốn xóa module này khỏi bố cục trang gian hàng?'
+  if (deleteTargetBlock !== null) {
+    deleteBlockDescription = `Bạn có chắc muốn xóa module "${deleteTargetBlock.title}" khỏi bố cục? Thay đổi sẽ được lưu khi bạn nhấn Lưu nháp hoặc Áp dụng gian hàng.`
+  }
+
+  function renderPreviewBlock(b: DecorationBlock, compact: boolean) {
+    if (!b.enabled) {
+      return null
+    }
+
+    if (b.type === 'BANNER_SLIDER' || b.type === 'BANNER') {
+      const slideList = b.banners ?? []
+      const slideCount = slideList.length
+      const firstBanner = slideList[0]
+      const hasFirstImage =
+        firstBanner !== undefined &&
+        firstBanner.imageUrl !== undefined &&
+        firstBanner.imageUrl !== ''
+
+      let heightClass = 'h-44'
+      if (compact) {
+        heightClass = 'h-32'
+      }
+
+      return (
+        <div key={b.id} className="relative overflow-hidden rounded-2xl bg-[#11182a] shadow-sm">
+          {hasFirstImage && (
+            <div className={cn('relative w-full', heightClass)}>
+              <img
+                src={firstBanner.imageUrl}
+                alt={firstBanner.title || b.title}
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pt-6 pb-2.5 text-white">
+                <p className="truncate text-xs font-bold">{firstBanner.title || b.title}</p>
+                {b.type === 'BANNER_SLIDER' && (
+                  <span className="text-[10px] text-white/80">
+                    {slideCount} banner trong slider
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!hasFirstImage && (
+            <div
+              className={cn(
+                'flex w-full flex-col items-center justify-center bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] p-4 text-center text-white',
+                heightClass,
+              )}
+            >
+              <ImageIcon size={26} className="mb-1 opacity-80" />
+              <p className="text-xs font-bold">{b.title}</p>
+              {b.type === 'BANNER_SLIDER' && (
+                <span className="text-[10px] text-white/80">
+                  {slideCount} banner trong slider (chưa tải ảnh)
+                </span>
+              )}
+            </div>
+          )}
+
+          {b.type === 'BANNER_SLIDER' && slideCount > 1 && (
+            <div className="absolute right-0 bottom-2 left-0 flex justify-center gap-1.5">
+              {slideList.map((_, dotIdx) => {
+                let dotClass = 'w-1.5 bg-white/40'
+                if (dotIdx === 0) {
+                  dotClass = 'w-3.5 bg-white'
+                }
+                return (
+                  <span key={dotIdx} className={`h-1.5 rounded-full transition-all ${dotClass}`} />
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    if (b.type === 'PRODUCT_COLLECTION' || b.type === 'COLLECTION') {
+      const badgeText = getCollectionBadgeLabel(b.collectionType)
+      const limitCount = b.itemLimit ?? 8
+      let gridColsClass = 'grid-cols-4'
+      let previewSlots = [1, 2, 3, 4]
+      if (compact) {
+        gridColsClass = 'grid-cols-2'
+        previewSlots = [1, 2]
+      }
+
+      return (
+        <div
+          key={b.id}
+          className="rounded-2xl border border-zinc-200/80 bg-white p-3 shadow-xs dark:border-white/10 dark:bg-[#11182a]"
+        >
+          <div className="mb-2.5 flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-1.5">
+              {b.type === 'PRODUCT_COLLECTION' && (
+                <span
+                  className={cn(
+                    'shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold',
+                    badgeToneClass('info'),
+                  )}
+                >
+                  {badgeText}
+                </span>
+              )}
+              <span className="truncate text-xs font-bold text-[#17203a] dark:text-zinc-100">
+                {b.title}
+              </span>
+            </div>
+            <span className="shrink-0 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+              Tối đa {limitCount} SP
+            </span>
+          </div>
+          <div className={cn('grid gap-2', gridColsClass)}>
+            {previewSlots.map(function (slot) {
+              return (
+                <div
+                  key={slot}
+                  className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-2 dark:border-white/10 dark:bg-white/5"
+                >
+                  <div className="mb-2 aspect-4/5 rounded-xl bg-zinc-200/70 dark:bg-white/10" />
+                  <div className="h-2.5 w-4/5 rounded-full bg-zinc-200/80 dark:bg-white/15" />
+                  <div className="mt-1.5 h-2 w-1/2 rounded-full bg-sky-200/80 dark:bg-sky-500/25" />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )
+    }
+
+    if (b.type === 'CATEGORY_GRID') {
+      let gridColsClass = 'grid-cols-4'
+      let catSlots = [1, 2, 3, 4]
+      if (compact) {
+        gridColsClass = 'grid-cols-3'
+        catSlots = [1, 2, 3]
+      }
+      return (
+        <div
+          key={b.id}
+          className="rounded-2xl border border-zinc-200/80 bg-white p-3 shadow-xs dark:border-white/10 dark:bg-[#11182a]"
+        >
+          <div className="mb-2.5 flex items-center justify-between gap-2">
+            <span className="flex items-center gap-1.5 truncate text-xs font-bold text-[#17203a] dark:text-zinc-100">
+              <SquaresFour size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />
+              {b.title}
+            </span>
+            <span className="shrink-0 text-[10px] text-zinc-500 dark:text-zinc-400">Danh mục</span>
+          </div>
+          <div className={cn('grid gap-2', gridColsClass)}>
+            {catSlots.map(function (slot) {
+              return (
+                <div
+                  key={slot}
+                  className="flex flex-col items-center gap-1.5 rounded-2xl border border-zinc-100 bg-zinc-50/70 p-2.5 dark:border-white/10 dark:bg-white/5"
+                >
+                  <div className="h-9 w-9 rounded-full bg-sky-100/80 dark:bg-sky-500/20" />
+                  <div className="h-2 w-12 rounded-full bg-zinc-200/80 dark:bg-white/15" />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )
+    }
+
+    if (b.type === 'VIDEO') {
+      const hasVideo = b.videoUrl !== undefined && b.videoUrl !== ''
+      let videoCardClass =
+        'flex items-center justify-center gap-2 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-xs text-zinc-500 dark:border-white/15 dark:bg-white/5 dark:text-zinc-400'
+      if (hasVideo) {
+        videoCardClass =
+          'flex items-center justify-center gap-2 rounded-2xl bg-[#11182a] p-4 text-xs font-semibold text-white'
+      }
+      return (
+        <div key={b.id} className={videoCardClass}>
+          <VideoCamera size={18} />
+          <span>
+            {b.title}
+            {!hasVideo && ' — chưa tải video'}
+          </span>
+        </div>
+      )
+    }
+
+    return null
   }
 
   return (
     <div className="space-y-6">
       {/* Top Banner & Actions */}
-      <div className="flex flex-col justify-between gap-4 rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm md:flex-row md:items-center dark:border-white/10 dark:bg-[#11182a]">
+      <div
+        className={cn(
+          PANEL_CLASS,
+          'flex flex-col justify-between gap-4 md:flex-row md:items-center',
+        )}
+      >
         <div>
           <div className="flex items-center gap-2">
-            <PaintBrushBroad size={24} className="text-indigo-600 dark:text-indigo-400" />
-            <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">
+            <PaintBrushBroad size={24} className="text-blue-700 dark:text-sky-300" />
+            <h2 className="text-xl font-bold text-[#17203a] dark:text-zinc-100">
               Trang Trí Gian Hàng (Store Decoration)
             </h2>
           </div>
@@ -236,17 +498,25 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {hasLocalChanges && (
-            <span className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
+            <span
+              className={cn(
+                'rounded-full px-3 py-1 text-[11px] font-bold',
+                badgeToneClass('warning'),
+              )}
+            >
               Có thay đổi chưa lưu
             </span>
           )}
           {hasLocalChanges && can('DECORATION_WRITE') && (
             <button
               type="button"
-              onClick={handleDiscard}
-              className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+              disabled={isBusy}
+              onClick={function () {
+                setShowDiscardConfirm(true)
+              }}
+              className={cn(secondaryButtonClass(), 'px-3.5 py-2 text-xs')}
             >
               <ArrowClockwise size={16} />
               Bỏ thay đổi
@@ -255,8 +525,9 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
           {can('DECORATION_WRITE') && (
             <button
               type="button"
+              disabled={isBusy}
               onClick={handleSaveDraft}
-              className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+              className={cn(secondaryButtonClass(), 'px-3.5 py-2 text-xs')}
             >
               <FloppyDisk size={16} />
               Lưu nháp
@@ -265,8 +536,14 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
           {can('DECORATION_WRITE') && (
             <button
               type="button"
-              onClick={handlePublish}
-              className="btn-primary flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition-colors"
+              disabled={isBusy}
+              onClick={function () {
+                void handlePublish()
+              }}
+              className={cn(
+                primaryButtonClass(),
+                'flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold shadow-sm disabled:opacity-50',
+              )}
             >
               <Broadcast size={16} />
               Áp dụng gian hàng
@@ -275,30 +552,13 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
         </div>
       </div>
 
-      {/* Success Notification Alert */}
-      {saveSuccessMsg && (
-        <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          <div className="flex items-center gap-2">
-            <CheckCircle size={18} className="text-green-600" />
-            <span>{saveSuccessMsg}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSaveSuccessMsg('')}
-            className="text-xs font-medium text-green-700 underline hover:text-green-900"
-          >
-            Đóng
-          </button>
-        </div>
-      )}
-
       {/* Main Studio Editor: 2 Columns */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         {/* Left Column: Module Manager List (5 cols) */}
-        <div className="space-y-4 rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm lg:col-span-5 dark:border-white/10 dark:bg-[#11182a]">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-white/10">
+        <div className={cn(PANEL_CLASS, 'space-y-4 lg:col-span-5')}>
+          <div className="flex items-center justify-between border-b border-zinc-200/80 pb-3 dark:border-white/10">
             <div>
-              <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              <h3 className="text-sm font-semibold text-[#17203a] dark:text-zinc-100">
                 Bố cục các module trang chủ
               </h3>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -308,10 +568,12 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
             {can('DECORATION_WRITE') && (
               <button
                 type="button"
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-900/40 dark:bg-indigo-900/40 dark:text-indigo-400"
+                onClick={function () {
+                  setIsAddModalOpen(true)
+                }}
+                className="flex cursor-pointer items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-blue-700 transition hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25"
               >
-                <Plus size={14} />
+                <Plus size={14} weight="bold" />
                 Thêm module
               </button>
             )}
@@ -322,13 +584,13 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
               const isDragging = draggedIdx === idx
               const isDragOver = dragOverIdx === idx
               let blockClass =
-                'flex items-center justify-between rounded-lg border bg-zinc-50 p-3 transition-all hover:border-indigo-300 hover:bg-white dark:border-white/10 dark:bg-white/5'
+                'flex items-center justify-between rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-3 transition-all hover:border-blue-300 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:border-sky-400/40'
               if (isDragging) {
-                blockClass += ' opacity-50 ring-2 ring-indigo-400'
+                blockClass += ' opacity-50 ring-2 ring-blue-500'
               }
               if (isDragOver) {
                 blockClass +=
-                  ' border-t-2 border-t-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20'
+                  ' border-t-2 border-t-blue-600 bg-sky-50/60 dark:border-t-sky-400 dark:bg-sky-500/15'
               }
 
               return (
@@ -342,7 +604,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   onDragEnd={handleDragEnd}
                   className={blockClass}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     {can('DECORATION_WRITE') && (
                       <span
                         className="cursor-grab text-zinc-400 hover:text-zinc-600 active:cursor-grabbing dark:text-zinc-500"
@@ -351,24 +613,36 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                         <DotsSixVertical size={16} />
                       </span>
                     )}
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-400 dark:bg-white/10 dark:text-zinc-500">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
                       {idx + 1}
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         {(block.type === 'BANNER_SLIDER' || block.type === 'BANNER') && (
-                          <ImageIcon size={14} className="text-blue-500" />
+                          <ImageIcon
+                            size={14}
+                            className="shrink-0 text-blue-600 dark:text-sky-400"
+                          />
                         )}
                         {(block.type === 'PRODUCT_COLLECTION' || block.type === 'COLLECTION') && (
-                          <SquaresFour size={14} className="text-emerald-500" />
+                          <SquaresFour
+                            size={14}
+                            className="shrink-0 text-emerald-600 dark:text-emerald-400"
+                          />
                         )}
                         {block.type === 'CATEGORY_GRID' && (
-                          <SquaresFour size={14} className="text-sky-500" />
+                          <SquaresFour
+                            size={14}
+                            className="shrink-0 text-sky-600 dark:text-sky-400"
+                          />
                         )}
                         {block.type === 'VIDEO' && (
-                          <VideoCamera size={14} className="text-indigo-500" />
+                          <VideoCamera
+                            size={14}
+                            className="shrink-0 text-blue-700 dark:text-sky-300"
+                          />
                         )}
-                        <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-100">
+                        <span className="truncate text-xs font-semibold text-[#17203a] dark:text-zinc-100">
                           {block.title}
                         </span>
                       </div>
@@ -379,8 +653,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   </div>
 
                   {can('DECORATION_WRITE') && (
-                    <div className="flex items-center gap-1">
-                      {/* Config Button for Slider / Collection */}
+                    <div className="flex shrink-0 items-center gap-1">
                       {(block.type === 'BANNER_SLIDER' ||
                         block.type === 'BANNER' ||
                         block.type === 'PRODUCT_COLLECTION' ||
@@ -388,6 +661,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                         block.type === 'VIDEO') && (
                         <button
                           type="button"
+                          aria-label={`Cấu hình ${block.title}`}
                           title="Cấu hình chi tiết module"
                           onClick={() => {
                             setEditingBlock(block)
@@ -399,51 +673,69 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                               setIsCollectionModalOpen(true)
                             }
                           }}
-                          className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
+                          className={cn(
+                            'cursor-pointer rounded-full p-1.5 text-zinc-500 hover:bg-zinc-200/70 hover:text-blue-700 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-sky-300',
+                            FOCUS_RING_CLASS,
+                          )}
                         >
                           <Gear size={15} />
                         </button>
                       )}
 
-                      {/* Reorder Buttons */}
                       <button
                         type="button"
+                        aria-label={`Di chuyển ${block.title} lên`}
                         title="Di chuyển lên"
                         onClick={() => handleMoveUp(idx)}
                         disabled={idx === 0}
-                        className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
+                        className={cn(
+                          'cursor-pointer rounded-full p-1.5 text-zinc-500 hover:bg-zinc-200/70 hover:text-[#17203a] disabled:cursor-not-allowed disabled:opacity-30 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white',
+                          FOCUS_RING_CLASS,
+                        )}
                       >
                         <ArrowUp size={14} />
                       </button>
                       <button
                         type="button"
+                        aria-label={`Di chuyển ${block.title} xuống`}
                         title="Di chuyển xuống"
                         onClick={() => handleMoveDown(idx)}
                         disabled={idx === blocks.length - 1}
-                        className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 disabled:hover:text-zinc-400 dark:text-zinc-500 dark:hover:bg-white/10"
+                        className={cn(
+                          'cursor-pointer rounded-full p-1.5 text-zinc-500 hover:bg-zinc-200/70 hover:text-[#17203a] disabled:cursor-not-allowed disabled:opacity-30 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white',
+                          FOCUS_RING_CLASS,
+                        )}
                       >
                         <ArrowDown size={14} />
                       </button>
 
-                      {/* Toggle Visibility */}
                       <button
                         type="button"
+                        aria-label={`Ẩn hoặc hiện ${block.title}`}
                         title="Ẩn/Hiện module"
                         onClick={() => handleToggle(block.id)}
-                        className="rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-white/10"
+                        className={cn(
+                          'cursor-pointer rounded-full p-1.5 text-zinc-500 hover:bg-zinc-200/70 hover:text-blue-700 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-sky-300',
+                          FOCUS_RING_CLASS,
+                        )}
                       >
-                        {block.enabled && <Eye size={15} className="text-emerald-600" />}
+                        {block.enabled && (
+                          <Eye size={15} className="text-emerald-600 dark:text-emerald-400" />
+                        )}
                         {!block.enabled && (
                           <EyeSlash size={15} className="text-zinc-400 dark:text-zinc-500" />
                         )}
                       </button>
 
-                      {/* Delete */}
                       <button
                         type="button"
+                        aria-label={`Xóa module ${block.title}`}
                         title="Xóa module"
-                        onClick={() => handleDelete(block.id)}
-                        className="rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-white/10"
+                        onClick={() => setDeleteTargetBlock(block)}
+                        className={cn(
+                          'cursor-pointer rounded-full p-1.5 text-zinc-400 hover:bg-rose-50 hover:text-rose-600 dark:text-zinc-500 dark:hover:bg-rose-500/15 dark:hover:text-rose-400',
+                          FOCUS_RING_CLASS,
+                        )}
                       >
                         <Trash size={14} />
                       </button>
@@ -454,39 +746,43 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
             })}
           </div>
 
-          <div className="rounded border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800">
-            💡 <strong>Mẹo gian hàng chuyên nghiệp:</strong> Đặt <em>Banner Slider</em> ở vị trí đầu
-            tiên, tiếp theo là <em>Bộ Sưu Tập Nổi Bật</em> để tối ưu tỷ lệ chuyển đổi đơn hàng lên
-            tới +35%.
+          <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200">
+            <Lightbulb
+              size={15}
+              weight="bold"
+              className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-300"
+            />
+            <span>
+              <strong>Gợi ý bố cục:</strong> Đặt <em>Banner Slider</em> ở đầu trang để nổi bật bộ
+              sưu tập chính, tiếp theo là <em>Bộ Sưu Tập Nổi Bật</em> và <em>Danh mục gian hàng</em>{' '}
+              để khách dễ khám phá sản phẩm.
+            </span>
           </div>
         </div>
 
         {/* Right Column: Live Storefront Preview (7 cols) */}
-        <div className="flex flex-col items-center rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm lg:col-span-7 dark:border-white/10 dark:bg-[#11182a]">
-          {/* Preview Controls */}
-          <div className="mb-4 flex w-full items-center justify-between border-b border-zinc-100 pb-3 dark:border-white/10">
-            <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+        <div className={cn(PANEL_CLASS, 'flex flex-col items-center lg:col-span-7')}>
+          <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-2 border-b border-zinc-200/80 pb-3 dark:border-white/10">
+            <span className="text-xs font-bold text-[#17203a] dark:text-zinc-200">
               Xem trước trực tiếp (Live Preview)
             </span>
-            <div className="flex items-center gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-white/10">
+            <div className={segmentedTrackClass()}>
               <button
                 type="button"
-                onClick={() => setDevicePreview('MOBILE')}
-                className={`flex items-center gap-1 rounded px-3 py-1 text-xs font-medium transition-all ${
-                  devicePreview === 'MOBILE' &&
-                  'bg-white text-indigo-600 shadow-sm dark:bg-[#11182a] dark:text-indigo-400'
-                } ${devicePreview !== 'MOBILE' && 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}
+                onClick={function () {
+                  setDevicePreview('MOBILE')
+                }}
+                className={segmentedItemClass(devicePreview === 'MOBILE')}
               >
                 <DeviceMobile size={14} />
                 Ứng dụng Mobile
               </button>
               <button
                 type="button"
-                onClick={() => setDevicePreview('DESKTOP')}
-                className={`flex items-center gap-1 rounded px-3 py-1 text-xs font-medium transition-all ${
-                  devicePreview === 'DESKTOP' &&
-                  'bg-white text-indigo-600 shadow-sm dark:bg-[#11182a] dark:text-indigo-400'
-                } ${devicePreview !== 'DESKTOP' && 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}
+                onClick={function () {
+                  setDevicePreview('DESKTOP')
+                }}
+                className={segmentedItemClass(devicePreview === 'DESKTOP')}
               >
                 <Desktop size={14} />
                 Giao diện Máy tính
@@ -494,211 +790,46 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
             </div>
           </div>
 
-          {/* Preview Viewport */}
+          {/* Mobile Preview Viewport */}
           {devicePreview === 'MOBILE' && (
-            <div className="w-[340px] overflow-hidden rounded-[32px] border-8 border-zinc-800 bg-zinc-100 shadow-2xl dark:bg-white/10">
-              {/* Phone Notch / Header */}
-              <div className="flex items-center justify-between bg-gradient-to-r from-indigo-900 to-sky-400 p-3 text-center text-xs font-bold text-white">
-                <span>9:41</span>
-                <span>NÉT</span>
-                <span className="text-[10px]">100%</span>
+            <div className="w-full max-w-[340px] overflow-hidden rounded-[32px] border-8 border-zinc-800 bg-zinc-100 shadow-2xl dark:border-white/20 dark:bg-[#0a0f1e]">
+              <div className="flex items-center justify-between bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] px-4 py-2.5 text-center text-xs font-bold text-white">
+                <span>DHMQ</span>
+                <span className="text-[10px] text-white/85">Xem trước di động</span>
               </div>
 
-              {/* Shop Header Bar in phone */}
-              <div className="flex items-center gap-3 bg-gradient-to-r from-indigo-900 to-sky-400 p-3 text-white">
+              <div className="flex items-center gap-3 bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] px-3.5 pb-3.5 text-white">
                 <UserAvatar name={shopName} size={40} />
-                <div>
-                  <h4 className="text-xs font-bold">{shopName}</h4>
-                  <p className="text-[10px] text-white/80">Online 5 phút trước | 4.9 ⭐</p>
+                <div className="min-w-0">
+                  <h4 className="truncate text-xs font-bold">{shopName}</h4>
+                  <p className="text-[10px] text-white/85">Gian hàng chính thức trên DHMQ</p>
                 </div>
               </div>
 
-              {/* Dynamic Blocks Stream */}
-              <div className="max-h-[500px] space-y-2 overflow-y-auto p-2">
-                {blocks.map((b) => {
-                  if (!b.enabled) return null
-
-                  if (b.type === 'BANNER_SLIDER') {
-                    let slideCount = 0
-                    if (b.banners !== undefined) {
-                      slideCount = b.banners.length
-                    }
-                    return (
-                      <div
-                        key={b.id}
-                        className="relative overflow-hidden rounded-xl bg-zinc-900 shadow-sm"
-                      >
-                        <div className="flex h-32 w-full flex-col items-center justify-center bg-gradient-to-r from-indigo-950 to-sky-800 p-3 text-center text-white">
-                          <ImageIcon size={26} className="mb-1 opacity-70" />
-                          <p className="text-xs font-bold">{b.title}</p>
-                          <span className="text-[10px] text-white/70">
-                            {slideCount} banner trong slider
-                          </span>
-                        </div>
-                        <div className="absolute right-0 bottom-2 left-0 flex justify-center gap-1.5">
-                          {Array.from({ length: Math.max(1, slideCount) }).map((_, dotIdx) => {
-                            let dotClass = 'w-1.5 bg-white/40'
-                            if (dotIdx === 0) {
-                              dotClass = 'w-3.5 bg-white'
-                            }
-                            return (
-                              <span
-                                key={dotIdx}
-                                className={`h-1.5 rounded-full transition-all ${dotClass}`}
-                              />
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  if (b.type === 'PRODUCT_COLLECTION') {
-                    let badgeText = 'MỚI NHẤT'
-                    if (b.collectionType === 'BEST_SELLER') {
-                      badgeText = 'BÁN CHẠY'
-                    }
-                    if (b.collectionType === 'SALE_OFF') {
-                      badgeText = 'GIẢM SỐC'
-                    }
-                    if (b.collectionType === 'CUSTOM') {
-                      badgeText = 'TUYỂN CHỌN'
-                    }
-
-                    return (
-                      <div
-                        key={b.id}
-                        className="rounded-xl bg-white p-2.5 shadow-sm dark:bg-white/10"
-                      >
-                        <div className="mb-2 flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
-                              {badgeText}
-                            </span>
-                            <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                              {b.title}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
-                            Xem tất cả &gt;
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="rounded border border-zinc-100 p-1.5 dark:border-white/10">
-                            <div className="mb-1 h-16 rounded bg-zinc-200 dark:bg-white/10" />
-                            <p className="truncate text-[10px] font-medium">Áo thun Oversize</p>
-                            <span className="text-[10px] font-bold text-red-500">189.000đ</span>
-                          </div>
-                          <div className="rounded border border-zinc-100 p-1.5 dark:border-white/10">
-                            <div className="mb-1 h-16 rounded bg-zinc-200 dark:bg-white/10" />
-                            <p className="truncate text-[10px] font-medium">Quần Jeans Baggy</p>
-                            <span className="text-[10px] font-bold text-red-500">349.000đ</span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  if (b.type === 'BANNER') {
-                    return (
-                      <div key={b.id} className="relative overflow-hidden rounded shadow-sm">
-                        <img
-                          src="https://picsum.photos/seed/sellerbanner/500/300"
-                          alt="Banner"
-                          onError={handleImageError}
-                          className="h-28 w-full object-cover"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 px-4 text-center text-xs font-bold text-white">
-                          {b.title}
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  if (b.type === 'COLLECTION') {
-                    return (
-                      <div key={b.id} className="rounded bg-white p-2.5 shadow-sm dark:bg-white/10">
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                            {b.title}
-                          </span>
-                          <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
-                            Xem tất cả &gt;
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="rounded border border-zinc-100 p-1.5 dark:border-white/10">
-                            <div className="mb-1 h-16 rounded bg-zinc-200 dark:bg-white/10" />
-                            <p className="truncate text-[10px] font-medium">Áo thun Oversize</p>
-                            <span className="text-[10px] font-bold text-red-500">189.000đ</span>
-                          </div>
-                          <div className="rounded border border-zinc-100 p-1.5 dark:border-white/10">
-                            <div className="mb-1 h-16 rounded bg-zinc-200 dark:bg-white/10" />
-                            <p className="truncate text-[10px] font-medium">Quần Jeans Baggy</p>
-                            <span className="text-[10px] font-bold text-red-500">349.000đ</span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  if (b.type === 'VIDEO') {
-                    const hasVideo = b.videoUrl !== undefined && b.videoUrl !== ''
-                    return (
-                      <div
-                        key={b.id}
-                        className={
-                          hasVideo
-                            ? 'flex items-center justify-center gap-2 rounded bg-zinc-900 p-3 text-xs text-white'
-                            : 'flex items-center justify-center gap-2 rounded border border-dashed border-zinc-300 bg-zinc-50 p-3 text-xs text-zinc-400 dark:border-white/15 dark:bg-white/5'
-                        }
-                      >
-                        <VideoCamera size={16} />
-                        <span>
-                          {b.title}
-                          {hasVideo ? '' : ' — chưa có video'}
-                        </span>
-                      </div>
-                    )
-                  }
-
-                  return null
+              <div className="max-h-[520px] space-y-2.5 overflow-y-auto p-2.5">
+                {blocks.map(function (b) {
+                  return renderPreviewBlock(b, true)
                 })}
               </div>
             </div>
           )}
 
+          {/* Desktop Preview Viewport */}
           {devicePreview === 'DESKTOP' && (
-            <div className="w-full overflow-hidden rounded-lg border bg-zinc-100 shadow-lg dark:bg-white/10">
-              <div className="flex items-center gap-2 border-b bg-zinc-200 px-3 py-2 dark:bg-white/10">
+            <div className="w-full overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 shadow-lg dark:border-white/15 dark:bg-[#0a0f1e]">
+              <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-200/80 px-4 py-2.5 dark:border-white/10 dark:bg-white/10">
                 <div className="flex gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                 </div>
-                <div className="max-w-sm flex-1 truncate rounded bg-white px-3 py-0.5 text-[11px] text-zinc-500 dark:bg-[#11182a] dark:text-zinc-400">
-                  https://netfashion.vn/fashionhub.boutique
+                <div className="max-w-sm flex-1 truncate rounded-full bg-white px-3 py-0.5 text-[11px] font-medium text-zinc-600 dark:bg-[#11182a] dark:text-zinc-300">
+                  Trang gian hàng • {shopName}
                 </div>
               </div>
-              <div className="max-h-[500px] space-y-4 overflow-y-auto bg-zinc-50 p-4 dark:bg-white/5">
-                {blocks.map((b) => {
-                  if (!b.enabled) return null
-                  return (
-                    <div
-                      key={b.id}
-                      className="rounded border border-zinc-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#11182a]"
-                    >
-                      <div className="mb-2 flex items-center justify-between border-b pb-2">
-                        <span className="text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-zinc-200">
-                          {b.type}
-                        </span>
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">{b.title}</span>
-                      </div>
-                      <div className="flex h-20 items-center justify-center rounded border border-dashed border-zinc-300 bg-zinc-100 text-xs text-zinc-400 dark:border-white/15 dark:bg-white/10 dark:text-zinc-500">
-                        Mô phỏng hiển thị module {b.title} trên màn hình PC rộng 1200px
-                      </div>
-                    </div>
-                  )
+              <div className="max-h-[520px] space-y-4 overflow-y-auto bg-zinc-50 p-4 dark:bg-[#0a0f1e]">
+                {blocks.map(function (b) {
+                  return renderPreviewBlock(b, false)
                 })}
               </div>
             </div>
@@ -713,11 +844,11 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
           onClose={() => setIsAddModalOpen(false)}
           widthClass="max-w-md"
         >
-          <div className="space-y-3">
+          <div className="mt-4 space-y-3">
             <div>
               <label
                 htmlFor="decorationModuleType"
-                className="mb-1 block text-xs font-semibold text-zinc-600 dark:text-zinc-300"
+                className="mb-1 block text-xs font-semibold text-zinc-700 dark:text-zinc-200"
               >
                 Loại module
               </label>
@@ -725,7 +856,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                 id="decorationModuleType"
                 value={newBlockType}
                 onChange={(e) => setNewBlockType(e.target.value as DecorationBlock['type'])}
-                className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
+                className="w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2.5 text-xs text-[#17203a] focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
               >
                 <option value="BANNER_SLIDER">Banner Slider (Trình chiếu tối đa 5 ảnh)</option>
                 <option value="PRODUCT_COLLECTION">
@@ -741,7 +872,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
             <div>
               <label
                 htmlFor="decorationModuleTitle"
-                className="mb-1 block text-xs font-semibold text-zinc-600 dark:text-zinc-300"
+                className="mb-1 block text-xs font-semibold text-zinc-700 dark:text-zinc-200"
               >
                 Tên tiêu đề module
               </label>
@@ -751,23 +882,23 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                 placeholder="Ví dụ: Top 10 Áo Thun Bán Chạy Nhất Tháng"
                 value={newBlockTitle}
                 onChange={(e) => setNewBlockTitle(e.target.value)}
-                className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
+                className={cn(INPUT_CLASS, 'text-xs')}
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-zinc-100 pt-2 dark:border-white/10">
+          <div className="mt-5 flex justify-end gap-2 border-t border-zinc-200/80 pt-3 dark:border-white/10">
             <button
               type="button"
               onClick={() => setIsAddModalOpen(false)}
-              className="rounded-full border border-zinc-300 px-4 py-2 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10"
+              className={cn(secondaryButtonClass(), 'text-xs')}
             >
               Hủy bỏ
             </button>
             <button
               type="button"
               onClick={handleAddBlock}
-              className="btn-primary rounded-full px-4 py-2 text-xs font-semibold"
+              className={cn(primaryButtonClass(), 'rounded-full px-5 py-2 text-xs font-semibold')}
             >
               Xác nhận thêm
             </button>
@@ -813,6 +944,35 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
           onSave={handleSaveConfig}
         />
       )}
+
+      {/* Confirm Delete Block */}
+      <ConfirmDialog
+        open={deleteTargetBlock !== null}
+        title="Xóa module trang trí?"
+        description={deleteBlockDescription}
+        confirmLabel="Xóa module"
+        cancelLabel="Giữ lại"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={function () {
+          setDeleteTargetBlock(null)
+        }}
+      />
+
+      {/* Confirm Discard Draft */}
+      <ConfirmDialog
+        open={showDiscardConfirm}
+        title="Bỏ tất cả thay đổi chưa lưu?"
+        description="Mọi chỉnh sửa bố cục bạn vừa thực hiện chưa lưu sẽ bị hủy và khôi phục về bản nháp trên hệ thống."
+        confirmLabel="Bỏ thay đổi"
+        cancelLabel="Tiếp tục chỉnh sửa"
+        variant="danger"
+        isPending={discardDraftMutation.isPending}
+        onConfirm={handleConfirmDiscard}
+        onCancel={function () {
+          setShowDiscardConfirm(false)
+        }}
+      />
     </div>
   )
 }

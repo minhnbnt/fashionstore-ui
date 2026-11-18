@@ -6,21 +6,26 @@ import {
   useGetShopProducts,
 } from '@generated/endpoints/shops-catalog/shops-catalog'
 import {
+  ArrowRight,
   CaretLeft,
   CaretRight,
+  Pause,
+  Play,
   Sparkle,
   SquaresFour,
-  ArrowRight,
   VideoCamera,
 } from '@phosphor-icons/react'
 
+import { ProductCard, type ProductCardItem } from '@/components/ui/ProductCard'
 import {
+  fallbackImageOnError,
   hookErrorMessage,
-  urlOrPlaceholder,
   PLACEHOLDER_IMAGE,
   takeData,
+  urlOrPlaceholder,
 } from '@/lib/api/apiAdapters'
-import { formatVnd } from '@/lib/format'
+import { isInternalLink } from '@/lib/content/siteContent'
+import { CARD_CLASS, cn, FOCUS_RING_CLASS, iconChipClass } from '@/lib/ui/styles'
 
 import type { DecorationBlock } from '@/types/seller'
 import type { PageResponseProductResponse } from '@generated/model/pageResponseProductResponse'
@@ -34,22 +39,19 @@ interface ShopDecorationRendererProps {
   onViewAllProducts?: () => void
 }
 
-function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
-  e.currentTarget.onerror = null
-  e.currentTarget.src = PLACEHOLDER_IMAGE
-}
-
-function getProductDisplayInfo(p: ProductResponse) {
-  let imageSrc = PLACEHOLDER_IMAGE
+function toProductCardItem(p: ProductResponse): ProductCardItem {
+  let defaultImageUrl: string | null = null
   if (p.images !== undefined && p.images.length > 0) {
     const firstImg = p.images[0]
     if (firstImg?.url !== undefined && firstImg.url !== '') {
-      imageSrc = urlOrPlaceholder(firstImg.url)
+      defaultImageUrl = firstImg.url
     }
   }
 
-  let minPrice = 0
-  let comparePrice: number | null = null
+  let minPrice: number | null = null
+  let compareAtPrice: number | null = null
+  let totalStock: number | null = null
+
   if (p.variants !== undefined && p.variants.length > 0) {
     const prices = p.variants.map((v) => v.price ?? 0).filter((pr) => pr > 0)
     if (prices.length > 0) {
@@ -59,33 +61,59 @@ function getProductDisplayInfo(p: ProductResponse) {
     if (
       defaultVar?.compareAtPrice !== undefined &&
       defaultVar.compareAtPrice !== null &&
+      minPrice !== null &&
       defaultVar.compareAtPrice > minPrice
     ) {
-      comparePrice = defaultVar.compareAtPrice
+      compareAtPrice = defaultVar.compareAtPrice
     }
-  }
-
-  let discountPercent = 0
-  if (comparePrice !== null && comparePrice > minPrice && minPrice > 0) {
-    discountPercent = Math.round((1 - minPrice / comparePrice) * 100)
+    const hasStockInfo = p.variants.some((v) => v.stockQuantity !== undefined)
+    if (hasStockInfo) {
+      totalStock = p.variants.reduce((acc, v) => acc + (v.stockQuantity ?? 0), 0)
+    }
   }
 
   return {
     id: p.id ?? '',
     name: p.name ?? 'Sản phẩm',
-    imageSrc,
+    defaultImageUrl,
     minPrice,
-    comparePrice,
-    discountPercent,
+    compareAtPrice,
+    averageRating: p.averageRating,
+    reviewCount: p.reviewCount,
+    totalStock,
   }
+}
+
+function BannerAnchor(props: {
+  linkUrl: string | undefined
+  className: string
+  children: React.ReactNode
+}) {
+  const link = props.linkUrl ?? ''
+  if (link === '') {
+    return <div className={props.className}>{props.children}</div>
+  }
+  if (isInternalLink(link)) {
+    return (
+      <Link to={link} className={props.className}>
+        {props.children}
+      </Link>
+    )
+  }
+  return (
+    <a href={link} target="_blank" rel="noopener noreferrer" className={props.className}>
+      {props.children}
+    </a>
+  )
 }
 
 function BannerSliderBlock({ block }: { block: DecorationBlock }) {
   const banners = block.banners ?? []
   const [currentIdx, setCurrentIdx] = useState(0)
+  const [paused, setPaused] = useState(false)
 
   useEffect(() => {
-    if (banners.length <= 1) return
+    if (banners.length <= 1 || paused) return
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     if (mediaQuery.matches) return
 
@@ -93,13 +121,14 @@ function BannerSliderBlock({ block }: { block: DecorationBlock }) {
       setCurrentIdx((prev) => (prev + 1) % banners.length)
     }, 4500)
     return () => clearInterval(timer)
-  }, [banners.length])
+  }, [banners.length, paused])
 
   if (banners.length === 0) {
     return null
   }
 
-  const activeBanner = banners[currentIdx] ?? banners[0]
+  const safeIdx = currentIdx % banners.length
+  const activeBanner = banners[safeIdx] ?? banners[0]
   let imageSrc = PLACEHOLDER_IMAGE
   if (activeBanner !== undefined) {
     // imageUrl trong draft là URL public đầy đủ (từ PresignResponse.publicUrl)
@@ -115,74 +144,107 @@ function BannerSliderBlock({ block }: { block: DecorationBlock }) {
     })
   }
 
+  let pauseLabel = 'Dừng tự chuyển banner'
+  if (paused) {
+    pauseLabel = 'Tiếp tục tự chuyển banner'
+  }
+
+  const hasLink =
+    activeBanner?.linkUrl !== undefined &&
+    activeBanner.linkUrl !== null &&
+    activeBanner.linkUrl !== ''
+
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-zinc-900 shadow-md">
+    <div
+      aria-roledescription="carousel"
+      aria-label={block.title || 'Banner gian hàng'}
+      className="relative overflow-hidden rounded-3xl bg-zinc-900 shadow-md"
+    >
       <div className="relative aspect-[3/1] min-h-[180px] w-full overflow-hidden">
-        {activeBanner?.linkUrl && (
-          <Link to={activeBanner.linkUrl} className="block h-full w-full">
-            <img
-              src={imageSrc}
-              alt={activeBanner.title ?? block.title}
-              onError={handleImageError}
-              className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-            />
-          </Link>
-        )}
-        {!activeBanner?.linkUrl && (
+        <BannerAnchor linkUrl={activeBanner?.linkUrl} className="block h-full w-full">
           <img
             src={imageSrc}
             alt={activeBanner?.title ?? block.title}
-            onError={handleImageError}
-            className="h-full w-full object-cover"
+            onError={fallbackImageOnError}
+            className={cn(
+              'h-full w-full object-cover',
+              hasLink &&
+                'motion-safe:transition-transform motion-safe:duration-700 hover:scale-105',
+            )}
           />
-        )}
+        </BannerAnchor>
 
-        {/* Title overlay if title exists */}
+        {/* Title overlay: pointer-events-none so underlying banner link clicks work */}
         {activeBanner?.title && (
-          <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 text-white">
+          <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 text-white">
             <h3 className="text-lg font-bold drop-shadow-md sm:text-2xl">{activeBanner.title}</h3>
           </div>
         )}
       </div>
 
-      {/* Navigation Arrows */}
+      {/* Navigation Arrows & Pause Toggle */}
       {banners.length > 1 && (
         <>
           <button
             type="button"
             onClick={handlePrevSlide}
-            className="absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
-            aria-label="Previous banner"
+            className={cn(
+              'absolute top-1/2 left-3 -translate-y-1/2 cursor-pointer rounded-full bg-black/45 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/75',
+              FOCUS_RING_CLASS,
+            )}
+            aria-label="Banner trước"
           >
-            <CaretLeft size={20} />
+            <CaretLeft size={20} weight="bold" />
           </button>
           <button
             type="button"
             onClick={() => setCurrentIdx((prev) => (prev + 1) % banners.length)}
-            className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
-            aria-label="Next banner"
+            className={cn(
+              'absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded-full bg-black/45 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/75',
+              FOCUS_RING_CLASS,
+            )}
+            aria-label="Banner sau"
           >
-            <CaretRight size={20} />
+            <CaretRight size={20} weight="bold" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaused(paused === false)}
+            aria-label={pauseLabel}
+            className={cn(
+              'absolute right-3 bottom-3 cursor-pointer rounded-full bg-black/45 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/75',
+              FOCUS_RING_CLASS,
+            )}
+          >
+            {paused && <Play size={14} weight="fill" />}
+            {paused === false && <Pause size={14} weight="fill" />}
           </button>
         </>
       )}
 
       {/* Pagination Dots */}
       {banners.length > 1 && (
-        <div className="absolute right-0 bottom-3 left-0 flex justify-center gap-1.5">
+        <div className="absolute right-0 bottom-2 left-0 flex justify-center gap-0.5">
           {banners.map((b, idx) => {
-            let dotClass = 'w-2 bg-white/50 hover:bg-white/80'
-            if (idx === currentIdx) {
-              dotClass = 'w-6 bg-white shadow'
+            const isCurrent = idx === safeIdx
+            let dotClass = 'block h-2 w-2 rounded-full bg-white/55 transition-all'
+            if (isCurrent) {
+              dotClass = 'block h-2 w-6 rounded-full bg-white shadow transition-all'
             }
             return (
               <button
                 key={b.id}
                 type="button"
                 onClick={() => setCurrentIdx(idx)}
-                className={`h-2 rounded-full transition-all ${dotClass}`}
-                aria-label={`Go to slide ${idx + 1}`}
-              />
+                aria-label={`Xem banner ${idx + 1}`}
+                aria-current={isCurrent}
+                className={cn(
+                  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-full',
+                  FOCUS_RING_CLASS,
+                )}
+              >
+                <span className={dotClass} />
+              </button>
             )
           })}
         </div>
@@ -240,8 +302,8 @@ function ProductCollectionBlock({
   // API lỗi thì báo lỗi thay vì tự biến mất im lặng
   if (productsQuery.isError) {
     return (
-      <div className="rounded-3xl border border-red-200 bg-red-50/60 p-6 text-center dark:border-red-900/50 dark:bg-red-950/20">
-        <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+      <div className="rounded-3xl border border-rose-200 bg-rose-50/70 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
+        <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">
           {hookErrorMessage('shops-catalog', productsQuery.error)}
         </p>
       </div>
@@ -254,70 +316,35 @@ function ProductCollectionBlock({
   }
 
   return (
-    <div className="space-y-4 rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
-      <div className="flex items-center justify-between">
+    <div className={cn(CARD_CLASS, 'space-y-4 p-6')}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+          <span className="flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
             <Sparkle size={14} weight="fill" />
             {badgeText}
           </span>
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{block.title}</h2>
+          <h2 className="text-lg font-bold text-[#17203a] dark:text-zinc-100">{block.title}</h2>
         </div>
 
         {onViewAll && (
           <button
             type="button"
             onClick={onViewAll}
-            className="flex items-center gap-1 text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+            className={cn(
+              'flex cursor-pointer items-center gap-1 rounded-full text-xs font-bold text-blue-700 transition-colors hover:underline dark:text-sky-300',
+              FOCUS_RING_CLASS,
+            )}
           >
             <span>Xem tất cả ({items.length})</span>
-            <ArrowRight size={14} />
+            <ArrowRight size={14} weight="bold" />
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        {items.map((prod) => {
-          const info = getProductDisplayInfo(prod)
-          return (
-            <Link
-              key={info.id}
-              to={`/product/${info.id}`}
-              className="group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200/70 bg-white transition-all hover:-translate-y-1 hover:border-indigo-300 hover:shadow-lg dark:border-white/10 dark:bg-white/5"
-            >
-              <div className="relative aspect-square w-full overflow-hidden bg-zinc-100 dark:bg-white/10">
-                <img
-                  src={info.imageSrc}
-                  alt={info.name}
-                  onError={handleImageError}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                {info.discountPercent > 0 && (
-                  <span className="absolute top-2 right-2 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
-                    -{info.discountPercent}%
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-1 flex-col justify-between p-3">
-                <h3 className="line-clamp-2 text-xs font-semibold text-zinc-800 transition-colors group-hover:text-indigo-600 dark:text-zinc-200 dark:group-hover:text-indigo-400">
-                  {info.name}
-                </h3>
-
-                <div className="mt-2.5 flex items-baseline gap-2">
-                  <span className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400">
-                    {formatVnd(info.minPrice)}
-                  </span>
-                  {info.comparePrice !== null && (
-                    <span className="text-[11px] text-zinc-400 line-through">
-                      {formatVnd(info.comparePrice)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </Link>
-          )
-        })}
+        {items.map((prod) => (
+          <ProductCard key={prod.id} item={toProductCardItem(prod)} showShop={false} />
+        ))}
       </div>
     </div>
   )
@@ -348,10 +375,10 @@ function CategoryGridBlock({
   }
 
   return (
-    <div className="space-y-4 rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+    <div className={cn(CARD_CLASS, 'space-y-4 p-6')}>
       <div className="flex items-center gap-2">
-        <SquaresFour size={20} className="text-indigo-600 dark:text-indigo-400" />
-        <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+        <SquaresFour size={20} className="text-blue-700 dark:text-sky-300" />
+        <h2 className="text-base font-bold text-[#17203a] dark:text-zinc-100">
           {block.title || 'Danh Mục Nổi Bật Của Shop'}
         </h2>
       </div>
@@ -366,13 +393,20 @@ function CategoryGridBlock({
                 onSelectCategory(c.id)
               }
             }}
-            className="flex flex-col items-center gap-2 rounded-2xl border border-zinc-200/60 bg-zinc-50/50 p-4 text-center transition-all hover:-translate-y-1 hover:border-indigo-300 hover:bg-white hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+            className={cn(
+              'flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-zinc-200/70 bg-zinc-50/50 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:border-sky-400/40 dark:hover:bg-white/10',
+              FOCUS_RING_CLASS,
+            )}
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
+            <span className={cn(iconChipClass(), 'h-12 w-12 rounded-2xl')}>
               <SquaresFour size={24} />
-            </div>
-            <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{c.name}</span>
-            <span className="text-[10px] text-zinc-400">{c.productCount} sản phẩm</span>
+            </span>
+            <span className="text-xs font-semibold text-[#17203a] dark:text-zinc-200">
+              {c.name}
+            </span>
+            <span className="text-[10px] text-zinc-500 tabular-nums dark:text-zinc-400">
+              {c.productCount} sản phẩm
+            </span>
           </button>
         ))}
       </div>
@@ -395,7 +429,7 @@ export default function ShopDecorationRenderer({
 
   if (activeBlocks.length === 0) {
     return (
-      <div className="rounded-3xl border border-dashed border-zinc-200 bg-white/50 p-12 text-center text-zinc-400 dark:border-white/10 dark:bg-white/5">
+      <div className="rounded-3xl border border-dashed border-zinc-200 bg-white/60 p-12 text-center text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
         <p className="text-sm">Gian hàng đang cập nhật trang trí giao diện mới.</p>
       </div>
     )
@@ -442,17 +476,22 @@ export default function ShopDecorationRenderer({
 
 /** Block VIDEO: một video do seller upload qua presign, stream thẳng từ S3. */
 function VideoBlock({ block }: { block: DecorationBlock }) {
+  let bodyPadding = 'p-4'
+  if (block.title !== '') {
+    bodyPadding = 'p-4 pt-3'
+  }
+
   return (
-    <div className="overflow-hidden rounded-3xl border border-sky-100 bg-white/80 shadow-md dark:border-white/10 dark:bg-white/5">
+    <div className={cn(CARD_CLASS, 'overflow-hidden')}>
       {block.title !== '' && (
         <div className="flex items-center gap-2 px-5 pt-4">
-          <VideoCamera size={18} weight="fill" className="text-indigo-500" />
-          <h2 className="text-base font-extrabold text-zinc-900 sm:text-lg dark:text-white">
+          <VideoCamera size={18} weight="fill" className="text-blue-700 dark:text-sky-300" />
+          <h2 className="text-base font-extrabold text-[#17203a] sm:text-lg dark:text-white">
             {block.title}
           </h2>
         </div>
       )}
-      <div className={block.title !== '' ? 'p-4 pt-3' : 'p-4'}>
+      <div className={bodyPadding}>
         {block.videoUrl !== undefined && block.videoUrl !== '' && (
           // eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track
           <video

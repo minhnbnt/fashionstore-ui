@@ -1,13 +1,14 @@
-import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 
-import { FileText, Image, Megaphone, Question, SquaresFour, X } from '@phosphor-icons/react'
+import { FileText, Image, Megaphone, Question } from '@phosphor-icons/react'
 
-import AdminNav from '../../components/admin/AdminNav'
-import BannersTab from '../../components/admin/tabs/BannersTab'
-import FaqsTab from '../../components/admin/tabs/FaqsTab'
-import PagesTab from '../../components/admin/tabs/PagesTab'
-import PopupsTab from '../../components/admin/tabs/PopupsTab'
+import AdminShell from '@/components/admin/AdminShell'
+import BannersTab from '@/components/admin/tabs/BannersTab'
+import FaqsTab from '@/components/admin/tabs/FaqsTab'
+import PagesTab from '@/components/admin/tabs/PagesTab'
+import PopupsTab from '@/components/admin/tabs/PopupsTab'
+import { notify } from '@/lib/notifications'
+import { cn, PANEL_CLASS, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 const TABS = [
   { value: 'banners', label: 'Banner', icon: Image },
@@ -29,60 +30,40 @@ function tabFromUrl(raw: string | null): TabValue {
 export default function AdminContent() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = tabFromUrl(searchParams.get('tab'))
-  const [notice, setNotice] = useState<string | null>(null)
 
   function selectTab(value: TabValue) {
-    setNotice(null)
     setSearchParams({ tab: value })
   }
 
-  let panel = <BannersTab onNotice={setNotice} />
+  function handleNotice(message: string) {
+    notify.success(message)
+  }
+
+  let panel = <BannersTab onNotice={handleNotice} />
   if (tab === 'popups') {
-    panel = <PopupsTab onNotice={setNotice} />
+    panel = <PopupsTab onNotice={handleNotice} />
   }
   if (tab === 'pages') {
-    panel = <PagesTab onNotice={setNotice} />
+    panel = <PagesTab onNotice={handleNotice} />
   }
   if (tab === 'faqs') {
-    panel = <FaqsTab onNotice={setNotice} />
+    panel = <FaqsTab onNotice={handleNotice} />
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] shadow-lg">
-          <SquaresFour size={22} weight="bold" className="text-white" />
-        </div>
-        <div>
-          <p className="text-xs font-bold tracking-[0.18em] text-indigo-600 uppercase dark:text-indigo-400">
-            Admin
-          </p>
-          <h1 className="text-xl font-extrabold tracking-tighter">Nội dung sàn</h1>
-        </div>
-      </div>
-
-      <AdminNav />
-
-      {notice !== null && (
-        <output className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
-          {notice}
-          <button type="button" aria-label="Ẩn thông báo" onClick={() => setNotice(null)}>
-            <X size={16} weight="bold" />
-          </button>
-        </output>
-      )}
-
-      <section className="glass rounded-3xl p-5">
-        <div className="mb-5 flex flex-wrap gap-1.5" role="tablist" aria-label="Loại nội dung">
+    <AdminShell
+      title="Nội dung sàn"
+      description="Quản lý banner, popup khuyến mãi, trang tĩnh và câu hỏi thường gặp của DHMQ."
+    >
+      <section className={PANEL_CLASS}>
+        <div
+          className={cn(segmentedTrackClass(), 'mb-5 w-fit flex-wrap')}
+          role="tablist"
+          aria-label="Loại nội dung"
+        >
           {TABS.map(function (item) {
             const selected = item.value === tab
             const TabIcon = item.icon
-            let tabClass =
-              'flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
-            if (selected) {
-              tabClass =
-                'flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
-            }
             return (
               <button
                 key={item.value}
@@ -90,7 +71,7 @@ export default function AdminContent() {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => selectTab(item.value)}
-                className={tabClass}
+                className={cn(segmentedItemClass(selected), 'cursor-pointer px-4 py-2 text-sm')}
               >
                 <TabIcon size={16} weight="bold" />
                 {item.label}
@@ -100,6 +81,6 @@ export default function AdminContent() {
         </div>
         {panel}
       </section>
-    </main>
+    </AdminShell>
   )
 }

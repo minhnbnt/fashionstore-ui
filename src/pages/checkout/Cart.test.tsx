@@ -15,24 +15,52 @@ const {
   clearCartMutate,
   wishlistToggleMutate,
   isFavorited,
-  confirmMock,
+  mockNotifySuccess,
+  mockNotifyFromError,
   state,
 } = vi.hoisted(() => ({
   updateQuantityMutate:
-    vi.fn<(variables: { variantId: string; data: { quantity: number } }) => void>(),
-  removeItemMutate: vi.fn<(variables: { variantId: string }) => void>(),
-  clearCartMutate: vi.fn<() => void>(),
+    vi.fn<
+      (
+        variables: { variantId: string; data: { quantity: number } },
+        options?: { onError?: (err: unknown) => void },
+      ) => void
+    >(),
+  removeItemMutate:
+    vi.fn<
+      (
+        variables: { variantId: string },
+        options?: { onSuccess?: () => void; onError?: (err: unknown) => void },
+      ) => void
+    >(),
+  clearCartMutate:
+    vi.fn<
+      (
+        variables?: undefined,
+        options?: { onSuccess?: () => void; onError?: (err: unknown) => void },
+      ) => void
+    >(),
   wishlistToggleMutate:
     vi.fn<
       (
         variables: { data: { productId: string } },
-        options?: { onSuccess: () => void; onError: () => void },
+        options?: { onSuccess: () => void; onError: (err?: unknown) => void },
       ) => void
     >(),
   isFavorited: vi.fn<(productId: string | undefined) => boolean>(),
-  // happy-dom không có window.confirm — gắn mock để test luồng xác nhận xoá
-  confirmMock: vi.fn<(message?: string) => boolean>(),
+  mockNotifySuccess: vi.fn(),
+  mockNotifyFromError: vi.fn(),
   state: { items: [] as CartItemResponse[], totalQuantity: 0 },
+}))
+
+vi.mock('@/lib/notifications', () => ({
+  notify: {
+    success: mockNotifySuccess,
+    fromError: mockNotifyFromError,
+    warning: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
 }))
 
 // useCart là chồng hook session + query + 4 mutation — mock module thay vì bọc provider
@@ -150,8 +178,8 @@ beforeEach(() => {
   clearCartMutate.mockReset()
   wishlistToggleMutate.mockReset()
   isFavorited.mockReset().mockReturnValue(false)
-  confirmMock.mockReset()
-  window.confirm = confirmMock
+  mockNotifySuccess.mockReset()
+  mockNotifyFromError.mockReset()
 })
 
 describe('Cart — chọn món, tổng tiền và thanh toán (DOM)', () => {
@@ -220,9 +248,15 @@ describe('Cart — chọn món, tổng tiền và thanh toán (DOM)', () => {
     expect((plus[2] as HTMLButtonElement).disabled).toBe(true)
 
     await user.click(minus[0] as HTMLButtonElement)
-    expect(updateQuantityMutate).toHaveBeenCalledWith({ variantId: 'v-1', data: { quantity: 1 } })
+    expect(updateQuantityMutate).toHaveBeenCalledWith(
+      { variantId: 'v-1', data: { quantity: 1 } },
+      expect.any(Object),
+    )
     await user.click(plus[0] as HTMLButtonElement)
-    expect(updateQuantityMutate).toHaveBeenCalledWith({ variantId: 'v-1', data: { quantity: 3 } })
+    expect(updateQuantityMutate).toHaveBeenCalledWith(
+      { variantId: 'v-1', data: { quantity: 3 } },
+      expect.any(Object),
+    )
   })
 
   it('xoá sản phẩm → removeItem mutate đúng variantId', async () => {
@@ -234,7 +268,7 @@ describe('Cart — chọn món, tổng tiền và thanh toán (DOM)', () => {
     )
 
     expect(removeItemMutate).toHaveBeenCalledTimes(1)
-    expect(removeItemMutate).toHaveBeenCalledWith({ variantId: 'v-1' })
+    expect(removeItemMutate).toHaveBeenCalledWith({ variantId: 'v-1' }, expect.any(Object))
   })
 
   it('chưa yêu thích → chuyển sang Yêu thích trước, thành công thì xoá khỏi giỏ', async () => {
@@ -250,7 +284,7 @@ describe('Cart — chọn món, tổng tiền và thanh toán (DOM)', () => {
 
     expect(wishlistToggleMutate).toHaveBeenCalledTimes(1)
     expect(wishlistToggleMutate.mock.calls[0]?.[0]).toEqual({ data: { productId: 'p-1' } })
-    expect(removeItemMutate).toHaveBeenCalledWith({ variantId: 'v-1' })
+    expect(removeItemMutate).toHaveBeenCalledWith({ variantId: 'v-1' }, expect.any(Object))
   })
 
   it('đã yêu thích sẵn → xoá khỏi giỏ luôn, không gọi toggle', async () => {
@@ -263,12 +297,13 @@ describe('Cart — chọn món, tổng tiền và thanh toán (DOM)', () => {
     )
 
     expect(wishlistToggleMutate).not.toHaveBeenCalled()
-    expect(removeItemMutate).toHaveBeenCalledWith({ variantId: 'v-1' })
+    expect(removeItemMutate).toHaveBeenCalledWith({ variantId: 'v-1' }, expect.any(Object))
   })
 
-  it('chuyển wishlist lỗi → hiện thông báo, giữ món trong giỏ', async () => {
+  it('chuyển wishlist lỗi → gọi notify.fromError, giữ món trong giỏ', async () => {
+    const err = new Error('wishlist-failed')
     wishlistToggleMutate.mockImplementation((_variables, options) => {
-      options?.onError()
+      options?.onError(err)
     })
     const user = userEvent.setup()
     renderCart()
@@ -277,37 +312,54 @@ describe('Cart — chọn món, tổng tiền và thanh toán (DOM)', () => {
       screen.getAllByRole('button', { name: 'Chuyển sang Yêu thích' })[0] as HTMLButtonElement,
     )
 
-    expect(
-      screen.getByText('Không thể chuyển sản phẩm sang Yêu thích. Vui lòng thử lại.'),
-    ).toBeTruthy()
+    expect(mockNotifyFromError).toHaveBeenCalledWith(
+      err,
+      'wishlist',
+      'Không thể chuyển sản phẩm sang Yêu thích. Vui lòng thử lại.',
+    )
     expect(removeItemMutate).not.toHaveBeenCalled()
   })
 
-  it('xoá giỏ phải qua confirm; huỷ confirm thì không xoá', async () => {
+  it('xoá giỏ phải qua ConfirmDialog; huỷ dialog thì không xoá', async () => {
     const user = userEvent.setup()
     renderCart()
 
-    confirmMock.mockReturnValueOnce(false)
     await user.click(screen.getByRole('button', { name: 'Xoá giỏ' }))
-    expect(clearCartMutate).not.toHaveBeenCalled()
-    expect(confirmMock).toHaveBeenCalledWith('Xoá toàn bộ giỏ hàng?')
+    expect(screen.getByText('Xoá toàn bộ giỏ hàng?')).toBeTruthy()
 
-    confirmMock.mockReturnValueOnce(true)
+    await user.click(screen.getByRole('button', { name: 'Hủy' }))
+    expect(clearCartMutate).not.toHaveBeenCalled()
+    expect(screen.queryByText('Xoá toàn bộ giỏ hàng?')).toBeNull()
+
     await user.click(screen.getByRole('button', { name: 'Xoá giỏ' }))
+    await user.click(screen.getByRole('button', { name: 'Xoá tất cả' }))
     expect(clearCartMutate).toHaveBeenCalledTimes(1)
   })
 
-  it('xoá đã chọn → remove từng món đang chọn sau confirm, món hết hàng không bị lôi vào', async () => {
+  it('xoá đã chọn → mở ConfirmDialog, xác nhận thì remove từng món đang chọn (bỏ qua món hết hàng)', async () => {
     const user = userEvent.setup()
     renderCart()
 
-    confirmMock.mockReturnValue(true)
     await user.click(screen.getByRole('button', { name: 'Xoá đã chọn' }))
+    expect(screen.getByText('Xoá 2 sản phẩm đã chọn?')).toBeTruthy()
 
-    expect(confirmMock).toHaveBeenCalledWith('Xoá 2 sản phẩm đã chọn?')
+    await user.click(screen.getByRole('button', { name: 'Xác nhận xoá' }))
+
     expect(removeItemMutate).toHaveBeenCalledTimes(2)
     const removedIds = removeItemMutate.mock.calls.map((call) => call[0]?.variantId)
     expect(removedIds).toEqual(['v-1', 'v-2'])
+  })
+
+  it('thanh tiến độ miễn phí vận chuyển: đạt 500k hiện chúc mừng, dưới 500k hiện số tiền còn thiếu', async () => {
+    const user = userEvent.setup()
+    renderCart()
+
+    // Mặc định 748.000 ₫ ≥ 500.000 ₫
+    expect(summary().getByText('Đã đạt miễn phí vận chuyển!')).toBeTruthy()
+
+    // Bỏ chọn Áo Sơ Mi Lụa → còn 350.000 ₫ (thiếu 150.000 ₫)
+    await user.click(screen.getByRole('checkbox', { name: 'Chọn Áo Sơ Mi Lụa' }))
+    expect(summary().getByText('150.000 ₫')).toBeTruthy()
   })
 
   it('giỏ rỗng → empty state kèm link đi mua sắm', () => {

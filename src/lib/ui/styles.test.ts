@@ -1,14 +1,23 @@
 import { describe, expect, it } from 'vite-plus/test'
 
 import {
+  CARD_CLASS,
+  INPUT_CLASS,
+  LABEL_CLASS,
+  PANEL_CLASS,
+  TEXTAREA_CLASS,
   cardClass,
   cn,
+  dangerButtonClass,
   filterChipClass,
   filterRowClass,
+  iconButtonClass,
   iconChipClass,
   optionPillClass,
+  secondaryButtonClass,
   segmentedItemClass,
   segmentedTrackClass,
+  sidebarItemClass,
   switchKnobClass,
   switchTrackClass,
 } from './styles'
@@ -58,5 +67,28 @@ describe('style helpers', () => {
     expect(optionPillClass(false)).not.toContain('btn-primary')
     expect(filterRowClass(true)).toContain('btn-primary')
     expect(filterRowClass(false)).not.toContain('btn-primary')
+  })
+
+  it('form và panel constants tuân thủ design system DHMQ', function () {
+    expect(LABEL_CLASS).toContain('font-bold')
+    expect(INPUT_CLASS).toContain('rounded-full')
+    expect(INPUT_CLASS).toContain('border-zinc-300')
+    expect(INPUT_CLASS).toContain('dark:bg-white/10')
+    expect(INPUT_CLASS).not.toContain('dark:bg-zinc-800')
+    expect(TEXTAREA_CLASS).toContain('rounded-2xl')
+    expect(CARD_CLASS).toContain('rounded-3xl')
+    expect(CARD_CLASS).toContain('dark:bg-[#11182a]')
+    expect(PANEL_CLASS).toContain('rounded-3xl')
+    expect(PANEL_CLASS).toContain('p-5')
+  })
+
+  it('button và sidebar helpers dùng shape lock pill và btn-primary khi active', function () {
+    expect(secondaryButtonClass()).toContain('rounded-full')
+    expect(secondaryButtonClass()).toContain('dark:bg-white/10')
+    expect(dangerButtonClass()).toContain('rounded-full')
+    expect(dangerButtonClass()).toContain('bg-rose-600')
+    expect(iconButtonClass()).toContain('rounded-full')
+    expect(sidebarItemClass(true)).toContain('btn-primary')
+    expect(sidebarItemClass(false)).not.toContain('btn-primary')
   })
 })

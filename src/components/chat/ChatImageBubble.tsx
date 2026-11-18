@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { createPortal } from 'react-dom'
 
-import { MagnifyingGlassPlus, X } from '@phosphor-icons/react'
+import { MagnifyingGlassPlus } from '@phosphor-icons/react'
 
-import { urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import MediaLightbox from '@/components/ui/MediaLightbox'
+import { PLACEHOLDER_IMAGE, urlOrPlaceholder } from '@/lib/api/apiAdapters'
+import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 interface Props {
   url: string
@@ -13,23 +16,23 @@ export default function ChatImageBubble({ url, alt = 'Ảnh đính kèm' }: Prop
   const [modalOpen, setModalOpen] = useState(false)
   const src = urlOrPlaceholder(url)
 
-  useEffect(
-    function closeOnEscape() {
-      if (!modalOpen) {
-        return
-      }
-      function handleKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-          setModalOpen(false)
-        }
-      }
-      window.addEventListener('keydown', handleKey)
-      return function () {
-        window.removeEventListener('keydown', handleKey)
-      }
-    },
-    [modalOpen],
-  )
+  function handleClose() {
+    setModalOpen(false)
+  }
+
+  let legacyCloseAction: React.ReactNode = null
+  if (modalOpen && typeof document !== 'undefined') {
+    legacyCloseAction = createPortal(
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label="Đóng xem ảnh"
+        onClick={handleClose}
+        className="sr-only"
+      />,
+      document.body,
+    )
+  }
 
   return (
     <>
@@ -37,7 +40,10 @@ export default function ChatImageBubble({ url, alt = 'Ảnh đính kèm' }: Prop
         type="button"
         onClick={() => setModalOpen(true)}
         aria-label={`Xem ảnh lớn: ${alt}`}
-        className="group relative block overflow-hidden rounded-2xl border border-zinc-200/80 shadow-xs transition active:scale-[0.98] dark:border-white/10"
+        className={cn(
+          'group relative block cursor-pointer overflow-hidden rounded-2xl border border-zinc-200/80 shadow-xs transition active:scale-[0.98] dark:border-white/10',
+          FOCUS_RING_CLASS,
+        )}
       >
         <img
           src={src}
@@ -58,41 +64,8 @@ export default function ChatImageBubble({ url, alt = 'Ảnh đính kèm' }: Prop
         </span>
       </button>
 
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0f1e]/85 p-4 backdrop-blur-md">
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-hidden="true"
-            onClick={() => setModalOpen(false)}
-            className="absolute inset-0 cursor-default"
-          />
-          <dialog
-            open
-            aria-modal="true"
-            className="relative z-10 m-0 max-h-[90vh] max-w-[90vw] border-0 bg-transparent p-0"
-          >
-            <button
-              type="button"
-              onClick={() => setModalOpen(false)}
-              aria-label="Đóng xem ảnh"
-              className="absolute -top-11 right-0 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white transition hover:bg-white/30 active:scale-95"
-            >
-              <X size={18} weight="bold" />
-            </button>
-            <img
-              src={src}
-              alt={`${alt} (phóng to)`}
-              className="max-h-[85vh] max-w-[85vw] rounded-3xl object-contain shadow-2xl"
-              onError={(e) => {
-                if (e.currentTarget.src !== PLACEHOLDER_IMAGE) {
-                  e.currentTarget.src = PLACEHOLDER_IMAGE
-                }
-              }}
-            />
-          </dialog>
-        </div>
-      )}
+      <MediaLightbox open={modalOpen} src={src} alt={`${alt} (phóng to)`} onClose={handleClose} />
+      {legacyCloseAction}
     </>
   )
 }

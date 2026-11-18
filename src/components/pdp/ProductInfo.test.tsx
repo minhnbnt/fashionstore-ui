@@ -9,8 +9,29 @@ import ProductInfo from './ProductInfo'
 
 import type { ProductResponse } from '@generated/model/productResponse'
 
-const { addItemMutate } = vi.hoisted(() => ({
-  addItemMutate: vi.fn<(variables: unknown, options: { onSuccess: () => void }) => void>(),
+const { addItemMutate, mockNotifySuccess, mockNotifyWarning, mockNotifyInfo, mockNotifyFromError } =
+  vi.hoisted(() => ({
+    addItemMutate:
+      vi.fn<
+        (
+          variables: unknown,
+          options: { onSuccess: () => void; onError: (err: unknown) => void },
+        ) => void
+      >(),
+    mockNotifySuccess: vi.fn(),
+    mockNotifyWarning: vi.fn(),
+    mockNotifyInfo: vi.fn(),
+    mockNotifyFromError: vi.fn(),
+  }))
+
+vi.mock('@/lib/notifications', () => ({
+  notify: {
+    success: mockNotifySuccess,
+    warning: mockNotifyWarning,
+    info: mockNotifyInfo,
+    fromError: mockNotifyFromError,
+    error: vi.fn(),
+  },
 }))
 
 vi.mock('@/hooks/useCart', () => ({
@@ -69,10 +90,14 @@ afterEach(cleanup)
 
 beforeEach(() => {
   addItemMutate.mockReset()
+  mockNotifySuccess.mockReset()
+  mockNotifyWarning.mockReset()
+  mockNotifyInfo.mockReset()
+  mockNotifyFromError.mockReset()
 })
 
 describe('ProductInfo — chọn variant và thêm giỏ (DOM)', () => {
-  it('chọn đủ màu + size rồi thêm giỏ → addItem nhận đúng variantId + quantity, hiện toast', async () => {
+  it('chọn đủ màu + size rồi thêm giỏ → addItem nhận đúng variantId + quantity, gọi notify.success', async () => {
     addItemMutate.mockImplementation((_variables, options) => {
       options.onSuccess()
     })
@@ -87,17 +112,32 @@ describe('ProductInfo — chọn variant và thêm giỏ (DOM)', () => {
     expect(addItemMutate).toHaveBeenCalledTimes(1)
     const variables = addItemMutate.mock.calls[0]?.[0]
     expect(variables).toEqual({ data: { variantId: 'v-1', quantity: 2 } })
-    expect(screen.getByText('Đã thêm 2 × Áo Sơ Mi Lụa vào giỏ')).toBeTruthy()
+    expect(mockNotifySuccess).toHaveBeenCalledWith('Đã thêm vào giỏ hàng', '2 × Áo Sơ Mi Lụa')
   })
 
-  it('thiếu lựa chọn variant → hiện nhắc, không gọi addItem', async () => {
+  it('thiếu lựa chọn variant → gọi notify.warning, không gọi addItem', async () => {
     const user = userEvent.setup()
     renderInfo(makeProduct())
 
     await user.click(screen.getByRole('button', { name: 'Thêm giỏ' }))
 
-    expect(screen.getByText('Vui lòng chọn màu sắc và kích cỡ')).toBeTruthy()
+    expect(mockNotifyWarning).toHaveBeenCalledWith('Vui lòng chọn màu sắc và kích cỡ')
     expect(addItemMutate).not.toHaveBeenCalled()
+  })
+
+  it('thêm giỏ lỗi → gọi notify.fromError', async () => {
+    const err = new Error('boom')
+    addItemMutate.mockImplementation((_variables, options) => {
+      options.onError(err)
+    })
+    const user = userEvent.setup()
+    renderInfo(makeProduct())
+
+    await user.click(screen.getByRole('button', { name: 'Đen' }))
+    await user.click(screen.getByRole('button', { name: 'M' }))
+    await user.click(screen.getByRole('button', { name: 'Thêm giỏ' }))
+
+    expect(mockNotifyFromError).toHaveBeenCalledWith(err, 'cart', 'Không thêm được vào giỏ hàng')
   })
 
   it('màu hết hàng → nút disabled kèm chú thích', () => {

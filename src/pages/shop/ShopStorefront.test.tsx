@@ -5,6 +5,8 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
+import { PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+
 import ShopStorefront from './ShopStorefront'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
@@ -34,6 +36,7 @@ function defaultShop(): ShopResponse {
 }
 
 vi.mock('@generated/endpoints/shops/shops', () => ({
+  getBySlugQueryKey: (slug: string) => [`/api/shops/${slug}`],
   useBySlug: vi.fn(() => ({
     data: {
       status: 200,
@@ -148,8 +151,8 @@ describe('ShopStorefront Customer Page', () => {
     expect(html).toContain('Thời Trang Thiết Kế Nét')
     expect(html).toContain('@net-design')
 
-    // Badge nét Mall
-    expect(html).toContain('nét Mall')
+    // Badge DHMQ Mall
+    expect(html).toContain('DHMQ Mall')
 
     // Thống kê shop
     expect(html).toContain('4.9')
@@ -179,9 +182,7 @@ describe('ShopStorefront Customer Page', () => {
     const html = renderStorefrontHtml()
 
     // Không còn ảnh placeholder "noimage" làm hình đại diện (alt = tên shop)
-    expect(html).not.toContain(
-      '<img src="https://picsum.photos/seed/net-noimage/600/750" alt="Thời Trang Thiết Kế Nét"',
-    )
+    expect(html).not.toContain(`<img src="${PLACEHOLDER_IMAGE}" alt="Thời Trang Thiết Kế Nét"`)
     // Có avatar generated (boring-avatars marble) với palette chàm của UserAvatar
     expect(html).toContain('#312e81')
   })

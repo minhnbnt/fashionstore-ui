@@ -10,6 +10,7 @@ export type SellerTabId =
   | 'RETURNS'
   | 'REVENUE'
   | 'REVIEWS'
+  | 'QNA'
   | 'CHAT'
   | 'DECORATION'
   | 'STAFF'

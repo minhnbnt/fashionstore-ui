@@ -114,7 +114,7 @@ export default function VideoConfigModal({
                   setVideoPreview(null)
                   setError(null)
                 }}
-                className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                className="flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/15"
               >
                 <Trash size={12} />
                 Gỡ video
@@ -164,14 +164,14 @@ export default function VideoConfigModal({
           />
 
           {error !== null && (
-            <p className="mt-2 rounded-lg bg-red-50 p-2 text-xs font-semibold text-red-600 dark:bg-red-950/20 dark:text-red-400">
+            <p className="mt-2 rounded-2xl border border-rose-200 bg-rose-50 p-2.5 text-xs font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
               {error}
             </p>
           )}
         </div>
 
-        <p className="flex items-start gap-1.5 rounded-lg bg-sky-50 p-2 text-[11px] text-zinc-500 dark:bg-sky-950/20 dark:text-zinc-400">
-          <VideoCamera size={13} className="mt-0.5 shrink-0 text-sky-600" />
+        <p className="flex items-start gap-1.5 rounded-2xl border border-sky-200 bg-sky-50/70 p-2.5 text-[11px] text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
+          <VideoCamera size={13} className="mt-0.5 shrink-0 text-sky-600 dark:text-sky-300" />
           Video hiển thị trên trang chủ gian hàng. Buyer bấm phát, stream thẳng từ S3 — không ảnh
           hưởng tốc độ tải trang.
         </p>

@@ -1,3 +1,5 @@
+import { FOCUS_RING_CLASS } from '@/lib/ui/styles'
+
 /** Class dùng chung cho bubble, canvas và ô nhập trên khung chat, trang /messages và CSKH. */
 
 export type ChatSurfaceVariant = 'dock' | 'page'
@@ -11,7 +13,8 @@ export const CHAT_SEARCH_PILL_CLASS =
   'flex items-center gap-2 rounded-full border border-zinc-300 bg-white/90 px-3.5 py-2 text-xs text-[#17203a] transition focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/15 dark:border-white/15 dark:bg-white/10 dark:text-white dark:focus-within:border-sky-400'
 
 export const CHAT_SEND_BUTTON_CLASS =
-  'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-800 text-white shadow-md shadow-blue-950/30 transition enabled:hover:-translate-y-0.5 enabled:hover:bg-blue-900 enabled:active:scale-95 disabled:cursor-not-allowed disabled:bg-blue-700 disabled:shadow-none dark:bg-blue-700 dark:ring-1 dark:ring-blue-400/45 dark:enabled:hover:bg-blue-600 dark:disabled:bg-blue-800'
+  'flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-blue-800 text-white shadow-md shadow-blue-950/30 transition enabled:hover:-translate-y-0.5 enabled:hover:bg-blue-900 enabled:active:scale-95 disabled:cursor-not-allowed disabled:bg-blue-700 disabled:opacity-50 disabled:shadow-none dark:bg-blue-700 dark:ring-1 dark:ring-blue-400/45 dark:enabled:hover:bg-blue-600 dark:disabled:bg-blue-800 ' +
+  FOCUS_RING_CLASS
 
 export function bubbleClass(isMine: boolean, variant: ChatSurfaceVariant = 'dock'): string {
   let sizeClass = 'px-3.5 py-2.5 text-[13px]'

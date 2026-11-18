@@ -66,7 +66,7 @@ describe('ProductTabs edited review indicator', () => {
       </QueryClientProvider>,
     )
 
-    fireEvent.click(screen.getByRole('button', { name: /Đánh giá/i }))
+    fireEvent.click(screen.getByRole('tab', { name: /Đánh giá/i }))
 
     expect(screen.getAllByText('Đã chỉnh sửa')).toHaveLength(1)
     expect(screen.queryByRole('button', { name: /Xóa/i })).toBeNull()

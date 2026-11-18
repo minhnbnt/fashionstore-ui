@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { getFirstAllowedTab, sellerTabParam } from '@/lib/seller/sellerNavigation'
+import { getFirstAllowedTab, parseSellerTab, sellerTabParam } from '@/lib/seller/sellerNavigation'
 import { canSeeTab } from '@/lib/seller/sellerPermissions'
 
 import type { SellerShopMembershipResponse } from '@generated/model/sellerShopMembershipResponse'
 
 describe('ShopDashboard Smart Auto-Navigation and Shop Resolution', () => {
+  it('hỗ trợ tab QNA trong điều hướng và phân quyền', () => {
+    expect(parseSellerTab('qna')).toBe('QNA')
+    expect(sellerTabParam('QNA')).toBe('qna')
+
+    expect(canSeeTab('QNA', ['REVIEW_READ'], false)).toBe(true)
+    expect(canSeeTab('QNA', ['REVIEW_REPLY'], false)).toBe(true)
+    expect(canSeeTab('QNA', ['ORDER_READ'], false)).toBe(false)
+    expect(getFirstAllowedTab(['REVIEW_READ'], false)).toBe('REVIEWS')
+  })
+
   it('nhân viên chỉ có quyền CHAT_ACCESS tự động chuyển hướng sang tab chat', () => {
     const permissions = ['CHAT_ACCESS']
     const isOwner = false

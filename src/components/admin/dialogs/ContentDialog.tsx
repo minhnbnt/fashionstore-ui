@@ -1,12 +1,16 @@
-import { createPortal } from 'react-dom'
-
-import { X } from '@phosphor-icons/react'
-
-import { INPUT_CLASS, LABEL_CLASS, TEXTAREA_CLASS } from '@/components/ui/formStyles'
+import Modal from '@/components/Modal'
+import {
+  cn,
+  INPUT_CLASS,
+  LABEL_CLASS,
+  primaryButtonClass,
+  secondaryButtonClass,
+  TEXTAREA_CLASS,
+} from '@/lib/ui/styles'
 
 export { INPUT_CLASS, LABEL_CLASS, TEXTAREA_CLASS }
 export const HINT_CLASS = 'mt-1 text-xs text-zinc-500 dark:text-zinc-400'
-export const ERROR_CLASS = 'mt-1 text-xs text-red-600 dark:text-red-400'
+export const ERROR_CLASS = 'mt-1 text-xs font-medium text-rose-600 dark:text-rose-400'
 
 interface Props {
   title: string
@@ -20,7 +24,7 @@ interface Props {
   children: React.ReactNode
 }
 
-/** Khung hộp thoại form nội dung (banner/popup/FAQ), cùng kiểu với hộp thoại gỡ sản phẩm. */
+/** Khung hộp thoại form nội dung (banner/popup/FAQ) dùng chung Modal chuẩn DHMQ. */
 export default function ContentDialog({
   title,
   submitLabel,
@@ -32,57 +36,55 @@ export default function ContentDialog({
   onSubmit,
   children,
 }: Props) {
+  function handleClose() {
+    if (pending) {
+      return
+    }
+    onClose()
+  }
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     onSubmit()
   }
 
-  return createPortal(
-    <dialog
-      open
-      aria-label={title}
-      className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black/60 p-4 text-inherit backdrop-blur-xs"
-    >
-      <form
-        onSubmit={handleSubmit}
-        className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#11182a]"
-      >
-        <div className="flex items-center justify-between gap-3 border-b border-zinc-100 p-5 dark:border-white/10">
-          <h2 className="text-lg font-extrabold tracking-tighter">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Đóng"
-            className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-white/10"
-          >
-            <X size={18} weight="bold" />
-          </button>
-        </div>
-
-        <div className="flex-1 space-y-4 overflow-y-auto p-5">
+  return (
+    <Modal title={title} onClose={handleClose} widthClass="max-w-2xl">
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <div className="space-y-4">
           {children}
-          {error !== null && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error !== null && (
+            <p
+              role="alert"
+              className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200"
+            >
+              {error}
+            </p>
+          )}
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-zinc-100 p-5 dark:border-white/10">
+        <div className="flex justify-end gap-3 border-t border-zinc-200/80 pt-4 dark:border-white/10">
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-full border border-zinc-200 px-5 py-2.5 text-sm font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+            onClick={handleClose}
+            disabled={pending}
+            className={cn(secondaryButtonClass(), 'px-5 py-2.5')}
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={canSubmit === false || pending}
-            className="btn-primary rounded-full px-5 py-2.5 text-sm font-bold disabled:opacity-50"
+            className={cn(
+              primaryButtonClass(),
+              'rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
+            )}
           >
             {pending && <span>{pendingLabel}</span>}
             {pending === false && <span>{submitLabel}</span>}
           </button>
         </div>
       </form>
-    </dialog>,
-    document.body,
+    </Modal>
   )
 }

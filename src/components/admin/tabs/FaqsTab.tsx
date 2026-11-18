@@ -5,6 +5,8 @@ import { useDeleteFaq, useListAdminFaqs } from '@generated/endpoints/admin-faq/a
 import { ArrowSquareOut, EyeSlash, PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { TableRowsSkeleton } from '@/components/ui/Skeleton'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import {
   FAQ_CATEGORY_OPTIONS,
@@ -12,8 +14,9 @@ import {
   groupBy,
   queryKeyStartsWith,
 } from '@/lib/content/siteContent'
+import { notify } from '@/lib/notifications'
+import { cn, FOCUS_RING_CLASS, primaryButtonClass } from '@/lib/ui/styles'
 
-import ConfirmDialog from '../dialogs/ConfirmDialog'
 import FaqFormDialog from '../dialogs/FaqFormDialog'
 
 import type { FaqCategoryValue } from '@/lib/content/siteContent'
@@ -40,15 +43,13 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
     })
   }
 
-  let deleteError: string | null = null
-  if (remove.isError) {
-    deleteError = hookErrorMessage('adminContent', remove.error)
-  }
-
-  let body = <div className="h-40 animate-pulse rounded-2xl bg-white/60 dark:bg-white/5" />
+  let body: React.ReactNode = <TableRowsSkeleton rows={4} columns={3} />
   if (listQuery.isError) {
     body = (
-      <p className="text-sm text-red-600 dark:text-red-400">
+      <p
+        role="alert"
+        className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+      >
         {hookErrorMessage('adminContent', listQuery.error)}
       </p>
     )
@@ -67,13 +68,16 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
             return (
               <section key={group.key}>
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <h3 className="text-xs font-bold tracking-[0.14em] text-indigo-600 uppercase dark:text-indigo-400">
+                  <h2 className="text-xs font-bold tracking-[0.14em] text-blue-700 uppercase dark:text-sky-300">
                     {faqCategoryLabel(group.key)} · {group.items.length}
-                  </h3>
+                  </h2>
                   <button
                     type="button"
                     onClick={() => setCreatingIn(group.key)}
-                    className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline dark:text-indigo-300"
+                    className={cn(
+                      'flex cursor-pointer items-center gap-1 rounded-full px-2 py-1 text-xs font-bold text-blue-700 hover:underline dark:text-sky-300',
+                      FOCUS_RING_CLASS,
+                    )}
                   >
                     <Plus size={12} weight="bold" />
                     Thêm vào nhóm
@@ -81,16 +85,17 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
                 </div>
                 <ul className="space-y-2">
                   {group.items.map(function (faq) {
+                    const questionText = faq.question ?? ''
                     return (
                       <li
                         key={faq.id}
-                        className="flex items-start gap-3 rounded-2xl bg-white/70 p-3 dark:bg-white/5"
+                        className="flex items-start gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-3 dark:border-white/10 dark:bg-white/5"
                       >
-                        <span className="mt-0.5 w-8 shrink-0 text-center text-xs font-bold text-zinc-400 tabular-nums">
+                        <span className="mt-0.5 w-8 shrink-0 text-center text-xs font-bold text-zinc-500 tabular-nums dark:text-zinc-400">
                           #{faq.sortOrder}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="flex items-center gap-2 text-sm font-bold">
+                          <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-[#17203a] dark:text-[#e2e8f0]">
                             {faq.question}
                             {faq.published !== true && (
                               <span className="flex shrink-0 items-center gap-1 rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-700 dark:bg-white/10 dark:text-zinc-300">
@@ -107,16 +112,22 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
                           <button
                             type="button"
                             onClick={() => setEditing(faq)}
-                            aria-label="Sửa câu hỏi"
-                            className="rounded-full border border-indigo-200 p-2 text-indigo-600 transition hover:bg-indigo-50 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
+                            aria-label={`Sửa câu hỏi: ${questionText}`}
+                            className={cn(
+                              'cursor-pointer rounded-full border border-indigo-200 p-2 text-blue-700 transition hover:bg-sky-50 dark:border-sky-500/30 dark:text-sky-300 dark:hover:bg-sky-500/10',
+                              FOCUS_RING_CLASS,
+                            )}
                           >
                             <PencilSimple size={16} weight="bold" />
                           </button>
                           <button
                             type="button"
                             onClick={() => setDeleting(faq)}
-                            aria-label="Xóa câu hỏi"
-                            className="rounded-full border border-red-200 p-2 text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+                            aria-label={`Xóa câu hỏi: ${questionText}`}
+                            className={cn(
+                              'cursor-pointer rounded-full border border-rose-200 p-2 text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/15',
+                              FOCUS_RING_CLASS,
+                            )}
                           >
                             <Trash size={16} weight="bold" />
                           </button>
@@ -144,7 +155,10 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
         <Link
           to="/faq"
           target="_blank"
-          className="flex w-fit items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:underline dark:text-indigo-300"
+          className={cn(
+            'flex w-fit cursor-pointer items-center gap-1.5 rounded-full text-sm font-semibold text-blue-700 hover:underline dark:text-sky-300',
+            FOCUS_RING_CLASS,
+          )}
         >
           Xem trang FAQ
           <ArrowSquareOut size={14} weight="bold" />
@@ -152,7 +166,10 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
         <button
           type="button"
           onClick={() => setCreatingIn('ORDER')}
-          className="btn-primary flex w-fit items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold"
+          className={cn(
+            primaryButtonClass(),
+            'flex w-fit items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold',
+          )}
         >
           <Plus size={16} weight="bold" />
           Thêm câu hỏi
@@ -173,23 +190,27 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
         />
       )}
 
-      {deleting !== null && (
-        <ConfirmDialog
-          open
-          title="Xóa câu hỏi"
-          description={`Xóa hẳn "${deleting.question ?? ''}"? Muốn ẩn tạm thời thì bỏ chọn "Hiện trên trang FAQ".`}
-          confirmLabel="Xóa câu hỏi"
-          pending={remove.isPending}
-          error={deleteError ?? undefined}
-          onClose={() => setDeleting(null)}
-          onConfirm={() => {
-            if (deleting.id === undefined) {
-              return
-            }
-            remove.mutate({ id: deleting.id }, { onSuccess: () => refresh('Đã xóa câu hỏi.') })
-          }}
-        />
-      )}
+      <ConfirmDialog
+        open={deleting !== null}
+        variant="danger"
+        title="Xóa câu hỏi"
+        description={`Xóa hẳn "${deleting?.question ?? ''}"? Muốn ẩn tạm thời thì bỏ chọn "Hiện trên trang FAQ".`}
+        confirmLabel="Xóa câu hỏi"
+        isPending={remove.isPending}
+        onCancel={() => setDeleting(null)}
+        onConfirm={() => {
+          if (deleting === null || deleting.id === undefined) {
+            return
+          }
+          remove.mutate(
+            { id: deleting.id },
+            {
+              onSuccess: () => refresh('Đã xóa câu hỏi.'),
+              onError: (err) => notify.fromError(err, 'adminContent'),
+            },
+          )
+        }}
+      />
     </div>
   )
 }

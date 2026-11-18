@@ -46,7 +46,11 @@ export default function ScheduleFields({
         </label>
       </div>
       <p className={HINT_CLASS}>Bỏ trống "Bắt đầu" = chạy ngay, bỏ trống "Kết thúc" = không hạn.</p>
-      {problem !== null && <p className={ERROR_CLASS}>{problem}</p>}
+      {problem !== null && (
+        <p role="alert" className={ERROR_CLASS}>
+          {problem}
+        </p>
+      )}
     </fieldset>
   )
 }

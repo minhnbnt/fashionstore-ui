@@ -6,6 +6,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { ApiError } from '@/lib/api/apiFetch'
+import { notify } from '@/lib/notifications'
 
 import SellerReviewsTab from './SellerReviewsTab'
 
@@ -292,6 +293,7 @@ describe('SellerReviewsTab', () => {
 
   it('chèn mẫu khi ô trống hoặc nối xuống dòng khi đã có text và chỉ toast sau khi phản hồi thành công', () => {
     setupDefaultMocks()
+    const notifySuccessSpy = vi.spyOn(notify, 'success').mockReturnValue('toast-id')
     renderTab()
 
     // Expand group trước (accordion collapsed by default)
@@ -313,18 +315,19 @@ describe('SellerReviewsTab', () => {
       id: 'rev-1',
       data: { reply: 'Cảm ơn bạn đã ủng hộ shop!\nBạn nhắn shop để được đổi size nhé.' },
     })
-    expect(screen.queryByText('Đã gửi phản hồi đánh giá của khách hàng!')).toBeNull()
+    expect(notifySuccessSpy).not.toHaveBeenCalled()
 
     act(() => {
       latestReplyOptions?.onError?.(new ApiError(403, 'Forbidden'))
     })
     expect(screen.getByText('Bạn không có quyền phản hồi đánh giá này.')).toBeTruthy()
-    expect(screen.queryByText('Đã gửi phản hồi đánh giá của khách hàng!')).toBeNull()
+    expect(notifySuccessSpy).not.toHaveBeenCalled()
 
     act(() => {
       latestReplyOptions?.onSuccess?.()
     })
-    expect(screen.getByText('Đã gửi phản hồi đánh giá của khách hàng!')).toBeTruthy()
+    expect(notifySuccessSpy).toHaveBeenCalledWith('Đã gửi phản hồi đánh giá của khách hàng!')
+    notifySuccessSpy.mockRestore()
   })
 
   it('quản lý mẫu phản hồi nhanh trong modal và ẩn chỉnh sửa khi chỉ có quyền đọc', () => {
@@ -370,7 +373,7 @@ describe('SellerReviewsTab', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Số đánh giá' }))
-    expect(screen.getByText('Số lượt đánh giá')).toBeTruthy()
+    expect(screen.getAllByText('Số lượt đánh giá').length).toBeGreaterThanOrEqual(1)
 
     fireEvent.change(screen.getByLabelText('Từ ngày'), {
       target: { value: '2026-10-25' },
@@ -541,7 +544,7 @@ describe('clickable product & message buyer', () => {
       { data: { shopId: 'shop-1', buyerId: 'buyer-uuid-1' } },
       expect.anything(),
     )
-    expect(navigateMock).toHaveBeenCalledWith('/messages?tab=shop&id=conv-1')
+    expect(navigateMock).toHaveBeenCalledWith('/shop?shopId=shop-1&tab=chat&convId=conv-1')
   })
 })
 

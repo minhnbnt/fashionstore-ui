@@ -1,8 +1,9 @@
 import { useState } from 'react'
 
 import { useBanProduct } from '@generated/endpoints/admin-products/admin-products'
-import { Prohibit, X } from '@phosphor-icons/react'
+import { Prohibit } from '@phosphor-icons/react'
 
+import Modal from '@/components/Modal'
 import {
   appendTemplate,
   REASON_MAX,
@@ -10,6 +11,15 @@ import {
   VIOLATION_OPTIONS,
 } from '@/lib/admin/productModeration'
 import { hookErrorMessage } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
+import {
+  cn,
+  dangerButtonClass,
+  FOCUS_RING_CLASS,
+  LABEL_CLASS,
+  secondaryButtonClass,
+  TEXTAREA_CLASS,
+} from '@/lib/ui/styles'
 
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
 import type { BanProductRequestViolationType } from '@generated/model/banProductRequestViolationType'
@@ -48,6 +58,13 @@ export default function BanProductDialog({ product, onClose, onDone }: Props) {
   }
   const canSubmit = violationType !== null && reasonProblem === null && ban.isPending === false
 
+  function handleClose() {
+    if (ban.isPending) {
+      return
+    }
+    onClose()
+  }
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setTouched(true)
@@ -56,147 +73,136 @@ export default function BanProductDialog({ product, onClose, onDone }: Props) {
     }
     ban.mutate(
       { id: product.id, data: { violationType, reason: reason.trim() } },
-      { onSuccess: onDone },
+      {
+        onSuccess: onDone,
+        onError: function (err) {
+          notify.fromError(err, 'adminProductBan')
+        },
+      },
     )
   }
 
   return (
-    <dialog
-      open
-      className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black/60 p-4 text-inherit backdrop-blur-xs"
-      aria-labelledby="ban-product-title"
-    >
-      <form
-        onSubmit={handleSubmit}
-        className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#11182a]"
-      >
-        <div className="flex items-start justify-between gap-3 border-b border-zinc-100 p-5 dark:border-white/10">
-          <div className="min-w-0">
-            <h2
-              id="ban-product-title"
-              className="flex items-center gap-2 text-lg font-extrabold tracking-tighter"
-            >
-              <Prohibit size={20} weight="bold" className="text-red-600 dark:text-red-400" />
-              Gỡ sản phẩm vi phạm
-            </h2>
-            <p className="mt-1 truncate text-sm text-zinc-500 dark:text-zinc-400">
-              {product.name} · {product.shopName}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Đóng"
-            className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-white/10"
-          >
-            <X size={18} weight="bold" />
-          </button>
-        </div>
+    <Modal title="Gỡ sản phẩm vi phạm" onClose={handleClose} widthClass="max-w-xl">
+      <form onSubmit={handleSubmit} className="mt-2 space-y-5">
+        <p className="flex items-center gap-2 truncate text-sm text-zinc-500 dark:text-zinc-400">
+          <Prohibit size={16} weight="bold" className="shrink-0 text-rose-600 dark:text-rose-400" />
+          <span className="truncate">
+            {product.name} · {product.shopName}
+          </span>
+        </p>
 
-        <div className="flex-1 space-y-5 overflow-y-auto p-5">
-          <fieldset>
-            <legend className="mb-2 text-sm font-bold">Loại vi phạm</legend>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {VIOLATION_OPTIONS.map(function (option) {
-                const checked = option.type === violationType
-                let optionClass =
-                  'flex cursor-pointer flex-col gap-0.5 rounded-2xl border border-zinc-200 px-3.5 py-2.5 transition hover:border-red-300 dark:border-white/10'
-                if (checked) {
-                  optionClass =
-                    'flex cursor-pointer flex-col gap-0.5 rounded-2xl border border-red-500 bg-red-50 px-3.5 py-2.5 transition dark:bg-red-500/10'
-                }
+        <fieldset>
+          <legend className={LABEL_CLASS}>Loại vi phạm</legend>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {VIOLATION_OPTIONS.map(function (option) {
+              const checked = option.type === violationType
+              let optionClass =
+                'flex cursor-pointer flex-col gap-0.5 rounded-2xl border border-zinc-300 bg-white/85 px-3.5 py-2.5 transition hover:border-rose-300 dark:border-white/15 dark:bg-white/5 dark:hover:border-rose-400/50'
+              if (checked) {
+                optionClass =
+                  'flex cursor-pointer flex-col gap-0.5 rounded-2xl border border-rose-500 bg-rose-50 px-3.5 py-2.5 transition dark:border-rose-400 dark:bg-rose-500/15'
+              }
+              return (
+                <label key={option.type} className={optionClass}>
+                  <span className="flex items-center gap-2 text-sm font-bold">
+                    <input
+                      type="radio"
+                      name="violationType"
+                      value={option.type}
+                      checked={checked}
+                      onChange={() => setViolationType(option.type)}
+                      className="accent-rose-600"
+                    />
+                    {option.label}
+                  </span>
+                  <span className="pl-5 text-xs text-zinc-500 dark:text-zinc-400">
+                    {option.hint}
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
+
+        <div>
+          <label htmlFor="ban-reason" className={LABEL_CLASS}>
+            Lý do gửi shop
+          </label>
+          {selected !== undefined && selected.templates.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {selected.templates.map(function (template) {
                 return (
-                  <label key={option.type} className={optionClass}>
-                    <span className="flex items-center gap-2 text-sm font-bold">
-                      <input
-                        type="radio"
-                        name="violationType"
-                        value={option.type}
-                        checked={checked}
-                        onChange={() => setViolationType(option.type)}
-                        className="accent-red-600"
-                      />
-                      {option.label}
-                    </span>
-                    <span className="pl-5 text-xs text-zinc-500 dark:text-zinc-400">
-                      {option.hint}
-                    </span>
-                  </label>
+                  <button
+                    key={template}
+                    type="button"
+                    onClick={() => setReason(appendTemplate(reason, template))}
+                    className={cn(
+                      'cursor-pointer rounded-full bg-zinc-100 px-3 py-1 text-left text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15',
+                      FOCUS_RING_CLASS,
+                    )}
+                  >
+                    + {template}
+                  </button>
                 )
               })}
             </div>
-          </fieldset>
-
-          <div>
-            <label htmlFor="ban-reason" className="mb-2 block text-sm font-bold">
-              Lý do gửi shop
-            </label>
-            {selected !== undefined && selected.templates.length > 0 && (
-              <div className="mb-2 flex flex-wrap gap-1.5">
-                {selected.templates.map(function (template) {
-                  return (
-                    <button
-                      key={template}
-                      type="button"
-                      onClick={() => setReason(appendTemplate(reason, template))}
-                      className="rounded-full bg-zinc-100 px-3 py-1 text-left text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
-                    >
-                      + {template}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-            <textarea
-              id="ban-reason"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              onBlur={() => setTouched(true)}
-              rows={4}
-              maxLength={REASON_MAX}
-              placeholder="Mô tả cụ thể vi phạm để shop biết cần khắc phục gì"
-              aria-invalid={visibleProblem !== null}
-              aria-describedby="ban-reason-help"
-              className="w-full resize-y rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none focus:border-red-400 dark:border-white/10 dark:bg-white/5"
-            />
-            <div id="ban-reason-help" className="mt-1 flex justify-between gap-3 text-xs">
-              <span className="text-red-600 dark:text-red-400">{visibleProblem}</span>
-              <span className="shrink-0 text-zinc-400 tabular-nums">
-                {reason.trim().length}/{REASON_MAX}
-              </span>
-            </div>
-          </div>
-
-          <p className="rounded-2xl bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
-            Sản phẩm sẽ biến mất khỏi tìm kiếm, trang chi tiết và không đặt mua được nữa. Shop thấy
-            lý do và không tự đăng bán lại được. Đơn hàng đang xử lý vẫn tiếp tục.
-          </p>
-
-          {ban.isError && (
-            <p className="text-sm text-red-600 dark:text-red-400">
-              {hookErrorMessage('adminProductBan', ban.error)}
-            </p>
           )}
+          <textarea
+            id="ban-reason"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            onBlur={() => setTouched(true)}
+            rows={4}
+            maxLength={REASON_MAX}
+            placeholder="Mô tả cụ thể vi phạm để shop biết cần khắc phục gì"
+            aria-invalid={visibleProblem !== null}
+            aria-describedby="ban-reason-help"
+            className={cn(TEXTAREA_CLASS, 'resize-y py-3')}
+          />
+          <div id="ban-reason-help" className="mt-1 flex justify-between gap-3 text-xs">
+            <span role="alert" className="font-medium text-rose-600 dark:text-rose-400">
+              {visibleProblem}
+            </span>
+            <span className="shrink-0 text-zinc-500 tabular-nums dark:text-zinc-400">
+              {reason.trim().length}/{REASON_MAX}
+            </span>
+          </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-zinc-100 p-5 dark:border-white/10">
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200">
+          Sản phẩm sẽ biến mất khỏi tìm kiếm, trang chi tiết và không đặt mua được nữa. Shop thấy lý
+          do và không tự đăng bán lại được. Đơn hàng đang xử lý vẫn tiếp tục.
+        </p>
+
+        {ban.isError && (
+          <p
+            role="alert"
+            className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200"
+          >
+            {hookErrorMessage('adminProductBan', ban.error)}
+          </p>
+        )}
+
+        <div className="flex justify-end gap-3 border-t border-zinc-200/80 pt-4 dark:border-white/10">
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-full border border-zinc-200 px-5 py-2.5 text-sm font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+            onClick={handleClose}
+            disabled={ban.isPending}
+            className={cn(secondaryButtonClass(), 'px-5 py-2.5')}
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={canSubmit === false}
-            className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
+            className={cn(dangerButtonClass(), 'px-5 py-2.5')}
           >
             {ban.isPending && <span>Đang gỡ…</span>}
             {ban.isPending === false && <span>Gỡ sản phẩm</span>}
           </button>
         </div>
       </form>
-    </dialog>
+    </Modal>
   )
 }

@@ -87,7 +87,7 @@ export default function ReviewProductPickerModal(props: Props) {
                   type="button"
                   disabled={isLocked}
                   onClick={() => props.onSelectProduct(item, entry.variantLabel, existing)}
-                  className="shrink-0 rounded-full border border-zinc-300 px-3.5 py-1.5 text-xs font-bold text-zinc-800 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:text-zinc-100 dark:hover:bg-white/10"
+                  className="shrink-0 cursor-pointer rounded-full border border-zinc-300 px-3.5 py-1.5 text-xs font-bold text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:text-zinc-100 dark:hover:bg-white/10"
                 >
                   {actionLabel(existing)}
                 </button>

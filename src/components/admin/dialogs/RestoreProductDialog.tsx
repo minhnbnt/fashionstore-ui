@@ -1,8 +1,11 @@
 import { useRestoreProduct } from '@generated/endpoints/admin-products/admin-products'
 import { ArrowCounterClockwise } from '@phosphor-icons/react'
 
+import Modal from '@/components/Modal'
 import { violationLabel } from '@/lib/admin/productModeration'
 import { hookErrorMessage } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
+import { cn, primaryButtonClass, secondaryButtonClass } from '@/lib/ui/styles'
 
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
 
@@ -16,32 +19,39 @@ interface Props {
 export default function RestoreProductDialog({ product, onClose, onDone }: Props) {
   const restore = useRestoreProduct()
 
+  function handleClose() {
+    if (restore.isPending) {
+      return
+    }
+    onClose()
+  }
+
   function handleConfirm() {
     if (product.id === undefined) {
       return
     }
-    restore.mutate({ id: product.id }, { onSuccess: onDone })
+    restore.mutate(
+      { id: product.id },
+      {
+        onSuccess: onDone,
+        onError: function (err) {
+          notify.fromError(err, 'adminProductRestore')
+        },
+      },
+    )
   }
 
   return (
-    <dialog
-      open
-      className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black/60 p-4 text-inherit backdrop-blur-xs"
-      aria-labelledby="restore-product-title"
-    >
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-[#11182a]">
-        <h2
-          id="restore-product-title"
-          className="flex items-center gap-2 text-lg font-extrabold tracking-tighter"
-        >
+    <Modal title="Khôi phục sản phẩm?" onClose={handleClose} widthClass="max-w-md">
+      <div className="mt-2">
+        <p className="flex items-center gap-2 truncate text-sm font-semibold">
           <ArrowCounterClockwise
-            size={20}
+            size={18}
             weight="bold"
-            className="text-indigo-600 dark:text-indigo-400"
+            className="shrink-0 text-blue-700 dark:text-sky-300"
           />
-          Khôi phục sản phẩm?
-        </h2>
-        <p className="mt-1 truncate text-sm font-semibold">{product.name}</p>
+          <span className="truncate">{product.name}</span>
+        </p>
         {product.violationType !== null && product.violationType !== undefined && (
           <p className="mt-3 rounded-2xl bg-zinc-100 px-4 py-3 text-xs text-zinc-600 dark:bg-white/5 dark:text-zinc-300">
             Đã gỡ vì <strong>{violationLabel(product.violationType)}</strong>:{' '}
@@ -54,7 +64,10 @@ export default function RestoreProductDialog({ product, onClose, onDone }: Props
         </p>
 
         {restore.isError && (
-          <p className="mt-3 text-sm text-red-600 dark:text-red-400">
+          <p
+            role="alert"
+            className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200"
+          >
             {hookErrorMessage('adminProductRestore', restore.error)}
           </p>
         )}
@@ -62,8 +75,9 @@ export default function RestoreProductDialog({ product, onClose, onDone }: Props
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-full border border-zinc-200 px-5 py-2.5 text-sm font-bold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+            onClick={handleClose}
+            disabled={restore.isPending}
+            className={cn(secondaryButtonClass(), 'px-5 py-2.5')}
           >
             Hủy
           </button>
@@ -71,13 +85,16 @@ export default function RestoreProductDialog({ product, onClose, onDone }: Props
             type="button"
             onClick={handleConfirm}
             disabled={restore.isPending}
-            className="btn-primary rounded-full px-5 py-2.5 text-sm font-bold disabled:opacity-50"
+            className={cn(
+              primaryButtonClass(),
+              'rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
+            )}
           >
             {restore.isPending && <span>Đang khôi phục…</span>}
             {restore.isPending === false && <span>Khôi phục</span>}
           </button>
         </div>
       </div>
-    </dialog>
+    </Modal>
   )
 }

@@ -2,6 +2,9 @@ import { useNavigate } from 'react-router'
 
 import { Heart } from '@phosphor-icons/react'
 
+import { takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
+
 import { useWishlist } from '../hooks/useWishlist'
 
 export default function WishlistButton(props: {
@@ -23,14 +26,15 @@ export default function WishlistButton(props: {
   }
 
   let size = 18
-  let buttonClass = 'glass absolute top-3 right-3 rounded-full p-2 disabled:opacity-60'
+  let buttonClass =
+    'glass absolute top-3 right-3 cursor-pointer rounded-full p-2 disabled:cursor-not-allowed disabled:opacity-60'
   if (action) {
     size = 16
     buttonClass =
-      'flex items-center justify-center rounded-full border border-sky-200 px-4 py-3 transition hover:border-rose-300 disabled:opacity-60 dark:border-white/10 dark:hover:border-rose-400/50'
+      'flex cursor-pointer items-center justify-center rounded-full border border-sky-200 px-4 py-3 transition hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:hover:border-rose-400/50'
     if (favorited) {
       buttonClass =
-        'flex items-center justify-center rounded-full border border-rose-300 px-4 py-3 transition disabled:opacity-60 dark:border-rose-400/50'
+        'flex cursor-pointer items-center justify-center rounded-full border border-rose-300 px-4 py-3 transition disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-400/50'
     }
   }
 
@@ -38,11 +42,45 @@ export default function WishlistButton(props: {
     if (props.productId === undefined || props.productId === '') {
       return
     }
+    const productId = props.productId
     if (isLoggedIn === false) {
-      void navigate('/login', { state: { from: '/product/' + props.productId } })
+      notify.info('Vui lòng đăng nhập để lưu sản phẩm yêu thích', undefined, {
+        id: 'wishlist-auth',
+      })
+      void navigate('/login', { state: { from: '/product/' + productId } })
       return
     }
-    toggle.mutate({ data: { productId: props.productId } })
+    const wasFavorited = favorited
+    toggle.mutate(
+      { data: { productId } },
+      {
+        onSuccess: function (res) {
+          let saved = wasFavorited === false
+          try {
+            const data = takeData(res)
+            if (data.saved !== undefined) {
+              saved = data.saved
+            }
+          } catch {
+            // Fallback to toggled local expectation when payload is absent
+          }
+          if (saved) {
+            notify.success('Đã thêm vào yêu thích', undefined, {
+              id: 'wishlist-' + productId,
+            })
+            return
+          }
+          notify.info('Đã bỏ khỏi yêu thích', undefined, {
+            id: 'wishlist-' + productId,
+          })
+        },
+        onError: function (err) {
+          notify.fromError(err, 'wishlist', 'Không thể cập nhật danh sách yêu thích', {
+            id: 'wishlist-' + productId,
+          })
+        },
+      },
+    )
   }
 
   return (

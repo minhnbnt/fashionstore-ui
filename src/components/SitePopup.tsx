@@ -2,15 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
 import { useListPopups } from '@generated/endpoints/site-content/site-content'
-import { X } from '@phosphor-icons/react'
 
-import { urlOrPlaceholder, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import Modal from '@/components/Modal'
+import { PLACEHOLDER_IMAGE, takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import {
   browserSeenStore,
   isInternalLink,
   markPopupSeen,
   pickPopup,
 } from '@/lib/content/siteContent'
+import { cn, FOCUS_RING_CLASS, primaryButtonClass } from '@/lib/ui/styles'
 
 import { useSessionQuery } from '../hooks/useSession'
 
@@ -104,24 +105,6 @@ export default function SitePopup() {
     [popupsQuery.isSuccess, popupsQuery.data, sessionQuery.isPending, sessionQuery.data],
   )
 
-  useEffect(
-    function () {
-      if (popup === null) {
-        return
-      }
-      const shown = popup
-      function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-          markPopupSeen(shown, browserSeenStore, new Date())
-          setPopup(null)
-        }
-      }
-      window.addEventListener('keydown', onKey)
-      return () => window.removeEventListener('keydown', onKey)
-    },
-    [popup],
-  )
-
   function close() {
     if (popup !== null) {
       markPopupSeen(popup, browserSeenStore, new Date())
@@ -137,43 +120,33 @@ export default function SitePopup() {
   const title = popup.title ?? ''
   const body = popup.body ?? ''
   const ctaLabel = popup.ctaLabel ?? ''
-  let ariaLabel = title
-  if (ariaLabel === '') {
-    ariaLabel = 'Khuyến mãi'
+  let modalTitle = title
+  if (modalTitle === '') {
+    modalTitle = 'Khuyến mãi'
   }
 
   return (
-    <dialog
-      open
-      aria-label={ariaLabel}
-      className="fixed inset-0 z-[60] m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-black/60 p-4 text-inherit backdrop-blur-xs"
-    >
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-2xl dark:border-white/10 dark:bg-[#11182a]">
-        <button
-          type="button"
-          onClick={close}
-          aria-label="Đóng"
-          className="absolute top-3 right-3 z-10 rounded-full bg-black/40 p-2 text-white transition hover:bg-black/60"
-        >
-          <X size={16} weight="bold" />
-        </button>
-
+    <Modal title={modalTitle} onClose={close} widthClass="max-w-md" closeOnBackdrop={true}>
+      <div className="mt-4 space-y-4">
         {imageUrl !== '' && (
-          <PopupAction popup={popup} onClose={close} className="block">
+          <PopupAction
+            popup={popup}
+            onClose={close}
+            className={cn('block cursor-pointer overflow-hidden rounded-2xl', FOCUS_RING_CLASS)}
+          >
             <img
               src={urlOrPlaceholder(imageUrl)}
-              alt={title}
+              alt={modalTitle}
               width={800}
               height={800}
               onError={handleImageError}
-              className="aspect-square w-full object-cover"
+              className="aspect-square w-full object-cover transition duration-300 hover:scale-[1.02]"
             />
           </PopupAction>
         )}
 
-        {(title !== '' || body !== '' || ctaLabel !== '') && (
-          <div className="space-y-3 p-6 text-center">
-            {title !== '' && <h2 className="text-2xl font-extrabold tracking-tighter">{title}</h2>}
+        {(body !== '' || ctaLabel !== '') && (
+          <div className="space-y-3 text-center">
             {body !== '' && (
               <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{body}</p>
             )}
@@ -181,7 +154,10 @@ export default function SitePopup() {
               <PopupAction
                 popup={popup}
                 onClose={close}
-                className="btn-primary inline-flex rounded-full px-7 py-3 text-sm font-bold"
+                className={cn(
+                  primaryButtonClass(),
+                  'inline-flex rounded-full px-7 py-3 text-sm font-bold',
+                )}
               >
                 {ctaLabel}
               </PopupAction>
@@ -189,6 +165,6 @@ export default function SitePopup() {
           </div>
         )}
       </div>
-    </dialog>
+    </Modal>
   )
 }

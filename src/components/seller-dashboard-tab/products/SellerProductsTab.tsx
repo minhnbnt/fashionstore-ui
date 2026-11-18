@@ -17,7 +17,6 @@ import {
   Eye,
   EyeSlash,
   Trash,
-  CheckCircle,
   X,
   WarningCircle,
   CircleNotch,
@@ -39,9 +38,17 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { formatDateTime, formatVnd } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 import { productItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 import { sellerProductStatusMeta } from '@/lib/seller/sellerStatus'
+import {
+  cn,
+  dangerButtonClass,
+  PANEL_CLASS,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from '@/lib/ui/styles'
 
 import type { ProductItem } from '@/types/seller'
 import type { BulkOperationResult, SellerProductResponse } from '@generated/model'
@@ -116,9 +123,6 @@ export default function SellerProductsTab({
   const [isUpdatingStock, setIsUpdatingStock] = useState(false)
   const [bulkStockError, setBulkStockError] = useState<string | null>(null)
 
-  // Toast notification
-  const [notification, setNotification] = useState<string | null>(null)
-
   // Queries. BE tra "ALL" khong bao gom san pham DELETED nen can them 1 query rieng
   // cho tab "Da xoa" (gop lai de client-side filter va dem so luong van dung duoc).
   const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopId !== '' } })
@@ -159,13 +163,6 @@ export default function SellerProductsTab({
     })
   }
 
-  function showToast(msg: string) {
-    setNotification(msg)
-    setTimeout(function () {
-      setNotification(null)
-    }, 3500)
-  }
-
   // Mutations
   const updateProductMutation = useUpdate1({
     mutation: {
@@ -181,7 +178,7 @@ export default function SellerProductsTab({
         void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
         setDeleteTargetId(null)
         setDeleteErrorMessage(null)
-        showToast('Đã xóa mềm sản phẩm vào thùng rác')
+        notify.success('Đã xóa mềm sản phẩm vào thùng rác')
       },
       onError: function (error: unknown) {
         let status: number | undefined = undefined
@@ -189,12 +186,15 @@ export default function SellerProductsTab({
           status = error.status
         }
         if (status === 409) {
-          setDeleteErrorMessage(
-            'Không thể xóa sản phẩm do đang có đơn hàng liên quan đang xử lý (chờ xác nhận hoặc đang vận chuyển). Vui lòng hoàn tất hoặc hủy các đơn hàng trước.',
-          )
+          const conflictMsg =
+            'Không thể xóa sản phẩm do đang có đơn hàng liên quan đang xử lý (chờ xác nhận hoặc đang vận chuyển). Vui lòng hoàn tất hoặc hủy các đơn hàng trước.'
+          setDeleteErrorMessage(conflictMsg)
+          notify.warning(conflictMsg)
           return
         }
-        setDeleteErrorMessage('Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau.')
+        const fallbackMsg = 'Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau.'
+        setDeleteErrorMessage(fallbackMsg)
+        notify.fromError(error, undefined, fallbackMsg)
       },
     },
   })
@@ -206,13 +206,13 @@ export default function SellerProductsTab({
         setSelectedProductIds(new Set())
         const data = resp.data
         if (isBulkResult(data)) {
-          showToast(`Thao tác thành công trên ${data.successCount} sản phẩm`)
+          notify.success(`Thao tác thành công trên ${data.successCount} sản phẩm`)
           return
         }
-        showToast('Thao tác hoàn tất')
+        notify.success('Thao tác hoàn tất')
       },
-      onError: function () {
-        showToast('Lỗi khi cập nhật trạng thái hàng loạt. Vui lòng thử lại.')
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Lỗi khi cập nhật trạng thái hàng loạt. Vui lòng thử lại.')
       },
     },
   })
@@ -228,16 +228,20 @@ export default function SellerProductsTab({
         if (isBulkResult(data)) {
           if (data.failedCount !== undefined && data.failedCount > 0) {
             const detail = (data.messages ?? []).join('; ')
-            showToast(`Đã xóa ${data.successCount} sản phẩm. Bỏ qua ${data.failedCount}: ${detail}`)
+            notify.warning(
+              `Đã xóa ${data.successCount} sản phẩm. Bỏ qua ${data.failedCount}: ${detail}`,
+            )
             return
           }
-          showToast(`Đã xóa mềm thành công ${data.successCount} sản phẩm`)
+          notify.success(`Đã xóa mềm thành công ${data.successCount} sản phẩm`)
           return
         }
-        showToast('Thao tác xóa mềm hoàn tất')
+        notify.success('Thao tác xóa mềm hoàn tất')
       },
-      onError: function () {
-        setBulkDeleteErrorMessage('Không thể xóa hàng loạt sản phẩm. Vui lòng kiểm tra lại.')
+      onError: function (err: unknown) {
+        const msg = 'Không thể xóa hàng loạt sản phẩm. Vui lòng kiểm tra lại.'
+        setBulkDeleteErrorMessage(msg)
+        notify.fromError(err, undefined, msg)
       },
     },
   })
@@ -250,10 +254,12 @@ export default function SellerProductsTab({
         setBulkPriceError(null)
         setBulkPriceValue('')
         setSelectedProductIds(new Set())
-        showToast('Cập nhật giá sản phẩm thành công')
+        notify.success('Cập nhật giá sản phẩm thành công')
       },
-      onError: function () {
-        setBulkPriceError('Lỗi cập nhật giá sản phẩm. Vui lòng kiểm tra lại giá trị.')
+      onError: function (err: unknown) {
+        const msg = 'Lỗi cập nhật giá sản phẩm. Vui lòng kiểm tra lại giá trị.'
+        setBulkPriceError(msg)
+        notify.fromError(err, undefined, msg)
       },
     },
   })
@@ -535,13 +541,13 @@ export default function SellerProductsTab({
       {
         onSuccess: function () {
           if (nextStatus === 'HIDDEN') {
-            showToast('Đã tạm ẩn sản phẩm khỏi gian hàng')
+            notify.success('Đã tạm ẩn sản phẩm khỏi gian hàng')
             return
           }
-          showToast('Đã bật bán sản phẩm thành công')
+          notify.success('Đã bật bán sản phẩm thành công')
         },
-        onError: function () {
-          showToast('Không thể cập nhật trạng thái sản phẩm.')
+        onError: function (err: unknown) {
+          notify.fromError(err, undefined, 'Không thể cập nhật trạng thái sản phẩm.')
         },
       },
     )
@@ -731,7 +737,7 @@ export default function SellerProductsTab({
 
     if (updates.length === 0) {
       setShowBulkStockModal(false)
-      showToast('Tồn kho các size không có thay đổi')
+      notify.info('Tồn kho các size không có thay đổi')
       return
     }
 
@@ -752,9 +758,11 @@ export default function SellerProductsTab({
       void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
       setShowBulkStockModal(false)
       setSelectedProductIds(new Set())
-      showToast('Cập nhật tồn kho từng size thành công')
-    } catch {
-      setBulkStockError('Lỗi cập nhật tồn kho từng size. Vui lòng kiểm tra lại.')
+      notify.success('Cập nhật tồn kho từng size thành công')
+    } catch (err: unknown) {
+      const msg = 'Lỗi cập nhật tồn kho từng size. Vui lòng kiểm tra lại.'
+      setBulkStockError(msg)
+      notify.fromError(err, 'sellerProductsInventory', msg)
     } finally {
       setIsUpdatingStock(false)
     }
@@ -801,14 +809,6 @@ export default function SellerProductsTab({
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Toast thông báo */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header bar */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -824,7 +824,10 @@ export default function SellerProductsTab({
             <button
               type="button"
               onClick={onNavigateAddProduct}
-              className="btn-primary flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-bold shadow-md"
+              className={cn(
+                primaryButtonClass(),
+                'flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold shadow-md',
+              )}
             >
               <Plus size={16} weight="bold" />
               Đăng sản phẩm mới
@@ -834,7 +837,7 @@ export default function SellerProductsTab({
       </div>
 
       {/* Main Container */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+      <div className={PANEL_CLASS}>
         {/* Tab phân loại 6 tabs */}
         <div className="flex flex-wrap items-center gap-1.5 border-b border-zinc-100 pb-4 dark:border-white/10">
           {[
@@ -848,14 +851,13 @@ export default function SellerProductsTab({
           ].map(function (tab) {
             const isCurrent = activeTab === tab.id
             let tabClasses =
-              'flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              'flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
             let countBadgeClasses =
               'rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400'
             if (isCurrent) {
               tabClasses =
-                'flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
-              countBadgeClasses =
-                'rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white dark:bg-indigo-900/30 dark:text-indigo-950'
+                'btn-primary flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition'
+              countBadgeClasses = 'rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white'
             }
             return (
               <button
@@ -895,10 +897,11 @@ export default function SellerProductsTab({
               {searchTerm !== '' && (
                 <button
                   type="button"
+                  aria-label="Xóa từ khóa tìm kiếm"
                   onClick={function () {
                     setSearchTerm('')
                   }}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                 >
                   <X size={14} weight="bold" />
                 </button>
@@ -914,11 +917,12 @@ export default function SellerProductsTab({
                   className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400"
                 />
                 <select
+                  aria-label="Lọc theo danh mục"
                   value={selectedCategoryId}
                   onChange={function (e) {
                     setSelectedCategoryId(e.target.value)
                   }}
-                  className="w-full appearance-none rounded-full border border-zinc-300 bg-zinc-50 py-2.5 pr-8 pl-9 text-xs font-medium text-zinc-700 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                  className="w-full appearance-none rounded-full border border-zinc-300 bg-white/85 py-2.5 pr-8 pl-9 text-xs font-medium text-[#17203a] outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-zinc-200"
                 >
                   <option value="">Tất cả danh mục</option>
                   {categoriesList.map(function (cat) {
@@ -945,11 +949,12 @@ export default function SellerProductsTab({
                   className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400"
                 />
                 <select
+                  aria-label="Lọc theo tồn kho"
                   value={stockFilter}
                   onChange={function (e) {
                     setStockFilter(e.target.value as StockFilterKey)
                   }}
-                  className="w-full appearance-none rounded-full border border-zinc-300 bg-zinc-50 py-2.5 pr-8 pl-9 text-xs font-medium text-zinc-700 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                  className="w-full appearance-none rounded-full border border-zinc-300 bg-white/85 py-2.5 pr-8 pl-9 text-xs font-medium text-[#17203a] outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-zinc-200"
                 >
                   <option value="ALL">Mọi mức tồn kho</option>
                   <option value="LOW_STOCK">Sắp hết hàng (≤ 15)</option>
@@ -967,11 +972,12 @@ export default function SellerProductsTab({
                   className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-zinc-400"
                 />
                 <select
+                  aria-label="Sắp xếp sản phẩm"
                   value={sortBy}
                   onChange={function (e) {
                     setSortBy(e.target.value as SortKey)
                   }}
-                  className="w-full appearance-none rounded-full border border-zinc-300 bg-zinc-50 py-2.5 pr-8 pl-9 text-xs font-medium text-zinc-700 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                  className="w-full appearance-none rounded-full border border-zinc-300 bg-white/85 py-2.5 pr-8 pl-9 text-xs font-medium text-[#17203a] outline-none focus:border-blue-600 dark:border-white/15 dark:bg-[#0a0f1e] dark:text-zinc-200"
                 >
                   <option value="createdAt_desc">Ngày đăng: Mới nhất</option>
                   <option value="createdAt_asc">Ngày đăng: Cũ nhất</option>
@@ -1020,7 +1026,7 @@ export default function SellerProductsTab({
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/20"
+                className={cn(secondaryButtonClass(), 'px-3.5 py-1.5 text-xs')}
               >
                 <ArrowCounterClockwise size={13} weight="bold" />
                 Xóa bộ lọc
@@ -1039,8 +1045,9 @@ export default function SellerProductsTab({
                     type="button"
                     onClick={handleToggleSelectAll}
                     disabled={selectableProducts.length === 0}
-                    className="flex items-center justify-center text-zinc-400 hover:text-indigo-600 disabled:opacity-40"
+                    className="flex cursor-pointer items-center justify-center text-zinc-400 hover:text-blue-700 disabled:opacity-40 dark:hover:text-sky-300"
                     title={selectAllTitle}
+                    aria-label={selectAllTitle}
                   >
                     {allSelectableSelected && (
                       <CheckSquare size={18} weight="fill" className="text-indigo-600" />
@@ -1170,35 +1177,48 @@ export default function SellerProductsTab({
                           </span>
                         )}
                         <div className="flex flex-wrap gap-1">
-                          {product.variants.map(function (v) {
+                          {product.variants.slice(0, 3).map(function (v) {
                             return (
                               <span
                                 key={v.id}
-                                className="rounded-lg bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold dark:bg-white/10"
+                                className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-700 dark:bg-white/10 dark:text-zinc-300"
                               >
                                 {v.color} - {v.size}
                               </span>
                             )
                           })}
+                          {product.variants.length > 3 && (
+                            <span
+                              title={product.variants
+                                .slice(3)
+                                .map(function (v) {
+                                  return `${v.color} - ${v.size}`
+                                })
+                                .join(', ')}
+                              className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-sky-500/20 dark:text-sky-300"
+                            >
+                              +{product.variants.length - 3}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>
 
                     {/* Giá bán */}
-                    <td className="px-3 py-3.5 text-right font-bold whitespace-nowrap text-zinc-900 dark:text-white">
+                    <td className="px-3 py-3.5 text-right font-bold whitespace-nowrap text-[#17203a] dark:text-white">
                       {formatVnd(product.price)}
                     </td>
 
                     {/* Tổng kho & Cảnh báo */}
                     <td className="px-3 py-3.5 text-center font-bold whitespace-nowrap">
                       {isLowStock && (
-                        <span className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-400/15 dark:text-amber-200">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
                           <WarningCircle size={13} weight="bold" />
                           {product.stock} <span className="text-[10px] font-normal">(Sắp hết)</span>
                         </span>
                       )}
                       {isOutOfStock && (
-                        <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:bg-red-400/15 dark:text-red-200">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
                           <WarningCircle size={13} weight="bold" />
                           Hết hàng
                         </span>
@@ -1221,7 +1241,7 @@ export default function SellerProductsTab({
                           product.statusReason !== undefined &&
                           product.statusReason !== null && (
                             <span
-                              className="max-w-[130px] truncate text-[10px] text-red-500"
+                              className="max-w-[130px] truncate text-[10px] text-rose-600 dark:text-rose-400"
                               title={product.statusReason}
                             >
                               {product.statusReason}
@@ -1245,7 +1265,8 @@ export default function SellerProductsTab({
                               onNavigateEditProduct(product.id)
                             }}
                             title="Chỉnh sửa sản phẩm"
-                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+                            aria-label="Chỉnh sửa sản phẩm"
+                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10"
                           >
                             <PencilSimple size={14} weight="bold" />
                           </button>
@@ -1262,7 +1283,7 @@ export default function SellerProductsTab({
                               }}
                               title={toggleActionTitle}
                               aria-label={toggleActionTitle}
-                              className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 text-zinc-600 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+                              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition hover:bg-zinc-100 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10"
                             >
                               {product.status === 'ACTIVE' && <EyeSlash size={14} weight="bold" />}
                               {product.status !== 'ACTIVE' && <Eye size={14} weight="bold" />}
@@ -1276,7 +1297,8 @@ export default function SellerProductsTab({
                               setDeleteTargetId(product.id)
                             }}
                             title="Xóa mềm sản phẩm"
-                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-red-200 text-red-500 transition hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20"
+                            aria-label="Xóa mềm sản phẩm"
+                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-rose-200 text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/15"
                           >
                             <Trash size={14} weight="bold" />
                           </button>
@@ -1311,16 +1333,16 @@ export default function SellerProductsTab({
       {selectedProductIds.size > 0 && (
         <aside
           aria-label="Thao tác hàng loạt trên các sản phẩm đã chọn"
-          className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-3xl border border-zinc-800 bg-zinc-950/95 px-5 py-3 text-white shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-[#11182a]/95"
+          className="fixed inset-x-4 bottom-4 z-40 flex flex-wrap items-center justify-between gap-2.5 rounded-3xl border border-white/15 bg-[#11182a]/95 px-4 py-3 text-white shadow-2xl backdrop-blur-md sm:inset-x-auto sm:bottom-6 sm:left-1/2 sm:-translate-x-1/2 sm:px-5 dark:border-white/15 dark:bg-[#0a0f1e]/95"
         >
-          <div className="flex items-center gap-2 border-r border-zinc-700 pr-3 text-xs font-bold">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-black text-white">
+          <div className="flex items-center gap-2 border-r border-white/15 pr-3 text-xs font-bold">
+            <span className="btn-primary flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-black text-white">
               {selectedProductIds.size}
             </span>
             <span>Đã chọn</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Hiện hàng loạt */}
             <button
               type="button"
@@ -1328,7 +1350,7 @@ export default function SellerProductsTab({
               onClick={function () {
                 handleBulkStatus('ACTIVE')
               }}
-              className="flex items-center gap-1.5 rounded-2xl bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700 disabled:opacity-50"
+              className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-zinc-100 transition hover:bg-white/20 disabled:opacity-50"
             >
               <Eye size={14} weight="bold" className="text-emerald-400" />
               <span>Hiện</span>
@@ -1341,7 +1363,7 @@ export default function SellerProductsTab({
               onClick={function () {
                 handleBulkStatus('HIDDEN')
               }}
-              className="flex items-center gap-1.5 rounded-2xl bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700 disabled:opacity-50"
+              className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-zinc-100 transition hover:bg-white/20 disabled:opacity-50"
             >
               <EyeSlash size={14} weight="bold" className="text-amber-400" />
               <span>Ẩn</span>
@@ -1357,7 +1379,7 @@ export default function SellerProductsTab({
                   setShowBulkPriceModal(true)
                 }}
                 title="Đổi giá sản phẩm đã chọn"
-                className="flex items-center gap-1.5 rounded-2xl bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700"
+                className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-zinc-100 transition hover:bg-white/20"
               >
                 <CurrencyDollar size={14} weight="bold" />
                 <span>Đổi giá</span>
@@ -1368,11 +1390,11 @@ export default function SellerProductsTab({
                 type="button"
                 disabled={true}
                 title="Chỉ được cập nhật giá khi chọn chính xác 1 sản phẩm"
-                className="flex cursor-not-allowed items-center gap-1.5 rounded-2xl bg-zinc-800/40 px-3 py-1.5 text-xs font-semibold text-zinc-500 opacity-60"
+                className="flex cursor-not-allowed items-center gap-1.5 rounded-full bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-zinc-400 opacity-60"
               >
                 <CurrencyDollar size={14} weight="bold" />
                 <span>Đổi giá</span>
-                <span className="text-[10px] text-zinc-500">(1 SP)</span>
+                <span className="text-[10px] text-zinc-400">(1 SP)</span>
               </button>
             )}
 
@@ -1393,7 +1415,7 @@ export default function SellerProductsTab({
                   setShowBulkStockModal(true)
                 }}
                 title="Cập nhật kho từng size cho sản phẩm đã chọn"
-                className="flex items-center gap-1.5 rounded-2xl bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700"
+                className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-zinc-100 transition hover:bg-white/20"
               >
                 <Package size={14} weight="bold" />
                 <span>Cập nhật kho</span>
@@ -1404,11 +1426,11 @@ export default function SellerProductsTab({
                 type="button"
                 disabled={true}
                 title="Chỉ được cập nhật kho khi chọn chính xác 1 sản phẩm"
-                className="flex cursor-not-allowed items-center gap-1.5 rounded-2xl bg-zinc-800/40 px-3 py-1.5 text-xs font-semibold text-zinc-500 opacity-60"
+                className="flex cursor-not-allowed items-center gap-1.5 rounded-full bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-zinc-400 opacity-60"
               >
                 <Package size={14} weight="bold" />
                 <span>Cập nhật kho</span>
-                <span className="text-[10px] text-zinc-500">(1 SP)</span>
+                <span className="text-[10px] text-zinc-400">(1 SP)</span>
               </button>
             )}
 
@@ -1419,9 +1441,9 @@ export default function SellerProductsTab({
                 setBulkDeleteErrorMessage(null)
                 setShowBulkDeleteModal(true)
               }}
-              className="flex items-center gap-1.5 rounded-2xl border border-red-800/60 bg-red-950/70 px-3 py-1.5 text-xs font-semibold text-red-200 transition hover:bg-red-900 disabled:opacity-50"
+              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/20 px-3.5 py-1.5 text-xs font-semibold text-rose-200 transition hover:bg-rose-600 hover:text-white disabled:opacity-50"
             >
-              <Trash size={14} weight="bold" className="text-red-400" />
+              <Trash size={14} weight="bold" />
               <span>Xóa</span>
             </button>
           </div>
@@ -1429,8 +1451,9 @@ export default function SellerProductsTab({
           <button
             type="button"
             onClick={handleClearSelection}
-            className="ml-2 rounded-xl p-1 text-zinc-400 transition hover:bg-zinc-800 hover:text-white"
+            className="ml-1 cursor-pointer rounded-full p-1.5 text-zinc-400 transition hover:bg-white/10 hover:text-white"
             title="Bỏ chọn tất cả"
+            aria-label="Bỏ chọn tất cả"
           >
             <X size={15} weight="bold" />
           </button>
@@ -1477,11 +1500,11 @@ export default function SellerProductsTab({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl bg-indigo-50 px-3 py-2 text-xs dark:bg-indigo-900/30">
+              <div className="flex items-center justify-between rounded-2xl bg-sky-50 px-3.5 py-2 text-xs dark:bg-sky-500/15">
                 <span className="font-semibold text-zinc-600 dark:text-zinc-300">
                   Giá cũ hiện tại:
                 </span>
-                <span className="text-sm font-black text-indigo-700 dark:text-indigo-300">
+                <span className="text-sm font-black text-blue-700 dark:text-sky-300">
                   {formatVnd(singleSelectedProduct.price)}
                 </span>
               </div>
@@ -1577,7 +1600,7 @@ export default function SellerProductsTab({
               onClick={function () {
                 setShowBulkPriceModal(false)
               }}
-              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+              className={cn(secondaryButtonClass(), 'text-xs')}
             >
               Hủy
             </button>
@@ -1585,7 +1608,10 @@ export default function SellerProductsTab({
               type="button"
               disabled={bulkPriceMutation.isPending}
               onClick={handleConfirmBulkPrice}
-              className="flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50"
+              className={cn(
+                primaryButtonClass(),
+                'flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-bold shadow-md disabled:opacity-50',
+              )}
             >
               {bulkPriceMutation.isPending && (
                 <CircleNotch size={14} weight="bold" className="animate-spin" />
@@ -1660,7 +1686,10 @@ export default function SellerProductsTab({
                     <button
                       type="button"
                       onClick={handleApplyAllFixed}
-                      className="h-8 rounded-full bg-indigo-600 px-3.5 text-[11px] font-bold text-white shadow-2xs transition hover:bg-indigo-700 active:scale-95"
+                      className={cn(
+                        primaryButtonClass(),
+                        'h-8 rounded-full px-3.5 text-[11px] font-bold shadow-2xs active:scale-95',
+                      )}
                     >
                       Gán tất cả
                     </button>
@@ -1748,8 +1777,9 @@ export default function SellerProductsTab({
                                 onClick={function () {
                                   handleDecrementVariant(v.id, v.stock)
                                 }}
-                                className="flex h-8 w-8 items-center justify-center text-zinc-500 transition hover:bg-zinc-200/70 hover:text-zinc-900 active:scale-90 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white"
+                                className="flex h-8 w-8 cursor-pointer items-center justify-center text-zinc-500 transition hover:bg-zinc-200/70 hover:text-zinc-900 active:scale-90 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white"
                                 title="Giảm 1"
+                                aria-label="Giảm 1"
                               >
                                 <span className="text-base leading-none font-bold">−</span>
                               </button>
@@ -1758,6 +1788,7 @@ export default function SellerProductsTab({
                                 type="number"
                                 min="0"
                                 step="1"
+                                aria-label={`Số lượng tồn kho size ${v.size}`}
                                 value={currentVal}
                                 onChange={function (e) {
                                   const val = e.target.value
@@ -1775,8 +1806,9 @@ export default function SellerProductsTab({
                                 onClick={function () {
                                   handleIncrementVariant(v.id, v.stock)
                                 }}
-                                className="flex h-8 w-8 items-center justify-center text-zinc-500 transition hover:bg-zinc-200/70 hover:text-zinc-900 active:scale-90 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white"
+                                className="flex h-8 w-8 cursor-pointer items-center justify-center text-zinc-500 transition hover:bg-zinc-200/70 hover:text-zinc-900 active:scale-90 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white"
                                 title="Tăng 1"
+                                aria-label="Tăng 1"
                               >
                                 <span className="text-base leading-none font-bold">+</span>
                               </button>
@@ -1838,7 +1870,7 @@ export default function SellerProductsTab({
               onClick={function () {
                 setShowBulkStockModal(false)
               }}
-              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+              className={cn(secondaryButtonClass(), 'text-xs')}
             >
               Hủy
             </button>
@@ -1848,7 +1880,10 @@ export default function SellerProductsTab({
               onClick={function () {
                 void handleConfirmBulkStock()
               }}
-              className="flex items-center gap-1.5 rounded-2xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50"
+              className={cn(
+                primaryButtonClass(),
+                'flex items-center gap-1.5 rounded-full px-5 py-2 text-xs font-bold shadow-md disabled:opacity-50',
+              )}
             >
               {isUpdatingStock && <CircleNotch size={14} weight="bold" className="animate-spin" />}
               <span>Lưu tồn kho</span>
@@ -1887,7 +1922,7 @@ export default function SellerProductsTab({
                 setShowBulkDeleteModal(false)
                 setBulkDeleteErrorMessage(null)
               }}
-              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300"
+              className={cn(secondaryButtonClass(), 'text-xs')}
             >
               Hủy bỏ
             </button>
@@ -1895,7 +1930,7 @@ export default function SellerProductsTab({
               type="button"
               disabled={bulkDeleteMutation.isPending}
               onClick={handleConfirmBulkDelete}
-              className="flex items-center gap-1.5 rounded-2xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
+              className={cn(dangerButtonClass(), 'text-xs')}
             >
               {bulkDeleteMutation.isPending && (
                 <CircleNotch size={14} weight="bold" className="animate-spin" />
@@ -1961,7 +1996,7 @@ export default function SellerProductsTab({
                 setDeleteTargetId(null)
                 setDeleteErrorMessage(null)
               }}
-              className="rounded-2xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-white/10 dark:text-zinc-300"
+              className={cn(secondaryButtonClass(), 'text-xs')}
             >
               Hủy bỏ
             </button>
@@ -1969,7 +2004,7 @@ export default function SellerProductsTab({
               type="button"
               disabled={deleteProductMutation.isPending}
               onClick={handleConfirmSingleDelete}
-              className="flex items-center gap-1.5 rounded-2xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
+              className={cn(dangerButtonClass(), 'text-xs')}
             >
               {deleteProductMutation.isPending && (
                 <CircleNotch size={14} weight="bold" className="animate-spin" />
