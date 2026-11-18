@@ -9,9 +9,9 @@ import {
   ShieldCheck,
   Sparkle,
   VideoCamera,
-  X,
 } from '@phosphor-icons/react'
 
+import Drawer from '@/components/ui/Drawer'
 import {
   canApprove,
   canBan,
@@ -31,6 +31,7 @@ import {
   takeData,
 } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
+import { cn, dangerButtonClass, primaryButtonClass } from '@/lib/ui/styles'
 
 import type { AdminProductDetailResponse } from '@generated/model/adminProductDetailResponse'
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
@@ -160,7 +161,7 @@ function DetailBody({
           <button
             type="button"
             onClick={() => onApprove(product)}
-            className="flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
+            className="flex cursor-pointer items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
           >
             <CheckCircle size={16} weight="bold" />
             Phê duyệt sản phẩm
@@ -170,7 +171,7 @@ function DetailBody({
           <button
             type="button"
             onClick={() => onReject(product)}
-            className="flex items-center gap-2 rounded-full border border-red-300 px-5 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+            className="flex cursor-pointer items-center gap-2 rounded-full border border-rose-300 px-5 py-2.5 text-sm font-bold text-rose-600 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-400 dark:hover:bg-rose-500/10"
           >
             <Prohibit size={16} weight="bold" />
             Từ chối duyệt
@@ -180,7 +181,7 @@ function DetailBody({
           <button
             type="button"
             onClick={() => onBan(product)}
-            className="flex items-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-red-700"
+            className={cn(dangerButtonClass(), 'cursor-pointer px-5 py-2.5')}
           >
             <Prohibit size={16} weight="bold" />
             Gỡ sản phẩm
@@ -190,7 +191,10 @@ function DetailBody({
           <button
             type="button"
             onClick={() => onRestore(product)}
-            className="btn-primary flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold"
+            className={cn(
+              primaryButtonClass(),
+              'flex cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold',
+            )}
           >
             <ArrowCounterClockwise size={16} weight="bold" />
             Khôi phục
@@ -200,7 +204,7 @@ function DetailBody({
           <button
             type="button"
             onClick={() => onDismiss(product)}
-            className="flex items-center gap-2 rounded-full border border-emerald-300 px-5 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+            className="flex cursor-pointer items-center gap-2 rounded-full border border-emerald-300 px-5 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
           >
             <ShieldCheck size={16} weight="bold" />
             Không vi phạm
@@ -459,33 +463,8 @@ export default function AdminProductDetailPanel({
   }
 
   return (
-    <dialog
-      open
-      className="fixed inset-0 z-40 m-0 flex h-full max-h-none w-full max-w-none justify-end border-0 bg-transparent p-0 text-inherit"
-      aria-label="Chi tiết sản phẩm"
-    >
-      <button
-        type="button"
-        aria-label="Đóng chi tiết"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default border-0 bg-black/40 backdrop-blur-xs"
-      />
-      <aside className="relative flex h-full w-full max-w-lg flex-col bg-[#f6f9ff] shadow-2xl dark:bg-[#0a0f1e]">
-        <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4 dark:border-white/10">
-          <p className="text-xs font-bold tracking-[0.18em] text-indigo-600 uppercase dark:text-indigo-400">
-            Chi tiết sản phẩm
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Đóng"
-            className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-white/10"
-          >
-            <X size={18} weight="bold" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-5">{body}</div>
-      </aside>
-    </dialog>
+    <Drawer open side="right" title="Chi tiết sản phẩm" widthClass="max-w-lg" onClose={onClose}>
+      {body}
+    </Drawer>
   )
 }

@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router'
 
 import { CheckCircle, Eye, EyeSlash, Lock, WarningCircle } from '@phosphor-icons/react'
 
+import { notify } from '@/lib/notifications'
+import { cn, INPUT_CLASS } from '@/lib/ui/styles'
+
 import { useUpdatePassword } from '../../hooks/useAuthMutations'
 import {
   fetchSession,
@@ -111,16 +114,20 @@ export default function ResetPassword() {
     const errorMsg = validatePasswordReset(password, confirmPassword)
     if (errorMsg !== null) {
       setFormError(errorMsg)
+      notify.warning(errorMsg, undefined, { id: 'reset-password-validation' })
       return
     }
     setFormError(null)
 
     updatePassword.mutate(password, {
       onSuccess: function () {
+        notify.success('Đặt lại mật khẩu thành công', 'Hệ thống sẽ chuyển bạn về trang đăng nhập.')
         setStatus('success')
       },
       onError: function (err) {
-        setFormError(friendlyAuthError(err))
+        const msg = friendlyAuthError(err)
+        setFormError(msg)
+        notify.error(msg, undefined, { id: 'reset-password-error' })
       },
     })
   }
@@ -242,7 +249,7 @@ export default function ResetPassword() {
                 }}
                 disabled={updatePassword.isPending}
                 placeholder="Ít nhất 6 ký tự"
-                className="w-full rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 pr-11 text-sm transition outline-none focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
+                className={cn(INPUT_CLASS, 'py-3 pr-11 transition disabled:opacity-60')}
               />
               <button
                 type="button"
@@ -251,7 +258,7 @@ export default function ResetPassword() {
                     return !prev
                   })
                 }}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
+                className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
                 aria-label="Ẩn hiện mật khẩu mới"
               >
                 {showPassword && <EyeSlash size={18} />}
@@ -278,7 +285,7 @@ export default function ResetPassword() {
                 }}
                 disabled={updatePassword.isPending}
                 placeholder="Nhập lại mật khẩu mới"
-                className="w-full rounded-2xl border border-zinc-200 bg-white/70 px-4 py-3 pr-11 text-sm transition outline-none focus:border-indigo-600 disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:focus:border-indigo-400"
+                className={cn(INPUT_CLASS, 'py-3 pr-11 transition disabled:opacity-60')}
               />
               <button
                 type="button"
@@ -287,7 +294,7 @@ export default function ResetPassword() {
                     return !prev
                   })
                 }}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
+                className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
                 aria-label="Ẩn hiện xác nhận mật khẩu"
               >
                 {showConfirm && <EyeSlash size={18} />}
@@ -299,7 +306,7 @@ export default function ResetPassword() {
           <button
             type="submit"
             disabled={updatePassword.isPending}
-            className="btn-primary mt-2 w-full rounded-full py-3 text-sm font-bold disabled:opacity-60"
+            className="btn-primary mt-2 w-full cursor-pointer rounded-full py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {updatePassword.isPending && <span>Đang cập nhật…</span>}
             {updatePassword.isPending === false && <span>Cập nhật mật khẩu</span>}

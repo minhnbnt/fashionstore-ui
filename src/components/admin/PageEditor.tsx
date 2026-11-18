@@ -18,6 +18,8 @@ import {
   SLUG_PATTERN,
   slugify,
 } from '@/lib/content/siteContent'
+import { notify } from '@/lib/notifications'
+import { cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 import Markdown from '../Markdown'
 import ConfirmDialog from './dialogs/ConfirmDialog'
@@ -131,13 +133,19 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
     if (page?.id === undefined) {
       create.mutate(
         { data },
-        { onSuccess: (response) => onSaved(takeData(response), 'Đã tạo trang nháp.') },
+        {
+          onSuccess: (response) => onSaved(takeData(response), 'Đã tạo trang nháp.'),
+          onError: (err) => notify.fromError(err, 'adminPageSave'),
+        },
       )
       return
     }
     update.mutate(
       { id: page.id, data },
-      { onSuccess: (response) => onSaved(takeData(response), 'Đã lưu trang.') },
+      {
+        onSuccess: (response) => onSaved(takeData(response), 'Đã lưu trang.'),
+        onError: (err) => notify.fromError(err, 'adminPageSave'),
+      },
     )
   }
 
@@ -148,24 +156,24 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
     if (published) {
       unpublish.mutate(
         { id: page.id },
-        { onSuccess: (response) => onSaved(takeData(response), 'Đã gỡ xuất bản, trang về nháp.') },
+        {
+          onSuccess: (response) => onSaved(takeData(response), 'Đã gỡ xuất bản, trang về nháp.'),
+          onError: (err) => notify.fromError(err, 'adminPageStatus'),
+        },
       )
       return
     }
     publish.mutate(
       { id: page.id },
-      { onSuccess: (response) => onSaved(takeData(response), 'Đã xuất bản trang.') },
+      {
+        onSuccess: (response) => onSaved(takeData(response), 'Đã xuất bản trang.'),
+        onError: (err) => notify.fromError(err, 'adminPageStatus'),
+      },
     )
   }
 
-  let modeWriteClass = 'rounded-full px-3 py-1 text-xs font-bold text-zinc-600 dark:text-zinc-300'
-  let modePreviewClass =
-    'rounded-full px-3 py-1 text-xs font-bold bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
-  if (mode === 'write') {
-    modeWriteClass =
-      'rounded-full px-3 py-1 text-xs font-bold bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
-    modePreviewClass = 'rounded-full px-3 py-1 text-xs font-bold text-zinc-600 dark:text-zinc-300'
-  }
+  const modeWriteClass = cn(segmentedItemClass(mode === 'write'), 'cursor-pointer px-3 py-1')
+  const modePreviewClass = cn(segmentedItemClass(mode === 'preview'), 'cursor-pointer px-3 py-1')
 
   let statusLabel = 'Xuất bản'
   let StatusIcon = Eye
@@ -272,7 +280,7 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
         </label>
         <label className="block">
           <span className={LABEL_CLASS}>Đường dẫn</span>
-          <div className="flex items-center rounded-2xl border border-zinc-200 bg-white pl-4 text-sm dark:border-white/10 dark:bg-white/5">
+          <div className="flex items-center rounded-full border border-zinc-300 bg-white/80 pl-4 text-sm focus-within:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400">
             <span className="shrink-0 text-zinc-400">/pages/</span>
             <input
               value={form.slug}
@@ -305,7 +313,7 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
           >
             {FOOTER_GROUP_OPTIONS.map(function (option) {
               return (
-                <option key={option.value} value={option.value}>
+                <option key={option.value} value={option.value} className="dark:bg-[#0a0f1e]">
                   {option.label}
                 </option>
               )
@@ -340,7 +348,7 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
       <div className="mt-5">
         <div className="mb-2 flex items-center justify-between gap-3">
           <span className="text-sm font-bold">Nội dung</span>
-          <div className="flex gap-1 rounded-full bg-zinc-100 p-1 lg:hidden dark:bg-white/10">
+          <div className={cn(segmentedTrackClass(), 'lg:hidden')}>
             <button type="button" onClick={() => setMode('write')} className={modeWriteClass}>
               Soạn
             </button>
@@ -373,6 +381,7 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
       {confirmDelete && page?.id !== undefined && (
         <ConfirmDialog
           open
+          danger
           title="Xóa trang"
           description={`Xóa hẳn trang nháp "${page.title ?? ''}"?`}
           confirmLabel="Xóa trang"
@@ -385,7 +394,10 @@ export default function PageEditor({ page, onBack, onSaved, onDeleted }: Props) 
             }
             remove.mutate(
               { id: page.id },
-              { onSuccess: () => onDeleted(`Đã xóa trang "${page.title ?? ''}".`) },
+              {
+                onSuccess: () => onDeleted(`Đã xóa trang "${page.title ?? ''}".`),
+                onError: (err) => notify.fromError(err, 'adminPageStatus'),
+              },
             )
           }}
         />

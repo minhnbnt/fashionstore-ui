@@ -166,7 +166,7 @@ export default function ReviewReplyTemplateModal({
                 setTitle(e.target.value)
               }}
               placeholder="Ví dụ: Cảm ơn đánh giá 5 sao"
-              className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-[#0b101b] dark:text-white"
+              className="mt-1 w-full rounded-full border border-zinc-300 bg-white/80 px-3 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
 
@@ -189,7 +189,7 @@ export default function ReviewReplyTemplateModal({
                 setContent(e.target.value)
               }}
               placeholder="Nhập nội dung phản hồi văn bản thuần..."
-              className="mt-1 w-full resize-none rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-[#0b101b] dark:text-white"
+              className="mt-1 w-full resize-none rounded-2xl border border-zinc-300 bg-white/80 px-3 py-2 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>
 
@@ -206,7 +206,7 @@ export default function ReviewReplyTemplateModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="btn-primary inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold disabled:opacity-50"
             >
               <Plus size={14} weight="bold" />
               {submitLabel}

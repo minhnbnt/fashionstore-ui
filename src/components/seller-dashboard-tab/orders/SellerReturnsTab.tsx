@@ -15,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 import { orderStatusMeta } from '@/lib/order/orderStatus'
 import { returnItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
@@ -56,13 +57,10 @@ export default function SellerReturnsTab({ shopId }: Props) {
   const [rejectTarget, setRejectTarget] = useState<ReturnItem | null>(null)
   const [resolution, setResolution] = useState('REFUND')
   const [refundAmount, setRefundAmount] = useState(378000)
-  const [returnAddress, setReturnAddress] = useState(
-    'Kho hàng FashionHub, 45 Kim Mã, Ba Đình, Hà Nội',
-  )
+  const [returnAddress, setReturnAddress] = useState('Kho hàng DHMQ, 45 Kim Mã, Ba Đình, Hà Nội')
   const [rejectNote, setRejectNote] = useState(
     'Sản phẩm đã qua sử dụng quá 30 ngày hoặc không có video bóc hàng',
   )
-  const [notification, setNotification] = useState<string | null>(null)
 
   const returnsQuery = useList4({ shopId }, { query: { enabled: shopId !== '' } })
   // Danh mục đơn hàng để resolve mã đơn / tên người mua cho từng yêu cầu trả hàng
@@ -72,6 +70,10 @@ export default function SellerReturnsTab({ shopId }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+        notify.success('Đã phê duyệt yêu cầu đổi trả và gửi địa chỉ kho nhận hàng cho khách!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể phê duyệt yêu cầu đổi trả.')
       },
     },
   })
@@ -79,6 +81,10 @@ export default function SellerReturnsTab({ shopId }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+        notify.success('Đã từ chối yêu cầu đổi trả kèm lý do!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể từ chối yêu cầu đổi trả.')
       },
     },
   })
@@ -86,6 +92,10 @@ export default function SellerReturnsTab({ shopId }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList4QueryKey() })
+        notify.success('Đã xác nhận nhận lại hàng và tự động cập nhật tồn kho!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể xác nhận nhận lại hàng.')
       },
     },
   })
@@ -128,18 +138,10 @@ export default function SellerReturnsTab({ shopId }: Props) {
     completeMutation.mutate({ id: returnId })
   }
 
-  function showToast(msg: string) {
-    setNotification(msg)
-    setTimeout(function () {
-      setNotification(null)
-    }, 3000)
-  }
-
   function handleConfirmApprove() {
     if (approveTarget !== null) {
       handleApproveReturn(approveTarget.id, resolution, refundAmount, returnAddress)
       setApproveTarget(null)
-      showToast('Đã phê duyệt yêu cầu đổi trả và gửi địa chỉ kho nhận hàng cho khách!')
     }
   }
 
@@ -147,7 +149,6 @@ export default function SellerReturnsTab({ shopId }: Props) {
     if (rejectTarget !== null) {
       handleRejectReturn(rejectTarget.id, rejectNote)
       setRejectTarget(null)
-      showToast('Đã từ chối yêu cầu đổi trả kèm lý do!')
     }
   }
 
@@ -163,14 +164,6 @@ export default function SellerReturnsTab({ shopId }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header */}
       <div>
         <h2 className="text-xl font-black text-zinc-900 dark:text-white">
@@ -211,10 +204,9 @@ export default function SellerReturnsTab({ shopId }: Props) {
           ].map(function (tab) {
             const isCurrent = activeTab === tab.id
             let tabClass =
-              'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              'rounded-full px-4 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
             if (isCurrent) {
-              tabClass =
-                'rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+              tabClass = 'btn-primary rounded-full px-4 py-2 text-xs font-bold transition'
             }
             return (
               <button
@@ -375,7 +367,6 @@ export default function SellerReturnsTab({ shopId }: Props) {
                       type="button"
                       onClick={function () {
                         handleCompleteReturn(ret.id)
-                        showToast('Đã xác nhận nhận lại hàng và tự động cập nhật tồn kho!')
                       }}
                       className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
                     >

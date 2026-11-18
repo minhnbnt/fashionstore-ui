@@ -22,6 +22,8 @@ import {
   scheduleLabel,
   scheduleWindowLabel,
 } from '@/lib/content/siteContent'
+import { notify } from '@/lib/notifications'
+import { cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 import BannerFormDialog from '../dialogs/BannerFormDialog'
 import ConfirmDialog from '../dialogs/ConfirmDialog'
@@ -87,7 +89,10 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
     }
     update.mutate(
       { id: banner.id, data: toggleRequest(banner) },
-      { onSuccess: () => refresh(message) },
+      {
+        onSuccess: () => refresh(message),
+        onError: (err) => notify.fromError(err, 'adminContent'),
+      },
     )
   }
 
@@ -194,15 +199,13 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
   return (
     <div>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Lọc vị trí">
+        <div
+          className={cn(segmentedTrackClass(), 'flex-wrap')}
+          role="tablist"
+          aria-label="Lọc vị trí"
+        >
           {FILTERS.map(function (item) {
             const selected = item.value === filter
-            let itemClass =
-              'rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
-            if (selected) {
-              itemClass =
-                'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
-            }
             return (
               <button
                 key={item.value}
@@ -210,7 +213,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setFilter(item.value)}
-                className={itemClass}
+                className={cn(segmentedItemClass(selected), 'cursor-pointer')}
               >
                 {item.label}
               </button>
@@ -220,7 +223,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
         <button
           type="button"
           onClick={() => setCreating(true)}
-          className="btn-primary flex w-fit items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold"
+          className="btn-primary flex w-fit cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold"
         >
           <Plus size={16} weight="bold" />
           Thêm banner
@@ -250,6 +253,7 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
       {deleting !== null && (
         <ConfirmDialog
           open
+          danger
           title="Xóa banner"
           description={`Xóa hẳn banner "${deleting.title ?? ''}"? Muốn ẩn tạm thời thì bấm "Tắt" thay vì xóa.`}
           confirmLabel="Xóa banner"
@@ -262,7 +266,10 @@ export default function BannersTab({ onNotice }: { onNotice: (message: string) =
             }
             remove.mutate(
               { id: deleting.id },
-              { onSuccess: () => refresh(`Đã xóa banner "${deleting.title ?? ''}".`) },
+              {
+                onSuccess: () => refresh(`Đã xóa banner "${deleting.title ?? ''}".`),
+                onError: (err) => notify.fromError(err, 'adminContent'),
+              },
             )
           }}
         />

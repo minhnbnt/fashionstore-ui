@@ -10,6 +10,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import UserAvatar from '@/components/UserAvatar'
 import { formatDateTime, pageCount, roleLabel } from '@/lib/admin/admin'
 import { takeData } from '@/lib/api/apiAdapters'
+import { CARD_CLASS, cn } from '@/lib/ui/styles'
 
 import type { AdminUserResponse } from '@generated/model/adminUserResponse'
 import type { ListAdminUsersParams } from '@generated/model/listAdminUsersParams'
@@ -112,7 +113,7 @@ export default function AdminUsers() {
     >
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
         <form onSubmit={submitSearch} className="flex gap-2">
-          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2.5 dark:border-white/10 dark:bg-white/5">
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2.5 focus-within:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400">
             <MagnifyingGlass size={17} className="shrink-0 text-zinc-500 dark:text-zinc-400" />
             <span className="sr-only">Tìm tài khoản</span>
             <input
@@ -120,15 +121,18 @@ export default function AdminUsers() {
               name="q"
               defaultValue={query}
               placeholder="Email hoặc tên hiển thị"
-              className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
+              className="w-full bg-transparent text-sm text-[#17203a] outline-none placeholder:text-zinc-400 dark:text-white"
             />
           </label>
-          <button type="submit" className="btn-primary rounded-full px-5 py-2.5 text-sm font-bold">
+          <button
+            type="submit"
+            className="btn-primary cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold"
+          >
             Tìm
           </button>
         </form>
 
-        <label className="flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-sm dark:border-white/10 dark:bg-white/5">
+        <label className="flex items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2.5 text-sm focus-within:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white dark:focus-within:border-sky-400">
           <span className="font-semibold text-zinc-500 dark:text-zinc-400">Trạng thái</span>
           <select
             value={status ?? ''}
@@ -137,13 +141,19 @@ export default function AdminUsers() {
             }}
             className="bg-transparent font-bold outline-none"
           >
-            <option value="">Tất cả</option>
-            <option value="ACTIVE">Hoạt động</option>
-            <option value="LOCKED">Đã khóa</option>
+            <option value="" className="dark:bg-[#0a0f1e]">
+              Tất cả
+            </option>
+            <option value="ACTIVE" className="dark:bg-[#0a0f1e]">
+              Hoạt động
+            </option>
+            <option value="LOCKED" className="dark:bg-[#0a0f1e]">
+              Đã khóa
+            </option>
           </select>
         </label>
 
-        <label className="flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2.5 text-sm dark:border-white/10 dark:bg-white/5">
+        <label className="flex items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2.5 text-sm focus-within:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white dark:focus-within:border-sky-400">
           <span className="font-semibold text-zinc-500 dark:text-zinc-400">Vai trò</span>
           <select
             value={role ?? ''}
@@ -152,10 +162,18 @@ export default function AdminUsers() {
             }}
             className="bg-transparent font-bold outline-none"
           >
-            <option value="">Tất cả</option>
-            <option value="CUSTOMER">Khách hàng</option>
-            <option value="SHOP">Người bán</option>
-            <option value="ADMIN">Quản trị viên</option>
+            <option value="" className="dark:bg-[#0a0f1e]">
+              Tất cả
+            </option>
+            <option value="CUSTOMER" className="dark:bg-[#0a0f1e]">
+              Khách hàng
+            </option>
+            <option value="SHOP" className="dark:bg-[#0a0f1e]">
+              Người bán
+            </option>
+            <option value="ADMIN" className="dark:bg-[#0a0f1e]">
+              Quản trị viên
+            </option>
           </select>
         </label>
       </div>
@@ -180,7 +198,7 @@ export default function AdminUsers() {
           />
         )}
         {users.length > 0 && (
-          <div className="overflow-x-auto rounded-3xl border border-zinc-200 dark:border-white/10">
+          <div className={cn(CARD_CLASS, 'overflow-x-auto')}>
             <table className="w-full min-w-[860px] text-left text-sm">
               <thead className="bg-zinc-50 text-xs tracking-wide text-zinc-500 uppercase dark:bg-white/5 dark:text-zinc-400">
                 <tr>

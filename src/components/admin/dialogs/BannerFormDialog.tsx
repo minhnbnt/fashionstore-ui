@@ -10,6 +10,7 @@ import {
   scheduleError,
   toLocalInput,
 } from '@/lib/content/siteContent'
+import { notify } from '@/lib/notifications'
 
 import ImageUploadField from '../fields/ImageUploadField'
 import ScheduleFields from '../fields/ScheduleFields'
@@ -94,12 +95,21 @@ export default function BannerFormDialog({ banner, defaultPlacement, onClose, on
       endsAt: fromLocalInput(schedule.endsAt) ?? undefined,
     }
     if (banner?.id === undefined) {
-      create.mutate({ data }, { onSuccess: () => onDone(`Đã tạo banner "${data.title}".`) })
+      create.mutate(
+        { data },
+        {
+          onSuccess: () => onDone(`Đã tạo banner "${data.title}".`),
+          onError: (err) => notify.fromError(err, 'adminContent'),
+        },
+      )
       return
     }
     update.mutate(
       { id: banner.id, data },
-      { onSuccess: () => onDone(`Đã lưu banner "${data.title}".`) },
+      {
+        onSuccess: () => onDone(`Đã lưu banner "${data.title}".`),
+        onError: (err) => notify.fromError(err, 'adminContent'),
+      },
     )
   }
 

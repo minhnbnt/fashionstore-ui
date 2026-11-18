@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { takeData } from '@/lib/api/apiAdapters'
 import { getRoleFromSession, refreshAuthSession } from '@/lib/auth'
+import { notify } from '@/lib/notifications'
 import { cardClass, cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 import AddressBookTab from '../../components/account/AddressBookTab'
@@ -24,7 +25,7 @@ import type { UserResponse } from '@generated/model/userResponse'
 // Đồng bộ với tab của khung chat (ChatDock): segmented control dạng pill,
 // tab đang chọn dùng btn-primary gradient.
 function getTabBtnClass(isActive: boolean): string {
-  return cn(segmentedItemClass(isActive))
+  return cn(segmentedItemClass(isActive), 'cursor-pointer')
 }
 
 export default function Account() {
@@ -34,7 +35,6 @@ export default function Account() {
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [modalOpen, setModalOpen] = useState(false)
-  const [statusNotice, setStatusNotice] = useState<string | null>(null)
   const roleRefreshAttempted = useRef(false)
 
   const activeTab = searchParams.get('tab') || 'shops'
@@ -61,15 +61,20 @@ export default function Account() {
   function handleSignOut() {
     signOut.mutate(undefined, {
       onSuccess: function () {
+        notify.success('Đã đăng xuất')
         void navigate('/', { replace: true })
+      },
+      onError: function (err) {
+        notify.fromError(err, 'signOut', 'Không thể đăng xuất. Vui lòng thử lại.')
       },
     })
   }
 
   function handleShopCreated() {
     setModalOpen(false)
-    setStatusNotice(
-      'Đăng ký mở shop thành công! Hồ sơ đang ở trạng thái chờ duyệt (dự kiến 1-3 ngày làm việc).',
+    notify.success(
+      'Đăng ký mở shop thành công',
+      'Hồ sơ đang ở trạng thái chờ duyệt (1-3 ngày làm việc).',
     )
     void queryClient.invalidateQueries({ queryKey: getGetMyShopsQueryKey() })
   }
@@ -197,7 +202,7 @@ export default function Account() {
             id="btn-account-logout"
             onClick={handleSignOut}
             disabled={signOut.isPending}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-red-200 py-3 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-500/30 dark:hover:bg-red-500/10"
+            className="mt-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-red-200 py-3 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/30 dark:hover:bg-red-500/10"
           >
             <SignOut size={16} weight="bold" />
             {signOut.isPending && <span>Đang đăng xuất…</span>}
@@ -234,15 +239,6 @@ export default function Account() {
               </button>
             </div>
           </div>
-
-          {statusNotice !== null && (
-            <div
-              id="account-status-notice"
-              className="mb-6 rounded-2xl bg-sky-50 px-4 py-3 text-xs font-semibold text-sky-800 dark:bg-sky-500/10 dark:text-sky-300"
-            >
-              {statusNotice}
-            </div>
-          )}
 
           {activeTab === 'shops' && (
             <section id="seller-channel">

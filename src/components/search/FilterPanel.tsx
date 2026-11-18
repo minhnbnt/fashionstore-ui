@@ -51,7 +51,7 @@ function AccordionGroup(props: {
         onClick={function () {
           setOpen(!open)
         }}
-        className="group flex w-full items-center justify-between text-left"
+        className="group flex w-full cursor-pointer items-center justify-between text-left"
       >
         <div className="flex items-center gap-2">
           {props.icon && <span className={cn(iconChipClass())}>{props.icon}</span>}
@@ -59,7 +59,7 @@ function AccordionGroup(props: {
             {props.title}
           </span>
           {props.badge !== undefined && (
-            <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-extrabold text-sky-700 dark:bg-sky-500/20 dark:text-sky-300">
+            <span className="rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-extrabold text-sky-700 tabular-nums dark:bg-sky-500/20 dark:text-sky-300">
               {props.badge}
             </span>
           )}
@@ -148,7 +148,7 @@ export default function FilterPanel(props: {
           <button
             type="button"
             onClick={props.onClear}
-            className="flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:underline dark:text-rose-400"
+            className="flex cursor-pointer items-center gap-1 text-[11px] font-bold text-rose-600 hover:underline dark:text-rose-400"
           >
             <Trash size={12} weight="bold" />
             <span>Xóa tất cả</span>
@@ -229,7 +229,7 @@ export default function FilterPanel(props: {
           facetMin !== null &&
           facetMax !== undefined &&
           facetMax !== null && (
-            <p className="mt-2 text-[11px] text-zinc-400">
+            <p className="mt-2 text-[11px] text-zinc-500 tabular-nums dark:text-zinc-400">
               Giá thị trường: {formatVnd(facetMin)} – {formatVnd(facetMax)}
             </p>
           )}
@@ -302,7 +302,7 @@ export default function FilterPanel(props: {
           <button
             type="button"
             onClick={props.onClear}
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-sky-100 py-2.5 text-xs font-extrabold text-zinc-700 transition hover:bg-sky-50 hover:text-zinc-900 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white/80 py-2.5 text-xs font-extrabold text-zinc-700 transition hover:bg-sky-50 hover:text-zinc-900 dark:border-white/15 dark:bg-white/5 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
           >
             <Trash size={14} weight="bold" />
             <span>Xóa tất cả</span>
@@ -314,17 +314,17 @@ export default function FilterPanel(props: {
 }
 
 function categoryClass(selected: boolean): string {
-  return cn(filterRowClass(selected))
+  return cn(filterRowClass(selected), 'cursor-pointer')
 }
 
 function presetChipClass(selected: boolean): string {
-  return cn(optionPillClass(selected))
+  return cn(optionPillClass(selected), 'cursor-pointer')
 }
 
 function sizePillClass(selected: boolean): string {
-  return cn(optionPillClass(selected))
+  return cn(optionPillClass(selected), 'cursor-pointer')
 }
 
 function colorPillClass(selected: boolean): string {
-  return cn(optionPillClass(selected), 'flex items-center gap-1.5 text-xs')
+  return cn(optionPillClass(selected), 'flex cursor-pointer items-center gap-1.5 text-xs')
 }

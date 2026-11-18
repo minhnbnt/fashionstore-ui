@@ -10,15 +10,15 @@ import {
 import {
   ArrowClockwise,
   ArrowCounterClockwise,
-  CalendarBlank,
   PencilSimple,
   Prohibit,
-  X,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import AdminShell from '@/components/admin/AdminShell'
 import { formatDateTime } from '@/lib/admin/productModeration'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 import {
   formatDay,
   holidayNameError,
@@ -29,8 +29,7 @@ import {
   weekdayLabel,
   yearOptions,
 } from '@/lib/order/holidays'
-
-import AdminNav from '../../components/admin/AdminNav'
+import { cn, PANEL_CLASS, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 import type { HolidayResponse } from '@generated/model/holidayResponse'
 import type { HolidaySyncResponse } from '@generated/model/holidaySyncResponse'
@@ -162,7 +161,6 @@ export default function AdminHolidays() {
   const [name, setName] = useState('')
   const [kind, setKind] = useState<SaveHolidayRequestKind>('HOLIDAY')
   const [touched, setTouched] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const listQuery = useListHolidays({ year })
   const save = useSaveHoliday()
@@ -177,7 +175,7 @@ export default function AdminHolidays() {
   const canSave = day !== '' && nameProblem === null && save.isPending === false
 
   function refresh(message: string) {
-    setNotice(message)
+    notify.success(message)
     void queryClient.invalidateQueries({ predicate: (query) => isHolidayKey(query.queryKey) })
   }
 
@@ -202,6 +200,9 @@ export default function AdminHolidays() {
           resetForm()
           refresh(`Đã lưu ngày ${formatDay(savedDay)}.`)
         },
+        onError: (err) => {
+          notify.fromError(err, 'adminHolidaySave')
+        },
       },
     )
   }
@@ -224,7 +225,10 @@ export default function AdminHolidays() {
     const target = holiday.day
     disable.mutate(
       { day: target },
-      { onSuccess: () => refresh(`Đã bỏ ngày ${formatDay(target)}.`) },
+      {
+        onSuccess: () => refresh(`Đã bỏ ngày ${formatDay(target)}.`),
+        onError: (err) => notify.fromError(err, 'adminHolidaySave'),
+      },
     )
   }
 
@@ -239,7 +243,10 @@ export default function AdminHolidays() {
     }
     save.mutate(
       { day: target, data: { name: holiday.name, kind: targetKind } },
-      { onSuccess: () => refresh(`Đã bật lại ngày ${formatDay(target)}.`) },
+      {
+        onSuccess: () => refresh(`Đã bật lại ngày ${formatDay(target)}.`),
+        onError: (err) => notify.fromError(err, 'adminHolidaySave'),
+      },
     )
   }
 
@@ -249,6 +256,9 @@ export default function AdminHolidays() {
       {
         onSuccess: (response) => {
           refresh(syncResultMessage(takeData(response)))
+        },
+        onError: (err) => {
+          notify.fromError(err, 'adminHolidaySync')
         },
       },
     )
@@ -306,40 +316,20 @@ export default function AdminHolidays() {
   }
 
   const inputClass =
-    'rounded-full border border-zinc-200 bg-white/80 px-4 py-2 text-sm outline-none dark:border-white/10 dark:bg-white/5'
+    'rounded-full border border-zinc-300 bg-white/80 px-4 py-2 text-sm text-[#17203a] placeholder:text-zinc-400 outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white dark:focus:border-sky-400'
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] shadow-lg">
-          <CalendarBlank size={22} weight="bold" className="text-white" />
-        </div>
-        <div>
-          <p className="text-xs font-bold tracking-[0.18em] text-indigo-600 uppercase dark:text-indigo-400">
-            Admin
-          </p>
-          <h1 className="text-xl font-extrabold tracking-tighter">Lịch nghỉ lễ</h1>
-        </div>
-      </div>
-
-      <AdminNav />
-
-      {notice !== null && (
-        <output className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
-          {notice}
-          <button type="button" aria-label="Ẩn thông báo" onClick={() => setNotice(null)}>
-            <X size={16} weight="bold" />
-          </button>
-        </output>
-      )}
-
+    <AdminShell
+      title="Lịch nghỉ lễ"
+      description="Quản lý ngày nghỉ lễ ảnh hưởng đến SLA xử lý và giao nhận đơn hàng."
+    >
       <p className="mb-4 max-w-3xl text-sm text-zinc-600 dark:text-zinc-300">
         Hạn xử lý đơn hàng không tính Chủ nhật và các ngày nghỉ dưới đây. Ngày "Đi làm bù" được tính
         kể cả khi rơi vào Chủ nhật. Ngày sửa tay luôn được giữ khi đồng bộ.
       </p>
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="glass rounded-3xl p-5">
+        <section className={PANEL_CLASS}>
           <h2 className="mb-1 text-sm font-bold">Đồng bộ từ Calendarific</h2>
           <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
             Tự động 03:00 ngày 1 hằng tháng cho năm nay và năm sau. <LastSync lastSync={lastSync} />
@@ -348,7 +338,7 @@ export default function AdminHolidays() {
             type="button"
             onClick={handleSync}
             disabled={syncConfigured === false || sync.isPending}
-            className="btn-primary flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold disabled:opacity-50"
+            className="btn-primary flex cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ArrowClockwise size={16} weight="bold" />
             {sync.isPending && <span>Đang đồng bộ…</span>}
@@ -359,14 +349,9 @@ export default function AdminHolidays() {
               Server chưa cấu hình CALENDARIFIC_API_KEY nên chưa đồng bộ được.
             </p>
           )}
-          {sync.isError && (
-            <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-              {hookErrorMessage('adminHolidaySync', sync.error)}
-            </p>
-          )}
         </section>
 
-        <section className="glass rounded-3xl p-5">
+        <section className={PANEL_CLASS}>
           <h2 className="mb-3 text-sm font-bold">Thêm / sửa ngày</h2>
           <form onSubmit={handleSave} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <input
@@ -399,13 +384,17 @@ export default function AdminHolidays() {
               aria-label="Loại ngày"
               className={inputClass}
             >
-              <option value="HOLIDAY">Nghỉ lễ</option>
-              <option value="WORKING_DAY">Đi làm bù</option>
+              <option value="HOLIDAY" className="dark:bg-[#0a0f1e]">
+                Nghỉ lễ
+              </option>
+              <option value="WORKING_DAY" className="dark:bg-[#0a0f1e]">
+                Đi làm bù
+              </option>
             </select>
             <button
               type="submit"
               disabled={canSave === false}
-              className="btn-primary rounded-full px-5 py-2 text-sm font-bold disabled:opacity-50"
+              className="btn-primary cursor-pointer rounded-full px-5 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
             >
               {save.isPending && <span>Đang lưu…</span>}
               {save.isPending === false && <span>Lưu</span>}
@@ -414,24 +403,17 @@ export default function AdminHolidays() {
           {visibleProblem !== null && (
             <p className="mt-2 text-xs text-red-600 dark:text-red-400">{visibleProblem}</p>
           )}
-          {(save.isError || disable.isError) && (
-            <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-              {hookErrorMessage('adminHolidaySave', save.error ?? disable.error)}
-            </p>
-          )}
         </section>
       </div>
 
-      <section className="glass rounded-3xl p-5">
-        <div className="mb-4 flex flex-wrap gap-1.5" role="tablist" aria-label="Chọn năm">
+      <section className={PANEL_CLASS}>
+        <div
+          className={cn(segmentedTrackClass(), 'mb-4 w-fit flex-wrap')}
+          role="tablist"
+          aria-label="Chọn năm"
+        >
           {yearOptions(CURRENT_YEAR).map(function (option) {
             const selected = option === year
-            let tabClass =
-              'rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
-            if (selected) {
-              tabClass =
-                'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
-            }
             return (
               <button
                 key={option}
@@ -439,7 +421,7 @@ export default function AdminHolidays() {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setSearchParams({ year: String(option) })}
-                className={tabClass}
+                className={cn(segmentedItemClass(selected), 'cursor-pointer')}
               >
                 {option}
               </button>
@@ -448,6 +430,6 @@ export default function AdminHolidays() {
         </div>
         {body}
       </section>
-    </main>
+    </AdminShell>
   )
 }

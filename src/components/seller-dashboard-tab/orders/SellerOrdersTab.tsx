@@ -34,6 +34,7 @@ import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { formatDateTime, formatVnd } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 import { timelineTitle } from '@/lib/order/orderMonitoring'
 import { orderItem, returnItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
@@ -128,7 +129,6 @@ export default function SellerOrdersTab({ shopId }: Props) {
   const [trackingLocation, setTrackingLocation] = useState('')
   const [trackingDescription, setTrackingDescription] = useState('')
   const [bulkResult, setBulkResult] = useState<BulkConfirmOrderResponse | null>(null)
-  const [notification, setNotification] = useState<string | null>(null)
 
   let queryParams: List5Params = { shopId, limit: 100 }
   if (isSingleOrderDetail) {
@@ -142,6 +142,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+        notify.success('Đã xác nhận đơn hàng thành công!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể xác nhận đơn hàng. Vui lòng thử lại.')
       },
     },
   })
@@ -151,6 +155,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
         setSelectedOrderIds([])
         setBulkResult(takeData(response))
+        notify.success('Đã xử lý xác nhận hàng loạt đơn hàng!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể xác nhận hàng loạt đơn hàng.')
       },
     },
   })
@@ -159,7 +167,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
         setShipTargetOrderId(null)
-        showToast('Đã bàn giao đơn hàng cho đơn vị vận chuyển!')
+        notify.success('Đã bàn giao đơn hàng cho đơn vị vận chuyển!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể bàn giao đơn hàng cho ĐVVC.')
       },
     },
   })
@@ -174,7 +185,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
         setTrackingTitle('')
         setTrackingLocation('')
         setTrackingDescription('')
-        showToast('Đã cập nhật mốc hành trình vận chuyển!')
+        notify.success('Đã cập nhật mốc hành trình vận chuyển!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể cập nhật mốc hành trình vận chuyển.')
       },
     },
   })
@@ -189,6 +203,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+        notify.success('Đã xác nhận giao thành công và thu tiền COD!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể xác nhận giao hàng.')
       },
     },
   })
@@ -197,6 +215,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
         void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
+        notify.success('Đã hủy đơn hàng và tự động hoàn trả tồn kho nguyên tử!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể hủy đơn hàng.')
       },
     },
   })
@@ -224,13 +246,6 @@ export default function SellerOrdersTab({ shopId }: Props) {
     returns = takeData(returnsQuery.data).map(function (r) {
       return returnItem(r, orderById)
     })
-  }
-
-  function showToast(msg: string) {
-    setNotification(msg)
-    setTimeout(function () {
-      setNotification(null)
-    }, 3000)
   }
 
   function handleConfirmOrder(orderId: string) {
@@ -310,7 +325,6 @@ export default function SellerOrdersTab({ shopId }: Props) {
       })
       setCancelTargetId(null)
       setCancelNote('')
-      showToast('Đã hủy đơn hàng và tự động hoàn trả tồn kho nguyên tử!')
     }
   }
 
@@ -431,14 +445,6 @@ export default function SellerOrdersTab({ shopId }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header bar */}
       {isSingleOrderDetail && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -497,10 +503,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
               {tabs.map(function (tab) {
                 const isCurrent = activeTab === tab.id
                 let tabClass =
-                  'flex items-center gap-2 rounded-2xl px-3.5 py-2 text-xs font-bold transition text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/5'
+                  'flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/5'
                 if (isCurrent) {
                   tabClass =
-                    'flex items-center gap-2 rounded-2xl px-3.5 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+                    'btn-primary flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition'
                 }
 
                 let countBadgeClass =
@@ -826,11 +832,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
                             disabled={sla.isExpired}
                             onClick={function () {
                               if (sla.isExpired) {
-                                showToast('Đơn hàng đã quá hạn 24h và đã bị hệ thống tự hủy!')
+                                notify.warning('Đơn hàng đã quá hạn 24h và đã bị hệ thống tự hủy!')
                                 return
                               }
                               handleConfirmOrder(order.id)
-                              showToast('Đã xác nhận đơn hàng thành công!')
                             }}
                             className={confirmButtonClass}
                           >
@@ -872,7 +877,6 @@ export default function SellerOrdersTab({ shopId }: Props) {
                               type="button"
                               onClick={function () {
                                 handleDeliverOrder(order.id)
-                                showToast('Đã xác nhận giao thành công và thu tiền COD!')
                               }}
                               className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
                             >
@@ -915,7 +919,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
 
       {/* Sticky Floating Action Bar for Bulk Confirm */}
       {selectedOrderIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-2xl border border-zinc-700 bg-zinc-900/95 px-6 py-3.5 text-white shadow-2xl backdrop-blur-md dark:border-white/20 dark:bg-zinc-950/95">
+        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-3xl border border-white/15 bg-[#11182a]/95 px-6 py-3.5 text-white shadow-2xl backdrop-blur-md dark:bg-[#0a0f1e]/95">
           <div className="flex items-center gap-5">
             <span className="text-xs font-bold">
               Đã chọn{' '}
@@ -929,7 +933,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 onClick={function () {
                   setSelectedOrderIds([])
                 }}
-                className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-zinc-800"
+                className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-white/10"
               >
                 Bỏ chọn
               </button>

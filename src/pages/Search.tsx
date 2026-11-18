@@ -16,6 +16,8 @@ import {
 } from '@phosphor-icons/react'
 import { keepPreviousData } from '@tanstack/react-query'
 
+import { Drawer } from '@/components/ui/Drawer'
+import { ProductCardSkeleton } from '@/components/ui/Skeleton'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import {
@@ -130,7 +132,7 @@ function ActiveChips(props: {
             onClick={function () {
               props.onChange(chip.patch)
             }}
-            className={cn(filterChipClass())}
+            className={cn(filterChipClass(), 'cursor-pointer')}
           >
             <span>{chip.label}</span>
             <X size={12} weight="bold" className="opacity-70" />
@@ -140,7 +142,7 @@ function ActiveChips(props: {
       <button
         type="button"
         onClick={props.onClearAll}
-        className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+        className="flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
       >
         <Trash size={12} weight="bold" />
         <span>Xóa tất cả</span>
@@ -235,11 +237,6 @@ export default function Search() {
 
   const filterCount = activeFilterCount(filters)
 
-  let filterPanelVisibility = 'hidden'
-  if (filtersOpen) {
-    filterPanelVisibility = 'block'
-  }
-
   return (
     <main className="mx-auto max-w-[1440px] px-4 pt-[100px] pb-20">
       {/* 1. Breadcrumb navigation */}
@@ -287,7 +284,7 @@ export default function Search() {
           {pageTitle(filters, currentCategory)}
         </h1>
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          Khám phá các thiết kế thời trang hiện đại, dẫn đầu xu hướng cùng nét Marketplace
+          Khám phá các thiết kế thời trang hiện đại, dẫn đầu xu hướng cùng DHMQ Marketplace
         </p>
       </div>
 
@@ -335,29 +332,24 @@ export default function Search() {
             type="button"
             aria-expanded={filtersOpen}
             onClick={function () {
-              setFiltersOpen(!filtersOpen)
+              setFiltersOpen(true)
             }}
             className={cn(
               primaryButtonClass(),
-              'flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-extrabold shadow-xs lg:hidden',
+              'flex w-full cursor-pointer items-center justify-center gap-2 rounded-full py-3 text-sm font-extrabold shadow-xs lg:hidden',
             )}
           >
             <Funnel size={16} weight="bold" />
             <span>Bộ lọc nâng cao</span>
             {filterCount > 0 && (
-              <span className="rounded-full bg-white/25 px-2 py-0.5 text-xs text-white">
+              <span className="rounded-full bg-white/25 px-2 py-0.5 text-xs text-white tabular-nums">
                 {filterCount}
               </span>
             )}
           </button>
 
           {/* Sticky Desktop Filter Panel */}
-          <div
-            className={
-              'glass mt-3 rounded-3xl p-5 lg:sticky lg:top-28 lg:mt-0 lg:block ' +
-              filterPanelVisibility
-            }
-          >
+          <div className="glass hidden rounded-3xl p-5 lg:sticky lg:top-28 lg:block">
             <FilterPanel
               filters={filters}
               categories={categories}
@@ -402,7 +394,7 @@ export default function Search() {
 
               {/* Result Count & View Switcher */}
               <div className="flex items-center gap-3">
-                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs font-semibold text-zinc-500 tabular-nums dark:text-zinc-400">
                   {searchQuery.isSuccess && (
                     <>
                       <span className="font-extrabold text-zinc-900 dark:text-white">{total}</span>{' '}
@@ -415,6 +407,8 @@ export default function Search() {
                   <button
                     type="button"
                     title="Xem dạng lưới"
+                    aria-label="Xem dạng lưới"
+                    aria-pressed={viewMode === 'grid'}
                     onClick={function () {
                       setViewMode('grid')
                     }}
@@ -425,6 +419,8 @@ export default function Search() {
                   <button
                     type="button"
                     title="Xem dạng danh sách"
+                    aria-label="Xem dạng danh sách"
+                    aria-pressed={viewMode === 'list'}
                     onClick={function () {
                       setViewMode('list')
                     }}
@@ -443,16 +439,7 @@ export default function Search() {
             {searchQuery.isPending && (
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 xl:gap-5">
                 {Array.from({ length: 8 }).map(function (_, i) {
-                  return (
-                    <div
-                      key={i}
-                      className="animate-pulse rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5"
-                    >
-                      <div className="aspect-[4/5] rounded-2xl bg-zinc-200 dark:bg-white/10" />
-                      <div className="mt-4 h-4 w-3/4 rounded-full bg-zinc-200 dark:bg-white/10" />
-                      <div className="mt-2 h-4 w-1/2 rounded-full bg-zinc-200 dark:bg-white/10" />
-                    </div>
-                  )
+                  return <ProductCardSkeleton key={i} />
                 })}
               </div>
             )}
@@ -511,24 +498,56 @@ export default function Search() {
           )}
         </section>
       </div>
+
+      {/* Mobile Filter Drawer */}
+      <Drawer
+        open={filtersOpen}
+        side="left"
+        title="Bộ lọc nâng cao"
+        onClose={function () {
+          setFiltersOpen(false)
+        }}
+      >
+        <FilterPanel
+          filters={filters}
+          categories={categories}
+          facets={facets}
+          onChange={change}
+          onClear={function () {
+            apply({ ...EMPTY_FILTERS, q: filters.q })
+          }}
+          totalCount={total}
+        />
+        <div className="mt-6 border-t border-zinc-200/80 pt-4 dark:border-white/10">
+          <button
+            type="button"
+            onClick={function () {
+              setFiltersOpen(false)
+            }}
+            className="btn-primary w-full cursor-pointer rounded-full py-3 text-sm font-bold tabular-nums"
+          >
+            Xem {total} kết quả
+          </button>
+        </div>
+      </Drawer>
     </main>
   )
 }
 
 function sortTabClass(selected: boolean): string {
-  return cn(segmentedItemClass(selected))
+  return cn(segmentedItemClass(selected), 'cursor-pointer')
 }
 
 function hotTagClass(isCurrent: boolean): string {
-  return cn(chipClass(isCurrent))
+  return cn(chipClass(isCurrent), 'cursor-pointer')
 }
 
 function viewTabClass(active: boolean): string {
   if (active) {
-    return cn(segmentedItemClass(true), 'p-1.5')
+    return cn(segmentedItemClass(true), 'cursor-pointer p-1.5')
   }
   return cn(
-    'rounded-full p-1.5 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200',
+    'cursor-pointer rounded-full p-1.5 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200',
   )
 }
 

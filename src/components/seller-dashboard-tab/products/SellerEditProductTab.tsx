@@ -19,7 +19,6 @@ import {
   ClockCounterClockwise,
   Eye,
   EyeSlash,
-  CheckCircle,
   WarningCircle,
   Plus,
   Trash,
@@ -41,6 +40,7 @@ import RichTextEditor from '@/components/ui/RichTextEditor'
 import { takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { formatDateTime } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 
 import type { ImageItemRequest } from '@generated/model/imageItemRequest'
 import type { ProductAuditLogResponse } from '@generated/model/productAuditLogResponse'
@@ -124,7 +124,6 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
   // State
   const [initialized, setInitialized] = useState(false)
   const [showAuditModal, setShowAuditModal] = useState(false)
-  const [notification, setNotification] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isTogglingStatus, setIsTogglingStatus] = useState(false)
@@ -247,7 +246,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
           queryKey: getGetAuditLogsQueryKey(shopId, productId),
         })
         void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
-        showToast('Cập nhật sản phẩm thành công!')
+        notify.success('Cập nhật sản phẩm thành công!')
         setIsSaving(false)
       },
       onError: function (err: unknown) {
@@ -257,6 +256,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         } else {
           setErrorMessage('Không thể lưu sản phẩm. Vui lòng thử lại.')
         }
+        notify.fromError(err, undefined, 'Không thể lưu sản phẩm. Vui lòng thử lại.')
       },
     },
   })
@@ -275,7 +275,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         if (resp.data.status !== undefined && resp.data.status !== null) {
           setStatus(String(resp.data.status))
         }
-        showToast('Đã chuyển đổi trạng thái sản phẩm thành công!')
+        notify.success('Đã chuyển đổi trạng thái sản phẩm thành công!')
       },
       onError: function (err: unknown) {
         setIsTogglingStatus(false)
@@ -284,16 +284,10 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         } else {
           setErrorMessage('Không thể chuyển đổi trạng thái.')
         }
+        notify.fromError(err, undefined, 'Không thể chuyển đổi trạng thái.')
       },
     },
   })
-
-  function showToast(msg: string) {
-    setNotification(msg)
-    setTimeout(function () {
-      setNotification(null)
-    }, 4000)
-  }
 
   function handleToggleStatus() {
     setIsTogglingStatus(true)
@@ -357,14 +351,16 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
 
   function handleRemoveVariant(keyId: string) {
     if (variants.length <= 1) {
-      alert('Sản phẩm phải có ít nhất 1 biến thể.')
+      notify.warning('Sản phẩm phải có ít nhất 1 biến thể.')
       return
     }
     const target = variants.find(function (v) {
       return v.keyId === keyId
     })
     if (target !== undefined && target.id !== null) {
-      alert('Biến thể đã có trên hệ thống. Bạn có thể cập nhật tồn kho về 0 thay vì xóa trực tiếp.')
+      notify.warning(
+        'Biến thể đã có trên hệ thống. Bạn có thể cập nhật tồn kho về 0 thay vì xóa trực tiếp.',
+      )
       return
     }
     setVariants(function (prev) {
@@ -422,7 +418,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       })
     })
 
-    showToast('Đã áp dụng thông số hàng loạt cho các biến thể được chọn!')
+    notify.success('Đã áp dụng thông số hàng loạt cho các biến thể được chọn!')
   }
 
   function handleSave() {
@@ -619,14 +615,6 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Toast Notification */}
-      {notification !== null && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-white p-4 shadow-xl dark:border-emerald-500/30 dark:bg-[#11182a]">
-          <CheckCircle size={20} weight="fill" className="text-emerald-500" />
-          <p className="text-xs font-bold text-zinc-900 dark:text-white">{notification}</p>
-        </div>
-      )}
-
       {/* Error Message banner */}
       {errorMessage !== null && (
         <div className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400">
@@ -779,7 +767,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
                   type="button"
                   onClick={function () {
                     void navigator.clipboard.writeText(slug)
-                    showToast('Đã sao chép đường dẫn slug!')
+                    notify.success('Đã sao chép đường dẫn slug!')
                   }}
                   aria-label="Sao chép slug"
                   title="Sao chép slug"

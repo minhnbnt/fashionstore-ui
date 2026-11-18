@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
@@ -8,24 +8,33 @@ import { useMe } from '@generated/endpoints/users/users'
 import {
   ChatCircleDots,
   Heart,
+  List,
   MagnifyingGlass,
   Moon,
   Receipt,
   ShieldCheck,
   ShoppingBag,
+  SignIn,
   SignOut,
+  SquaresFour,
   Storefront,
   Sun,
+  Tag,
   User,
   UserCircle,
 } from '@phosphor-icons/react'
 
+import { Drawer } from '@/components/ui/Drawer'
 import { useTheme } from '@/hooks/useTheme'
-import { urlOrPlaceholder, takeData } from '@/lib/api/apiAdapters'
+import { takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 import {
+  chipClass,
   cn,
   iconChipClass,
+  INPUT_CLASS,
   menuItemClass,
+  sectionLabelClass,
   switchKnobClass,
   switchTrackClass,
 } from '@/lib/ui/styles'
@@ -44,7 +53,7 @@ import type { CategoryResponse } from '@generated/model/categoryResponse'
 function RoleBadge({ role }: { role: string }) {
   if (role === 'admin') {
     return (
-      <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-500/20 dark:text-red-300">
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-500/20 dark:text-red-300">
         <ShieldCheck size={11} weight="bold" />
         Admin
       </span>
@@ -52,14 +61,14 @@ function RoleBadge({ role }: { role: string }) {
   }
   if (role === 'shop') {
     return (
-      <span className="flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-600 dark:bg-violet-500/20 dark:text-violet-300">
+      <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-600 dark:bg-violet-500/20 dark:text-violet-300">
         <Storefront size={11} weight="bold" />
         Shop
       </span>
     )
   }
   return (
-    <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-600 dark:bg-sky-500/20 dark:text-sky-300">
+    <span className="inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-600 dark:bg-sky-500/20 dark:text-sky-300">
       Khách hàng
     </span>
   )
@@ -102,13 +111,32 @@ export default function Header() {
   if (theme === 'dark') {
     themeKnobStyle = { transform: 'translateX(12px)' }
   }
+
   const [keyword, setKeyword] = useState('')
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null)
   const accountMenuContainerRef = useRef<HTMLDivElement>(null)
   const accountMenuTriggerRef = useRef<HTMLButtonElement>(null)
   const menu = useMenuDisclosure({
     containerRef: accountMenuContainerRef,
     triggerRef: accountMenuTriggerRef,
   })
+
+  useEffect(
+    function () {
+      if (mobileSearchOpen === false) {
+        return
+      }
+      const frame = window.requestAnimationFrame(function () {
+        mobileSearchInputRef.current?.focus()
+      })
+      return function () {
+        window.cancelAnimationFrame(frame)
+      }
+    },
+    [mobileSearchOpen],
+  )
 
   const categoriesQuery = useListCategories()
   let categories: CategoryResponse[] = []
@@ -120,15 +148,21 @@ export default function Header() {
     e.preventDefault()
     const q = keyword.trim()
     if (q !== '') {
+      setMobileSearchOpen(false)
       void navigate('/search?q=' + encodeURIComponent(q))
     }
   }
 
   function handleSignOut() {
     menu.close()
+    setMobileNavOpen(false)
     signOut.mutate(undefined, {
       onSuccess: function () {
+        notify.success('Đã đăng xuất', 'Hẹn gặp lại bạn tại DHMQ.')
         void navigate('/', { replace: true })
+      },
+      onError: function (err) {
+        notify.fromError(err, 'auth', 'Không thể đăng xuất')
       },
     })
   }
@@ -224,47 +258,88 @@ export default function Header() {
     unreadBadgeText = '99+'
   }
 
+  function closeMobileNav() {
+    setMobileNavOpen(false)
+  }
+
   return (
     <header className="fixed inset-x-0 top-0 z-50">
       <div className="mx-auto max-w-[1400px] px-4">
-        <div className="glass mt-3 flex h-16 items-center gap-4 rounded-full px-4 md:px-6">
-          <Link to="/" className="flex items-center gap-1 text-2xl font-extrabold tracking-tighter">
-            <span>nét</span>
+        <div className="glass mt-3 flex h-16 items-center gap-2 rounded-full px-3 md:gap-4 md:px-6">
+          {/* Mobile menu trigger */}
+          <button
+            type="button"
+            aria-label="Mở menu điều hướng"
+            onClick={function () {
+              setMobileNavOpen(true)
+            }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-zinc-700 transition hover:bg-sky-100 lg:hidden dark:text-zinc-200 dark:hover:bg-white/10"
+          >
+            <List size={20} weight="bold" />
+          </button>
+
+          {/* Brand wordmark */}
+          <Link
+            to="/"
+            className="flex shrink-0 items-center gap-1 text-xl font-extrabold tracking-tighter md:text-2xl"
+          >
+            <span>DHMQ</span>
             <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-indigo-900 to-sky-400" />
           </Link>
-          <nav className="ml-4 hidden items-center gap-6 text-sm font-medium lg:flex">
-            {categories.map(function (c) {
+
+          {/* Desktop category nav */}
+          <nav
+            aria-label="Danh mục chính"
+            className="ml-4 hidden items-center gap-5 text-sm font-medium lg:flex"
+          >
+            {categories.slice(0, 6).map(function (c) {
               return (
                 <Link
                   key={c.id}
                   to={'/search?category=' + encodeURIComponent(c.slug ?? '')}
-                  className="text-zinc-600 transition hover:text-blue-700 dark:text-zinc-300 dark:hover:text-sky-300"
+                  className="whitespace-nowrap text-zinc-600 transition hover:text-blue-700 dark:text-zinc-300 dark:hover:text-sky-300"
                 >
                   {c.name}
                 </Link>
               )
             })}
           </nav>
+
+          {/* Desktop search bar */}
           <form
             onSubmit={submitSearch}
-            className="ml-auto hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2 text-sm text-zinc-500 md:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-300"
+            className="ml-auto hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2 text-sm text-zinc-500 transition-colors focus-within:border-blue-600 md:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:focus-within:border-sky-400"
           >
-            <MagnifyingGlass size={16} weight="bold" />
+            <MagnifyingGlass size={16} weight="bold" className="shrink-0" />
             <input
               value={keyword}
               onChange={function (e) {
                 setKeyword(e.target.value)
               }}
-              className="w-full bg-transparent outline-none placeholder:text-zinc-400"
+              className="w-full bg-transparent text-[#17203a] outline-none placeholder:text-zinc-400 dark:text-white"
               placeholder="Tìm áo, váy, khoác…"
             />
           </form>
-          <div className="ml-auto flex items-center gap-2 md:ml-0">
+
+          {/* Right actions */}
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2 md:ml-0">
+            {/* Mobile search trigger */}
+            <button
+              type="button"
+              aria-label="Tìm kiếm sản phẩm"
+              onClick={function () {
+                setMobileSearchOpen(true)
+              }}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-700 transition hover:bg-sky-100 md:hidden dark:text-zinc-200 dark:hover:bg-white/10"
+            >
+              <MagnifyingGlass size={20} weight="bold" />
+            </button>
+
             {/* Seller Channel Link */}
             <Link
               to={sellerChannelPath}
               id="header-seller-link"
-              className="hidden items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50/80 px-3 py-1.5 text-xs font-bold text-orange-700 transition hover:bg-orange-100 sm:flex dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20"
+              className="hidden items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-50/80 px-3 py-1.5 text-xs font-bold whitespace-nowrap text-indigo-800 transition hover:bg-indigo-100 sm:flex dark:border-white/15 dark:bg-white/10 dark:text-sky-200 dark:hover:bg-white/15"
             >
               <Storefront size={14} weight="bold" />
               <span>Kênh Người Bán</span>
@@ -282,7 +357,7 @@ export default function Header() {
                 <span
                   id="header-messages-badge"
                   data-testid="header-messages-badge"
-                  className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-extrabold text-white shadow"
+                  className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-extrabold text-white tabular-nums shadow"
                 >
                   {unreadBadgeText}
                 </span>
@@ -313,7 +388,7 @@ export default function Header() {
               {menu.open && isLoggedIn && (
                 <div
                   id="account-menu"
-                  className="absolute top-full right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-3xl border border-white/30 bg-white/90 shadow-xl backdrop-blur-md motion-safe:transition-[opacity,translate,scale] motion-safe:duration-150 motion-safe:ease-out dark:border-white/15 dark:bg-[#0a0f1e] dark:shadow-indigo-500/10 motion-safe:starting:translate-y-1 motion-safe:starting:scale-[0.96] motion-safe:starting:opacity-0"
+                  className="absolute top-full right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-3xl border border-white/30 bg-white/95 shadow-xl backdrop-blur-md motion-safe:transition-[opacity,translate,scale] motion-safe:duration-150 motion-safe:ease-out dark:border-white/15 dark:bg-[#0a0f1e] dark:shadow-indigo-500/10 motion-safe:starting:translate-y-1 motion-safe:starting:scale-[0.96] motion-safe:starting:opacity-0"
                 >
                   {/* Identity card */}
                   <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3 dark:border-white/10">
@@ -376,7 +451,7 @@ export default function Header() {
                         wishlistCount > 0 && (
                           <span
                             data-testid="account-wishlist-count"
-                            className="ml-auto rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"
+                            className="ml-auto rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700 tabular-nums dark:bg-indigo-500/20 dark:text-indigo-200"
                           >
                             {wishlistCount}
                           </span>
@@ -427,15 +502,16 @@ export default function Header() {
               )}
             </div>
 
+            {/* Cart link */}
             <Link
               to="/cart"
               aria-label="Giỏ hàng"
-              className="btn-primary relative flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold"
+              className="btn-primary relative flex items-center gap-2 rounded-full px-3.5 py-2.5 text-sm font-semibold sm:px-4"
             >
               <ShoppingBag size={18} weight="fill" />
               <span className="hidden sm:inline">Giỏ</span>
               {totalQuantity > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-extrabold text-indigo-700 shadow">
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-extrabold text-indigo-700 tabular-nums shadow">
                   {totalQuantity}
                 </span>
               )}
@@ -443,6 +519,231 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      {/* Mobile & Tablet Navigation Drawer */}
+      <Drawer
+        open={mobileNavOpen}
+        side="left"
+        title="Danh mục & Điều hướng"
+        onClose={closeMobileNav}
+      >
+        <div className="space-y-6">
+          {/* Categories */}
+          <div>
+            <p className={cn(sectionLabelClass(), 'mb-2 px-3')}>Danh mục sản phẩm</p>
+            <div className="space-y-1">
+              <Link
+                to="/search"
+                onClick={closeMobileNav}
+                className={cn(menuItemClass(), 'rounded-full')}
+              >
+                <span className={cn(iconChipClass())}>
+                  <SquaresFour size={16} />
+                </span>
+                <span>Tất cả sản phẩm</span>
+              </Link>
+              {categories.map(function (c) {
+                return (
+                  <Link
+                    key={c.id}
+                    to={'/search?category=' + encodeURIComponent(c.slug ?? '')}
+                    onClick={closeMobileNav}
+                    className={cn(menuItemClass(), 'rounded-full')}
+                  >
+                    <span className={cn(iconChipClass())}>
+                      <Tag size={16} />
+                    </span>
+                    <span>{c.name}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Marketplace & Account Shortcuts */}
+          <div className="border-t border-zinc-200/80 pt-4 dark:border-white/10">
+            <p className={cn(sectionLabelClass(), 'mb-2 px-3')}>Tiện ích & Tài khoản</p>
+            <div className="space-y-1">
+              <Link
+                to={sellerChannelPath}
+                onClick={closeMobileNav}
+                className={cn(menuItemClass(), 'rounded-full')}
+              >
+                <span className={cn(iconChipClass())}>
+                  <Storefront size={16} />
+                </span>
+                <span>Kênh Người Bán</span>
+              </Link>
+              <Link
+                to="/messages"
+                onClick={closeMobileNav}
+                className={cn(menuItemClass(), 'rounded-full')}
+              >
+                <span className={cn(iconChipClass())}>
+                  <ChatCircleDots size={16} />
+                </span>
+                <span>Tin nhắn</span>
+                {isLoggedIn && totalUnread > 0 && (
+                  <span className="ml-auto rounded-full bg-rose-500 px-2 py-0.5 text-xs font-bold text-white tabular-nums">
+                    {unreadBadgeText}
+                  </span>
+                )}
+              </Link>
+              <Link
+                to="/wishlist"
+                onClick={closeMobileNav}
+                className={cn(menuItemClass(), 'rounded-full')}
+              >
+                <span className={cn(iconChipClass())}>
+                  <Heart size={16} />
+                </span>
+                <span>Sản phẩm yêu thích</span>
+                {wishlistCount > 0 && (
+                  <span className="ml-auto rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700 tabular-nums dark:bg-indigo-500/20 dark:text-indigo-200">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+
+              {isLoggedIn && (
+                <>
+                  <Link
+                    to={dashboardPath}
+                    onClick={closeMobileNav}
+                    className={cn(menuItemClass(), 'rounded-full')}
+                  >
+                    <span className={cn(iconChipClass())}>
+                      <UserCircle size={16} />
+                    </span>
+                    <span>{dashboardLabel}</span>
+                  </Link>
+                  <Link
+                    to="/account/orders"
+                    onClick={closeMobileNav}
+                    className={cn(menuItemClass(), 'rounded-full')}
+                  >
+                    <span className={cn(iconChipClass())}>
+                      <Receipt size={16} />
+                    </span>
+                    <span>Đơn hàng của tôi</span>
+                  </Link>
+                </>
+              )}
+
+              {isLoggedIn === false && (
+                <Link
+                  to="/login"
+                  onClick={closeMobileNav}
+                  className="btn-primary mt-2 flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold"
+                >
+                  <SignIn size={16} weight="bold" />
+                  <span>Đăng nhập / Đăng ký</span>
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Display preferences */}
+          <div className="border-t border-zinc-200/80 pt-4 dark:border-white/10">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={theme === 'dark'}
+              onClick={toggleTheme}
+              className={cn(menuItemClass(), 'w-full rounded-full')}
+            >
+              <span className={cn(iconChipClass())}>
+                {theme === 'dark' && <Moon size={16} />}
+                {theme !== 'dark' && <Sun size={16} />}
+              </span>
+              <span>Giao diện tối</span>
+              <span
+                aria-hidden="true"
+                className={cn(
+                  switchTrackClass(theme === 'dark'),
+                  'ml-auto flex h-4 w-7 items-center rounded-full p-0.5 transition-colors',
+                )}
+              >
+                <span className={cn(switchKnobClass())} style={themeKnobStyle} />
+              </span>
+            </button>
+
+            {isLoggedIn && (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signOut.isPending}
+                className="mt-2 flex w-full items-center gap-2.5 rounded-full px-3.5 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-red-50 dark:bg-red-500/10">
+                  <SignOut size={16} weight="bold" />
+                </span>
+                {signOut.isPending && <span>Đang đăng xuất…</span>}
+                {signOut.isPending === false && <span>Đăng xuất</span>}
+              </button>
+            )}
+          </div>
+        </div>
+      </Drawer>
+
+      {/* Mobile Search Bottom Sheet */}
+      <Drawer
+        open={mobileSearchOpen}
+        side="bottom"
+        title="Tìm kiếm sản phẩm"
+        onClose={function () {
+          setMobileSearchOpen(false)
+        }}
+      >
+        <div className="space-y-5">
+          <form onSubmit={submitSearch} className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <MagnifyingGlass
+                size={16}
+                weight="bold"
+                className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-zinc-400"
+              />
+              <input
+                ref={mobileSearchInputRef}
+                value={keyword}
+                onChange={function (e) {
+                  setKeyword(e.target.value)
+                }}
+                placeholder="Tìm áo, váy, áo khoác, phụ kiện…"
+                className={cn(INPUT_CLASS, 'pl-10')}
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn-primary shrink-0 rounded-full px-5 py-2.5 text-sm font-bold"
+            >
+              Tìm kiếm
+            </button>
+          </form>
+
+          {categories.length > 0 && (
+            <div>
+              <p className={cn(sectionLabelClass(), 'mb-2.5')}>Danh mục nổi bật</p>
+              <div className="flex flex-wrap gap-2">
+                {categories.slice(0, 8).map(function (c) {
+                  return (
+                    <Link
+                      key={c.id}
+                      to={'/search?category=' + encodeURIComponent(c.slug ?? '')}
+                      onClick={function () {
+                        setMobileSearchOpen(false)
+                      }}
+                      className={cn(chipClass(false), 'px-3.5 py-1.5 text-xs')}
+                    >
+                      {c.name}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </Drawer>
     </header>
   )
 }

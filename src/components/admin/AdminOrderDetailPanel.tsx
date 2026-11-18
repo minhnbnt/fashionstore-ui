@@ -6,10 +6,10 @@ import {
   Storefront,
   User,
   Warning,
-  X,
   XCircle,
 } from '@phosphor-icons/react'
 
+import Drawer from '@/components/ui/Drawer'
 import { formatDateTime } from '@/lib/admin/productModeration'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
@@ -22,6 +22,7 @@ import {
   statusBadgeClass,
   statusLabel,
 } from '@/lib/order/orderMonitoring'
+import { cn, dangerButtonClass } from '@/lib/ui/styles'
 
 import type { AdminOrderDetailResponse } from '@generated/model/adminOrderDetailResponse'
 import type { AdminOrderResponse } from '@generated/model/adminOrderResponse'
@@ -129,7 +130,7 @@ function DetailBody({
         <button
           type="button"
           onClick={() => onCancel(order)}
-          className="flex items-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-red-700"
+          className={cn(dangerButtonClass(), 'cursor-pointer px-5 py-2.5')}
         >
           <XCircle size={16} weight="bold" />
           Hủy can thiệp
@@ -317,33 +318,8 @@ export default function AdminOrderDetailPanel({
   }
 
   return (
-    <dialog
-      open
-      className="fixed inset-0 z-40 m-0 flex h-full max-h-none w-full max-w-none justify-end border-0 bg-transparent p-0 text-inherit"
-      aria-label="Chi tiết đơn hàng"
-    >
-      <button
-        type="button"
-        aria-label="Đóng chi tiết"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default border-0 bg-black/40 backdrop-blur-xs"
-      />
-      <aside className="relative flex h-full w-full max-w-lg flex-col bg-[#f6f9ff] shadow-2xl dark:bg-[#0a0f1e]">
-        <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4 dark:border-white/10">
-          <p className="text-xs font-bold tracking-[0.18em] text-indigo-600 uppercase dark:text-indigo-400">
-            Chi tiết đơn hàng
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Đóng"
-            className="rounded-full p-2 text-zinc-500 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-white/10"
-          >
-            <X size={18} weight="bold" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-5">{body}</div>
-      </aside>
-    </dialog>
+    <Drawer open side="right" title="Chi tiết đơn hàng" widthClass="max-w-lg" onClose={onClose}>
+      {body}
+    </Drawer>
   )
 }

@@ -2,32 +2,34 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import {
-  House,
-  Package,
-  PlusCircle,
   Archive,
-  ShoppingCart,
-  ArrowUUpLeft,
-  Wallet,
-  Star,
-  ChatCircleDots,
-  PaintBrushBroad,
-  UsersThree,
-  Storefront,
   ArrowSquareOut,
-  List,
-  X,
+  ArrowUUpLeft,
   CaretRight,
-  ShieldCheck,
-  ChartLineUp,
   ChartBar,
+  ChartLineUp,
+  ChatCircleDots,
+  House,
+  List,
+  Package,
+  PaintBrushBroad,
+  PlusCircle,
+  ShieldCheck,
+  ShoppingCart,
+  Star,
+  Storefront,
+  UsersThree,
+  Wallet,
 } from '@phosphor-icons/react'
 
 import NotificationBell from '@/components/NotificationBell'
 import ShopSwitcher from '@/components/seller/ShopSwitcher'
+import { Drawer } from '@/components/ui/Drawer'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import UserAvatar from '@/components/UserAvatar'
 import { canSeeTab } from '@/lib/seller/sellerPermissions'
+
+import { SellerSidebarNav } from './SellerSidebarNav'
 
 import type { MenuGroup, SellerTabId } from '@/types/seller'
 
@@ -44,6 +46,55 @@ interface SellerLayoutProps {
   isOwner?: boolean
   shopId?: string
   onSwitchShop?: (shopId: string) => void
+}
+
+function getBreadcrumbLabel(activeTab: SellerTabId): string {
+  if (activeTab === 'OVERVIEW') {
+    return 'Tổng quan gian hàng'
+  }
+  if (activeTab === 'PRODUCTS') {
+    return 'Tất cả sản phẩm'
+  }
+  if (activeTab === 'ADD_PRODUCT') {
+    return 'Thêm sản phẩm mới'
+  }
+  if (activeTab === 'EDIT_PRODUCT') {
+    return 'Chỉnh sửa sản phẩm'
+  }
+  if (activeTab === 'INVENTORY') {
+    return 'Quản lý tồn kho & Biến thể'
+  }
+  if (activeTab === 'ORDERS') {
+    return 'Quản lý đơn hàng'
+  }
+  if (activeTab === 'RETURNS') {
+    return 'Yêu cầu trả hàng & Hoàn tiền'
+  }
+  if (activeTab === 'REVENUE') {
+    return 'Doanh thu & Tài chính'
+  }
+  if (activeTab === 'REVIEWS') {
+    return 'Đánh giá từ khách hàng'
+  }
+  if (activeTab === 'CHAT') {
+    return 'Tin nhắn khách hàng (DHMQ Chat)'
+  }
+  if (activeTab === 'DECORATION') {
+    return 'Trang trí gian hàng'
+  }
+  if (activeTab === 'STAFF') {
+    return 'Phân quyền & Quản lý nhân viên'
+  }
+  if (activeTab === 'PROFILE') {
+    return 'Hồ sơ Shop & KYC'
+  }
+  if (activeTab === 'STATS_REVENUE') {
+    return 'Thống kê & Báo cáo doanh thu'
+  }
+  if (activeTab === 'STATS_PRODUCTS') {
+    return 'Phân tích hiệu suất sản phẩm'
+  }
+  return 'Phân tích khách hàng & Theo dõi'
 }
 
 export function SellerLayout({
@@ -81,14 +132,14 @@ export function SellerLayout({
           label: 'Quản lý đơn hàng',
           icon: ShoppingCart,
           badgeCount: pendingOrdersCount,
-          badgeColor: 'bg-indigo-700',
+          badgeColor: 'bg-blue-700',
         },
         {
           id: 'RETURNS',
           label: 'Trả hàng / Hoàn tiền',
           icon: ArrowUUpLeft,
           badgeCount: returnRequestsCount,
-          badgeColor: 'bg-amber-500',
+          badgeColor: 'bg-amber-600',
         },
       ],
     },
@@ -157,7 +208,7 @@ export function SellerLayout({
           label: 'Tin nhắn CSKH',
           icon: ChatCircleDots,
           badgeCount: unreadChatCount,
-          badgeColor: 'bg-indigo-700',
+          badgeColor: 'bg-blue-700',
         },
       ],
     },
@@ -184,15 +235,19 @@ export function SellerLayout({
   ]
 
   const filteredGroups: MenuGroup[] = menuGroups
-    .map((group) => {
-      const items = group.items.filter((item) => canSeeTab(item.id, permissions, isOwner))
+    .map(function (group) {
+      const items = group.items.filter(function (item) {
+        return canSeeTab(item.id, permissions, isOwner)
+      })
       return { ...group, items }
     })
-    .filter((group) => group.items.length > 0)
+    .filter(function (group) {
+      return group.items.length > 0
+    })
 
   const canAccessChat = isOwner || permissions.includes('CHAT_ACCESS')
 
-  const handleSelectTab = (tab: SellerTabId) => {
+  const handleSelectTab = function (tab: SellerTabId) {
     onSelectTab(tab)
     setIsMobileMenuOpen(false)
   }
@@ -205,46 +260,55 @@ export function SellerLayout({
       <header className="sticky top-0 z-40">
         <div className="mx-auto max-w-[1600px] px-4">
           <div className="glass mt-3 flex h-16 items-center justify-between gap-3 rounded-full px-4 md:px-6">
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
               <button
                 type="button"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 lg:hidden dark:text-zinc-300 dark:hover:bg-white/10"
+                aria-label="Mở menu Kênh Người Bán"
+                onClick={function () {
+                  setIsMobileMenuOpen(true)
+                }}
+                className="cursor-pointer rounded-full p-2 text-zinc-600 transition hover:bg-sky-100 hover:text-[#17203a] focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none lg:hidden dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:ring-sky-400/40"
               >
                 <List size={22} />
               </button>
 
-              {/* Seller Branding — wordmark nét giống storefront */}
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1 text-2xl font-extrabold tracking-tighter">
-                  nét
-                  <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-indigo-900 to-sky-400" />
-                </span>
-                <span className="hidden rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-indigo-700 uppercase sm:inline dark:bg-indigo-900/40 dark:text-indigo-300">
+              {/* Seller Branding — wordmark DHMQ chuẩn hệ thiết kế */}
+              <div className="flex shrink-0 items-center gap-2">
+                <Link
+                  to="/shop"
+                  className="flex items-center gap-1 rounded-full text-xl font-extrabold tracking-tighter text-[#17203a] transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none sm:text-2xl dark:text-[#e2e8f0] dark:focus-visible:ring-sky-400/40"
+                >
+                  <span>DHMQ</span>
+                  <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8]" />
+                </Link>
+                <span className="hidden rounded-full bg-indigo-100/90 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-indigo-800 uppercase sm:inline dark:bg-sky-500/15 dark:text-sky-300">
                   Seller Center
                 </span>
               </div>
 
               {shopId !== undefined && shopId !== '' && onSwitchShop !== undefined && (
-                <div className="ml-1 sm:ml-2">
+                <div className="ml-0.5 sm:ml-2">
                   <ShopSwitcher currentShopId={shopId} onSwitchShop={onSwitchShop} />
                 </div>
               )}
             </div>
 
             {/* Right Header Navigation */}
-            <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex shrink-0 items-center gap-2 md:gap-3">
               {/* Quick Chat Shortcut with Badge */}
               {canAccessChat && (
                 <button
                   type="button"
-                  onClick={() => handleSelectTab('CHAT')}
-                  className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10"
+                  onClick={function () {
+                    handleSelectTab('CHAT')
+                  }}
+                  aria-label="Tin nhắn CSKH"
                   title="Tin nhắn CSKH"
+                  className="relative cursor-pointer rounded-full p-2 text-zinc-600 transition hover:bg-sky-100 hover:text-[#17203a] focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:ring-sky-400/40"
                 >
                   <ChatCircleDots size={20} />
                   {unreadChatCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-700 text-[10px] font-bold text-white">
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-700 px-1 text-[10px] font-bold text-white shadow-xs dark:bg-sky-400 dark:text-[#0a0f1e]">
                       {unreadChatCount}
                     </span>
                   )}
@@ -255,12 +319,12 @@ export function SellerLayout({
               <NotificationBell categories={['SELLING']} />
 
               {/* Theme Toggle — component dùng chung với Header storefront */}
-              <ThemeToggle className="relative rounded-full p-2 text-zinc-600 transition hover:bg-indigo-100 dark:text-zinc-300 dark:hover:bg-white/10" />
+              <ThemeToggle className="relative cursor-pointer rounded-full p-2 text-zinc-600 transition hover:bg-sky-100 hover:text-[#17203a] focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:ring-sky-400/40" />
 
               {/* Back to Marketplace Link */}
               <Link
                 to="/"
-                className="hidden items-center gap-1.5 rounded-full border border-zinc-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-all hover:border-blue-600 hover:text-indigo-600 sm:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:text-indigo-400"
+                className="hidden items-center gap-1.5 rounded-full border border-zinc-300 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-blue-600 hover:text-blue-700 focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none sm:flex dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:border-sky-400/50 dark:hover:text-sky-300 dark:focus-visible:ring-sky-400/40"
               >
                 <span>Xem trang mua sắm</span>
                 <ArrowSquareOut size={14} />
@@ -269,19 +333,25 @@ export function SellerLayout({
               {/* Seller Shop Profile Badge */}
               <button
                 type="button"
-                onClick={() => handleSelectTab('PROFILE')}
-                className="group flex cursor-pointer items-center gap-2 text-left"
+                onClick={function () {
+                  handleSelectTab('PROFILE')
+                }}
+                className="group flex cursor-pointer items-center gap-2 rounded-full px-1.5 py-1 text-left transition hover:bg-sky-100/70 focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none dark:hover:bg-white/10 dark:focus-visible:ring-sky-400/40"
               >
                 <UserAvatar name={shopName} size={32} />
                 <div className="hidden flex-col text-left md:flex">
                   <div className="flex items-center gap-1">
-                    <span className="max-w-[140px] truncate text-xs font-bold text-zinc-800 transition-colors group-hover:text-indigo-600 dark:text-zinc-100 dark:group-hover:text-indigo-400">
+                    <span className="max-w-[140px] truncate text-xs font-bold text-[#17203a] transition-colors group-hover:text-blue-700 dark:text-[#e2e8f0] dark:group-hover:text-sky-300">
                       {shopName}
                     </span>
-                    <ShieldCheck size={14} className="text-blue-500" weight="fill" />
+                    <ShieldCheck
+                      size={14}
+                      className="shrink-0 text-blue-600 dark:text-sky-400"
+                      weight="fill"
+                    />
                   </div>
-                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-                    nét Mall • 4.9 ⭐
+                  <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+                    DHMQ Seller • Gian hàng hoạt động
                   </span>
                 </div>
               </button>
@@ -294,151 +364,49 @@ export function SellerLayout({
       <div className="mx-auto flex w-full max-w-[1600px] flex-1 gap-4 px-2 py-4 sm:px-4">
         {/* Left Sidebar for Desktop */}
         <aside className="sticky top-20 hidden max-h-[calc(100vh-96px)] w-64 shrink-0 flex-col overflow-y-auto rounded-3xl border border-zinc-200/80 bg-white/80 p-3 shadow-sm lg:flex dark:border-white/10 dark:bg-[#11182a]">
-          <nav className="space-y-4">
-            {filteredGroups.map((group) => (
-              <div key={group.groupTitle} className="space-y-1">
-                <span className="mb-1 block px-3 text-[10px] font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                  {group.groupTitle}
-                </span>
-                {group.items.map((item) => {
-                  const Icon = item.icon
-                  let isActive = activeTab === item.id
-                  if (item.id === 'PRODUCTS' && activeTab === 'EDIT_PRODUCT') {
-                    isActive = true
-                  }
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleSelectTab(item.id)}
-                      className={`flex w-full items-center justify-between rounded-full px-3 py-2 text-xs font-medium transition-all ${
-                        isActive &&
-                        'bg-indigo-900 font-bold text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
-                      } ${!isActive && 'text-zinc-600 hover:bg-sky-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-zinc-100'}`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Icon
-                          size={16}
-                          className={`${isActive && 'text-white dark:text-indigo-950'} ${!isActive && 'text-zinc-500 dark:text-zinc-400'}`}
-                        />
-                        <span>{item.label}</span>
-                      </div>
-
-                      {item.badgeCount && item.badgeCount > 0 && (
-                        <span
-                          className={`py-0.2 rounded-full px-1.5 text-[10px] font-bold text-white ${item.badgeColor}`}
-                        >
-                          {item.badgeCount}
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            ))}
-          </nav>
+          <SellerSidebarNav
+            groups={filteredGroups}
+            activeTab={activeTab}
+            onSelectTab={handleSelectTab}
+          />
         </aside>
 
-        {/* Mobile Sidebar Drawer */}
-        {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 flex lg:hidden">
-            <button
-              type="button"
-              aria-label="Đóng thanh điều hướng"
-              className="fixed inset-0 cursor-default border-0 bg-zinc-950/55 backdrop-blur-sm"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <div className="relative flex h-full w-72 flex-col overflow-y-auto bg-white p-4 shadow-2xl dark:bg-[#11182a]">
-              <div className="mb-3 flex items-center justify-between border-b pb-3">
-                <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
-                  Menu Kênh Người Bán
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-white/10"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <nav className="space-y-4">
-                {filteredGroups.map((group) => (
-                  <div key={group.groupTitle} className="space-y-1">
-                    <span className="mb-1 block px-2 text-[10px] font-bold tracking-wider text-zinc-400 dark:text-zinc-500">
-                      {group.groupTitle}
-                    </span>
-                    {group.items.map((item) => {
-                      const Icon = item.icon
-                      let isActive = activeTab === item.id
-                      if (item.id === 'PRODUCTS' && activeTab === 'EDIT_PRODUCT') {
-                        isActive = true
-                      }
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleSelectTab(item.id)}
-                          className={`flex w-full items-center justify-between rounded-full px-3 py-2 text-xs font-medium transition-all ${
-                            isActive &&
-                            'bg-indigo-900 font-bold text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
-                          } ${!isActive && 'text-zinc-600 hover:bg-sky-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-zinc-100'}`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <Icon
-                              size={16}
-                              className={`${isActive && 'text-white dark:text-indigo-950'} ${!isActive && 'text-zinc-500 dark:text-zinc-400'}`}
-                            />
-                            <span>{item.label}</span>
-                          </div>
-
-                          {item.badgeCount && item.badgeCount > 0 && (
-                            <span
-                              className={`py-0.2 rounded-full px-1.5 text-[10px] font-bold text-white ${item.badgeColor}`}
-                            >
-                              {item.badgeCount}
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                ))}
-              </nav>
-            </div>
-          </div>
-        )}
+        {/* Mobile Sidebar Drawer — dùng chung Drawer + SellerSidebarNav */}
+        <Drawer
+          open={isMobileMenuOpen}
+          side="left"
+          title="Menu Kênh Người Bán"
+          widthClass="max-w-xs"
+          onClose={function () {
+            setIsMobileMenuOpen(false)
+          }}
+        >
+          <SellerSidebarNav
+            groups={filteredGroups}
+            activeTab={activeTab}
+            onSelectTab={handleSelectTab}
+          />
+        </Drawer>
 
         {/* Center Main Content Area */}
         <main className="min-w-0 flex-1 space-y-4">
           {/* Breadcrumb Bar */}
-          <div className="flex items-center gap-2 rounded-lg border border-zinc-200/80 bg-white/80 px-4 py-2.5 text-xs text-zinc-500 shadow-xs dark:border-white/10 dark:bg-[#11182a] dark:text-zinc-400">
+          <nav
+            aria-label="Đường dẫn điều hướng"
+            className="flex items-center gap-2 rounded-2xl border border-zinc-200/80 bg-white/80 px-4 py-2.5 text-xs text-zinc-600 shadow-xs dark:border-white/10 dark:bg-[#11182a] dark:text-zinc-300"
+          >
             <Link
               to="/shop"
-              className="flex items-center gap-1 hover:text-indigo-600 dark:hover:text-indigo-400"
+              className="flex items-center gap-1 rounded-full transition hover:text-blue-700 focus-visible:ring-2 focus-visible:ring-blue-600/40 focus-visible:outline-none dark:hover:text-sky-300 dark:focus-visible:ring-sky-400/40"
             >
               <House size={14} />
               <span>Kênh Người Bán</span>
             </Link>
-            <CaretRight size={12} className="text-zinc-400 dark:text-zinc-500" />
-            <span className="font-semibold text-zinc-800 dark:text-zinc-100">
-              {activeTab === 'OVERVIEW' && 'Tổng quan gian hàng'}
-              {activeTab === 'PRODUCTS' && 'Tất cả sản phẩm'}
-              {activeTab === 'ADD_PRODUCT' && 'Thêm sản phẩm mới'}
-              {activeTab === 'INVENTORY' && 'Quản lý tồn kho & Biến thể'}
-              {activeTab === 'ORDERS' && 'Quản lý đơn hàng'}
-              {activeTab === 'RETURNS' && 'Yêu cầu trả hàng & Hoàn tiền'}
-              {activeTab === 'REVENUE' && 'Doanh thu & Tài chính'}
-              {activeTab === 'REVIEWS' && 'Đánh giá từ khách hàng'}
-              {activeTab === 'CHAT' && 'Tin nhắn khách hàng (nét Chat)'}
-              {activeTab === 'DECORATION' && 'Trang trí gian hàng'}
-              {activeTab === 'STAFF' && 'Phân quyền & Quản lý nhân viên'}
-              {activeTab === 'PROFILE' && 'Hồ sơ Shop & KYC'}
-              {activeTab === 'STATS_REVENUE' && 'Thống kê & Báo cáo doanh thu'}
-              {activeTab === 'STATS_PRODUCTS' && 'Phân tích hiệu suất sản phẩm'}
-              {activeTab === 'STATS_CUSTOMERS' && 'Phân tích khách hàng & Theo dõi'}
+            <CaretRight size={12} className="shrink-0 text-zinc-400 dark:text-zinc-500" />
+            <span className="truncate font-semibold text-[#17203a] dark:text-[#e2e8f0]">
+              {getBreadcrumbLabel(activeTab)}
             </span>
-          </div>
+          </nav>
 
           {/* Tab Content Body */}
           {children}

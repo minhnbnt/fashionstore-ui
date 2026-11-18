@@ -1,4 +1,4 @@
-# Design system — nét
+# Design system — DHMQ
 
 ## UI kit (code dùng được)
 

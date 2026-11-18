@@ -7,6 +7,7 @@ export const ProductDetail = lazy(() => import('./ProductDetail'))
 export const Faq = lazy(() => import('./Faq'))
 export const StaticPage = lazy(() => import('./StaticPage'))
 export const Messages = lazy(() => import('./Messages'))
+export const NotFound = lazy(() => import('./NotFound'))
 
 // Account
 export const Account = lazy(() => import('./account/Account'))
@@ -26,6 +27,7 @@ export const AdminContent = lazy(() => import('./admin/AdminContent'))
 export const AdminOrders = lazy(() => import('./admin/AdminOrders'))
 export const AdminHolidays = lazy(() => import('./admin/AdminHolidays'))
 export const AdminBannedKeywords = lazy(() => import('./admin/AdminBannedKeywords'))
+export const AdminSettings = lazy(() => import('./admin/AdminSettings'))
 
 // Checkout
 export const Cart = lazy(() => import('./checkout/Cart'))

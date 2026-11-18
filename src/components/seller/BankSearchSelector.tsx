@@ -138,7 +138,7 @@ export default function BankSearchSelector({
 
       {/* Dropdown Menu with Search */}
       {isOpen && (
-        <div className="absolute z-40 mt-1 max-h-72 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-white/15 dark:bg-zinc-900">
+        <div className="absolute z-40 mt-1 max-h-72 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-white/15 dark:bg-[#0a0f1e]">
           {/* Search Box */}
           <div className="border-b border-zinc-100 p-2 dark:border-white/10">
             <div className="relative">

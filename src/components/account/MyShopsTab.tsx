@@ -185,7 +185,7 @@ export default function MyShopsTab({ onOpenRegisterModal }: MyShopsTabProps) {
             Bạn chưa tham gia gian hàng nào
           </h3>
           <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Khởi tạo gian hàng thời trang độc bản trên nét để tiếp cận cộng đồng mua sắm trẻ trung,
+            Khởi tạo gian hàng thời trang độc bản trên DHMQ để tiếp cận cộng đồng mua sắm trẻ trung,
             hoặc liên hệ chủ shop để nhận thư mời làm nhân viên vận hành.
           </p>
           <div className="mt-5">
@@ -233,7 +233,7 @@ export default function MyShopsTab({ onOpenRegisterModal }: MyShopsTabProps) {
                         {shop.shopName ?? ''}
                       </h3>
                       <p className="truncate font-mono text-xs text-zinc-400 dark:text-zinc-500">
-                        net.vn/shop/{shop.shopSlug}
+                        dhmq.vn/shop/{shop.shopSlug}
                       </p>
                       <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
                         Tham gia: {formatDateTime(shop.joinedAt)}
@@ -258,7 +258,7 @@ export default function MyShopsTab({ onOpenRegisterModal }: MyShopsTabProps) {
                   {shop.shopStatus === 'PENDING' && (
                     <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
                       <ClockCountdown size={16} weight="bold" className="shrink-0" />
-                      <span>Hồ sơ đang chờ nét phê duyệt định danh (1-3 ngày làm việc).</span>
+                      <span>Hồ sơ đang chờ DHMQ phê duyệt định danh (1-3 ngày làm việc).</span>
                     </div>
                   )}
 

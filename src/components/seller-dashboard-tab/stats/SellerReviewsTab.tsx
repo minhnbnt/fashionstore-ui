@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { useOpenConversationWithBuyer } from '@generated/endpoints/chat/chat'
@@ -15,7 +15,6 @@ import {
 import {
   ChatCircleDots,
   CaretDown,
-  CheckCircle,
   Flag,
   PaperPlaneRight,
   Play,
@@ -28,6 +27,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
 import { hookErrorMessage, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 import {
   groupReviewsByProduct,
   reviewItem,
@@ -53,9 +53,9 @@ function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
 
 function filterPillClass(active: boolean): string {
   if (active) {
-    return 'rounded-2xl px-4 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+    return 'btn-primary rounded-full px-4 py-2 text-xs font-bold transition'
   }
-  return 'rounded-2xl px-4 py-2 text-xs font-bold transition text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white'
+  return 'rounded-full px-4 py-2 text-xs font-bold transition text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white'
 }
 
 interface Props {
@@ -67,7 +67,6 @@ export default function SellerReviewsTab({ shopId }: Props) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const openWithBuyerMutation = useOpenConversationWithBuyer()
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [onlyUnreplied, setOnlyUnreplied] = useState(false)
   const [selectedStars, setSelectedStars] = useState<number | undefined>(undefined)
@@ -80,7 +79,6 @@ export default function SellerReviewsTab({ shopId }: Props) {
   const [reportReason, setReportReason] = useState(
     'Đánh giá sai sự thật / Cạnh tranh không lành mạnh',
   )
-  const [notification, setNotification] = useState<string | null>(null)
   const [lightboxMedia, setLightboxMedia] = useState<{
     type: 'image' | 'video'
     url: string
@@ -156,24 +154,6 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
   const groups: ReviewGroup[] = groupReviewsByProduct(reviews)
 
-  function showToast(msg: string) {
-    if (toastTimerRef.current !== null) {
-      clearTimeout(toastTimerRef.current)
-    }
-    setNotification(msg)
-    toastTimerRef.current = setTimeout(function () {
-      setNotification(null)
-    }, 3000)
-  }
-
-  useEffect(function () {
-    return function () {
-      if (toastTimerRef.current !== null) {
-        clearTimeout(toastTimerRef.current)
-      }
-    }
-  }, [])
-
   function handleInsertTemplate(templateContent: string) {
     setReplyError(null)
     if (replyContent.trim() === '') {
@@ -201,10 +181,12 @@ export default function SellerReviewsTab({ shopId }: Props) {
           setReplyTargetId(null)
           setReplyContent('')
           setReplyError(null)
-          showToast('Đã gửi phản hồi đánh giá của khách hàng!')
+          notify.success('Đã gửi phản hồi đánh giá của khách hàng!')
         },
         onError: function (error) {
-          setReplyError(hookErrorMessage('sellerReviewReply', error))
+          const msg = hookErrorMessage('sellerReviewReply', error)
+          setReplyError(msg)
+          notify.error(msg)
         },
       },
     )
@@ -219,7 +201,10 @@ export default function SellerReviewsTab({ shopId }: Props) {
       {
         onSuccess: function () {
           setReportTargetId(null)
-          showToast('Đã gửi báo cáo đánh giá lên bộ phận kiểm duyệt của sàn!')
+          notify.success('Đã gửi báo cáo đánh giá lên bộ phận kiểm duyệt của sàn!')
+        },
+        onError: function (error) {
+          notify.fromError(error, undefined, 'Không thể gửi báo cáo đánh giá. Vui lòng thử lại.')
         },
       },
     )
@@ -251,14 +236,6 @@ export default function SellerReviewsTab({ shopId }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -776,7 +753,7 @@ export default function SellerReviewsTab({ shopId }: Props) {
             setIsTemplateModalOpen(false)
           }}
           onChanged={function (msg) {
-            showToast(msg)
+            notify.success(msg)
           }}
         />
       )}

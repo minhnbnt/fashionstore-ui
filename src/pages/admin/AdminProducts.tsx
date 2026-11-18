@@ -17,6 +17,13 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import AdminProductDetailPanel from '@/components/admin/AdminProductDetailPanel'
+import AdminShell from '@/components/admin/AdminShell'
+import BanProductDialog from '@/components/admin/dialogs/BanProductDialog'
+import DismissReportsDialog from '@/components/admin/dialogs/DismissReportsDialog'
+import RejectProductDialog from '@/components/admin/dialogs/RejectProductDialog'
+import RestoreProductDialog from '@/components/admin/dialogs/RestoreProductDialog'
+import Pagination from '@/components/search/Pagination'
 import {
   canApprove,
   canBan,
@@ -35,14 +42,14 @@ import {
   PLACEHOLDER_IMAGE,
   takeData,
 } from '@/lib/api/apiAdapters'
-
-import AdminProductDetailPanel from '../../components/admin/AdminProductDetailPanel'
-import AdminShell from '../../components/admin/AdminShell'
-import BanProductDialog from '../../components/admin/dialogs/BanProductDialog'
-import DismissReportsDialog from '../../components/admin/dialogs/DismissReportsDialog'
-import RejectProductDialog from '../../components/admin/dialogs/RejectProductDialog'
-import RestoreProductDialog from '../../components/admin/dialogs/RestoreProductDialog'
-import Pagination from '../../components/search/Pagination'
+import { notify } from '@/lib/notifications'
+import {
+  cn,
+  PANEL_CLASS,
+  secondaryButtonClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from '@/lib/ui/styles'
 
 import type { ProductStatusFilter } from '@/lib/admin/productModeration'
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
@@ -220,7 +227,6 @@ export default function AdminProducts() {
   const [restoreTarget, setRestoreTarget] = useState<AdminProductResponse | null>(null)
   const [dismissTarget, setDismissTarget] = useState<AdminProductResponse | null>(null)
   const [rejectTarget, setRejectTarget] = useState<AdminProductResponse | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const listQuery = useListAdminProducts(paramsOf(status, q, shopId, page))
   const approveMutation = useApproveProduct()
@@ -247,7 +253,7 @@ export default function AdminProducts() {
     setRestoreTarget(null)
     setDismissTarget(null)
     setRejectTarget(null)
-    setNotice(message)
+    notify.success(message)
     void queryClient.invalidateQueries({ predicate: (query) => isAdminProductKey(query.queryKey) })
   }
 
@@ -262,7 +268,7 @@ export default function AdminProducts() {
           refreshAfterModeration(`Đã phê duyệt sản phẩm "${product.name}".`)
         },
         onError: (err) => {
-          setNotice(hookErrorMessage('adminProducts', err))
+          notify.fromError(err, 'adminProducts')
         },
       },
     )
@@ -330,52 +336,40 @@ export default function AdminProducts() {
       title="Kiểm duyệt sản phẩm"
       description="Xử lý sản phẩm bị người mua báo cáo hoặc hệ thống gắn cờ theo từ khóa cấm, gỡ hàng vi phạm và khôi phục khi shop đã khắc phục."
       actions={
-        <Link
-          to="/admin/products/keywords"
-          className="flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-2 text-sm font-bold text-zinc-700 transition hover:bg-white/70 dark:border-white/10 dark:text-zinc-200 dark:hover:bg-white/10"
-        >
+        <Link to="/admin/products/keywords" className={secondaryButtonClass()}>
           <TextAa size={17} weight="bold" />
           Từ khóa cấm
         </Link>
       }
     >
-      {notice !== null && (
-        <output className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
-          {notice}
-          <button type="button" aria-label="Ẩn thông báo" onClick={() => setNotice(null)}>
-            <X size={16} weight="bold" />
-          </button>
-        </output>
-      )}
-
-      <section>
+      <section className={PANEL_CLASS}>
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Lọc trạng thái">
-            {STATUS_TABS.map(function (tab) {
-              const selected = tab.value === status
-              let tabClass =
-                'rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
-              if (selected) {
-                tabClass =
-                  'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
-              }
-              return (
-                <button
-                  key={tab.value}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onClick={() => updateUrl({ status: tab.value, page: null })}
-                  className={tabClass}
-                >
-                  {tab.label}
-                </button>
-              )
-            })}
+          <div className="overflow-x-auto pb-1">
+            <div
+              className={cn(segmentedTrackClass(), 'w-max')}
+              role="tablist"
+              aria-label="Lọc trạng thái"
+            >
+              {STATUS_TABS.map(function (tab) {
+                const selected = tab.value === status
+                return (
+                  <button
+                    key={tab.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => updateUrl({ status: tab.value, page: null })}
+                    className={cn(segmentedItemClass(selected), 'cursor-pointer')}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           <form onSubmit={handleSearch} className="flex w-full items-center gap-2 lg:w-auto">
-            <label className="flex flex-1 items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-4 py-2 lg:w-80 dark:border-white/10 dark:bg-white/5">
+            <label className="flex flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2 focus-within:border-blue-600 lg:w-80 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400">
               <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
               <input
                 type="search"
@@ -383,10 +377,13 @@ export default function AdminProducts() {
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="Tên, slug, tên shop hoặc SKU"
                 aria-label="Tìm sản phẩm"
-                className="w-full bg-transparent text-sm outline-none"
+                className="w-full bg-transparent text-sm text-[#17203a] outline-none placeholder:text-zinc-400 dark:text-white"
               />
             </label>
-            <button type="submit" className="btn-primary rounded-full px-4 py-2 text-sm font-bold">
+            <button
+              type="submit"
+              className="btn-primary cursor-pointer rounded-full px-4 py-2 text-sm font-bold"
+            >
               Tìm
             </button>
           </form>

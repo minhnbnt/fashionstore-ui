@@ -540,7 +540,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                   type="text"
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="VD: Nét Boutique, Thời Trang GenZ, An Fashion..."
+                  placeholder="VD: DHMQ Boutique, Thời Trang GenZ, An Fashion..."
                   className={`${INPUT_BASE} font-medium`}
                 />
               </label>
@@ -552,7 +552,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                 <span className="font-normal text-zinc-400">(Tự sinh độc nhất)</span>{' '}
                 <span className="text-red-500">*</span>
                 <div className="mt-1 flex items-center rounded-full border border-zinc-300 bg-white/80 px-4 py-2 dark:border-white/15 dark:bg-white/10">
-                  <span className="text-xs text-zinc-400">net.vn/shop/</span>
+                  <span className="text-xs text-zinc-400">dhmq.vn/shop/</span>
                   <input
                     id="input-shop-slug"
                     type="text"
@@ -1144,7 +1144,7 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                 </div>
                 <div>
                   <span className="text-zinc-400">Đường dẫn:</span>{' '}
-                  <span className="font-mono text-blue-600">net.vn/shop/{slug}</span>
+                  <span className="font-mono text-blue-600">dhmq.vn/shop/{slug}</span>
                 </div>
                 <div>
                   <span className="text-zinc-400">Chủ shop (CCCD):</span>{' '}
@@ -1218,8 +1218,8 @@ export default function ShopKycRegistrationModal({ isOpen, userEmail, onClose, o
                   className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-600 dark:border-white/15 dark:bg-white/10"
                 />
                 <span>
-                  Tôi đồng ý để sàn nét lưu trữ dữ liệu định danh eKYC và cung cấp số liệu doanh thu
-                  cho Cơ quan Thuế theo quy định TMĐT Việt Nam.
+                  Tôi đồng ý để sàn DHMQ lưu trữ dữ liệu định danh eKYC và cung cấp số liệu doanh
+                  thu cho Cơ quan Thuế theo quy định TMĐT Việt Nam.
                 </span>
               </label>
             </div>

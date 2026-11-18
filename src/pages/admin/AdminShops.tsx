@@ -9,6 +9,7 @@ import StatePanel from '@/components/ui/StatePanel'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { formatDateTime, pageCount } from '@/lib/admin/admin'
 import { takeData } from '@/lib/api/apiAdapters'
+import { CARD_CLASS, cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 import type { AdminShopResponse } from '@generated/model/adminShopResponse'
 import type { ListAdminShopsParams } from '@generated/model/listAdminShopsParams'
@@ -107,26 +108,23 @@ export default function AdminShops() {
       }
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-2">
+        <div
+          className={cn(segmentedTrackClass(), 'w-fit flex-wrap')}
+          role="tablist"
+          aria-label="Lọc trạng thái gian hàng"
+        >
           {STATUS_TABS.map(function (tab) {
             let active = status === tab.value
             if (tab.value === '' && status === undefined) {
               active = true
             }
-            let className =
-              'rounded-full border px-4 py-2 text-sm font-bold transition dark:border-white/10'
-            if (active) {
-              className +=
-                ' border-indigo-900 bg-indigo-900 text-white dark:border-indigo-300 dark:bg-indigo-300 dark:text-indigo-950'
-            } else {
-              className +=
-                ' border-zinc-200 bg-white/60 text-zinc-600 hover:border-indigo-300 dark:bg-white/5 dark:text-zinc-300'
-            }
             return (
               <button
                 key={tab.label}
                 type="button"
-                className={className}
+                role="tab"
+                aria-selected={active}
+                className={cn(segmentedItemClass(active), 'cursor-pointer px-4 py-2 text-sm')}
                 onClick={function () {
                   let nextStatus: ListAdminShopsStatus | undefined
                   if (tab.value !== '') {
@@ -142,7 +140,7 @@ export default function AdminShops() {
         </div>
 
         <form onSubmit={submitSearch} className="flex max-w-2xl gap-2">
-          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2.5 dark:border-white/10 dark:bg-white/5">
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-4 py-2.5 focus-within:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400">
             <MagnifyingGlass size={17} className="shrink-0 text-zinc-500 dark:text-zinc-400" />
             <span className="sr-only">Tìm shop</span>
             <input
@@ -150,10 +148,13 @@ export default function AdminShops() {
               name="q"
               defaultValue={query}
               placeholder="Tên shop, slug hoặc email chủ shop"
-              className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
+              className="w-full bg-transparent text-sm text-[#17203a] outline-none placeholder:text-zinc-400 dark:text-white"
             />
           </label>
-          <button type="submit" className="btn-primary rounded-full px-5 py-2.5 text-sm font-bold">
+          <button
+            type="submit"
+            className="btn-primary cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold"
+          >
             Tìm
           </button>
         </form>
@@ -176,7 +177,7 @@ export default function AdminShops() {
           />
         )}
         {shops.length > 0 && (
-          <div className="overflow-x-auto rounded-3xl border border-zinc-200 dark:border-white/10">
+          <div className={cn(CARD_CLASS, 'overflow-x-auto')}>
             <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="bg-zinc-50 text-xs tracking-wide text-zinc-500 uppercase dark:bg-white/5 dark:text-zinc-400">
                 <tr>

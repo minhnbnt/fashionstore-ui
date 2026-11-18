@@ -13,7 +13,6 @@ import {
   WarningCircle,
   ClockCounterClockwise,
   PencilSimple,
-  CheckCircle,
   MagnifyingGlass,
   ArrowUp,
   ArrowDown,
@@ -22,6 +21,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import { apiErrorMessage, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 import { productItem, stockMovementItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 
@@ -57,7 +57,6 @@ export default function SellerInventoryTab({ shopId }: Props) {
   const [adjustVariant, setAdjustVariant] = useState<InventoryItemResponse | null>(null)
   const [adjustQty, setAdjustQty] = useState(10)
   const [adjustReason, setAdjustReason] = useState<AdjustReason>('RESTOCK')
-  const [notification, setNotification] = useState<string | null>(null)
 
   const inventoryQuery = useInventory(shopId, undefined, { query: { enabled: shopId !== '' } })
   // Chỉ để lấy ảnh sản phẩm cho từng dòng tồn kho
@@ -136,13 +135,6 @@ export default function SellerInventoryTab({ shopId }: Props) {
     return 0
   }
 
-  function showToast(msg: string) {
-    setNotification(msg)
-    setTimeout(function () {
-      setNotification(null)
-    }, 3000)
-  }
-
   // Gắn ảnh sản phẩm vào từng dòng tồn kho
   const imageByProductId = productImageByProductId()
   const rows = inventory.map(function (inv) {
@@ -194,19 +186,19 @@ export default function SellerInventoryTab({ shopId }: Props) {
 
   function handleConfirmAdjust() {
     if (adjustVariant === null) {
-      alert('Chưa chọn biến thể.')
+      notify.warning('Chưa chọn biến thể.')
       return
     }
     if ((adjustVariant.variantId ?? '') === '') {
-      alert('Biến thể không hợp lệ.')
+      notify.warning('Biến thể không hợp lệ.')
       return
     }
-    handleAdjustStock(adjustVariant.variantId ?? '', adjustQty, adjustReason)
+    const targetSku = adjustVariant.sku ?? ''
+    handleAdjustStock(adjustVariant.variantId ?? '', adjustQty, adjustReason, targetSku)
     setShowAdjustModal(false)
-    showToast(`Đã ghi nhận điều chỉnh kho cho SKU ${adjustVariant.sku ?? ''}`)
   }
 
-  function handleAdjustStock(variantId: string, changeQty: number, reason: string) {
+  function handleAdjustStock(variantId: string, changeQty: number, reason: string, sku: string) {
     const current = inventory.find(function (i) {
       return i.variantId === variantId
     })
@@ -215,7 +207,21 @@ export default function SellerInventoryTab({ shopId }: Props) {
     }
     const stock = current.stockQuantity ?? 0
     const newStock = Math.max(0, stock + changeQty)
-    adjustStockMutation.mutate({ shopId, variantId, data: { newStock, reason } })
+    adjustStockMutation.mutate(
+      { shopId, variantId, data: { newStock, reason } },
+      {
+        onSuccess: function () {
+          notify.success(`Đã ghi nhận điều chỉnh kho cho SKU ${sku}`)
+        },
+        onError: function (err: unknown) {
+          notify.fromError(
+            err,
+            'sellerProductsInventory',
+            'Không thể điều chỉnh tồn kho. Vui lòng thử lại.',
+          )
+        },
+      },
+    )
   }
 
   function renderStockState(stock: number, threshold: number, isLow: boolean) {
@@ -260,14 +266,6 @@ export default function SellerInventoryTab({ shopId }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header bar */}
       <div>
         <h2 className="text-xl font-black text-zinc-900 dark:text-white">
@@ -309,14 +307,13 @@ export default function SellerInventoryTab({ shopId }: Props) {
             ].map(function (tab) {
               const isCurrent = activeFilter === tab.id
               let tabClasses =
-                'flex items-center gap-1.5 rounded-2xl px-3.5 py-1.5 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
               let countBadgeClasses =
                 'rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400'
               if (isCurrent) {
                 tabClasses =
-                  'flex items-center gap-1.5 rounded-2xl px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
-                countBadgeClasses =
-                  'rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white dark:bg-indigo-900/30 dark:text-indigo-950'
+                  'btn-primary flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition'
+                countBadgeClasses = 'rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white'
               }
               return (
                 <button

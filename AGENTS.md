@@ -1,6 +1,6 @@
 # fashionstore-ui — AGENTS.md
 
-Shop "nét": landing thời trang, Vite + React 19 + Tailwind v4.
+Shop "DHMQ": landing thời trang, Vite + React 19 + Tailwind v4.
 
 ## Đọc thêm (chi tiết chia file để khỏi phình)
 

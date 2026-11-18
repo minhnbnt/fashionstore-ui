@@ -69,22 +69,24 @@ export default function TrendChart({ title, points, formatValue }: Props) {
                   key={point.date}
                   type="button"
                   aria-label={`${formatDayLabel(point.date)}: ${formatValue(point.value)}`}
-                  className="group relative flex h-full flex-1 items-end justify-center rounded-t outline-none focus-visible:bg-indigo-500/10"
+                  className="group relative flex h-full flex-1 cursor-pointer items-end justify-center rounded-t-xl outline-none focus-visible:bg-blue-500/10"
                 >
                   {point.value > 0 && (
                     <span
-                      className="block w-full max-w-7 rounded-t bg-indigo-500 transition-colors group-hover:bg-indigo-700 group-focus-visible:bg-indigo-700 dark:bg-indigo-400 dark:group-hover:bg-indigo-300"
-                      style={{ height: `${height}%`, minHeight: 2 }}
+                      className="block w-full max-w-7 rounded-t-full bg-gradient-to-t from-[#312e81] via-[#1d4ed8] to-[#38bdf8] opacity-90 shadow-xs transition duration-150 group-hover:opacity-100 group-hover:brightness-110 group-focus-visible:opacity-100 group-focus-visible:brightness-110"
+                      style={{ height: `${height}%`, minHeight: 4 }}
                     />
                   )}
                   <span
                     role="tooltip"
-                    className={`pointer-events-none absolute bottom-full z-10 mb-2 hidden rounded-2xl bg-zinc-900 px-3 py-2 text-xs whitespace-nowrap text-white shadow-lg group-hover:block group-focus-visible:block dark:bg-white dark:text-zinc-900 ${tooltipSide}`}
+                    className={`pointer-events-none absolute bottom-full z-10 mb-2 hidden rounded-2xl border border-white/15 bg-[#17203a] px-3 py-2 text-xs whitespace-nowrap text-white shadow-xl group-hover:block group-focus-visible:block dark:bg-[#0a0f1e] dark:text-[#e2e8f0] ${tooltipSide}`}
                   >
-                    <span className="block text-zinc-300 dark:text-zinc-500">
+                    <span className="block text-zinc-300 dark:text-zinc-400">
                       {formatDayLabel(point.date)}
                     </span>
-                    <span className="block font-bold tabular-nums">{formatValue(point.value)}</span>
+                    <span className="block font-extrabold tabular-nums">
+                      {formatValue(point.value)}
+                    </span>
                   </span>
                 </button>
               )

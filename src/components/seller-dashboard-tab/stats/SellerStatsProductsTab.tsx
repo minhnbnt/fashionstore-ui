@@ -42,7 +42,7 @@ function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
 
 function slowDaysClass(active: boolean): string {
   if (active) {
-    return 'bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white'
+    return 'btn-primary shadow-sm'
   }
   return 'text-zinc-500 dark:text-zinc-400'
 }

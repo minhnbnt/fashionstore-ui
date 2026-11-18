@@ -25,6 +25,7 @@ import {
 import { BarChart, DonutChart, LineChart } from '@/components/ui/charts'
 import { takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 import {
   orderStatusSummaryData,
   revenueCategoryItems,
@@ -51,7 +52,7 @@ const CATEGORY_COLORS = [
 
 function periodFilterClass(active: boolean): string {
   if (active) {
-    return 'bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white'
+    return 'btn-primary shadow-sm'
   }
   return 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
 }
@@ -73,8 +74,6 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [isExporting, setIsExporting] = useState(false)
-  const [exportError, setExportError] = useState<string | null>(null)
-  const [exportSuccessMessage, setExportSuccessMessage] = useState<string | null>(null)
 
   const isEnabled = shopId !== ''
 
@@ -213,12 +212,10 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
 
   async function handleExportExcel() {
     if (dateError !== null) {
-      setExportError(dateError)
+      notify.warning(dateError)
       return
     }
     setIsExporting(true)
-    setExportError(null)
-    setExportSuccessMessage(null)
     try {
       const res = await exportRevenueReport(shopId, {
         format: 'xlsx',
@@ -252,14 +249,10 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
         document.body.removeChild(link)
         URL.revokeObjectURL(url)
 
-        setExportSuccessMessage('Đã xuất file Excel (.xlsx) 4 sheet chi tiết thành công!')
+        notify.success('Đã xuất file Excel (.xlsx) 4 sheet chi tiết thành công!')
       }
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setExportError(err.message)
-      } else {
-        setExportError('Lỗi khi xuất file báo cáo')
-      }
+      notify.fromError(err, undefined, 'Lỗi khi xuất file báo cáo')
     } finally {
       setIsExporting(false)
     }
@@ -362,7 +355,6 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
                   onClick={() => {
                     setFromDate('')
                     setToDate('')
-                    setExportError(null)
                   }}
                   className="rounded-full p-0.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-zinc-200"
                   title="Xóa bộ lọc ngày"
@@ -379,7 +371,7 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
                 void handleExportExcel()
               }}
               disabled={isExporting || dateError !== null}
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+              className="btn-primary flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-sm transition disabled:opacity-50"
               title="Xuất file báo cáo Excel (.xlsx)"
             >
               <DownloadSimple size={14} weight="bold" />
@@ -394,19 +386,6 @@ export default function SellerStatsRevenueTab({ shopId }: Props) {
         <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
           <WarningCircle size={16} weight="bold" className="shrink-0 text-amber-600" />
           <span>{dateError}</span>
-        </div>
-      )}
-
-      {exportError !== null && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400">
-          {exportError}
-        </div>
-      )}
-
-      {exportSuccessMessage !== null && (
-        <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300">
-          <CheckCircle size={16} weight="bold" className="shrink-0 text-emerald-600" />
-          <span>{exportSuccessMessage}</span>
         </div>
       )}
 

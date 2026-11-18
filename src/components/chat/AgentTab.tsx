@@ -589,7 +589,7 @@ export default function AgentTab(props: AgentTabProps) {
                 {convHeaderTitle}
               </p>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Trợ lý nét AI · Gợi ý phối đồ & tìm nhanh sản phẩm phù hợp
+                Trợ lý DHMQ AI · Gợi ý phối đồ & tìm nhanh sản phẩm phù hợp
               </p>
             </div>
           </div>
@@ -710,7 +710,7 @@ export default function AgentTab(props: AgentTabProps) {
               <Sparkle size={20} weight="bold" />
             </span>
             <h3 className="text-sm font-bold text-[#17203a] dark:text-white">
-              Trợ lý mua sắm nét AI
+              Trợ lý mua sắm DHMQ AI
             </h3>
             <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
               Mô tả dịp mặc, kiểu dáng, tầm giá hoặc kích cỡ bạn đang tìm — chọn nhanh gợi ý bên

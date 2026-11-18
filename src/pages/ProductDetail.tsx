@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useDetail1 } from '@generated/endpoints/products/products'
 
+import { PageSkeleton } from '@/components/ui/Skeleton'
 import { apiErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 
@@ -45,8 +46,8 @@ export default function ProductDetail() {
 
   if (detailQuery.isPending) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 py-24 text-center">
-        <p className="text-sm text-zinc-500">Đang tải sản phẩm…</p>
+      <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
+        <PageSkeleton />
       </main>
     )
   }

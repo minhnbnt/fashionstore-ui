@@ -14,7 +14,6 @@ import { getMineQueryKey, useUpdateProfile } from '@generated/endpoints/shops/sh
 import {
   PaperPlaneRight,
   MagnifyingGlass,
-  CheckCircle,
   Robot,
   Image as ImageIcon,
   ShoppingBagOpen,
@@ -44,6 +43,7 @@ import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/us
 import { usePinToBottom } from '@/hooks/usePinToBottom'
 import { takeData } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
+import { notify } from '@/lib/notifications'
 import { chatConversationItem, chatMessageItem } from '@/lib/seller/sellerAdapters'
 
 import type { ChatConversationItem, ChatMessageItem } from '@/types/seller'
@@ -75,7 +75,6 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
   const [showAutoReplyModal, setShowAutoReplyModal] = useState(false)
   const [showProductPickerModal, setShowProductPickerModal] = useState(false)
   const [tempAutoReply, setTempAutoReply] = useState(autoReplyText)
-  const [notification, setNotification] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const shopProductsQuery = useListProducts(
@@ -123,6 +122,9 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
         void queryClient.invalidateQueries({ queryKey: getMessagesQueryKey(variables.id) })
         void queryClient.invalidateQueries({ queryKey: getSellerConversationsQueryKey({ shopId }) })
       },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể gửi tin nhắn. Vui lòng thử lại.')
+      },
     },
   })
   const markReadMutation = useMarkRead({
@@ -136,6 +138,10 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getMineQueryKey() })
+        notify.success('Đã lưu cấu hình tin nhắn tự động!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, 'shops', 'Không thể lưu cấu hình tin nhắn tự động.')
       },
     },
   })
@@ -188,13 +194,6 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
     updateProfileMutation.mutate({ id: shopId, data: { autoReplyText: text } })
   }
 
-  function showToast(msg: string) {
-    setNotification(msg)
-    setTimeout(function () {
-      setNotification(null)
-    }, 3000)
-  }
-
   const selectedConv = conversations.find(function (c) {
     return c.id === activeConvId
   })
@@ -219,8 +218,8 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
       .then(function (uploadId) {
         setPendingImage({ uploadId, objectUrl: URL.createObjectURL(file) })
       })
-      .catch(function (err) {
-        console.error('Lỗi tải ảnh:', err)
+      .catch(function (err: unknown) {
+        notify.fromError(err, undefined, 'Tải ảnh thất bại. Vui lòng thử lại.')
       })
       .finally(function () {
         setIsUploadingImage(false)
@@ -247,19 +246,10 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
   function handleSaveAutoReplyConfirm() {
     handleSaveAutoReply(tempAutoReply)
     setShowAutoReplyModal(false)
-    showToast('Đã lưu cấu hình tin nhắn tự động!')
   }
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-full border border-zinc-200/80 bg-[#17203a] px-4 py-2.5 text-sm font-bold text-white shadow-xl dark:border-white/15 dark:bg-white dark:text-[#17203a]">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -527,7 +517,7 @@ export default function SellerChatTab({ shopId, autoReplyText }: Props) {
               onChange={function (e) {
                 setTempAutoReply(e.target.value)
               }}
-              placeholder="VD: Cảm ơn bạn đã ghé thăm FashionHub! Chúng tôi sẽ phản hồi trong ít phút..."
+              placeholder="VD: Cảm ơn bạn đã ghé thăm DHMQ! Chúng tôi sẽ phản hồi trong ít phút..."
               className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-white/90 p-3 text-xs text-[#17203a] outline-none placeholder:text-zinc-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 dark:border-white/15 dark:bg-white/10 dark:text-white"
             />
           </div>

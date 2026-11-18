@@ -31,6 +31,7 @@ import RichTextEditor from '@/components/ui/RichTextEditor'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { uploadImage } from '@/lib/api/uploadImage'
+import { notify } from '@/lib/notifications'
 
 function handleImageError(event: React.SyntheticEvent<HTMLImageElement>) {
   const target = event.currentTarget
@@ -105,7 +106,7 @@ function positiveOrNull(value: number): number | null {
 
 function sizeViewTabClass(active: boolean): string {
   if (active) {
-    return 'bg-indigo-900 text-white shadow-xs dark:bg-indigo-300 dark:text-indigo-950'
+    return 'btn-primary shadow-xs'
   }
   return 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
 }
@@ -240,41 +241,41 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     currentShop !== undefined &&
     (currentShop.isTrusted === true || currentShop.kycStatus === 'VERIFIED')
 
+  function reportValidationError(msg: string) {
+    setFormError(msg)
+    notify.warning(msg)
+  }
+
   const createProductMutation = useCreate({
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
+        notify.success('Đăng bán sản phẩm mới thành công!')
         onBack()
       },
       onError: function (err: unknown) {
+        let msg = 'Có lỗi xảy ra khi tạo sản phẩm.'
         if (err instanceof ApiError) {
           if (err.status === 409) {
             const lower = err.message.toLowerCase()
             if (lower.includes('slug')) {
-              setFormError(
-                'Đường dẫn slug sản phẩm đã tồn tại trong gian hàng. Vui lòng đổi lại tên sản phẩm.',
-              )
-              return
+              msg =
+                'Đường dẫn slug sản phẩm đã tồn tại trong gian hàng. Vui lòng đổi lại tên sản phẩm.'
+            } else if (lower.includes('sku')) {
+              msg =
+                'Mã SKU của một trong các phân loại đã tồn tại trong gian hàng. Vui lòng kiểm tra lại bảng phân loại bên dưới và đổi mã SKU.'
+            } else {
+              msg =
+                'Xung đột dữ liệu (409): Tên/slug hoặc mã SKU đã tồn tại trong gian hàng. Vui lòng kiểm tra lại.'
             }
-            if (lower.includes('sku')) {
-              setFormError(
-                'Mã SKU của một trong các phân loại đã tồn tại trong gian hàng. Vui lòng kiểm tra lại bảng phân loại bên dưới và đổi mã SKU.',
-              )
-              return
-            }
-            setFormError(
-              'Xung đột dữ liệu (409): Tên/slug hoặc mã SKU đã tồn tại trong gian hàng. Vui lòng kiểm tra lại.',
-            )
-            return
+          } else {
+            msg = notify.safeErrorMessage(err, undefined, msg)
           }
-          setFormError(err.message)
-          return
+        } else {
+          msg = notify.safeErrorMessage(err, undefined, msg)
         }
-        if (err instanceof Error) {
-          setFormError(err.message)
-          return
-        }
-        setFormError('Có lỗi xảy ra khi tạo sản phẩm.')
+        setFormError(msg)
+        notify.error(msg)
       },
     },
   })
@@ -384,7 +385,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
   function handleRemoveColor(colorName: string) {
     if (colors.length <= 1) {
-      setFormError('Sản phẩm nên có ít nhất 1 màu sắc.')
+      reportValidationError('Sản phẩm nên có ít nhất 1 màu sắc.')
       return
     }
     const updatedColors = colors.filter((c) => c !== colorName)
@@ -417,7 +418,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
   function handleRemoveSizeFromColor(colorName: string, sizeName: string) {
     const currentSizes = colorSizesMap[colorName] ?? []
     if (currentSizes.length <= 1) {
-      setFormError(`Màu "${colorName}" phải có ít nhất 1 kích cỡ.`)
+      reportValidationError(`Màu "${colorName}" phải có ít nhất 1 kích cỡ.`)
       return
     }
     const updatedSizes = currentSizes.filter((s) => s !== sizeName)
@@ -458,7 +459,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
     const stock = parseNumberFromDots(bulkStock)
 
     if (p === null && cp === null && stock === null) {
-      setFormError('Vui lòng nhập ít nhất một thông tin để áp dụng hàng loạt.')
+      reportValidationError('Vui lòng nhập ít nhất một thông tin để áp dụng hàng loạt.')
       return
     }
 
@@ -488,6 +489,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       }),
     )
     setFormError(null)
+    notify.success('Đã áp dụng thông số hàng loạt cho các biến thể được chọn!')
   }
 
   function handleAddVariant() {
@@ -500,7 +502,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
   function handleRemoveVariant(keyId: string) {
     if (variants.length <= 1) {
-      setFormError('Sản phẩm phải có ít nhất 1 biến thể.')
+      reportValidationError('Sản phẩm phải có ít nhất 1 biến thể.')
       return
     }
     const filtered = variants.filter(function (v) {
@@ -560,11 +562,9 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
         }),
       )
     } catch (err: unknown) {
-      let msg = 'Tải ảnh màu thất bại.'
-      if (err instanceof Error) {
-        msg = err.message
-      }
+      const msg = notify.safeErrorMessage(err, undefined, 'Tải ảnh màu thất bại.')
       setFormError(msg)
+      notify.error(msg)
     } finally {
       setUploadingColor(null)
       e.target.value = ''
@@ -585,37 +585,37 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
     // 1. Validation basic info
     if (name.trim().length < 5) {
-      setFormError('Tên sản phẩm phải có ít nhất 5 ký tự.')
+      reportValidationError('Tên sản phẩm phải có ít nhất 5 ký tự.')
       return
     }
     if (name.trim().length > 300) {
-      setFormError('Tên sản phẩm không được vượt quá 300 ký tự.')
+      reportValidationError('Tên sản phẩm không được vượt quá 300 ký tự.')
       return
     }
     if (slug.trim() === '') {
-      setFormError('Đường dẫn slug sản phẩm không hợp lệ.')
+      reportValidationError('Đường dẫn slug sản phẩm không hợp lệ.')
       return
     }
     if (effectiveCategoryId === '') {
-      setFormError('Vui lòng chọn danh mục ngành hàng.')
+      reportValidationError('Vui lòng chọn danh mục ngành hàng.')
       return
     }
     if (description.trim() === '') {
-      setFormError('Mô tả chi tiết sản phẩm không được để trống.')
+      reportValidationError('Mô tả chi tiết sản phẩm không được để trống.')
       return
     }
 
     // 2. Validation media
     if (images.length < 3) {
-      setFormError('Vui lòng tải lên tối thiểu 3 ảnh sản phẩm (gallery).')
+      reportValidationError('Vui lòng tải lên tối thiểu 3 ảnh sản phẩm (gallery).')
       return
     }
     if (images.length > 9) {
-      setFormError('Sản phẩm chỉ được tải lên tối đa 9 ảnh.')
+      reportValidationError('Sản phẩm chỉ được tải lên tối đa 9 ảnh.')
       return
     }
     if (tryOnEnabled && garment === null) {
-      setFormError(
+      reportValidationError(
         'Ảnh garment (trải phẳng trên nền trắng) là bắt buộc khi bật tính năng thử đồ ảo.',
       )
       return
@@ -623,43 +623,43 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
 
     // 3. Validation variants
     if (variants.length === 0) {
-      setFormError('Sản phẩm phải có ít nhất 1 biến thể.')
+      reportValidationError('Sản phẩm phải có ít nhất 1 biến thể.')
       return
     }
     const defaultCount = variants.filter((v) => v.isDefault).length
     if (defaultCount !== 1) {
-      setFormError('Vui lòng chọn chính xác 1 biến thể làm mặc định.')
+      reportValidationError('Vui lòng chọn chính xác 1 biến thể làm mặc định.')
       return
     }
 
     const seenSkus = new Set<string>()
     for (const v of variants) {
       if (v.sku.trim() === '') {
-        setFormError('Mã SKU không được để trống.')
+        reportValidationError('Mã SKU không được để trống.')
         return
       }
       const upperSku = v.sku.trim().toUpperCase()
       if (seenSkus.has(upperSku)) {
-        setFormError(
+        reportValidationError(
           `Mã SKU "${v.sku}" bị trùng lặp giữa các phân loại. Mỗi phân loại phải có mã SKU riêng biệt.`,
         )
         return
       }
       seenSkus.add(upperSku)
       if (v.size.trim() === '' || v.color.trim() === '') {
-        setFormError('Kích cỡ và màu sắc của biến thể không được để trống.')
+        reportValidationError('Kích cỡ và màu sắc của biến thể không được để trống.')
         return
       }
       if (v.price <= 0) {
-        setFormError('Giá bán phải lớn hơn 0 ₫.')
+        reportValidationError('Giá bán phải lớn hơn 0 ₫.')
         return
       }
       if (v.compareAtPrice !== null && v.compareAtPrice < 0) {
-        setFormError('Giá gốc không được âm.')
+        reportValidationError('Giá gốc không được âm.')
         return
       }
       if (v.stockQuantity < 0) {
-        setFormError('Số lượng tồn kho ban đầu không được âm.')
+        reportValidationError('Số lượng tồn kho ban đầu không được âm.')
         return
       }
     }
@@ -990,11 +990,11 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
             </div>
 
             {/* Toggle View Mode: By Color vs Matrix Grid */}
-            <div className="flex items-center rounded-xl border border-zinc-200 bg-white p-0.5 shadow-2xs dark:border-white/10 dark:bg-[#11182a]">
+            <div className="flex items-center rounded-full border border-zinc-200 bg-white p-0.5 shadow-2xs dark:border-white/10 dark:bg-[#11182a]">
               <button
                 type="button"
                 onClick={() => setSizeViewMode('by_color')}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${sizeViewTabClass(sizeViewMode === 'by_color')}`}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition ${sizeViewTabClass(sizeViewMode === 'by_color')}`}
               >
                 <ListDashes size={14} weight="bold" />
                 Theo từng màu
@@ -1002,7 +1002,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
               <button
                 type="button"
                 onClick={() => setSizeViewMode('grid')}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition ${sizeViewTabClass(sizeViewMode === 'grid')}`}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition ${sizeViewTabClass(sizeViewMode === 'grid')}`}
               >
                 <SquaresFour size={14} weight="bold" />
                 Lưới ma trận Màu × Size

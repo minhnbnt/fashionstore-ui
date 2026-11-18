@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 
 import { useGetAdminStats } from '@generated/endpoints/admin-stats/admin-stats'
 import {
@@ -7,23 +7,25 @@ import {
   ArrowRight,
   Coins,
   Package,
-  ShieldCheck,
-  SignOut,
   Storefront,
   Users,
 } from '@phosphor-icons/react'
 
+import AdminShell from '@/components/admin/AdminShell'
+import BreakdownCard from '@/components/admin/dashboard/BreakdownCard'
+import StatTile from '@/components/admin/dashboard/StatTile'
+import TrendChart from '@/components/admin/dashboard/TrendChart'
+import PendingShopsQueue from '@/components/admin/PendingShopsQueue'
 import { formatCompactVnd, trendPoints } from '@/lib/admin/adminStats'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
-
-import BreakdownCard from '../../components/admin/dashboard/BreakdownCard'
-import StatTile from '../../components/admin/dashboard/StatTile'
-import TrendChart from '../../components/admin/dashboard/TrendChart'
-import PendingShopsQueue from '../../components/admin/PendingShopsQueue'
-import UserAvatar from '../../components/UserAvatar'
-import { useSignOut } from '../../hooks/useAuthMutations'
-import { useSessionQuery } from '../../hooks/useSession'
+import {
+  cn,
+  iconChipClass,
+  secondaryButtonClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+} from '@/lib/ui/styles'
 
 import type { TrendMetric } from '@/types/admin'
 import type { AdminStatsResponse } from '@generated/model/adminStatsResponse'
@@ -47,9 +49,6 @@ function formatterOf(metric: TrendMetric): (value: number) => string {
 }
 
 export default function AdminDashboard() {
-  const { data: session } = useSessionQuery()
-  const signOut = useSignOut()
-  const navigate = useNavigate()
   const statsQuery = useGetAdminStats()
   const [metric, setMetric] = useState<TrendMetric>('orders')
 
@@ -71,49 +70,24 @@ export default function AdminDashboard() {
   }
   const activeTab = TREND_TABS.find((tab) => tab.metric === metric) ?? TREND_TABS[0]
 
-  function handleSignOut() {
-    signOut.mutate(undefined, {
-      onSuccess: function () {
-        void navigate('/', { replace: true })
-      },
-    })
-  }
+  const refreshButton = (
+    <button
+      type="button"
+      onClick={() => void statsQuery.refetch()}
+      disabled={statsQuery.isFetching}
+      className={cn(secondaryButtonClass(), 'cursor-pointer')}
+    >
+      <ArrowClockwise size={16} weight="bold" className={refreshIconClass} />
+      <span>Làm mới</span>
+    </button>
+  )
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-[100px] pb-12">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] shadow-lg">
-            <ShieldCheck size={22} weight="bold" className="text-white" />
-          </div>
-          <div>
-            <p className="text-xs font-bold tracking-[0.18em] text-indigo-600 uppercase dark:text-indigo-400">
-              Admin
-            </p>
-            <h1 className="text-xl font-extrabold tracking-tighter">Tổng quan hệ thống</h1>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => void statsQuery.refetch()}
-            disabled={statsQuery.isFetching}
-            className="flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-white/70 disabled:opacity-60 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
-          >
-            <ArrowClockwise size={16} weight="bold" className={refreshIconClass} />
-            Làm mới
-          </button>
-          {session !== undefined && session !== null && (
-            <div className="flex items-center gap-3">
-              <UserAvatar name={session.user.email ?? 'admin'} size={36} />
-              <p className="hidden text-sm font-medium text-zinc-500 sm:block dark:text-zinc-400">
-                {session.user.email}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
+    <AdminShell
+      title="Tổng quan hệ thống"
+      description="Theo dõi chỉ số vận hành sàn DHMQ, xu hướng đơn hàng và hàng đợi duyệt shop."
+      actions={refreshButton}
+    >
       {statsQuery.isPending && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-busy="true">
           {[0, 1, 2, 3].map(function (index) {
@@ -167,15 +141,13 @@ export default function AdminDashboard() {
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">Theo ngày, giờ Việt Nam</p>
               </div>
-              <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Chọn chỉ số">
+              <div
+                className={cn(segmentedTrackClass(), 'flex-wrap')}
+                role="tablist"
+                aria-label="Chọn chỉ số"
+              >
                 {TREND_TABS.map(function (tab) {
                   const selected = tab.metric === metric
-                  let tabClass =
-                    'rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
-                  if (selected) {
-                    tabClass =
-                      'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
-                  }
                   return (
                     <button
                       key={tab.metric}
@@ -183,7 +155,7 @@ export default function AdminDashboard() {
                       role="tab"
                       aria-selected={selected}
                       onClick={() => setMetric(tab.metric)}
-                      className={tabClass}
+                      className={cn(segmentedItemClass(selected), 'cursor-pointer')}
                     >
                       {tab.label}
                     </button>
@@ -240,7 +212,7 @@ export default function AdminDashboard() {
               to="/admin/shops"
               className="group glass flex items-start gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
+              <span className={cn(iconChipClass(), 'h-11 w-11 rounded-2xl')}>
                 <Storefront size={22} weight="bold" />
               </span>
               <span>
@@ -252,14 +224,14 @@ export default function AdminDashboard() {
               <ArrowRight
                 size={18}
                 weight="bold"
-                className="mt-1 ml-auto shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-indigo-600"
+                className="mt-1 ml-auto shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-blue-600 dark:group-hover:text-sky-400"
               />
             </Link>
             <Link
               to="/admin/users"
               className="group glass flex items-start gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
+              <span className={cn(iconChipClass(), 'h-11 w-11 rounded-2xl')}>
                 <Users size={22} weight="bold" />
               </span>
               <span>
@@ -271,14 +243,14 @@ export default function AdminDashboard() {
               <ArrowRight
                 size={18}
                 weight="bold"
-                className="mt-1 ml-auto shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-indigo-600"
+                className="mt-1 ml-auto shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-blue-600 dark:group-hover:text-sky-400"
               />
             </Link>
             <Link
               to="/admin/products"
               className="group glass flex items-start gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
+              <span className={cn(iconChipClass(), 'h-11 w-11 rounded-2xl')}>
                 <Package size={22} weight="bold" />
               </span>
               <span>
@@ -295,23 +267,12 @@ export default function AdminDashboard() {
               <ArrowRight
                 size={18}
                 weight="bold"
-                className="mt-1 ml-auto shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-indigo-600"
+                className="mt-1 ml-auto shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-blue-600 dark:group-hover:text-sky-400"
               />
             </Link>
           </section>
         </>
       )}
-
-      <button
-        type="button"
-        onClick={handleSignOut}
-        disabled={signOut.isPending}
-        className="mt-6 flex items-center gap-2 rounded-full border border-red-200 px-5 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-500/30 dark:hover:bg-red-500/10"
-      >
-        <SignOut size={16} weight="bold" />
-        {signOut.isPending && <span>Đang đăng xuất…</span>}
-        {signOut.isPending === false && <span>Đăng xuất</span>}
-      </button>
-    </main>
+    </AdminShell>
   )
 }

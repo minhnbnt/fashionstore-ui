@@ -8,7 +8,6 @@ import {
 } from '@generated/endpoints/addresses/addresses'
 import {
   ArrowClockwise,
-  CheckCircle,
   MapPin,
   PencilSimple,
   Plus,
@@ -18,7 +17,9 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 
 import AddressFormModal from './AddressFormModal'
 
@@ -30,7 +31,7 @@ function addAddressButtonClass(isMaxReached: boolean): string {
   if (isMaxReached) {
     return 'cursor-not-allowed bg-zinc-200 text-zinc-400 dark:bg-white/5 dark:text-zinc-600'
   }
-  return 'bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 text-white shadow-indigo-900/20 hover:opacity-90'
+  return 'btn-primary cursor-pointer shadow-indigo-900/20'
 }
 
 function addAddressButtonTitle(isMaxReached: boolean): string {
@@ -45,9 +46,7 @@ export default function AddressBookTab() {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
   const [editingAddr, setEditingAddr] = useState<AddressResponse | null>(null)
-
-  const [toast, setToast] = useState<string | null>(null)
-  const [toastError, setToastError] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AddressResponse | null>(null)
 
   // Queries
   const addressesQuery = useList()
@@ -66,23 +65,11 @@ export default function AddressBookTab() {
 
   const isMaxReached = addresses.length >= MAX_ADDRESSES
 
-  function showToast(msg: string) {
-    setToast(msg)
-    window.setTimeout(function () {
-      setToast(null)
-    }, 3000)
-  }
-
-  function showToastError(msg: string) {
-    setToastError(msg)
-    window.setTimeout(function () {
-      setToastError(null)
-    }, 4000)
-  }
-
   function openCreateModal() {
     if (isMaxReached) {
-      showToastError(`Bạn chỉ có thể lưu tối đa ${MAX_ADDRESSES} địa chỉ nhận hàng.`)
+      notify.warning(`Bạn chỉ có thể lưu tối đa ${MAX_ADDRESSES} địa chỉ nhận hàng.`, undefined, {
+        id: 'address-limit',
+      })
       return
     }
     setEditingAddr(null)
@@ -99,11 +86,13 @@ export default function AddressBookTab() {
   const deleteAddressMutation = useDelete({
     mutation: {
       onSuccess: function () {
-        showToast('Đã xóa địa chỉ thành công.')
+        setDeleteTarget(null)
+        notify.success('Đã xóa địa chỉ thành công')
         void queryClient.invalidateQueries({ queryKey: getListQueryKey() })
       },
-      onError: function () {
-        showToastError('Không thể xóa địa chỉ. Vui lòng thử lại.')
+      onError: function (err) {
+        setDeleteTarget(null)
+        notify.fromError(err, 'addresses', 'Không thể xóa địa chỉ. Vui lòng thử lại.')
       },
     },
   })
@@ -111,21 +100,19 @@ export default function AddressBookTab() {
   const changeDefaultMutation = useChangeDefault({
     mutation: {
       onSuccess: function () {
-        showToast('Đã đặt làm địa chỉ mặc định.')
+        notify.success('Đã đặt làm địa chỉ mặc định')
         void queryClient.invalidateQueries({ queryKey: getListQueryKey() })
       },
-      onError: function () {
-        showToastError('Không thể thay đổi địa chỉ mặc định.')
+      onError: function (err) {
+        notify.fromError(err, 'addresses', 'Không thể thay đổi địa chỉ mặc định.')
       },
     },
   })
 
-  function handleDeleteAddress(id: string | undefined) {
+  function handleConfirmDelete() {
+    const id = deleteTarget?.id
     if (id === undefined || id === '') {
-      return
-    }
-    const confirmed = window.confirm('Bạn có chắc chắn muốn xóa địa chỉ nhận hàng này?')
-    if (confirmed === false) {
+      setDeleteTarget(null)
       return
     }
     deleteAddressMutation.mutate({ id })
@@ -179,21 +166,6 @@ export default function AddressBookTab() {
         </div>
       )}
 
-      {/* Toast Feedback */}
-      {toast && (
-        <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-          <CheckCircle size={18} weight="fill" className="shrink-0 text-emerald-600" />
-          <span>{toast}</span>
-        </div>
-      )}
-
-      {toastError && (
-        <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
-          <WarningCircle size={18} weight="fill" className="shrink-0 text-rose-600" />
-          <span>{toastError}</span>
-        </div>
-      )}
-
       {/* Loading State */}
       {addressesQuery.isLoading && (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-zinc-200 bg-white/80 py-16 dark:border-white/10 dark:bg-white/5">
@@ -219,7 +191,7 @@ export default function AddressBookTab() {
           <button
             type="button"
             onClick={openCreateModal}
-            className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-900/20 transition hover:opacity-90"
+            className="btn-primary mt-5 inline-flex cursor-pointer items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-bold shadow-md shadow-indigo-900/20"
           >
             <Plus size={15} weight="bold" />
             <span>Thêm địa chỉ ngay</span>
@@ -279,7 +251,7 @@ export default function AddressBookTab() {
                     onClick={function () {
                       openEditModal(addr)
                     }}
-                    className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-blue-500 hover:text-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/15"
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-blue-500 hover:text-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/15"
                   >
                     <PencilSimple size={13} />
                     <span>Sửa</span>
@@ -293,7 +265,7 @@ export default function AddressBookTab() {
                           handleSetDefault(addr.id)
                         }}
                         disabled={isMutating}
-                        className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-blue-500 hover:text-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/15"
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-2xs transition hover:border-blue-500 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/15"
                       >
                         <span>Đặt làm mặc định</span>
                       </button>
@@ -301,11 +273,12 @@ export default function AddressBookTab() {
                       <button
                         type="button"
                         onClick={function () {
-                          handleDeleteAddress(addr.id)
+                          setDeleteTarget(addr)
                         }}
                         disabled={isMutating}
-                        className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-2xs transition hover:border-rose-300 hover:bg-rose-50 dark:border-white/15 dark:bg-white/10 dark:hover:bg-rose-950/30"
+                        className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-2xs transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:hover:bg-rose-950/30"
                         title="Xóa địa chỉ"
+                        aria-label="Xóa địa chỉ"
                       >
                         <Trash size={13} />
                       </button>
@@ -318,9 +291,7 @@ export default function AddressBookTab() {
         </div>
       )}
 
-      {/* Form thêm/sửa địa chỉ — component dùng chung với Checkout, portal ra <body>
-          để thoát containing block của .glass (backdrop-filter làm position: fixed
-          quy chiếu theo section thay vì viewport) */}
+      {/* Form thêm/sửa địa chỉ — component dùng chung với Checkout */}
       {modalOpen && (
         <AddressFormModal
           mode={modalMode}
@@ -328,15 +299,21 @@ export default function AddressBookTab() {
           onClose={function () {
             setModalOpen(false)
           }}
-          onSaved={function () {
-            if (modalMode === 'create') {
-              showToast('Đã thêm địa chỉ nhận hàng mới thành công!')
-            } else {
-              showToast('Đã cập nhật thông tin địa chỉ thành công!')
-            }
-          }}
         />
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Xóa địa chỉ nhận hàng"
+        description="Bạn có chắc chắn muốn xóa địa chỉ nhận hàng này? Thao tác này không thể hoàn tác."
+        confirmLabel="Xóa địa chỉ"
+        variant="danger"
+        isPending={deleteAddressMutation.isPending}
+        onConfirm={handleConfirmDelete}
+        onCancel={function () {
+          setDeleteTarget(null)
+        }}
+      />
     </div>
   )
 }

@@ -43,6 +43,7 @@ import Modal from '@/components/Modal'
 import { apiErrorText, takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { formatDateTime } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 import { auditItem, memberItem, roleItem } from '@/lib/seller/sellerAdapters'
 import {
   formatTargetType,
@@ -72,7 +73,7 @@ const ALL_SYSTEM_PERMISSIONS = [
   { key: 'REVENUE_WITHDRAW', label: 'Yêu cầu rút tiền về tài khoản ngân hàng', group: 'Tài chính' },
   { key: 'REVIEW_READ', label: 'Xem đánh giá của khách hàng', group: 'CSKH' },
   { key: 'REVIEW_REPLY', label: 'Phản hồi đánh giá & báo cáo vi phạm', group: 'CSKH' },
-  { key: 'CHAT_ACCESS', label: 'Nhắn tin trực tiếp với người mua (nét Chat)', group: 'CSKH' },
+  { key: 'CHAT_ACCESS', label: 'Nhắn tin trực tiếp với người mua (DHMQ Chat)', group: 'CSKH' },
   { key: 'DECORATION_WRITE', label: 'Trang trí gian hàng & xếp layout', group: 'Gian hàng' },
 ]
 
@@ -146,8 +147,6 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
   const [auditSearchQuery, setAuditSearchQuery] = useState('')
   const [auditPage, setAuditPage] = useState(0)
 
-  const [notification, setNotification] = useState('')
-
   const rolesQuery = useListRoles(shopId, { query: { enabled: shopId !== '' } })
   const membersQuery = useListMembers(shopId, { query: { enabled: shopId !== '' } })
   const invitationsQuery = useListInvitations(shopId, {
@@ -174,13 +173,15 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã tạo vai trò mới thành công!')
+        notify.success('Đã tạo vai trò mới thành công!')
         setIsRoleModalOpen(false)
         setRoleNameInput('')
         setSelectedPermissions([])
       },
       onError: function (err: unknown) {
-        setRoleError(apiErrorText(err, 'Có lỗi xảy ra khi tạo vai trò.'))
+        const msg = apiErrorText(err, 'Có lỗi xảy ra khi tạo vai trò.')
+        setRoleError(msg)
+        notify.error(msg)
       },
     },
   })
@@ -196,14 +197,16 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã cập nhật vai trò thành công!')
+        notify.success('Đã cập nhật vai trò thành công!')
         setIsRoleModalOpen(false)
         setEditingRoleId(null)
         setRoleNameInput('')
         setSelectedPermissions([])
       },
       onError: function (err: unknown) {
-        setRoleError(apiErrorText(err, 'Có lỗi xảy ra khi sửa vai trò.'))
+        const msg = apiErrorText(err, 'Có lỗi xảy ra khi sửa vai trò.')
+        setRoleError(msg)
+        notify.error(msg)
       },
     },
   })
@@ -220,10 +223,10 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã xóa vai trò thành công!')
+        notify.success('Đã xóa vai trò thành công!')
       },
       onError: function (err: unknown) {
-        setNotification(apiErrorText(err, 'Không thể xóa vai trò này.'))
+        notify.fromError(err, undefined, 'Không thể xóa vai trò này.')
       },
     },
   })
@@ -239,7 +242,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification(
+        notify.success(
           `Đã gửi lời mời trong website tới tài khoản ${inviteEmail.trim()} thành công!`,
         )
         setInviteEmail('')
@@ -259,6 +262,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
           msg = apiErrorText(err, msg)
         }
         setInviteError(msg)
+        notify.error(msg)
       },
     },
   })
@@ -274,10 +278,10 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã thu hồi lời mời thành công!')
+        notify.success('Đã thu hồi lời mời thành công!')
       },
       onError: function (err: unknown) {
-        setNotification(apiErrorText(err, 'Không thể thu hồi lời mời.'))
+        notify.fromError(err, undefined, 'Không thể thu hồi lời mời.')
       },
     },
   })
@@ -293,10 +297,10 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã cập nhật trạng thái nhân viên thành công!')
+        notify.success('Đã cập nhật trạng thái nhân viên thành công!')
       },
       onError: function (err: unknown) {
-        setNotification(apiErrorText(err, 'Không thể đổi trạng thái nhân viên.'))
+        notify.fromError(err, undefined, 'Không thể đổi trạng thái nhân viên.')
       },
     },
   })
@@ -313,10 +317,10 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã đổi vai trò nhân viên thành công!')
+        notify.success('Đã đổi vai trò nhân viên thành công!')
       },
       onError: function (err: unknown) {
-        setNotification(apiErrorText(err, 'Không thể đổi vai trò.'))
+        notify.fromError(err, undefined, 'Không thể đổi vai trò.')
       },
     },
   })
@@ -497,23 +501,6 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
           </button>
         </div>
       </div>
-
-      {/* Notification Toast */}
-      {notification && (
-        <div className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900/30 dark:bg-green-950/30 dark:text-green-300">
-          <div className="flex items-center gap-2">
-            <CheckCircle size={18} className="text-green-600 dark:text-green-400" />
-            <span>{notification}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setNotification('')}
-            className="text-xs font-medium text-green-700 underline hover:text-green-900 dark:text-green-400"
-          >
-            Đóng
-          </button>
-        </div>
-      )}
 
       {/* Sub-tab navigation */}
       <div className="flex rounded-t-3xl border-b border-zinc-200/80 bg-white/80 px-4 dark:border-white/10 dark:bg-[#11182a]">

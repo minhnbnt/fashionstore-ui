@@ -97,7 +97,7 @@ export default function ImageUploadField({
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <label
           htmlFor={inputId}
-          className="flex cursor-pointer items-center gap-1.5 rounded-full border border-zinc-200 px-4 py-2 text-xs font-bold transition hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-white/10"
+          className="flex cursor-pointer items-center gap-1.5 rounded-full border border-zinc-300 bg-white/80 px-4 py-2 text-xs font-bold transition hover:bg-zinc-100 dark:border-white/15 dark:bg-white/10 dark:hover:bg-white/15"
         >
           <UploadSimple size={14} weight="bold" />
           {uploadLabel}

@@ -37,7 +37,7 @@ export default function BreakdownCard({ title, total, items }: Props) {
               <div className="h-2 rounded-full bg-zinc-200/70 dark:bg-white/10">
                 {row.value > 0 && (
                   <div
-                    className="h-2 min-w-2 rounded-full bg-indigo-500 dark:bg-indigo-400"
+                    className="h-2 min-w-2 rounded-full bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8]"
                     style={{ width: `${row.share * 100}%` }}
                   />
                 )}

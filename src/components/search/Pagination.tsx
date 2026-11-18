@@ -4,9 +4,9 @@ import { pageWindow } from '@/lib/pagination'
 
 function pageClass(selected: boolean): string {
   if (selected) {
-    return 'h-10 min-w-10 rounded-full bg-indigo-900 px-3 text-sm font-bold text-white'
+    return 'btn-primary h-10 min-w-10 cursor-pointer rounded-full px-3 text-sm font-bold tabular-nums'
   }
-  return 'h-10 min-w-10 rounded-full px-3 text-sm font-bold transition hover:bg-sky-100 dark:hover:bg-white/10'
+  return 'h-10 min-w-10 cursor-pointer rounded-full px-3 text-sm font-bold tabular-nums transition hover:bg-sky-100 dark:hover:bg-white/10'
 }
 
 export default function Pagination(props: {

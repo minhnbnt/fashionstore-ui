@@ -17,7 +17,7 @@ interface ShopAboutTabProps {
 
 export default function ShopAboutTab({ shop }: ShopAboutTabProps) {
   let returnPolicyText =
-    'Gian hàng tuân thủ chính sách tiêu chuẩn của sàn nét: Hỗ trợ khách hàng đổi trả miễn phí trong vòng 7 ngày kể từ ngày nhận hàng với bất kỳ lý do lỗi kỹ thuật từ nhà sản xuất, lỗi đường chỉ, rách hoặc giao sai mẫu / kích cỡ.'
+    'Gian hàng tuân thủ chính sách tiêu chuẩn của sàn DHMQ: Hỗ trợ khách hàng đổi trả miễn phí trong vòng 7 ngày kể từ ngày nhận hàng với bất kỳ lý do lỗi kỹ thuật từ nhà sản xuất, lỗi đường chỉ, rách hoặc giao sai mẫu / kích cỡ.'
   if (
     shop.returnPolicy !== null &&
     shop.returnPolicy !== undefined &&
@@ -71,7 +71,7 @@ export default function ShopAboutTab({ shop }: ShopAboutTabProps) {
             <ol className="list-decimal space-y-1 pl-4">
               <li>Yêu cầu trả hàng qua mục &ldquo;Đơn mua&rdquo; trong vòng thời hạn quy định.</li>
               <li>Đóng gói kiện hàng nguyên vẹn tem mác, phụ kiện đi kèm.</li>
-              <li>Đơn vị vận chuyển liên kết của nét sẽ đến lấy hàng tận nơi miễn phí.</li>
+              <li>Đơn vị vận chuyển liên kết của DHMQ sẽ đến lấy hàng tận nơi miễn phí.</li>
               <li>Tiền hoàn về ví hoặc tài khoản ngân hàng ngay khi shop xác nhận nhận kiện.</li>
             </ol>
           </div>
@@ -114,12 +114,12 @@ export default function ShopAboutTab({ shop }: ShopAboutTabProps) {
           </div>
         </div>
 
-        {/* Nét Platform Guarantee */}
+        {/* DHMQ Platform Guarantee */}
         <div className="space-y-3 rounded-3xl border border-zinc-200/80 bg-gradient-to-br from-indigo-50/50 to-sky-50/50 p-6 shadow-sm dark:border-white/10 dark:from-indigo-950/20 dark:to-sky-950/20">
           <div className="flex items-center gap-2">
             <ShieldCheck size={20} className="text-indigo-600 dark:text-indigo-400" />
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-              An tâm mua sắm tại nét
+              An tâm mua sắm tại DHMQ
             </h3>
           </div>
 

@@ -18,11 +18,12 @@ import {
   ArrowClockwise,
   Eye,
   EyeSlash,
-  CheckCircle,
   FloppyDisk,
   Broadcast,
   Image as ImageIcon,
+  Lightbulb,
   SquaresFour,
+  Star,
   VideoCamera,
   Gear,
   DotsSixVertical,
@@ -31,7 +32,8 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import UserAvatar from '@/components/UserAvatar'
-import { takeData, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 import { reorderBlocks } from '@/lib/seller/decoration'
 import { decorationBlocks, decorationDraftJson } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
@@ -42,9 +44,11 @@ import VideoConfigModal from './decoration/VideoConfigModal'
 
 import type { DecorationBlock } from '@/types/seller'
 
-function handleImageError(e: React.SyntheticEvent<HTMLImageElement>) {
-  e.currentTarget.onerror = null
-  e.currentTarget.src = PLACEHOLDER_IMAGE
+function previewTabClass(active: boolean): string {
+  if (active) {
+    return 'btn-primary flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-all'
+  }
+  return 'flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-zinc-500 transition-all hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
 }
 
 // Id block chỉ dùng cho React key — sinh ở module-level để khỏi gọi Date.now trong render
@@ -65,7 +69,6 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [newBlockType, setNewBlockType] = useState<DecorationBlock['type']>('BANNER_SLIDER')
   const [newBlockTitle, setNewBlockTitle] = useState('')
-  const [saveSuccessMsg, setSaveSuccessMsg] = useState('')
 
   const [editingBlock, setEditingBlock] = useState<DecorationBlock | null>(null)
   const [isSliderModalOpen, setIsSliderModalOpen] = useState(false)
@@ -79,6 +82,10 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
         setDraftBlocks(null)
+        notify.success('Đã lưu bản nháp thiết kế gian hàng!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể lưu bản nháp thiết kế gian hàng.')
       },
     },
   })
@@ -87,6 +94,10 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
         setDraftBlocks(null)
+        notify.success('Đã xuất bản giao diện lên trang gian hàng chính thức!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể xuất bản giao diện gian hàng.')
       },
     },
   })
@@ -95,6 +106,10 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getGetDecorationQueryKey(shopId) })
         setDraftBlocks(null)
+        notify.info('Đã bỏ các thay đổi chưa lưu, quay lại bản nháp trên hệ thống.')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể bỏ thay đổi bản nháp.')
       },
     },
   })
@@ -168,7 +183,10 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
   }
 
   const handleAddBlock = () => {
-    if (!newBlockTitle.trim()) return
+    if (!newBlockTitle.trim()) {
+      notify.warning('Vui lòng nhập tên tiêu đề module.')
+      return
+    }
     const newBlock: DecorationBlock = {
       id: newBlockId(),
       type: newBlockType,
@@ -186,7 +204,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
     setDraftBlocks([...blocks, newBlock])
     setNewBlockTitle('')
     setIsAddModalOpen(false)
-    setSaveSuccessMsg('Đã thêm module trang trí mới vào bố cục!')
+    notify.success('Đã thêm module trang trí mới vào bố cục!')
   }
 
   const handleSaveConfig = (updated: DecorationBlock) => {
@@ -201,22 +219,19 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
     setIsSliderModalOpen(false)
     setIsCollectionModalOpen(false)
     setIsVideoModalOpen(false)
-    setSaveSuccessMsg(`Đã cập nhật cấu hình module ${updated.title}!`)
+    notify.success(`Đã cập nhật cấu hình module ${updated.title}!`)
   }
 
   const handleSaveDraft = () => {
     saveDraftMutation.mutate({ shopId, data: { layoutJson: decorationDraftJson(blocks) } })
-    setSaveSuccessMsg('Đã gửi lưu bản nháp thiết kế gian hàng!')
   }
 
   const handlePublish = () => {
     publishMutation.mutate({ shopId })
-    setSaveSuccessMsg('Đã gửi xuất bản giao diện lên trang gian hàng chính thức!')
   }
 
   const handleDiscard = () => {
     discardDraftMutation.mutate({ shopId })
-    setSaveSuccessMsg('Đã bỏ các thay đổi chưa lưu, quay lại bản nháp trên hệ thống.')
   }
 
   return (
@@ -274,23 +289,6 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
           )}
         </div>
       </div>
-
-      {/* Success Notification Alert */}
-      {saveSuccessMsg && (
-        <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          <div className="flex items-center gap-2">
-            <CheckCircle size={18} className="text-green-600" />
-            <span>{saveSuccessMsg}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSaveSuccessMsg('')}
-            className="text-xs font-medium text-green-700 underline hover:text-green-900"
-          >
-            Đóng
-          </button>
-        </div>
-      )}
 
       {/* Main Studio Editor: 2 Columns */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
@@ -454,10 +452,17 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
             })}
           </div>
 
-          <div className="rounded border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800">
-            💡 <strong>Mẹo gian hàng chuyên nghiệp:</strong> Đặt <em>Banner Slider</em> ở vị trí đầu
-            tiên, tiếp theo là <em>Bộ Sưu Tập Nổi Bật</em> để tối ưu tỷ lệ chuyển đổi đơn hàng lên
-            tới +35%.
+          <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
+            <Lightbulb
+              size={15}
+              weight="bold"
+              className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400"
+            />
+            <span>
+              <strong>Mẹo gian hàng chuyên nghiệp:</strong> Đặt <em>Banner Slider</em> ở vị trí đầu
+              tiên, tiếp theo là <em>Bộ Sưu Tập Nổi Bật</em> để tối ưu tỷ lệ chuyển đổi đơn hàng lên
+              tới +35%.
+            </span>
           </div>
         </div>
 
@@ -468,14 +473,11 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
             <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
               Xem trước trực tiếp (Live Preview)
             </span>
-            <div className="flex items-center gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-white/10">
+            <div className="flex items-center gap-1 rounded-full bg-zinc-100 p-1 dark:bg-white/10">
               <button
                 type="button"
                 onClick={() => setDevicePreview('MOBILE')}
-                className={`flex items-center gap-1 rounded px-3 py-1 text-xs font-medium transition-all ${
-                  devicePreview === 'MOBILE' &&
-                  'bg-white text-indigo-600 shadow-sm dark:bg-[#11182a] dark:text-indigo-400'
-                } ${devicePreview !== 'MOBILE' && 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}
+                className={previewTabClass(devicePreview === 'MOBILE')}
               >
                 <DeviceMobile size={14} />
                 Ứng dụng Mobile
@@ -483,10 +485,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
               <button
                 type="button"
                 onClick={() => setDevicePreview('DESKTOP')}
-                className={`flex items-center gap-1 rounded px-3 py-1 text-xs font-medium transition-all ${
-                  devicePreview === 'DESKTOP' &&
-                  'bg-white text-indigo-600 shadow-sm dark:bg-[#11182a] dark:text-indigo-400'
-                } ${devicePreview !== 'DESKTOP' && 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400'}`}
+                className={previewTabClass(devicePreview === 'DESKTOP')}
               >
                 <Desktop size={14} />
                 Giao diện Máy tính
@@ -498,18 +497,25 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
           {devicePreview === 'MOBILE' && (
             <div className="w-[340px] overflow-hidden rounded-[32px] border-8 border-zinc-800 bg-zinc-100 shadow-2xl dark:bg-white/10">
               {/* Phone Notch / Header */}
-              <div className="flex items-center justify-between bg-gradient-to-r from-indigo-900 to-sky-400 p-3 text-center text-xs font-bold text-white">
+              <div className="flex items-center justify-between bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] p-3 text-center text-xs font-bold text-white">
                 <span>9:41</span>
-                <span>NÉT</span>
+                <span>DHMQ</span>
                 <span className="text-[10px]">100%</span>
               </div>
 
               {/* Shop Header Bar in phone */}
-              <div className="flex items-center gap-3 bg-gradient-to-r from-indigo-900 to-sky-400 p-3 text-white">
+              <div className="flex items-center gap-3 bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] p-3 text-white">
                 <UserAvatar name={shopName} size={40} />
                 <div>
                   <h4 className="text-xs font-bold">{shopName}</h4>
-                  <p className="text-[10px] text-white/80">Online 5 phút trước | 4.9 ⭐</p>
+                  <p className="flex items-center gap-1 text-[10px] text-white/85">
+                    <span>Đang hoạt động</span>
+                    <span>|</span>
+                    <span className="inline-flex items-center gap-0.5">
+                      4.9
+                      <Star size={10} weight="fill" className="text-amber-300" />
+                    </span>
+                  </p>
                 </div>
               </div>
 
@@ -601,15 +607,10 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
 
                   if (b.type === 'BANNER') {
                     return (
-                      <div key={b.id} className="relative overflow-hidden rounded shadow-sm">
-                        <img
-                          src="https://picsum.photos/seed/sellerbanner/500/300"
-                          alt="Banner"
-                          onError={handleImageError}
-                          className="h-28 w-full object-cover"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 px-4 text-center text-xs font-bold text-white">
-                          {b.title}
+                      <div key={b.id} className="overflow-hidden rounded-xl shadow-sm">
+                        <div className="flex h-28 w-full flex-col items-center justify-center bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] px-4 text-center text-white">
+                          <ImageIcon size={24} className="mb-1 opacity-80" />
+                          <span className="text-xs font-bold">{b.title}</span>
                         </div>
                       </div>
                     )
@@ -644,19 +645,18 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
 
                   if (b.type === 'VIDEO') {
                     const hasVideo = b.videoUrl !== undefined && b.videoUrl !== ''
+                    let videoCardClass =
+                      'flex items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-3 text-xs text-zinc-400 dark:border-white/15 dark:bg-white/5'
+                    if (hasVideo) {
+                      videoCardClass =
+                        'flex items-center justify-center gap-2 rounded-xl bg-zinc-900 p-3 text-xs text-white'
+                    }
                     return (
-                      <div
-                        key={b.id}
-                        className={
-                          hasVideo
-                            ? 'flex items-center justify-center gap-2 rounded bg-zinc-900 p-3 text-xs text-white'
-                            : 'flex items-center justify-center gap-2 rounded border border-dashed border-zinc-300 bg-zinc-50 p-3 text-xs text-zinc-400 dark:border-white/15 dark:bg-white/5'
-                        }
-                      >
+                      <div key={b.id} className={videoCardClass}>
                         <VideoCamera size={16} />
                         <span>
                           {b.title}
-                          {hasVideo ? '' : ' — chưa có video'}
+                          {!hasVideo && ' — chưa có video'}
                         </span>
                       </div>
                     )
@@ -677,7 +677,7 @@ export function SellerDecorationTab({ shopId, shopName }: SellerDecorationTabPro
                   <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
                 </div>
                 <div className="max-w-sm flex-1 truncate rounded bg-white px-3 py-0.5 text-[11px] text-zinc-500 dark:bg-[#11182a] dark:text-zinc-400">
-                  https://netfashion.vn/fashionhub.boutique
+                  https://dhmq.vn/dhmq.boutique
                 </div>
               </div>
               <div className="max-h-[500px] space-y-4 overflow-y-auto bg-zinc-50 p-4 dark:bg-white/5">

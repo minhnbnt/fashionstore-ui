@@ -17,7 +17,6 @@ import {
   Eye,
   EyeSlash,
   Trash,
-  CheckCircle,
   X,
   WarningCircle,
   CircleNotch,
@@ -39,6 +38,7 @@ import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { formatDateTime, formatVnd } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 import { productItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 import { sellerProductStatusMeta } from '@/lib/seller/sellerStatus'
@@ -116,9 +116,6 @@ export default function SellerProductsTab({
   const [isUpdatingStock, setIsUpdatingStock] = useState(false)
   const [bulkStockError, setBulkStockError] = useState<string | null>(null)
 
-  // Toast notification
-  const [notification, setNotification] = useState<string | null>(null)
-
   // Queries. BE tra "ALL" khong bao gom san pham DELETED nen can them 1 query rieng
   // cho tab "Da xoa" (gop lai de client-side filter va dem so luong van dung duoc).
   const productsQuery = useListProducts(shopId, undefined, { query: { enabled: shopId !== '' } })
@@ -159,13 +156,6 @@ export default function SellerProductsTab({
     })
   }
 
-  function showToast(msg: string) {
-    setNotification(msg)
-    setTimeout(function () {
-      setNotification(null)
-    }, 3500)
-  }
-
   // Mutations
   const updateProductMutation = useUpdate1({
     mutation: {
@@ -181,7 +171,7 @@ export default function SellerProductsTab({
         void queryClient.invalidateQueries({ queryKey: getListProductsQueryKey(shopId) })
         setDeleteTargetId(null)
         setDeleteErrorMessage(null)
-        showToast('Đã xóa mềm sản phẩm vào thùng rác')
+        notify.success('Đã xóa mềm sản phẩm vào thùng rác')
       },
       onError: function (error: unknown) {
         let status: number | undefined = undefined
@@ -189,12 +179,15 @@ export default function SellerProductsTab({
           status = error.status
         }
         if (status === 409) {
-          setDeleteErrorMessage(
-            'Không thể xóa sản phẩm do đang có đơn hàng liên quan đang xử lý (chờ xác nhận hoặc đang vận chuyển). Vui lòng hoàn tất hoặc hủy các đơn hàng trước.',
-          )
+          const conflictMsg =
+            'Không thể xóa sản phẩm do đang có đơn hàng liên quan đang xử lý (chờ xác nhận hoặc đang vận chuyển). Vui lòng hoàn tất hoặc hủy các đơn hàng trước.'
+          setDeleteErrorMessage(conflictMsg)
+          notify.warning(conflictMsg)
           return
         }
-        setDeleteErrorMessage('Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau.')
+        const fallbackMsg = 'Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại sau.'
+        setDeleteErrorMessage(fallbackMsg)
+        notify.fromError(error, undefined, fallbackMsg)
       },
     },
   })
@@ -206,13 +199,13 @@ export default function SellerProductsTab({
         setSelectedProductIds(new Set())
         const data = resp.data
         if (isBulkResult(data)) {
-          showToast(`Thao tác thành công trên ${data.successCount} sản phẩm`)
+          notify.success(`Thao tác thành công trên ${data.successCount} sản phẩm`)
           return
         }
-        showToast('Thao tác hoàn tất')
+        notify.success('Thao tác hoàn tất')
       },
-      onError: function () {
-        showToast('Lỗi khi cập nhật trạng thái hàng loạt. Vui lòng thử lại.')
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Lỗi khi cập nhật trạng thái hàng loạt. Vui lòng thử lại.')
       },
     },
   })
@@ -228,16 +221,20 @@ export default function SellerProductsTab({
         if (isBulkResult(data)) {
           if (data.failedCount !== undefined && data.failedCount > 0) {
             const detail = (data.messages ?? []).join('; ')
-            showToast(`Đã xóa ${data.successCount} sản phẩm. Bỏ qua ${data.failedCount}: ${detail}`)
+            notify.warning(
+              `Đã xóa ${data.successCount} sản phẩm. Bỏ qua ${data.failedCount}: ${detail}`,
+            )
             return
           }
-          showToast(`Đã xóa mềm thành công ${data.successCount} sản phẩm`)
+          notify.success(`Đã xóa mềm thành công ${data.successCount} sản phẩm`)
           return
         }
-        showToast('Thao tác xóa mềm hoàn tất')
+        notify.success('Thao tác xóa mềm hoàn tất')
       },
-      onError: function () {
-        setBulkDeleteErrorMessage('Không thể xóa hàng loạt sản phẩm. Vui lòng kiểm tra lại.')
+      onError: function (err: unknown) {
+        const msg = 'Không thể xóa hàng loạt sản phẩm. Vui lòng kiểm tra lại.'
+        setBulkDeleteErrorMessage(msg)
+        notify.fromError(err, undefined, msg)
       },
     },
   })
@@ -250,10 +247,12 @@ export default function SellerProductsTab({
         setBulkPriceError(null)
         setBulkPriceValue('')
         setSelectedProductIds(new Set())
-        showToast('Cập nhật giá sản phẩm thành công')
+        notify.success('Cập nhật giá sản phẩm thành công')
       },
-      onError: function () {
-        setBulkPriceError('Lỗi cập nhật giá sản phẩm. Vui lòng kiểm tra lại giá trị.')
+      onError: function (err: unknown) {
+        const msg = 'Lỗi cập nhật giá sản phẩm. Vui lòng kiểm tra lại giá trị.'
+        setBulkPriceError(msg)
+        notify.fromError(err, undefined, msg)
       },
     },
   })
@@ -535,13 +534,13 @@ export default function SellerProductsTab({
       {
         onSuccess: function () {
           if (nextStatus === 'HIDDEN') {
-            showToast('Đã tạm ẩn sản phẩm khỏi gian hàng')
+            notify.success('Đã tạm ẩn sản phẩm khỏi gian hàng')
             return
           }
-          showToast('Đã bật bán sản phẩm thành công')
+          notify.success('Đã bật bán sản phẩm thành công')
         },
-        onError: function () {
-          showToast('Không thể cập nhật trạng thái sản phẩm.')
+        onError: function (err: unknown) {
+          notify.fromError(err, undefined, 'Không thể cập nhật trạng thái sản phẩm.')
         },
       },
     )
@@ -731,7 +730,7 @@ export default function SellerProductsTab({
 
     if (updates.length === 0) {
       setShowBulkStockModal(false)
-      showToast('Tồn kho các size không có thay đổi')
+      notify.info('Tồn kho các size không có thay đổi')
       return
     }
 
@@ -752,9 +751,11 @@ export default function SellerProductsTab({
       void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
       setShowBulkStockModal(false)
       setSelectedProductIds(new Set())
-      showToast('Cập nhật tồn kho từng size thành công')
-    } catch {
-      setBulkStockError('Lỗi cập nhật tồn kho từng size. Vui lòng kiểm tra lại.')
+      notify.success('Cập nhật tồn kho từng size thành công')
+    } catch (err: unknown) {
+      const msg = 'Lỗi cập nhật tồn kho từng size. Vui lòng kiểm tra lại.'
+      setBulkStockError(msg)
+      notify.fromError(err, 'sellerProductsInventory', msg)
     } finally {
       setIsUpdatingStock(false)
     }
@@ -801,14 +802,6 @@ export default function SellerProductsTab({
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Toast thông báo */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header bar */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -848,14 +841,13 @@ export default function SellerProductsTab({
           ].map(function (tab) {
             const isCurrent = activeTab === tab.id
             let tabClasses =
-              'flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+              'flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
             let countBadgeClasses =
               'rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400'
             if (isCurrent) {
               tabClasses =
-                'flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
-              countBadgeClasses =
-                'rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white dark:bg-indigo-900/30 dark:text-indigo-950'
+                'btn-primary flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition'
+              countBadgeClasses = 'rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white'
             }
             return (
               <button

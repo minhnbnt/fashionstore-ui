@@ -22,6 +22,7 @@ import {
   scheduleLabel,
   scheduleWindowLabel,
 } from '@/lib/content/siteContent'
+import { notify } from '@/lib/notifications'
 
 import ConfirmDialog from '../dialogs/ConfirmDialog'
 import PopupFormDialog from '../dialogs/PopupFormDialog'
@@ -79,7 +80,10 @@ export default function PopupsTab({ onNotice }: { onNotice: (message: string) =>
     }
     update.mutate(
       { id: popup.id, data: toggleRequest(popup) },
-      { onSuccess: () => refresh(message) },
+      {
+        onSuccess: () => refresh(message),
+        onError: (err) => notify.fromError(err, 'adminContent'),
+      },
     )
   }
 
@@ -223,6 +227,7 @@ export default function PopupsTab({ onNotice }: { onNotice: (message: string) =>
       {deleting !== null && (
         <ConfirmDialog
           open
+          danger
           title="Xóa popup"
           description={`Xóa hẳn popup "${deleting.name ?? ''}"? Muốn ẩn tạm thời thì bấm "Tắt" thay vì xóa.`}
           confirmLabel="Xóa popup"
@@ -235,7 +240,10 @@ export default function PopupsTab({ onNotice }: { onNotice: (message: string) =>
             }
             remove.mutate(
               { id: deleting.id },
-              { onSuccess: () => refresh(`Đã xóa popup "${deleting.name ?? ''}".`) },
+              {
+                onSuccess: () => refresh(`Đã xóa popup "${deleting.name ?? ''}".`),
+                onError: (err) => notify.fromError(err, 'adminContent'),
+              },
             )
           }}
         />

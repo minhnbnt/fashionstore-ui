@@ -125,7 +125,7 @@ export default function ShopStorefront() {
           className="btn-primary mt-6 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-bold"
         >
           <ArrowLeft size={16} />
-          Về trang chủ nét
+          Về trang chủ DHMQ
         </Link>
       </main>
     )

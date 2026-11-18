@@ -7,9 +7,10 @@ import {
   useDeleteBannedKeyword,
   useListBannedKeywords,
 } from '@generated/endpoints/admin-banned-keywords/admin-banned-keywords'
-import { ArrowLeft, Plus, Trash, X } from '@phosphor-icons/react'
+import { ArrowLeft, Plus, Trash } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import AdminShell from '@/components/admin/AdminShell'
 import {
   formatDateTime,
   KEYWORD_MAX,
@@ -18,8 +19,8 @@ import {
   violationLabel,
 } from '@/lib/admin/productModeration'
 import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
-
-import AdminShell from '../../components/admin/AdminShell'
+import { notify } from '@/lib/notifications'
+import { INPUT_CLASS, LABEL_CLASS, PANEL_CLASS, secondaryButtonClass } from '@/lib/ui/styles'
 
 import type { BanProductRequestViolationType } from '@generated/model/banProductRequestViolationType'
 
@@ -33,7 +34,6 @@ export default function AdminBannedKeywords() {
   const [violationType, setViolationType] = useState<BanProductRequestViolationType>('COUNTERFEIT')
   const [touched, setTouched] = useState(false)
   const [confirmId, setConfirmId] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const listQuery = useListBannedKeywords()
   const create = useCreateBannedKeyword()
@@ -65,23 +65,31 @@ export default function AdminBannedKeywords() {
           setTouched(false)
           if (response.status === 201) {
             const flagged = response.data.flaggedProducts ?? 0
-            setNotice(
-              `Đã thêm "${response.data.keyword?.keyword ?? ''}". Gắn cờ ${flagged} sản phẩm đang có vào hàng đợi báo cáo.`,
+            notify.success(
+              `Đã thêm từ khóa "${response.data.keyword?.keyword ?? ''}"`,
+              `Gắn cờ ${flagged} sản phẩm đang có vào hàng đợi báo cáo.`,
             )
           }
           refresh()
+        },
+        onError: function (err) {
+          notify.fromError(err, 'adminKeywords')
         },
       },
     )
   }
 
-  function handleDelete(id: string) {
+  function handleDelete(id: string, keywordLabel: string) {
     remove.mutate(
       { id },
       {
         onSuccess: function () {
           setConfirmId(null)
+          notify.success(`Đã xóa từ khóa "${keywordLabel}".`)
           refresh()
+        },
+        onError: function (err) {
+          notify.fromError(err, 'adminKeywords')
         },
       },
     )
@@ -137,9 +145,9 @@ export default function AdminBannedKeywords() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(item.id ?? '')}
+                      onClick={() => handleDelete(item.id ?? '', item.keyword ?? '')}
                       disabled={remove.isPending}
-                      className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                      className="cursor-pointer rounded-full bg-rose-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Xóa
                     </button>
@@ -158,90 +166,69 @@ export default function AdminBannedKeywords() {
       title="Từ khóa cấm"
       description="Sản phẩm có tên hoặc mô tả chứa từ khóa (khớp nguyên từ, không phân biệt hoa thường) được tự gắn cờ vào hàng đợi báo cáo. Hệ thống không tự gỡ, admin quyết định."
       actions={
-        <Link
-          to="/admin/products"
-          className="flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-2 text-sm font-bold text-zinc-700 transition hover:bg-white/70 dark:border-white/10 dark:text-zinc-200 dark:hover:bg-white/10"
-        >
+        <Link to="/admin/products" className={secondaryButtonClass()}>
           <ArrowLeft size={17} weight="bold" />
           Hàng đợi kiểm duyệt
         </Link>
       }
     >
-      {notice !== null && (
-        <output className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
-          {notice}
-          <button type="button" aria-label="Ẩn thông báo" onClick={() => setNotice(null)}>
-            <X size={16} weight="bold" />
-          </button>
-        </output>
-      )}
-
-      <form
-        onSubmit={handleSubmit}
-        className="mb-6 flex flex-col gap-3 rounded-2xl bg-white/70 p-4 md:flex-row md:items-start dark:bg-white/5"
-      >
-        <div className="flex-1">
-          <label htmlFor="keyword-input" className="mb-1.5 block text-sm font-bold">
-            Từ khóa
-          </label>
-          <input
-            id="keyword-input"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            onBlur={() => setTouched(true)}
-            maxLength={KEYWORD_MAX}
-            placeholder="Ví dụ: replica, like auth, hàng nhái"
-            aria-invalid={visibleProblem !== null}
-            className="w-full rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
-          />
-          {visibleProblem !== null && (
-            <p className="mt-1 text-xs text-red-600 dark:text-red-400">{visibleProblem}</p>
-          )}
-        </div>
-        <div className="md:w-64">
-          <label htmlFor="keyword-violation" className="mb-1.5 block text-sm font-bold">
-            Loại vi phạm
-          </label>
-          <select
-            id="keyword-violation"
-            value={violationType}
-            onChange={(event) =>
-              setViolationType(event.target.value as BanProductRequestViolationType)
-            }
-            className="w-full rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10"
-          >
-            {VIOLATION_OPTIONS.map(function (option) {
-              return (
-                <option key={option.type} value={option.type}>
-                  {option.label}
-                </option>
-              )
-            })}
-          </select>
-        </div>
-        <button
-          type="submit"
-          disabled={create.isPending}
-          className="btn-primary flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold disabled:opacity-50 md:mt-7"
+      <div className="space-y-5">
+        <form
+          onSubmit={handleSubmit}
+          className={`${PANEL_CLASS} flex flex-col gap-3 md:flex-row md:items-start`}
         >
-          <Plus size={16} weight="bold" />
-          {create.isPending && <span>Đang thêm và quét…</span>}
-          {create.isPending === false && <span>Thêm từ khóa</span>}
-        </button>
-      </form>
+          <div className="flex-1">
+            <label htmlFor="keyword-input" className={LABEL_CLASS}>
+              Từ khóa
+            </label>
+            <input
+              id="keyword-input"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              onBlur={() => setTouched(true)}
+              maxLength={KEYWORD_MAX}
+              placeholder="Ví dụ: replica, like auth, hàng nhái"
+              aria-invalid={visibleProblem !== null}
+              className={INPUT_CLASS}
+            />
+            {visibleProblem !== null && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{visibleProblem}</p>
+            )}
+          </div>
+          <div className="md:w-64">
+            <label htmlFor="keyword-violation" className={LABEL_CLASS}>
+              Loại vi phạm
+            </label>
+            <select
+              id="keyword-violation"
+              value={violationType}
+              onChange={(event) =>
+                setViolationType(event.target.value as BanProductRequestViolationType)
+              }
+              className={INPUT_CLASS}
+            >
+              {VIOLATION_OPTIONS.map(function (option) {
+                return (
+                  <option key={option.type} value={option.type} className="dark:bg-[#0a0f1e]">
+                    {option.label}
+                  </option>
+                )
+              })}
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={create.isPending}
+            className="btn-primary flex cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50 md:mt-7"
+          >
+            <Plus size={16} weight="bold" />
+            {create.isPending && <span>Đang thêm và quét…</span>}
+            {create.isPending === false && <span>Thêm từ khóa</span>}
+          </button>
+        </form>
 
-      {create.isError && (
-        <p className="mb-4 text-sm text-red-600 dark:text-red-400">
-          {hookErrorMessage('adminKeywords', create.error)}
-        </p>
-      )}
-      {remove.isError && (
-        <p className="mb-4 text-sm text-red-600 dark:text-red-400">
-          {hookErrorMessage('adminKeywords', remove.error)}
-        </p>
-      )}
-
-      {listBody}
+        <section className={PANEL_CLASS}>{listBody}</section>
+      </div>
     </AdminShell>
   )
 }

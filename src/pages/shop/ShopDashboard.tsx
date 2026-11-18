@@ -9,6 +9,7 @@ import { useGetMyShops } from '@generated/endpoints/seller-staff-roles/seller-st
 import { useMine } from '@generated/endpoints/shops/shops'
 import { Storefront, WarningCircle } from '@phosphor-icons/react'
 
+import { PageSkeleton } from '@/components/ui/Skeleton'
 import { apiErrorMessage, takeData } from '@/lib/api/apiAdapters'
 import { shopProfile } from '@/lib/seller/sellerAdapters'
 import { getFirstAllowedTab, parseSellerTab, sellerTabParam } from '@/lib/seller/sellerNavigation'
@@ -63,8 +64,8 @@ function emptyProfile(shopName: string): ShopProfileData {
 
 function TabLoading() {
   return (
-    <main className="py-24 text-center">
-      <p className="text-sm text-zinc-500">Đang tải gian hàng…</p>
+    <main className="py-6">
+      <PageSkeleton />
     </main>
   )
 }
@@ -222,7 +223,7 @@ export default function ShopDashboard() {
           Bạn chưa tham gia gian hàng nào
         </h2>
         <p className="mt-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-          Hãy đăng ký mở gian hàng mới trên sàn nét hoặc liên hệ chủ shop để nhận thư mời làm nhân
+          Hãy đăng ký mở gian hàng mới trên sàn DHMQ hoặc liên hệ chủ shop để nhận thư mời làm nhân
           viên.
         </p>
         <Link

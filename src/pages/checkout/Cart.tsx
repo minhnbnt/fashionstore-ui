@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import {
+  CheckCircle,
   Heart,
   Minus,
   Plus,
@@ -10,10 +11,14 @@ import {
   Trash,
   TrendDown,
   TrendUp,
+  Truck,
 } from '@phosphor-icons/react'
 
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { hookErrorMessage, urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 import { classifyPriceChange, groupCartByShop, stockState } from '@/lib/shop/cartView'
 
 import { useCart } from '../../hooks/useCart'
@@ -22,13 +27,17 @@ import { useWishlist } from '../../hooks/useWishlist'
 import type { CartShopGroup } from '@/lib/shop/cartView'
 import type { CartItemResponse } from '@generated/model/cartItemResponse'
 
+const FREE_SHIPPING_THRESHOLD = 500000
+
+type CartConfirmState = null | { kind: 'clear' } | { kind: 'removeSelected'; count: number }
+
 export default function Cart() {
   const { items, totalQuantity, isLoading, isError, error, updateQuantity, removeItem, clearCart } =
     useCart()
   const wishlist = useWishlist()
   // Giu dang "loai tru" de item moi them vao mac dinh duoc tick.
   const [excluded, setExcluded] = useState<string[]>([])
-  const [actionError, setActionError] = useState<string | null>(null)
+  const [confirmState, setConfirmState] = useState<CartConfirmState>(null)
   const navigate = useNavigate()
 
   // Nhom theo shop theo dac ta 1.4.1, mon het hang khong the chon.
@@ -46,6 +55,19 @@ export default function Cart() {
   }
   const allSelected = selectable.length > 0 && selected.length === selectable.length
   const shopGroups = groupCartByShop(items)
+
+  const freeShippingReached = selectedTotal >= FREE_SHIPPING_THRESHOLD
+  let freeShippingRemaining = FREE_SHIPPING_THRESHOLD - selectedTotal
+  if (freeShippingRemaining < 0) {
+    freeShippingRemaining = 0
+  }
+  let freeShippingProgress = Math.round((selectedTotal / FREE_SHIPPING_THRESHOLD) * 100)
+  if (freeShippingProgress > 100) {
+    freeShippingProgress = 100
+  }
+  if (freeShippingProgress < 0) {
+    freeShippingProgress = 0
+  }
 
   function toggle(variantId: string) {
     if (excluded.includes(variantId)) {
@@ -103,27 +125,86 @@ export default function Cart() {
     void navigate(`/checkout?${query.toString()}`)
   }
 
-  function handleRemove(variantId: string) {
-    removeItem.mutate({ variantId })
+  function handleUpdateQty(variantId: string, nextQuantity: number) {
+    updateQuantity.mutate(
+      { variantId, data: { quantity: nextQuantity } },
+      {
+        onError: function (err) {
+          notify.fromError(err, 'cart', 'Không thể cập nhật số lượng')
+        },
+      },
+    )
   }
 
-  function confirmClear() {
-    if (window.confirm('Xoá toàn bộ giỏ hàng?')) {
-      clearCart.mutate()
-    }
+  function handleRemove(variantId: string, successMessage?: string) {
+    const resolvedSuccess = successMessage ?? 'Đã xoá sản phẩm khỏi giỏ hàng'
+    removeItem.mutate(
+      { variantId },
+      {
+        onSuccess: function () {
+          notify.success(resolvedSuccess)
+        },
+        onError: function (err) {
+          notify.fromError(err, 'cart', 'Không thể xoá sản phẩm khỏi giỏ hàng')
+        },
+      },
+    )
   }
 
-  function removeSelected() {
+  function requestClear() {
+    setConfirmState({ kind: 'clear' })
+  }
+
+  function requestRemoveSelected() {
     if (selected.length === 0) {
       return
     }
-    if (window.confirm(`Xoá ${selected.length} sản phẩm đã chọn?`) === false) {
+    setConfirmState({ kind: 'removeSelected', count: selected.length })
+  }
+
+  function handleConfirmDialog() {
+    if (confirmState === null) {
       return
     }
+    if (confirmState.kind === 'clear') {
+      setConfirmState(null)
+      clearCart.mutate(undefined, {
+        onSuccess: function () {
+          notify.success('Đã xoá toàn bộ giỏ hàng')
+        },
+        onError: function (err) {
+          notify.fromError(err, 'cart', 'Không thể xoá giỏ hàng')
+        },
+      })
+      return
+    }
+
+    setConfirmState(null)
+    const targets: string[] = []
     for (const item of selected) {
       if (item.variantId !== undefined) {
-        handleRemove(item.variantId)
+        targets.push(item.variantId)
       }
+    }
+    if (targets.length === 0) {
+      return
+    }
+    let notifiedSuccess = false
+    for (const variantId of targets) {
+      removeItem.mutate(
+        { variantId },
+        {
+          onSuccess: function () {
+            if (notifiedSuccess === false) {
+              notifiedSuccess = true
+              notify.success(`Đã xoá ${targets.length} sản phẩm đã chọn`)
+            }
+          },
+          onError: function (err) {
+            notify.fromError(err, 'cart', 'Không thể xoá sản phẩm đã chọn')
+          },
+        },
+      )
     }
   }
 
@@ -133,19 +214,22 @@ export default function Cart() {
     if (productId === undefined || variantId === undefined) {
       return
     }
-    setActionError(null)
     if (wishlist.isFavorited(productId)) {
-      handleRemove(variantId)
+      handleRemove(variantId, 'Đã chuyển sản phẩm sang Yêu thích')
       return
     }
     wishlist.toggle.mutate(
       { data: { productId } },
       {
         onSuccess: function () {
-          handleRemove(variantId)
+          handleRemove(variantId, 'Đã chuyển sản phẩm sang Yêu thích')
         },
-        onError: function () {
-          setActionError('Không thể chuyển sản phẩm sang Yêu thích. Vui lòng thử lại.')
+        onError: function (err) {
+          notify.fromError(
+            err,
+            'wishlist',
+            'Không thể chuyển sản phẩm sang Yêu thích. Vui lòng thử lại.',
+          )
         },
       },
     )
@@ -154,9 +238,7 @@ export default function Cart() {
   let body = (
     <div className="space-y-3" aria-busy="true">
       {[0, 1, 2].map(function (index) {
-        return (
-          <div key={index} className="h-24 animate-pulse rounded-3xl bg-white/60 dark:bg-white/5" />
-        )
+        return <Skeleton key={index} className="h-24 w-full rounded-3xl" />
       })}
     </div>
   )
@@ -186,42 +268,45 @@ export default function Cart() {
   }
 
   if (isLoading === false && items.length > 0) {
+    let shippingBarClass =
+      'h-full rounded-full bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] transition-all duration-300'
+    if (freeShippingReached) {
+      shippingBarClass =
+        'h-full rounded-full bg-emerald-500 transition-all duration-300 dark:bg-emerald-400'
+    }
+
     body = (
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section className="glass rounded-3xl p-4 sm:p-6">
           <div className="mb-3 flex items-center justify-between gap-3 border-b border-zinc-200/70 pb-3 dark:border-white/10">
-            <label className="flex items-center gap-2 text-sm font-semibold">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
               <input
                 type="checkbox"
                 checked={allSelected}
                 onChange={toggleAll}
-                className="h-4 w-4 accent-indigo-600"
+                className="h-4 w-4 cursor-pointer accent-blue-600"
               />
               Chọn tất cả ({selectable.length})
             </label>
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={removeSelected}
+                onClick={requestRemoveSelected}
                 disabled={selected.length === 0}
-                className="text-sm font-semibold text-zinc-500 transition hover:text-red-600 disabled:opacity-50 dark:text-zinc-400"
+                className="cursor-pointer text-sm font-semibold text-zinc-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-400 dark:hover:text-rose-400"
               >
                 Xoá đã chọn
               </button>
               <button
                 type="button"
-                onClick={confirmClear}
+                onClick={requestClear}
                 disabled={clearCart.isPending}
-                className="text-sm font-semibold text-zinc-500 transition hover:text-red-600 disabled:opacity-50 dark:text-zinc-400"
+                className="cursor-pointer text-sm font-semibold text-zinc-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-400 dark:hover:text-rose-400"
               >
                 Xoá giỏ
               </button>
             </div>
           </div>
-
-          {actionError !== null && (
-            <p className="mb-2 text-sm text-red-600 dark:text-red-400">{actionError}</p>
-          )}
 
           <div className="space-y-6">
             {shopGroups.map(function (group) {
@@ -240,19 +325,23 @@ export default function Cart() {
               return (
                 <div key={group.shopId}>
                   <div className="flex items-center justify-between gap-3 border-b border-zinc-200/70 pb-2 dark:border-white/10">
-                    <label className="flex items-center gap-2 text-sm font-semibold">
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
                       <input
                         type="checkbox"
                         checked={shopSelected}
                         onChange={function () {
                           toggleShop(group)
                         }}
-                        className="h-4 w-4 accent-indigo-600"
+                        className="h-4 w-4 cursor-pointer accent-blue-600"
                       />
-                      <Storefront size={16} weight="bold" className="text-indigo-500" />
+                      <Storefront
+                        size={16}
+                        weight="bold"
+                        className="text-blue-700 dark:text-sky-300"
+                      />
                       {group.shopName}
                     </label>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
                       {group.items.length} sản phẩm
                     </span>
                   </div>
@@ -276,11 +365,11 @@ export default function Cart() {
 
                       let heartWeight: 'fill' | 'bold' = 'bold'
                       let heartClass =
-                        'flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 dark:hover:bg-rose-500/10'
+                        'flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-rose-500/10'
                       if (favorited) {
                         heartWeight = 'fill'
                         heartClass =
-                          'flex h-8 w-8 items-center justify-center rounded-full text-rose-500 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 dark:hover:bg-rose-500/10'
+                          'flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-rose-500 transition hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-rose-500/10'
                       }
 
                       return (
@@ -291,10 +380,10 @@ export default function Cart() {
                             disabled={state === 'out'}
                             onChange={() => toggle(variantId)}
                             aria-label={`Chọn ${item.productName ?? ''}`}
-                            className="mt-1 h-4 w-4 shrink-0 accent-indigo-600 disabled:opacity-40"
+                            className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
                           />
 
-                          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-white/10 dark:bg-white/5">
+                          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-white/10 dark:bg-white/5">
                             {item.productId !== undefined && (
                               <Link
                                 to={`/product/${item.productId}`}
@@ -337,7 +426,7 @@ export default function Cart() {
                             {item.productId !== undefined && (
                               <Link
                                 to={`/product/${item.productId}`}
-                                className="line-clamp-2 font-bold transition hover:text-indigo-600 dark:hover:text-indigo-300"
+                                className="line-clamp-2 font-bold transition hover:text-blue-700 dark:hover:text-sky-300"
                                 title={item.productName}
                               >
                                 {item.productName}
@@ -349,17 +438,19 @@ export default function Cart() {
                             <p className="text-sm text-zinc-500 dark:text-zinc-400">
                               {item.variantLabel} · SKU {item.sku}
                             </p>
-                            <p className="mt-1 text-sm font-semibold">{formatVnd(unitPrice)}</p>
+                            <p className="mt-1 text-sm font-semibold tabular-nums">
+                              {formatVnd(unitPrice)}
+                            </p>
 
                             {priceChange === 'decreased' && (
-                              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-600 tabular-nums dark:text-emerald-400">
                                 <TrendDown size={14} weight="bold" />
                                 Giá đã giảm từ {formatVnd(priceAtAdded)} xuống{' '}
                                 {formatVnd(unitPrice)}
                               </p>
                             )}
                             {priceChange === 'increased' && (
-                              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                              <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-amber-600 tabular-nums dark:text-amber-400">
                                 <TrendUp size={14} weight="bold" />
                                 Giá đã tăng từ {formatVnd(priceAtAdded)} lên {formatVnd(unitPrice)}
                               </p>
@@ -371,30 +462,25 @@ export default function Cart() {
                               </p>
                             )}
                             {state === 'low' && (
-                              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                              <p className="mt-1 text-xs text-amber-600 tabular-nums dark:text-amber-400">
                                 Chỉ còn {stock} sản phẩm
                               </p>
                             )}
 
                             <div className="mt-2 flex items-center gap-2">
-                              <div className="flex items-center rounded-full border border-zinc-200 dark:border-white/15">
+                              <div className="flex items-center rounded-full border border-zinc-300 bg-white/80 dark:border-white/15 dark:bg-white/10">
                                 <button
                                   type="button"
                                   aria-label="Giảm số lượng"
                                   disabled={
                                     quantity <= 1 || state === 'out' || updateQuantity.isPending
                                   }
-                                  onClick={() =>
-                                    updateQuantity.mutate({
-                                      variantId,
-                                      data: { quantity: quantity - 1 },
-                                    })
-                                  }
-                                  className="flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-40"
+                                  onClick={() => handleUpdateQty(variantId, quantity - 1)}
+                                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10"
                                 >
                                   <Minus size={14} weight="bold" />
                                 </button>
-                                <span className="w-8 text-center text-sm font-semibold">
+                                <span className="w-8 text-center text-sm font-semibold tabular-nums">
                                   {quantity}
                                 </span>
                                 <button
@@ -403,13 +489,8 @@ export default function Cart() {
                                   disabled={
                                     quantity >= stock || state === 'out' || updateQuantity.isPending
                                   }
-                                  onClick={() =>
-                                    updateQuantity.mutate({
-                                      variantId,
-                                      data: { quantity: quantity + 1 },
-                                    })
-                                  }
-                                  className="flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-40"
+                                  onClick={() => handleUpdateQty(variantId, quantity + 1)}
+                                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10"
                                 >
                                   <Plus size={14} weight="bold" />
                                 </button>
@@ -432,14 +513,14 @@ export default function Cart() {
                                 aria-label="Xoá sản phẩm"
                                 disabled={removeItem.isPending}
                                 onClick={() => handleRemove(variantId)}
-                                className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40 dark:hover:bg-red-500/10"
+                                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-rose-500/10"
                               >
                                 <Trash size={16} />
                               </button>
                             </div>
                           </div>
 
-                          <p className="shrink-0 text-right font-bold">
+                          <p className="shrink-0 text-right font-bold tabular-nums">
                             {formatVnd(unitPrice * quantity)}
                           </p>
                         </li>
@@ -450,44 +531,108 @@ export default function Cart() {
               )
             })}
           </div>
-
-          {updateQuantity.isError && (
-            <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-              {hookErrorMessage('cart', updateQuantity.error)}
-            </p>
-          )}
         </section>
 
         <aside className="glass h-fit rounded-3xl p-5 lg:sticky lg:top-24">
           <h2 className="text-lg font-extrabold tracking-tight">Tóm tắt</h2>
-          <dl className="mt-4 space-y-2 text-sm">
+
+          {/* Free Shipping Progress Bar */}
+          <div className="mt-4 rounded-2xl border border-zinc-200/80 bg-white/70 p-3.5 dark:border-white/10 dark:bg-white/5">
+            <div className="flex items-start gap-2 text-xs">
+              {freeShippingReached && (
+                <>
+                  <CheckCircle
+                    size={16}
+                    weight="fill"
+                    className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                  />
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                    Đã đạt miễn phí vận chuyển!
+                  </span>
+                </>
+              )}
+              {freeShippingReached === false && (
+                <>
+                  <Truck
+                    size={16}
+                    weight="fill"
+                    className="mt-0.5 shrink-0 text-blue-700 dark:text-sky-300"
+                  />
+                  <span className="text-zinc-600 dark:text-zinc-300">
+                    Mua thêm{' '}
+                    <strong className="font-extrabold text-blue-700 tabular-nums dark:text-sky-300">
+                      {formatVnd(freeShippingRemaining)}
+                    </strong>{' '}
+                    để được miễn phí vận chuyển
+                  </span>
+                </>
+              )}
+            </div>
+            <progress
+              value={freeShippingProgress}
+              max={100}
+              aria-label="Tiến độ miễn phí vận chuyển"
+              className="sr-only"
+            />
+            <div
+              aria-hidden="true"
+              className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-zinc-200/80 dark:bg-white/10"
+            >
+              <div className={shippingBarClass} style={{ width: `${freeShippingProgress}%` }} />
+            </div>
+          </div>
+
+          <dl className="mt-4 space-y-2.5 text-sm">
             <div className="flex justify-between">
               <dt className="text-zinc-500 dark:text-zinc-400">Đã chọn</dt>
-              <dd className="font-semibold">{selectedCount} sản phẩm</dd>
+              <dd className="font-semibold tabular-nums">{selectedCount} sản phẩm</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-zinc-500 dark:text-zinc-400">Tạm tính</dt>
-              <dd className="font-bold">{formatVnd(selectedTotal)}</dd>
+              <dd className="font-bold tabular-nums">{formatVnd(selectedTotal)}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-zinc-500 dark:text-zinc-400">Phí ship</dt>
-              <dd className="font-semibold">Tính ở bước đặt hàng</dd>
+              <dd className="font-semibold">
+                {freeShippingReached && (
+                  <span className="text-emerald-600 dark:text-emerald-400">Miễn phí</span>
+                )}
+                {freeShippingReached === false && <span>Tính ở bước đặt hàng</span>}
+              </dd>
             </div>
           </dl>
           <button
             type="button"
             onClick={goCheckout}
             disabled={selected.length === 0}
-            className="btn-primary mt-5 w-full rounded-full py-3 text-sm font-bold disabled:opacity-50"
+            className="btn-primary mt-5 w-full cursor-pointer rounded-full py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"
           >
             Thanh toán ({selected.length})
           </button>
-          <p className="mt-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-3 text-center text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
             {totalQuantity} sản phẩm trong giỏ · thanh toán khi nhận hàng
           </p>
         </aside>
       </div>
     )
+  }
+
+  let dialogTitle = ''
+  let dialogDescription = ''
+  let dialogConfirmLabel = 'Xác nhận'
+  let dialogPending = false
+  if (confirmState !== null) {
+    if (confirmState.kind === 'clear') {
+      dialogTitle = 'Xoá toàn bộ giỏ hàng?'
+      dialogDescription = 'Tất cả sản phẩm trong giỏ hàng của bạn sẽ bị xoá và không thể hoàn tác.'
+      dialogConfirmLabel = 'Xoá tất cả'
+      dialogPending = clearCart.isPending
+    } else {
+      dialogTitle = `Xoá ${confirmState.count} sản phẩm đã chọn?`
+      dialogDescription = 'Các sản phẩm đang chọn sẽ bị xoá khỏi giỏ hàng của bạn.'
+      dialogConfirmLabel = 'Xác nhận xoá'
+      dialogPending = removeItem.isPending
+    }
   }
 
   return (
@@ -499,6 +644,19 @@ export default function Cart() {
         <h1 className="text-2xl font-extrabold tracking-tighter">Giỏ hàng</h1>
       </div>
       {body}
+      <ConfirmDialog
+        open={confirmState !== null}
+        title={dialogTitle}
+        description={dialogDescription}
+        confirmLabel={dialogConfirmLabel}
+        cancelLabel="Hủy"
+        variant="danger"
+        isPending={dialogPending}
+        onConfirm={handleConfirmDialog}
+        onCancel={function () {
+          setConfirmState(null)
+        }}
+      />
     </main>
   )
 }

@@ -1,4 +1,4 @@
-import { MagnifyingGlass, Sparkle } from '@phosphor-icons/react'
+import { Lightbulb, MagnifyingGlass, Sparkle } from '@phosphor-icons/react'
 
 import { ProductCard } from '../home/Sections'
 
@@ -27,7 +27,10 @@ export default function EmptySearchState(props: {
 
         {/* Mẹo tìm kiếm */}
         <div className="mt-6 inline-flex flex-col items-start gap-1.5 rounded-2xl border border-sky-100 bg-white/80 p-4 text-left text-xs text-zinc-600 shadow-xs dark:border-white/10 dark:bg-white/5 dark:text-zinc-300">
-          <p className="font-bold text-zinc-800 dark:text-zinc-100">💡 Mẹo tìm kiếm hiệu quả:</p>
+          <p className="flex items-center gap-1.5 font-bold text-zinc-800 dark:text-zinc-100">
+            <Lightbulb size={15} weight="bold" className="text-amber-500" />
+            <span>Mẹo tìm kiếm hiệu quả:</span>
+          </p>
           <ul className="list-disc space-y-0.5 pl-4 text-[11px] text-zinc-500 dark:text-zinc-400">
             <li>Kiểm tra lại chính tả của từ khóa đã nhập</li>
             <li>Sử dụng các từ khóa ngắn gọn, chung hơn (ví dụ: "áo", "váy", "quần")</li>
@@ -68,7 +71,7 @@ export default function EmptySearchState(props: {
                 Có thể bạn sẽ thích
               </h3>
               <p className="text-xs text-zinc-400">
-                Những mẫu thời trang bán chạy và nổi bật nhất trên sàn nét
+                Những mẫu thời trang bán chạy và nổi bật nhất trên sàn DHMQ
               </p>
             </div>
           </div>

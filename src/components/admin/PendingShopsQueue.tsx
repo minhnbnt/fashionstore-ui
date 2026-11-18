@@ -10,6 +10,7 @@ import {
   PLACEHOLDER_IMAGE,
   takeData,
 } from '@/lib/api/apiAdapters'
+import { cn, iconChipClass } from '@/lib/ui/styles'
 
 const QUEUE_SIZE = 5
 
@@ -64,12 +65,8 @@ export default function PendingShopsQueue({ pendingCount }: { pendingCount: numb
                   />
                 )}
                 {(shop.logoUrl === null || shop.logoUrl === undefined) && (
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 dark:bg-indigo-900/40">
-                    <Storefront
-                      size={18}
-                      weight="bold"
-                      className="text-indigo-600 dark:text-indigo-400"
-                    />
+                  <div className={cn(iconChipClass(), 'h-9 w-9 rounded-2xl')}>
+                    <Storefront size={18} weight="bold" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">

@@ -55,7 +55,7 @@ export function readAgentConfig(): AgentConfig | null {
  *  và id sản phẩm khách đang xem ở trang chi tiết (nếu có). */
 export function buildSystemPrompt(filters: SearchFilters, product?: AgentProductContext): string {
   const lines: string[] = [
-    'Bạn là trợ lý mua sắm của cửa hàng thời trang "nét" — marketplace thời trang.',
+    'Bạn là trợ lý mua sắm của cửa hàng thời trang "DHMQ" — marketplace thời trang.',
     'Luôn trả lời bằng tiếng Việt, ngắn gọn, thân thiện. Giá sản phẩm tính bằng VND.',
     'Nhiệm vụ: giúp khách tìm sản phẩm trong cửa hàng.',
     '- Trước khi gợi ý sản phẩm, phải gọi tool searchProducts với bộ lọc phù hợp, không được bịa sản phẩm.',

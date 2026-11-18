@@ -11,11 +11,12 @@ import {
   useSummary1,
   useTopProducts,
 } from '@generated/endpoints/seller-revenue-finance/seller-revenue-finance'
-import { Wallet, Clock, Receipt, TrendUp, Bank, CheckCircle } from '@phosphor-icons/react'
+import { Wallet, Clock, Receipt, TrendUp, Bank } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
 import { takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 import { settlementItem, withdrawalItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 
@@ -45,7 +46,6 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
   const [subTab, setSubTab] = useState<'SETTLEMENTS' | 'WITHDRAWALS'>('SETTLEMENTS')
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState(1000000)
-  const [notification, setNotification] = useState<string | null>(null)
 
   const settlementsQuery = useSettlements({ shopId }, { query: { enabled: shopId !== '' } })
   // Danh mục đơn hàng để resolve mã đơn cho từng phiên quyết toán
@@ -110,9 +110,20 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
   }
 
   function handleCreateWithdrawal(amount: number) {
-    requestWithdrawalMutation.mutate({
-      data: { shopId, amount, bankName, bankAccount, bankHolder },
-    })
+    requestWithdrawalMutation.mutate(
+      {
+        data: { shopId, amount, bankName, bankAccount, bankHolder },
+      },
+      {
+        onSuccess: function () {
+          setShowWithdrawModal(false)
+          notify.success(`Đã tạo lệnh rút ${formatVnd(amount)} về tài khoản ngân hàng!`)
+        },
+        onError: function (err: unknown) {
+          notify.fromError(err, undefined, 'Không thể tạo lệnh rút tiền. Vui lòng thử lại.')
+        },
+      },
+    )
   }
 
   const walletBalance = summary?.walletBalance ?? 0
@@ -136,25 +147,16 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
     return { ...d, height }
   })
 
-  function showToast(msg: string) {
-    setNotification(msg)
-    setTimeout(function () {
-      setNotification(null)
-    }, 3000)
-  }
-
   function handleConfirmWithdraw() {
     if (withdrawAmount < 50000) {
-      alert('Số tiền rút tối thiểu là 50.000 ₫.')
+      notify.warning('Số tiền rút tối thiểu là 50.000 ₫.')
       return
     }
     if (withdrawAmount > walletBalance) {
-      alert('Số tiền rút vượt quá số dư ví khả dụng hiện tại.')
+      notify.warning('Số tiền rút vượt quá số dư ví khả dụng hiện tại.')
       return
     }
     handleCreateWithdrawal(withdrawAmount)
-    setShowWithdrawModal(false)
-    showToast(`Đã tạo lệnh rút ${formatVnd(withdrawAmount)} về tài khoản ngân hàng!`)
   }
 
   function renderWithdrawalBadge(status: string) {
@@ -188,14 +190,6 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>

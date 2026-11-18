@@ -4,7 +4,6 @@ import { getMineQueryKey, useUpdate2, useUpdateProfile } from '@generated/endpoi
 import {
   Storefront,
   FloppyDisk,
-  CheckCircle,
   MapPin,
   Bank,
   IdentificationBadge,
@@ -17,6 +16,7 @@ import ImageUploadField from '@/components/admin/fields/ImageUploadField'
 import LocationAddressSelector from '@/components/common/LocationAddressSelector'
 import RichTextEditor from '@/components/ui/RichTextEditor'
 import { splitFullAddress } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 
 import type { ShopProfileData } from '@/types/seller'
 
@@ -28,7 +28,6 @@ interface SellerProfileTabProps {
 export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<ShopProfileData>(profile)
-  const [saveSuccess, setSaveSuccess] = useState(false)
   // Chỉ track ảnh MỚI upload; undefined = giữ nguyên logo/banner cũ (API: null = giữ nguyên)
   const [newLogoUploadId, setNewLogoUploadId] = useState<string | undefined>(undefined)
   const [newBannerUploadId, setNewBannerUploadId] = useState<string | undefined>(undefined)
@@ -59,40 +58,53 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
       bannerUploadId = newBannerUploadId
     }
 
-    updateShopMutation.mutate({
-      id: shopId,
-      data: {
-        name: next.shopName,
-        description: next.bio,
-        logoUploadId,
-        bannerUploadId,
-      },
-    })
-
     let returnPolicy: string | null = null
     if (next.returnPolicy !== undefined && next.returnPolicy !== '') {
       returnPolicy = next.returnPolicy
     }
 
-    updateProfileMutation.mutate({
-      id: shopId,
-      data: {
-        phone: next.phone,
-        address: next.pickupAddress,
-        returnPolicy,
-        processingDays: next.daysToShip,
-        bankName: next.bankName,
-        bankAccount: next.bankAccount,
-        bankHolder: next.bankHolder,
-        workingHours: next.workingHours,
+    void notify.promise(
+      Promise.all([
+        updateShopMutation.mutateAsync({
+          id: shopId,
+          data: {
+            name: next.shopName,
+            description: next.bio,
+            logoUploadId,
+            bannerUploadId,
+          },
+        }),
+        updateProfileMutation.mutateAsync({
+          id: shopId,
+          data: {
+            phone: next.phone,
+            address: next.pickupAddress,
+            returnPolicy,
+            processingDays: next.daysToShip,
+            bankName: next.bankName,
+            bankAccount: next.bankAccount,
+            bankHolder: next.bankHolder,
+            workingHours: next.workingHours,
+          },
+        }),
+      ]),
+      {
+        loading: 'Đang lưu hồ sơ gian hàng...',
+        success: 'Cập nhật thông tin hồ sơ Shop & Cấu hình vận hành thành công!',
+        error: function (err: unknown) {
+          return notify.safeErrorMessage(
+            err,
+            'shops',
+            'Không thể lưu hồ sơ gian hàng. Vui lòng thử lại.',
+          )
+        },
       },
-    })
+    )
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     handleSaveProfile(formData)
-    setSaveSuccess(true)
   }
 
   let returnPolicyValue = ''
@@ -128,23 +140,6 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
         </div>
       </div>
 
-      {/* Success Notification Alert */}
-      {saveSuccess && (
-        <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          <div className="flex items-center gap-2">
-            <CheckCircle size={18} className="text-green-600" />
-            <span>Cập nhật thông tin hồ sơ Shop & Cấu hình vận hành thành công!</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSaveSuccess(false)}
-            className="text-xs font-medium text-green-700 underline hover:text-green-900"
-          >
-            Đóng
-          </button>
-        </div>
-      )}
-
       {/* Section 1: Basic Information */}
       <div className="space-y-5 rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
         <div className="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-white/10">
@@ -154,7 +149,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
           </h3>
           <div className="flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">
             <ShieldCheck size={14} />
-            <span>Gian hàng đã xác thực eKYC nét Mall</span>
+            <span>Gian hàng đã xác thực eKYC DHMQ Mall</span>
           </div>
         </div>
 
@@ -188,7 +183,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
             </label>
             <div className="flex items-center overflow-hidden rounded-full border border-zinc-300 dark:border-white/15">
               <span className="border-r border-zinc-300 bg-zinc-100 px-3 py-2 text-xs text-zinc-500 select-none dark:border-white/15 dark:bg-white/10 dark:text-zinc-400">
-                netfashion.vn/
+                dhmq.vn/
               </span>
               <input
                 id="slugField"
@@ -333,7 +328,7 @@ export function SellerProfileTab({ shopId, profile }: SellerProfileTabProps) {
               className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
             >
               <option value={1}>1 ngày (Giao hàng hỏa tốc / Chuẩn bị ngay trong ngày)</option>
-              <option value={2}>2 ngày (Tiêu chuẩn sàn nét)</option>
+              <option value={2}>2 ngày (Tiêu chuẩn sàn DHMQ)</option>
               <option value={3}>3 ngày (Mức tối đa cho phép)</option>
             </select>
           </div>

@@ -197,7 +197,7 @@ export default function Messages() {
                 className={aiTabButtonClass}
               >
                 <Sparkle size={16} weight="bold" />
-                <span>Trợ lý nét AI</span>
+                <span>Trợ lý DHMQ AI</span>
               </button>
             </div>
           </div>

@@ -31,7 +31,6 @@ import {
   Star,
   Storefront,
   Truck,
-  X,
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -51,6 +50,7 @@ import {
   takeData,
 } from '@/lib/api/apiAdapters'
 import { formatDateTime, formatVnd } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 import {
   BUYER_ORDER_TABS,
   type BuyerOrderTabKey,
@@ -66,6 +66,7 @@ import {
   groupOrderReviewProducts,
   resolveOrderReviewAction,
 } from '@/lib/review/reviewOrderHelpers'
+import { cn, segmentedItemClass } from '@/lib/ui/styles'
 
 import type { OrderResponse } from '@generated/model/orderResponse'
 import type { ReorderResponse } from '@generated/model/reorderResponse'
@@ -153,9 +154,12 @@ function orderMatchesTab(
 
 function tabButtonClass(active: boolean): string {
   if (active) {
-    return 'shrink-0 rounded-full bg-[#17203a] px-4 py-2 text-xs font-bold text-white shadow-sm dark:bg-white dark:text-[#0a0f1e]'
+    return cn(segmentedItemClass(true), 'shrink-0 cursor-pointer px-4 py-2')
   }
-  return 'shrink-0 rounded-full border border-sky-100 bg-white/80 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
+  return cn(
+    segmentedItemClass(false),
+    'shrink-0 cursor-pointer border border-zinc-200/80 bg-white/80 px-4 py-2 hover:bg-zinc-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10',
+  )
 }
 
 export default function Orders() {
@@ -181,7 +185,6 @@ export default function Orders() {
   } | null>(null)
   const [reorderResult, setReorderResult] = useState<ReorderResponse | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null)
 
   const ordersQuery = useMine3({ query: { enabled: isLoggedIn } })
   const returnsQuery = useMyReturns({ query: { enabled: isLoggedIn } })
@@ -321,11 +324,13 @@ export default function Orders() {
       {
         onSuccess: () => {
           setCancelTarget(null)
-          setActionSuccess('Đã hủy đơn hàng thành công.')
+          setActionError(null)
+          notify.success('Đã hủy đơn hàng thành công')
           invalidateOrderCaches(orderId)
         },
         onError: (err) => {
-          setActionError(hookErrorMessage('cancelOrder', err))
+          setActionError(notify.safeErrorMessage(err, 'cancelOrder', 'Không thể hủy đơn hàng'))
+          notify.fromError(err, 'cancelOrder', 'Không thể hủy đơn hàng')
         },
       },
     )
@@ -336,16 +341,15 @@ export default function Orders() {
       return
     }
     const orderId = order.id
-    setActionError(null)
     confirmReceiptMutation.mutate(
       { id: orderId },
       {
         onSuccess: () => {
-          setActionSuccess('Cảm ơn bạn đã xác nhận nhận hàng!')
+          notify.success('Đã xác nhận nhận hàng thành công')
           invalidateOrderCaches(orderId)
         },
         onError: (err) => {
-          setActionError(hookErrorMessage('confirmReceipt', err))
+          notify.fromError(err, 'confirmReceipt', 'Không thể xác nhận nhận hàng')
         },
       },
     )
@@ -373,11 +377,15 @@ export default function Orders() {
       {
         onSuccess: () => {
           setReturnTarget(null)
-          setActionSuccess('Đã gửi yêu cầu đổi trả cho shop.')
+          setActionError(null)
+          notify.success('Đã gửi yêu cầu đổi trả cho shop')
           invalidateOrderCaches(orderId)
         },
         onError: (err) => {
-          setActionError(hookErrorMessage('createReturn', err))
+          setActionError(
+            notify.safeErrorMessage(err, 'createReturn', 'Không thể gửi yêu cầu đổi trả'),
+          )
+          notify.fromError(err, 'createReturn', 'Không thể gửi yêu cầu đổi trả')
         },
       },
     )
@@ -414,15 +422,22 @@ export default function Orders() {
     }
     const { orderId, productId, existing } = reviewContext
     setActionError(null)
+    const isEditing = existing !== undefined && existing.id !== undefined && existing.id !== ''
     const onSuccess = () => {
       setReviewContext(null)
-      setActionSuccess('Đã lưu đánh giá của bạn.')
+      setActionError(null)
+      let successTitle = 'Đã gửi đánh giá của bạn'
+      if (isEditing) {
+        successTitle = 'Đã cập nhật đánh giá của bạn'
+      }
+      notify.success(successTitle)
       void queryClient.invalidateQueries({ queryKey: getMyReviewsQueryKey() })
       void queryClient.invalidateQueries({ queryKey: getProductReviewsQueryKey(productId) })
       void queryClient.invalidateQueries({ queryKey: getProductReviewSummaryQueryKey(productId) })
     }
     const onError = (err: unknown) => {
-      setActionError(hookErrorMessage('review', err))
+      setActionError(notify.safeErrorMessage(err, 'review', 'Không thể lưu đánh giá'))
+      notify.fromError(err, 'review', 'Không thể lưu đánh giá')
     }
 
     if (existing !== undefined && existing.id) {
@@ -439,7 +454,6 @@ export default function Orders() {
     if (!order.id) {
       return
     }
-    setActionError(null)
     try {
       const response = await reorderMutation.mutateAsync({ orderId: order.id })
       const data = takeData(response)
@@ -448,12 +462,13 @@ export default function Orders() {
       const skipped = data.skippedCount ?? 0
       const added = data.addedCount ?? 0
       if (adjusted === 0 && skipped === 0 && added > 0) {
+        notify.success('Đã thêm sản phẩm vào giỏ hàng')
         void navigate('/cart')
         return
       }
       setReorderResult(data)
     } catch (err) {
-      setActionError(hookErrorMessage('reorder', err))
+      notify.fromError(err, 'reorder', 'Không thể mua lại đơn hàng')
     }
   }
 
@@ -517,24 +532,6 @@ export default function Orders() {
           </button>
         ))}
       </div>
-
-      {actionSuccess !== null && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-200">
-          <span>{actionSuccess}</span>
-          <button type="button" onClick={() => setActionSuccess(null)}>
-            <X size={16} />
-          </button>
-        </div>
-      )}
-
-      {actionError !== null && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200">
-          <span>{actionError}</span>
-          <button type="button" onClick={() => setActionError(null)}>
-            <X size={16} />
-          </button>
-        </div>
-      )}
 
       {ordersQuery.isLoading && (
         <StatePanel title="Đang tải đơn hàng" description="Danh sách đơn đang được cập nhật…" />
@@ -779,7 +776,10 @@ export default function Orders() {
         orderCode={cancelTarget?.code}
         isPending={cancelMutation.isPending}
         error={actionError}
-        onClose={() => setCancelTarget(null)}
+        onClose={() => {
+          setActionError(null)
+          setCancelTarget(null)
+        }}
         onConfirm={handleConfirmCancel}
       />
 
@@ -788,7 +788,10 @@ export default function Orders() {
         orderCode={returnTarget?.code}
         isPending={createReturnMutation.isPending}
         error={actionError}
-        onClose={() => setReturnTarget(null)}
+        onClose={() => {
+          setActionError(null)
+          setReturnTarget(null)
+        }}
         onSubmit={handleSubmitReturn}
       />
 
@@ -827,7 +830,10 @@ export default function Orders() {
         existingReview={reviewContext?.existing}
         isPending={createReviewMutation.isPending || updateReviewMutation.isPending}
         error={actionError}
-        onClose={() => setReviewContext(null)}
+        onClose={() => {
+          setActionError(null)
+          setReviewContext(null)
+        }}
         onSubmit={handleSubmitReview}
       />
 

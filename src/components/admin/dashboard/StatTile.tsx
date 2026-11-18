@@ -1,3 +1,5 @@
+import { cn, iconChipClass } from '@/lib/ui/styles'
+
 import type { Icon } from '@phosphor-icons/react'
 
 interface Props {
@@ -13,8 +15,8 @@ export default function StatTile({ icon: TileIcon, label, value, detail, highlig
     <div className="glass flex flex-col gap-2 rounded-3xl p-5">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{label}</p>
-        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-100 dark:bg-indigo-900/40">
-          <TileIcon size={18} weight="bold" className="text-indigo-600 dark:text-indigo-400" />
+        <div className={cn(iconChipClass(), 'h-9 w-9 rounded-2xl')}>
+          <TileIcon size={18} weight="bold" />
         </div>
       </div>
       <p className="text-3xl font-extrabold tracking-tighter tabular-nums">{value}</p>

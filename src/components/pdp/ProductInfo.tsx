@@ -5,7 +5,9 @@ import { Minus, Plus, ShoppingBag, Star } from '@phosphor-icons/react'
 
 import { priceInfo } from '@/lib/api/apiAdapters'
 import { formatVnd, priceLabel } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 import { findVariant, isOptionAvailable } from '@/lib/shop/variants'
+import { cn, secondaryButtonClass } from '@/lib/ui/styles'
 
 import { useCart } from '../../hooks/useCart'
 import Markdown from '../Markdown'
@@ -16,12 +18,12 @@ import type { ProductResponse } from '@generated/model/productResponse'
 
 function optionClass(selected: boolean, available: boolean): string {
   if (selected) {
-    return 'rounded-full bg-indigo-900 px-4 py-2 text-sm font-bold text-white'
+    return 'btn-primary cursor-pointer rounded-full px-4 py-2 text-sm font-bold shadow-xs'
   }
   if (available === false) {
     return 'cursor-not-allowed rounded-full border border-dashed border-zinc-200 px-4 py-2 text-sm font-bold text-zinc-400 line-through dark:border-white/10 dark:text-zinc-600'
   }
-  return 'rounded-full border border-sky-100 px-4 py-2 text-sm font-bold transition hover:border-sky-300 dark:border-white/10 dark:hover:border-white/30'
+  return 'cursor-pointer rounded-full border border-zinc-300 bg-white/80 px-4 py-2 text-sm font-bold text-[#17203a] transition hover:border-blue-600 dark:border-white/15 dark:bg-white/5 dark:text-[#e2e8f0] dark:hover:border-sky-400'
 }
 
 function unavailableTitle(available: boolean): string | undefined {
@@ -40,14 +42,6 @@ export default function ProductInfo(props: { product: ProductResponse }) {
   const [color, setColor] = useState<string | null>(null)
   const [size, setSize] = useState<string | null>(null)
   const [qty, setQty] = useState(1)
-  const [toast, setToast] = useState<string | null>(null)
-
-  function showToast(msg: string) {
-    setToast(msg)
-    window.setTimeout(function () {
-      setToast(null)
-    }, 2500)
-  }
 
   const match = findVariant(variants, size, color)
   const needsColor = info.colors.length > 0 && color === null
@@ -73,7 +67,7 @@ export default function ProductInfo(props: { product: ProductResponse }) {
 
   function requireSelection(): boolean {
     if (needsColor || needsSize) {
-      showToast('Vui lòng chọn màu sắc và kích cỡ')
+      notify.warning('Vui lòng chọn màu sắc và kích cỡ')
       return false
     }
     return true
@@ -103,27 +97,34 @@ export default function ProductInfo(props: { product: ProductResponse }) {
       return
     }
     if (match === undefined || match.id === undefined) {
-      showToast('Vui lòng chọn màu sắc và kích cỡ')
+      notify.warning('Vui lòng chọn màu sắc và kích cỡ')
       return
     }
     addItem.mutate(
       { data: { variantId: match.id, quantity: qty } },
       {
         onSuccess: function () {
-          showToast('Đã thêm ' + qty + ' × ' + (p.name ?? '') + ' vào giỏ')
+          notify.success('Đã thêm vào giỏ hàng', qty + ' × ' + (p.name ?? ''))
         },
-        onError: function () {
-          showToast('Không thêm được vào giỏ, vui lòng thử lại')
+        onError: function (err) {
+          notify.fromError(err, 'cart', 'Không thêm được vào giỏ hàng')
         },
       },
     )
+  }
+
+  function buyNow() {
+    if (requireSelection() === false) {
+      return
+    }
+    notify.info('Mua ngay', p.name ?? '')
   }
 
   if (info.totalStock === 0) {
     return (
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">{p.name}</h1>
-        <p className="mt-2 font-bold text-zinc-500">Hết hàng</p>
+        <p className="mt-2 font-bold text-zinc-500 dark:text-zinc-400">Hết hàng</p>
       </div>
     )
   }
@@ -134,7 +135,7 @@ export default function ProductInfo(props: { product: ProductResponse }) {
       <p className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
         <Star size={16} weight="fill" className="text-sky-400" />
         {p.averageRating !== null && p.averageRating !== undefined && (
-          <span>
+          <span className="tabular-nums">
             {p.averageRating.toFixed(1)} · {p.reviewCount ?? 0} đánh giá
           </span>
         )}
@@ -147,25 +148,25 @@ export default function ProductInfo(props: { product: ProductResponse }) {
           </span>
         )}
       </p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-2xl font-extrabold text-blue-700 dark:text-sky-300">
+      <div className="mt-4 flex flex-wrap items-baseline gap-2.5">
+        <span className="text-2xl font-extrabold text-blue-700 tabular-nums md:text-3xl dark:text-sky-300">
           {priceLabel(price)}
         </span>
         {compareAt !== null && compareAt !== undefined && (
-          <span className="text-sm text-zinc-400 line-through dark:text-zinc-500">
+          <span className="text-sm text-zinc-400 tabular-nums line-through dark:text-zinc-500">
             {formatVnd(compareAt)}
           </span>
         )}
       </div>
       {p.description !== undefined && (
-        <div className="mt-3">
+        <div className="mt-4">
           <Markdown source={p.description} />
         </div>
       )}
       {info.colors.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-5">
           <p className="text-sm font-bold">Màu sắc</p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {info.colors.map(function (c) {
               const selected = color === c
               const available = isOptionAvailable(variants, 'color', c, size)
@@ -189,9 +190,9 @@ export default function ProductInfo(props: { product: ProductResponse }) {
         </div>
       )}
       {info.sizes.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-5">
           <p className="text-sm font-bold">Kích cỡ</p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {info.sizes.map(function (s) {
               const selected = size === s
               const available = isOptionAvailable(variants, 'size', s, color)
@@ -214,48 +215,52 @@ export default function ProductInfo(props: { product: ProductResponse }) {
           </div>
         </div>
       )}
-      <div className="mt-4 flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-full border border-sky-100 px-2 py-1 dark:border-white/10">
-          <button type="button" aria-label="Giảm" onClick={dec} className="rounded-full p-2">
+      <div className="mt-5 flex items-center gap-3">
+        <div className="flex items-center gap-2 rounded-full border border-zinc-300 bg-white/80 px-2 py-1 dark:border-white/15 dark:bg-white/10">
+          <button
+            type="button"
+            aria-label="Giảm"
+            disabled={qty <= 1}
+            onClick={dec}
+            className="cursor-pointer rounded-full p-2 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10"
+          >
             <Minus size={14} />
           </button>
-          <span className="min-w-6 text-center font-bold">{qty}</span>
-          <button type="button" aria-label="Tăng" onClick={inc} className="rounded-full p-2">
+          <span className="min-w-6 text-center font-bold tabular-nums">{qty}</span>
+          <button
+            type="button"
+            aria-label="Tăng"
+            disabled={qty >= stock}
+            onClick={inc}
+            className="cursor-pointer rounded-full p-2 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10"
+          >
             <Plus size={14} />
           </button>
         </div>
-        <span className="text-xs text-zinc-500">Còn {stock} sản phẩm</span>
+        <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+          Còn {stock} sản phẩm
+        </span>
       </div>
       {/* mt-auto: neo hàng CTA xuống đáy cột phải khi cột ảnh cao hơn */}
-      <div className="mt-auto flex flex-col gap-2 pt-5 sm:flex-row">
+      <div className="mt-auto flex flex-col gap-2.5 pt-6 sm:flex-row">
         <button
           type="button"
           onClick={addToCart}
           disabled={addItem.isPending}
-          className="btn-primary flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-bold disabled:opacity-60"
+          className="btn-primary flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full py-3 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60"
         >
           <ShoppingBag size={16} weight="fill" />
           Thêm giỏ
         </button>
         <button
           type="button"
-          onClick={function () {
-            if (requireSelection() === false) {
-              return
-            }
-            showToast('Mua ngay: ' + (p.name ?? ''))
-          }}
-          className="flex-1 rounded-full border border-sky-200 py-3 text-sm font-bold"
+          onClick={buyNow}
+          className={cn(secondaryButtonClass(), 'flex-1 cursor-pointer py-3')}
         >
           Mua ngay
         </button>
         <WishlistButton productId={p.id} variant="action" />
       </div>
-      {toast && (
-        <p className="glass fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full px-5 py-2 text-sm font-bold">
-          {toast}
-        </p>
-      )}
     </div>
   )
 }

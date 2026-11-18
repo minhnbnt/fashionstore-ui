@@ -79,8 +79,9 @@ export default function ShopStorefrontHeader({
     logoSrc = urlOrPlaceholder(shop.logoUrl)
   }
 
-  let bannerSrc = 'https://picsum.photos/seed/netshopbanner/1600/500'
-  if (shop.bannerUrl !== null && shop.bannerUrl !== undefined && shop.bannerUrl !== '') {
+  const hasBanner = shop.bannerUrl !== null && shop.bannerUrl !== undefined && shop.bannerUrl !== ''
+  let bannerSrc = ''
+  if (hasBanner) {
     bannerSrc = urlOrPlaceholder(shop.bannerUrl)
   }
 
@@ -109,13 +110,15 @@ export default function ShopStorefrontHeader({
   return (
     <div className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm dark:border-white/10 dark:bg-[#11182a]">
       {/* Cover Banner with Gradient Overlay */}
-      <div className="relative h-48 w-full overflow-hidden bg-zinc-900 md:h-64">
-        <img
-          src={bannerSrc}
-          alt={shop.name}
-          onError={handleImageError}
-          className="h-full w-full object-cover opacity-80"
-        />
+      <div className="relative h-48 w-full overflow-hidden bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] md:h-64">
+        {hasBanner && (
+          <img
+            src={bannerSrc}
+            alt={shop.name}
+            onError={handleImageError}
+            className="h-full w-full object-cover opacity-80"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/20" />
 
         {/* Top Badges */}
@@ -123,7 +126,7 @@ export default function ShopStorefrontHeader({
           {isMall && (
             <span className="flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-xs font-extrabold tracking-wider text-white uppercase shadow-md">
               <ShieldCheck size={16} weight="fill" />
-              nét Mall
+              DHMQ Mall
             </span>
           )}
           {!isMall && (

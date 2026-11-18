@@ -16,7 +16,7 @@ interface ReviewTrendCardProps {
 
 function toggleButtonClass(active: boolean): string {
   if (active) {
-    return 'bg-white text-indigo-600 shadow-sm dark:bg-indigo-600 dark:text-white'
+    return 'btn-primary shadow-sm'
   }
   return 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
 }

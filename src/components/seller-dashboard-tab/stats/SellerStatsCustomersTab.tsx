@@ -6,6 +6,7 @@ import {
 import {
   Crown,
   Heart,
+  Lightbulb,
   Receipt,
   TrendDown,
   TrendUp,
@@ -239,9 +240,16 @@ export default function SellerStatsCustomersTab({ shopId }: Props) {
             </div>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3.5 text-xs text-indigo-900 dark:border-indigo-900/30 dark:bg-indigo-950/20 dark:text-indigo-200">
-            💡 Mẹo: Tạo thêm mã giảm giá độc quyền cho người theo dõi để gia tăng tỷ lệ chốt đơn và
-            chuyển đổi fan thành khách hàng thân thiết.
+          <div className="mt-4 flex items-start gap-2 rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3.5 text-xs text-indigo-900 dark:border-indigo-900/30 dark:bg-indigo-950/20 dark:text-indigo-200">
+            <Lightbulb
+              size={16}
+              weight="bold"
+              className="mt-0.5 shrink-0 text-indigo-600 dark:text-sky-300"
+            />
+            <span>
+              Mẹo: Tạo thêm mã giảm giá độc quyền cho người theo dõi để gia tăng tỷ lệ chốt đơn và
+              chuyển đổi fan thành khách hàng thân thiết.
+            </span>
           </div>
         </div>
       </div>

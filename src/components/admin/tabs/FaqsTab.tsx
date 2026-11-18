@@ -12,6 +12,7 @@ import {
   groupBy,
   queryKeyStartsWith,
 } from '@/lib/content/siteContent'
+import { notify } from '@/lib/notifications'
 
 import ConfirmDialog from '../dialogs/ConfirmDialog'
 import FaqFormDialog from '../dialogs/FaqFormDialog'
@@ -176,6 +177,7 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
       {deleting !== null && (
         <ConfirmDialog
           open
+          danger
           title="Xóa câu hỏi"
           description={`Xóa hẳn "${deleting.question ?? ''}"? Muốn ẩn tạm thời thì bỏ chọn "Hiện trên trang FAQ".`}
           confirmLabel="Xóa câu hỏi"
@@ -186,7 +188,13 @@ export default function FaqsTab({ onNotice }: { onNotice: (message: string) => v
             if (deleting.id === undefined) {
               return
             }
-            remove.mutate({ id: deleting.id }, { onSuccess: () => refresh('Đã xóa câu hỏi.') })
+            remove.mutate(
+              { id: deleting.id },
+              {
+                onSuccess: () => refresh('Đã xóa câu hỏi.'),
+                onError: (err) => notify.fromError(err, 'adminContent'),
+              },
+            )
           }}
         />
       )}
