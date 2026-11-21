@@ -26,7 +26,7 @@ import { usePinToBottom } from '@/hooks/usePinToBottom'
 import { useSessionQuery } from '@/hooks/useSession'
 import { readAgentConfig } from '@/lib/ai/agent'
 import { deserializeAgentMessage, serializeAgentMessage } from '@/lib/ai/agentHistory'
-import { createAgentTransport } from '@/lib/ai/chatTransport'
+import { createChatTransport } from '@/lib/ai/chatTransport'
 import { EMPTY_FILTERS, parseFilters, toQueryString, withFilter } from '@/lib/searchFilters'
 
 import {
@@ -52,7 +52,7 @@ import type { SearchFilters } from '@/types/search'
 import type { ToolUIPart, ChatTransport } from 'ai'
 
 export interface AgentTabProps {
-  /** Inject cho test; bỏ trống thì đọc từ biến env VITE_AI_*. */
+  /** Inject cho test; bỏ trống thì đọc VITE_AI_BACKEND_URL. */
   config?: AgentConfig
   /** Inject cho test; bỏ trống thì dựng transport chạy agent trong browser. */
   transport?: ChatTransport<AgentUIMessage>
@@ -246,7 +246,7 @@ export default function AgentTab(props: AgentTabProps) {
     [props.config],
   )
 
-  // Transport dựng một lần: agent chạy trong browser, bộ lọc gửi kèm metadata từng tin nhắn.
+  // Transport dựng một lần: agent chạy ở ai-backend, Bearer gắn theo từng request.
   const agentTransport = useMemo(
     function () {
       if (props.transport !== undefined) {
@@ -255,7 +255,7 @@ export default function AgentTab(props: AgentTabProps) {
       if (config === null) {
         return undefined
       }
-      return createAgentTransport({ config })
+      return createChatTransport({ backendUrl: config.backendUrl })
     },
     [props.transport, config],
   )

@@ -8,7 +8,6 @@ import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import ChatDock from '@/components/chat/ChatDock'
 import Header from '@/components/Header'
-import { createShowProductsTool } from '@/lib/ai/tools/showProducts'
 import Messages from '@/pages/Messages'
 import ProductDetail from '@/pages/ProductDetail'
 
@@ -116,7 +115,7 @@ const REAL_SHOP_JSON = {
 }
 
 function configFixture(): AgentConfig {
-  return { baseUrl: 'https://ai.example.com/v1', apiKey: 'sk-test', model: 'test-model' }
+  return { backendUrl: 'https://ai.test' }
 }
 
 function transportOf(chunks: UIMessageChunk[]): ChatTransport<AgentUIMessage> {
@@ -631,31 +630,5 @@ describe('AiProductClickFlow — click card sản phẩm AI gợi ý', () => {
       expect(screen.getByRole('heading', { name: 'Áo khoác parka layer' })).toBeTruthy()
     })
     expect(screen.queryByText(/Đã xảy ra lỗi/)).toBeNull()
-  })
-
-  it('showProducts tự fallback sang detail khi AI truyền slug thay UUID', async () => {
-    vi.stubEnv('VITE_API_URL', 'http://localhost:8080')
-    vi.stubEnv('VITE_ASSETS_URL', 'http://localhost:9000/fashionstore')
-    vi.stubGlobal('fetch', async function (input: RequestInfo | URL) {
-      const url = urlOf(input)
-      if (url.includes('/api/products/batch')) {
-        return jsonResponse({ status: 400 }, 400)
-      }
-      if (url.endsWith('/api/products/ao-khoac-parka')) {
-        return jsonResponse(REAL_PRODUCT_JSON)
-      }
-      return jsonResponse({}, 404)
-    })
-
-    const tool = createShowProductsTool()
-    const output = await tool.execute!(
-      { productIds: ['ao-khoac-parka'] },
-      { toolCallId: 'c-slug', messages: [], context: {} },
-    )
-    expect('items' in output && output.items).toHaveLength(1)
-    if ('items' in output) {
-      expect(output.items[0]?.id).toBe(PRODUCT_ID)
-      expect(output.items[0]?.minPrice).toBe(980000)
-    }
   })
 })

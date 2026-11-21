@@ -25,7 +25,7 @@ vi.mock('@/lib/ai/agent', async function (importOriginal) {
 })
 
 function configFixture(): AgentConfig {
-  return { baseUrl: 'https://ai.example.com/v1', apiKey: 'sk-test', model: 'test-model' }
+  return { backendUrl: 'https://ai.test' }
 }
 
 // Transport giả: phát đúng các UIMessageChunk rồi đóng stream, không gọi LLM thật.

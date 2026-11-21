@@ -1,33 +1,66 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { createAgentTransport, MAX_AGENT_STEPS } from './chatTransport'
+import { createChatTransport } from './chatTransport'
 
-import type { AgentConfig } from './agent'
+import type { AgentUIMessage } from './agent'
 
-function configFixture(): AgentConfig {
-  return { baseUrl: 'https://ai.example.com/v1', apiKey: 'sk-test', model: 'test-model' }
+const { sessionMock } = vi.hoisted(function () {
+  return { sessionMock: vi.fn() }
+})
+
+vi.mock('@/lib/auth', function () {
+  return { getAuthClient: () => ({ getSession: sessionMock }) }
+})
+
+function responseFixture(): Response {
+  return new Response('data: {"type":"start"}\n\ndata: [DONE]\n\n', {
+    status: 200,
+    headers: { 'content-type': 'text/event-stream' },
+  })
 }
 
-describe('createAgentTransport', () => {
-  it('trả transport có sendMessages và reconnectToStream', function () {
-    const transport = createAgentTransport({ config: configFixture() })
+function sendOptions() {
+  return {
+    chatId: 'c1',
+    messageId: 'u1',
+    trigger: 'submit',
+    messages: [
+      { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Tìm áo' }] },
+    ] as unknown as AgentUIMessage[],
+  }
+}
 
-    expect(typeof transport.sendMessages).toBe('function')
-    expect(typeof transport.reconnectToStream).toBe('function')
+afterEach(function () {
+  vi.unstubAllGlobals()
+})
+
+describe('createChatTransport', function () {
+  it('gửi tới {backendUrl}/api/chat kèm Bearer token của phiên', async function () {
+    sessionMock.mockResolvedValue({ data: { session: { access_token: 'jwt-1' } } })
+    const fetchMock = vi.fn().mockResolvedValue(responseFixture())
+    vi.stubGlobal('fetch', fetchMock)
+
+    const transport = createChatTransport({ backendUrl: 'https://ai.test' })
+    await transport.sendMessages(sendOptions() as never)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const call = fetchMock.mock.calls[0]
+    expect(String(call[0])).toBe('https://ai.test/api/chat')
+    const headers = new Headers(call[1]?.headers)
+    expect(headers.get('authorization')).toBe('Bearer jwt-1')
   })
 
-  it('không hỗ trợ resume: reconnectToStream trả null', async function () {
-    const transport = createAgentTransport({ config: configFixture() })
+  it('không có session thì vẫn gửi request nhưng không gắn authorization', async function () {
+    sessionMock.mockResolvedValue({ data: { session: null } })
+    const fetchMock = vi.fn().mockResolvedValue(responseFixture())
+    vi.stubGlobal('fetch', fetchMock)
 
-    const stream = await transport.reconnectToStream?.({
-      chatId: 'chat-1',
-    } as never)
+    const transport = createChatTransport({ backendUrl: 'https://ai.test' })
+    await transport.sendMessages(sendOptions() as never)
 
-    expect(stream).toBeNull()
-  })
-
-  it('vòng lặp agent đủ dài cho chuỗi nhiều lần gọi tool', function () {
-    // listCategories → searchProducts → nới bộ lọc tìm lại → trả lời cần > 5 bước
-    expect(MAX_AGENT_STEPS).toBe(10)
+    const call = fetchMock.mock.calls[0]
+    expect(String(call[0])).toBe('https://ai.test/api/chat')
+    const headers = new Headers(call[1]?.headers)
+    expect(headers.get('authorization')).toBeNull()
   })
 })
