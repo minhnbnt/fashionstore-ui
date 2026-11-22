@@ -2,8 +2,7 @@ import { DefaultChatTransport } from 'ai'
 
 import { getAuthClient } from '@/lib/auth'
 
-import type { AgentContext } from './agent'
-import type { AgentUIMessage } from './agent'
+import type { AgentContext, AgentImageContext, AgentUIMessage } from './agent'
 import type { ChatTransport } from 'ai'
 
 /** Transport mỏng: gọi POST /api/chat của ai-backend, gắn Bearer token và context hiện tại. */
@@ -16,7 +15,13 @@ export function createChatTransport({
 }): ChatTransport<AgentUIMessage> {
   return new DefaultChatTransport<AgentUIMessage>({
     api: `${backendUrl}/api/chat`,
-    prepareSendMessagesRequest: function ({ messages }) {
+    prepareSendMessagesRequest: function ({ messages, body }) {
+      // Ảnh đính kèm đi qua request options (body.image) để merge vào context
+      // — sống sót kể cả khi caller đã clear state ngay sau sendMessage.
+      const extra = (body ?? {}) as { image?: AgentImageContext }
+      if (extra.image !== undefined) {
+        return { body: { messages, context: { ...getContext(), image: extra.image } } }
+      }
       return { body: { messages, context: getContext() } }
     },
     fetch: async function (input, init) {

@@ -1,5 +1,5 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 
 import { useChat } from '@ai-sdk/react'
@@ -7,11 +7,13 @@ import {
   CaretDown,
   ChatCircleDots,
   MagnifyingGlass,
+  Paperclip,
   PaperPlaneRight,
   Plus,
   Sparkle,
   Stop,
   Trash,
+  X,
 } from '@phosphor-icons/react'
 
 import Markdown from '@/components/Markdown'
@@ -27,6 +29,7 @@ import { useSessionQuery } from '@/hooks/useSession'
 import { readAgentConfig } from '@/lib/ai/agent'
 import { deserializeAgentMessage, serializeAgentMessage } from '@/lib/ai/agentHistory'
 import { createChatTransport } from '@/lib/ai/chatTransport'
+import { MAX_IMAGE_BYTES, uploadImageWithUrl } from '@/lib/api/uploadImage'
 import { EMPTY_FILTERS, parseFilters, toQueryString, withFilter } from '@/lib/searchFilters'
 
 import {
@@ -43,13 +46,14 @@ import type { ChatSurfaceVariant } from './bubble'
 import type {
   AgentConfig,
   AgentContext,
+  AgentImageContext,
   AgentTools,
   AgentUIMessage,
   SearchToolOutput,
   ShowToolOutput,
 } from '@/lib/ai/agent'
 import type { SearchFilters } from '@/types/search'
-import type { ToolUIPart, ChatTransport } from 'ai'
+import type { ChatRequestOptions, ToolUIPart, ChatTransport } from 'ai'
 
 export interface AgentTabProps {
   /** Inject cho test; bỏ trống thì đọc VITE_AI_BACKEND_URL. */
@@ -70,6 +74,15 @@ const AI_QUICK_PROMPTS = [
   'Áo khoác đi làm thanh lịch',
   'Gợi ý set đồ dạo phố cuối tuần',
 ]
+
+/** Ảnh đang soạn: preview local, trạng thái upload và kết quả sau khi lên S3. */
+interface AttachedImage {
+  previewUrl: string | null
+  status: 'uploading' | 'ready' | 'error'
+  filename?: string
+  image?: AgentImageContext
+  error?: string
+}
 
 type SearchToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-searchProducts' }>
 type ShowToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-showProducts' }>
@@ -200,6 +213,10 @@ export default function AgentTab(props: AgentTabProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [input, setInput] = useState('')
+  const [attached, setAttached] = useState<AttachedImage | null>(null)
+  const attachSeqRef = useRef(0)
+  // url ảnh thumbnail theo message id (state để render lại khi gửi xong).
+  const [sentImageByMessageId, setSentImageByMessageId] = useState<Map<string, string>>(new Map())
 
   const sessionQuery = useSessionQuery()
   const isLoggedIn = sessionQuery.data?.user !== undefined
@@ -265,12 +282,59 @@ export default function AgentTab(props: AgentTabProps) {
     [location.pathname, filters],
   )
 
-  const getContext = useCallback(
-    function () {
-      return context
-    },
-    [context],
-  )
+  function clearAttached() {
+    attachSeqRef.current += 1
+    setAttached(function (current) {
+      if (current !== null && current.previewUrl !== null) {
+        window.URL.revokeObjectURL(current.previewUrl)
+      }
+      return null
+    })
+  }
+
+  function handleAttach(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (file === undefined) {
+      return
+    }
+    if (file.type.startsWith('image/') === false) {
+      setAttached({ previewUrl: null, status: 'error', error: 'Chỉ nhận file ảnh.' })
+      return
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setAttached({ previewUrl: null, status: 'error', error: 'Ảnh tối đa 5 MB.' })
+      return
+    }
+    clearAttached()
+    const seq = attachSeqRef.current
+    const previewUrl = window.URL.createObjectURL(file)
+    setAttached({ previewUrl, status: 'uploading', filename: file.name })
+    uploadImageWithUrl(file)
+      .then(function (uploaded) {
+        if (attachSeqRef.current !== seq) {
+          return
+        }
+        setAttached({
+          previewUrl,
+          status: 'ready',
+          filename: file.name,
+          // publicUrl từ presign khớp key S3 thật (có extension) — tự build từ
+          // uploadId sẽ 404 vì key gồm cả đuôi file.
+          image: { url: uploaded.publicUrl, mediaType: file.type },
+        })
+      })
+      .catch(function () {
+        if (attachSeqRef.current !== seq) {
+          return
+        }
+        setAttached({
+          previewUrl,
+          status: 'error',
+          error: 'Không gửi được ảnh, thử ảnh khác nhé.',
+        })
+      })
+  }
 
   // Transport dựng một lần: agent chạy ở ai-backend, Bearer + context gắn theo từng request.
   const agentTransport = useMemo(
@@ -281,9 +345,14 @@ export default function AgentTab(props: AgentTabProps) {
       if (config === null) {
         return undefined
       }
-      return createChatTransport({ backendUrl: config.backendUrl, getContext })
+      return createChatTransport({
+        backendUrl: config.backendUrl,
+        getContext: function () {
+          return context
+        },
+      })
     },
-    [props.transport, config, getContext],
+    [props.transport, config, context],
   )
 
   const chat = useChat<AgentUIMessage>({ transport: agentTransport })
@@ -402,12 +471,24 @@ export default function AgentTab(props: AgentTabProps) {
     [showConvDropdown],
   )
 
-  function submitPromptText(rawText: string) {
+  function submitPromptText(rawText: string, image?: AgentImageContext) {
     const text = rawText.trim()
-    if (text === '') {
+    if (text === '' && image === undefined) {
       return
     }
-    void chat.sendMessage({ text })
+    const id = crypto.randomUUID()
+    const options: ChatRequestOptions = {}
+    if (image !== undefined) {
+      options.body = { image }
+      setSentImageByMessageId(function (current) {
+        const next = new Map(current)
+        next.set(id, image.url)
+        return next
+      })
+    }
+    // Full message object (không phải {text}) để id mình truyền được giữ lại —
+    // cần cho thumbnail theo message. Ảnh đi qua body để transport merge vào context.
+    void chat.sendMessage({ id, role: 'user', parts: [{ type: 'text', text }] }, options)
     pinNow()
 
     if (isLoggedIn) {
@@ -444,16 +525,24 @@ export default function AgentTab(props: AgentTabProps) {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (input.trim() === '') {
+    const image = attached?.image
+    if (input.trim() === '' && image === undefined) {
       return
     }
-    submitPromptText(input)
+    submitPromptText(input, image)
     setInput('')
+    clearAttached()
   }
 
   function applyFilters(patch: Partial<SearchFilters>) {
     void navigate('/search?' + toQueryString(withFilter(filters, patch)))
   }
+
+  const readyImage = attached?.image
+  const sendDisabled =
+    config === null ||
+    (attached !== null && readyImage === undefined) ||
+    (input.trim() === '' && readyImage === undefined)
 
   const isPageVariant = props.variant === 'page'
 
@@ -467,6 +556,7 @@ export default function AgentTab(props: AgentTabProps) {
 
     // Tin nhắn user: bubble indigo bên phải. Tin nhắn agent: markdown tràn khung, không bubble.
     if (message.role === 'user') {
+      const sentImageUrl = sentImageByMessageId.get(message.id)
       return (
         <div key={message.id} className={userRowContainerClass}>
           {message.parts.map(function (part, index) {
@@ -497,6 +587,13 @@ export default function AgentTab(props: AgentTabProps) {
             }
             return null
           })}
+          {sentImageUrl !== undefined && (
+            <img
+              src={sentImageUrl}
+              alt="Ảnh bạn đã gửi"
+              className="max-w-[78%] rounded-2xl rounded-tr-xs object-cover"
+            />
+          )}
         </div>
       )
     }
@@ -768,7 +865,46 @@ export default function AgentTab(props: AgentTabProps) {
         onSubmit={handleSubmit}
         className="shrink-0 border-t border-zinc-200/70 bg-white/85 px-3.5 py-3 backdrop-blur-xs dark:border-white/10 dark:bg-[#11182a]/85"
       >
+        {attached !== null && (
+          <div className="mb-2 flex items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 p-2 dark:border-white/10 dark:bg-white/5">
+            {attached.previewUrl !== null && (
+              <img
+                src={attached.previewUrl}
+                alt="Ảnh sẽ gửi kèm"
+                className="h-12 w-10 shrink-0 rounded-lg object-cover"
+              />
+            )}
+            <span className="min-w-0 flex-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+              {attached.status === 'uploading' && <span>Đang tải ảnh lên…</span>}
+              {attached.status === 'ready' && (
+                <span className="block truncate">{attached.filename}</span>
+              )}
+              {attached.status === 'error' && (
+                <span className="text-red-600 dark:text-red-400">{attached.error}</span>
+              )}
+            </span>
+            <button
+              type="button"
+              aria-label="Gỡ ảnh"
+              onClick={clearAttached}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-200 hover:text-zinc-600 dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              <X size={14} weight="bold" />
+            </button>
+          </div>
+        )}
         <div className="flex items-center gap-2">
+          <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-white/10">
+            <Paperclip size={16} weight="bold" />
+            <input
+              type="file"
+              accept="image/*"
+              aria-label="Đính kèm ảnh"
+              disabled={config === null}
+              onChange={handleAttach}
+              className="sr-only"
+            />
+          </label>
           <input
             value={input}
             onChange={function (e) {
@@ -794,7 +930,7 @@ export default function AgentTab(props: AgentTabProps) {
             <button
               type="submit"
               aria-label="Gửi câu hỏi"
-              disabled={input.trim() === '' || config === null}
+              disabled={sendDisabled}
               className={CHAT_SEND_BUTTON_CLASS}
             >
               <PaperPlaneRight size={18} weight="fill" />

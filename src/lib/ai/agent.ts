@@ -5,11 +5,18 @@ import type { UIDataTypes, UIMessage } from 'ai'
 // Contract types còn lại sau khi chuyển agent sang ai-backend.
 // Chỉ type + đọc config — mọi schema/execute/prompt nằm ở server.
 
+/** Ảnh khách đính kèm: URL public để ai-backend fetch qua tool readImage. */
+export interface AgentImageContext {
+  url: string
+  mediaType?: string
+}
+
 /** Context trang gửi tươi theo từng request, agent kéo vào qua tool getPageContext. */
 export interface AgentContext {
   route: string
   filters: SearchFilters
   productId?: string
+  image?: AgentImageContext
 }
 
 export interface SearchToolOutput {
