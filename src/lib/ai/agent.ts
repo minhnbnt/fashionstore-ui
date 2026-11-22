@@ -5,15 +5,11 @@ import type { UIDataTypes, UIMessage } from 'ai'
 // Contract types còn lại sau khi chuyển agent sang ai-backend.
 // Chỉ type + đọc config — mọi schema/execute/prompt nằm ở server.
 
-/** Snapshot sản phẩm khách đang xem ở trang chi tiết: chỉ cần id, chi tiết lấy qua tool. */
-export interface AgentProductContext {
-  id: string
-}
-
-/** Mỗi tin nhắn user mang theo snapshot bộ lọc trang lúc gửi, kèm id sản phẩm đang xem (nếu ở PDP). */
-export interface AgentMessageMetadata {
+/** Context trang gửi tươi theo từng request, agent kéo vào qua tool getPageContext. */
+export interface AgentContext {
+  route: string
   filters: SearchFilters
-  product?: AgentProductContext
+  productId?: string
 }
 
 export interface SearchToolOutput {
@@ -46,9 +42,13 @@ export interface AgentProductDetailOutput {
   }>
 }
 
-/** I/O thuần của 4 tool — ToolUIPart<AgentTools> nhận trực tiếp shape này. */
+/** I/O thuần của 5 tool — ToolUIPart<AgentTools> nhận trực tiếp shape này. */
 // type alias (không phải interface) để có index signature thỏa constraint UITools.
 export type AgentTools = {
+  getPageContext: {
+    input: Record<string, never>
+    output: AgentContext
+  }
   searchProducts: {
     input: {
       q?: string | null
@@ -76,7 +76,7 @@ export type AgentTools = {
   }
 }
 
-export type AgentUIMessage = UIMessage<AgentMessageMetadata, UIDataTypes, AgentTools>
+export type AgentUIMessage = UIMessage<unknown, UIDataTypes, AgentTools>
 
 export interface AgentConfig {
   backendUrl: string
