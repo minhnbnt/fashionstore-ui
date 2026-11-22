@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { describe, expect, it, vi } from 'vite-plus/test'
 
 import {
   apiErrorMessage,
@@ -6,6 +6,7 @@ import {
   hookErrorMessage,
   imageHitToSummary,
   imageSearchErrorText,
+  imageUrl,
   priceInfo,
   takeData,
   urlOrPlaceholder,
@@ -179,5 +180,16 @@ describe('imageHitToSummary', () => {
       minPrice: 250000,
       defaultImageUrl: 'https://cdn/a.png',
     })
+  })
+})
+
+describe('imageUrl', function () {
+  it('nối VITE_ASSETS_URL với key upload thành URL tuyệt đối', function () {
+    vi.stubEnv('VITE_ASSETS_URL', 'https://assets.test/')
+    try {
+      expect(imageUrl('chat-img-1')).toBe('https://assets.test/chat-img-1')
+    } finally {
+      vi.unstubAllEnvs()
+    }
   })
 })

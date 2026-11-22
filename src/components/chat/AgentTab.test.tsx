@@ -2,9 +2,9 @@ import { MemoryRouter, useLocation } from 'react-router'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import AgentTab from './AgentTab'
 
@@ -17,6 +17,14 @@ vi.mock('motion/react', () => ({
   motion: { div: 'div' },
   useReducedMotion: () => true,
 }))
+
+const { uploadImageMock } = vi.hoisted(function () {
+  return { uploadImageMock: vi.fn() }
+})
+
+vi.mock('@/lib/api/uploadImage', function () {
+  return { uploadImage: uploadImageMock, MAX_IMAGE_BYTES: 5 * 1024 * 1024 }
+})
 
 // Ép trạng thái "chưa cấu hình" cho test tương ứng — không phụ thuộc .env của máy chạy test.
 vi.mock('@/lib/ai/agent', async function (importOriginal) {
@@ -86,6 +94,10 @@ function renderTab(props: {
     </QueryClientProvider>,
   )
 }
+
+beforeEach(function () {
+  uploadImageMock.mockReset()
+})
 
 afterEach(function () {
   cleanup()
@@ -590,5 +602,159 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     expect(screen.queryByRole('button', { name: 'Đoạn chat mới' })).toBeNull()
     expect(screen.queryByText('Đăng nhập để lưu lại lịch sử tư vấn AI.')).toBeNull()
     expect(screen.getByText(/Trợ lý nét AI · Gợi ý phối đồ/)).toBeTruthy()
+  })
+
+  describe('đính kèm ảnh', function () {
+    function imageFile(name = 'ao.png', type = 'image/png'): File {
+      return new File(['fake-image'], name, { type })
+    }
+
+    function sendButton(): HTMLButtonElement {
+      return screen.getByRole('button', { name: 'Gửi câu hỏi' }) as HTMLButtonElement
+    }
+
+    function streamFetchMock() {
+      return vi.fn().mockResolvedValue(
+        new Response('data: {"type":"start"}\n\ndata: [DONE]\n\n', {
+          status: 200,
+          headers: { 'content-type': 'text/event-stream' },
+        }),
+      )
+    }
+
+    function requestBodyOf(fetchMock: ReturnType<typeof vi.fn>): {
+      context: { image?: { url: string; mediaType?: string } }
+      messages: AgentUIMessage[]
+    } {
+      const call = fetchMock.mock.calls[0]
+      return JSON.parse(String(call[1]?.body)) as {
+        context: { image?: { url: string; mediaType?: string } }
+        messages: AgentUIMessage[]
+      }
+    }
+
+    it('gửi ảnh → context.image.url đi trong request, không đính FileUIPart vào message', async function () {
+      vi.stubEnv('VITE_ASSETS_URL', 'https://assets.test')
+      uploadImageMock.mockResolvedValue('chat-img-1')
+      const fetchMock = streamFetchMock()
+      vi.stubGlobal('fetch', fetchMock)
+      const user = userEvent.setup()
+      renderTab({ config: configFixture() })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+      expect(await screen.findByAltText('Ảnh sẽ gửi kèm')).toBeTruthy()
+      await waitFor(function () {
+        expect(sendButton().disabled).toBe(false)
+      })
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'món này còn không')
+      await user.click(sendButton())
+
+      expect(await screen.findByText('món này còn không')).toBeTruthy()
+      const body = requestBodyOf(fetchMock)
+      expect(body.context.image?.url).toBe('https://assets.test/chat-img-1')
+      const last = body.messages[body.messages.length - 1]
+      expect(
+        last?.parts.some(function (part) {
+          return part.type === 'file'
+        }),
+      ).toBe(false)
+    })
+
+    it('chỉ có ảnh, không có chữ thì vẫn gửi được', async function () {
+      vi.stubEnv('VITE_ASSETS_URL', 'https://assets.test')
+      uploadImageMock.mockResolvedValue('chat-img-2')
+      const fetchMock = streamFetchMock()
+      vi.stubGlobal('fetch', fetchMock)
+      const user = userEvent.setup()
+      renderTab({ config: configFixture() })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+      await waitFor(function () {
+        expect(sendButton().disabled).toBe(false)
+      })
+      await user.click(sendButton())
+
+      await waitFor(function () {
+        expect(fetchMock).toHaveBeenCalled()
+      })
+      expect(requestBodyOf(fetchMock).context.image?.url).toBe('https://assets.test/chat-img-2')
+    })
+
+    it('file không phải ảnh thì báo lỗi và không upload', function () {
+      renderTab({ config: configFixture() })
+
+      // userEvent.upload lọc theo accept="image/*" nên dùng fireEvent để test handler.
+      fireEvent.change(screen.getByLabelText('Đính kèm ảnh'), {
+        target: { files: [imageFile('a.txt', 'text/plain')] },
+      })
+
+      return screen.findByText('Chỉ nhận file ảnh.').then(function () {
+        expect(uploadImageMock).not.toHaveBeenCalled()
+      })
+    })
+
+    it('ảnh quá 5MB thì báo lỗi và không upload', async function () {
+      const big = imageFile()
+      Object.defineProperty(big, 'size', { value: 6 * 1024 * 1024 })
+      const user = userEvent.setup()
+      renderTab({ config: configFixture() })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), big)
+
+      expect(await screen.findByText('Ảnh tối đa 5 MB.')).toBeTruthy()
+      expect(uploadImageMock).not.toHaveBeenCalled()
+    })
+
+    it('upload thất bại thì hiện lỗi và khóa nút gửi', async function () {
+      uploadImageMock.mockRejectedValue(new Error('lỗi mạng'))
+      const user = userEvent.setup()
+      renderTab({ config: configFixture() })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+
+      expect(await screen.findByText('Không gửi được ảnh, thử ảnh khác nhé.')).toBeTruthy()
+      expect(sendButton().disabled).toBe(true)
+    })
+
+    it('gỡ ảnh thì bỏ preview và không gửi image trong context', async function () {
+      vi.stubEnv('VITE_ASSETS_URL', 'https://assets.test')
+      uploadImageMock.mockResolvedValue('chat-img-3')
+      const fetchMock = streamFetchMock()
+      vi.stubGlobal('fetch', fetchMock)
+      const user = userEvent.setup()
+      renderTab({ config: configFixture() })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+      expect(await screen.findByAltText('Ảnh sẽ gửi kèm')).toBeTruthy()
+      await user.click(screen.getByRole('button', { name: 'Gỡ ảnh' }))
+      expect(screen.queryByAltText('Ảnh sẽ gửi kèm')).toBeNull()
+
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'không có ảnh nha')
+      await user.click(sendButton())
+
+      await waitFor(function () {
+        expect(fetchMock).toHaveBeenCalled()
+      })
+      const body = requestBodyOf(fetchMock)
+      expect(body.context.image).toBeUndefined()
+      expect(Object.keys(body.context)).not.toContain('image')
+    })
+
+    it('ảnh đã gửi hiện thumbnail trong tin nhắn user', async function () {
+      vi.stubEnv('VITE_ASSETS_URL', 'https://assets.test')
+      uploadImageMock.mockResolvedValue('chat-img-4')
+      const captured: { messages: AgentUIMessage[] } = { messages: [] }
+      const user = userEvent.setup()
+      renderTab({ config: configFixture(), transport: capturingTransport([], captured) })
+
+      await user.upload(screen.getByLabelText('Đính kèm ảnh'), imageFile())
+      await waitFor(function () {
+        expect(sendButton().disabled).toBe(false)
+      })
+      await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'đây là ảnh')
+      await user.click(sendButton())
+
+      expect(await screen.findByAltText('Ảnh bạn đã gửi')).toBeTruthy()
+    })
   })
 })

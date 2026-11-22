@@ -99,4 +99,43 @@ describe('createChatTransport', function () {
     expect(body.context.productId).toBe('slug-ao-polo')
     expect(body.messages).toHaveLength(1)
   })
+
+  it('body.image từ request options được merge vào context.image', async function () {
+    sessionMock.mockResolvedValue({ data: { session: null } })
+    const fetchMock = vi.fn().mockResolvedValue(responseFixture())
+    vi.stubGlobal('fetch', fetchMock)
+
+    const transport = createChatTransport({
+      backendUrl: 'https://ai.test',
+      getContext: contextFixture,
+    })
+    await transport.sendMessages({
+      ...sendOptions(),
+      body: { image: { url: 'https://assets.test/chat-img-1', mediaType: 'image/png' } },
+    } as never)
+
+    const call = fetchMock.mock.calls[0]
+    const body = JSON.parse(String(call[1]?.body)) as unknown as {
+      context: { image?: { url: string } }
+    }
+    expect(body.context.image?.url).toBe('https://assets.test/chat-img-1')
+  })
+
+  it('không có body.image thì context giữ nguyên, không có field image', async function () {
+    sessionMock.mockResolvedValue({ data: { session: null } })
+    const fetchMock = vi.fn().mockResolvedValue(responseFixture())
+    vi.stubGlobal('fetch', fetchMock)
+
+    const transport = createChatTransport({
+      backendUrl: 'https://ai.test',
+      getContext: contextFixture,
+    })
+    await transport.sendMessages(sendOptions() as never)
+
+    const call = fetchMock.mock.calls[0]
+    const body = JSON.parse(String(call[1]?.body)) as unknown as {
+      context: Record<string, unknown>
+    }
+    expect(body.context).not.toHaveProperty('image')
+  })
 })

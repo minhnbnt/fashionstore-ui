@@ -7,6 +7,18 @@ import type { ProductSummaryResponse } from '@generated/model/productSummaryResp
 
 export const PLACEHOLDER_IMAGE = 'https://picsum.photos/seed/net-noimage/600/750'
 
+/** URL public của ảnh đã upload (key là uploadId trả về từ presign). */
+export function imageUrl(key: string): string {
+  const base = import.meta.env.VITE_ASSETS_URL as string | undefined
+  if (base === undefined || base === '') {
+    throw new Error('Thiếu VITE_ASSETS_URL trong .env')
+  }
+  if (base.endsWith('/')) {
+    return base + key
+  }
+  return base + '/' + key
+}
+
 /** URL ảnh từ response; null/undefined/rỗng thì dùng placeholder ảnh mặc định. */
 export function urlOrPlaceholder(url: string | null | undefined): string {
   if (url === null || url === undefined || url === '') {
