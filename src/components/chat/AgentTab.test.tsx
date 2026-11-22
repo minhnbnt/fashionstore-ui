@@ -87,7 +87,10 @@ function renderTab(props: {
   )
 }
 
-afterEach(cleanup)
+afterEach(function () {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 const TOOL_RESULT_CHUNKS: UIMessageChunk[] = [
   { type: 'start', messageId: 'a1' },
@@ -430,7 +433,7 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     expect(link.getAttribute('href')).toBe('/product/p1')
   })
 
-  it('đang ở trang chi tiết thì tin nhắn mang id sản phẩm đang xem', async function () {
+  it('tin nhắn không còn mang metadata context (context đi theo request)', async function () {
     const user = userEvent.setup()
     const captured: { messages: AgentUIMessage[] } = { messages: [] }
     renderTab({
@@ -445,23 +448,33 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     await screen.findByText('còn size L không')
     const last = captured.messages[captured.messages.length - 1]
     expect(last?.role).toBe('user')
-    expect(last?.metadata?.product).toEqual({ id: 'p-123' })
+    expect(last?.metadata).toBeUndefined()
   })
 
-  it('không ở trang chi tiết thì metadata không có product', async function () {
+  it('request mang context từ location hiện tại, không phải snapshot trong message', async function () {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response('data: {"type":"start"}\n\ndata: [DONE]\n\n', {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
-    const captured: { messages: AgentUIMessage[] } = { messages: [] }
-    renderTab({
-      config: configFixture(),
-      transport: capturingTransport([], captured),
-    })
+    renderTab({ config: configFixture(), route: '/product/p-123' })
 
-    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'váy hoa')
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'còn size L không')
     await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
 
-    await screen.findByText('váy hoa')
-    const last = captured.messages[captured.messages.length - 1]
-    expect(last?.metadata?.product).toBeUndefined()
+    await screen.findByText('còn size L không')
+    const call = fetchMock.mock.calls[0]
+    const body = JSON.parse(String(call[1]?.body)) as unknown as {
+      context: { route: string; productId?: string }
+      messages: AgentUIMessage[]
+    }
+    expect(body.context.route).toBe('/product/p-123')
+    expect(body.context.productId).toBe('p-123')
+    expect(body.messages[body.messages.length - 1].metadata).toBeUndefined()
+    vi.unstubAllGlobals()
   })
 
   it('tool getProductDetail đang chạy thì hiện trạng thái đang tra cứu', async function () {
