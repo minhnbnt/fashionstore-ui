@@ -87,7 +87,7 @@ vi.mock('@generated/endpoints/shops/shops', () => ({
 }))
 
 function dummyConfig(): AgentConfig {
-  return { baseUrl: 'https://ai.example.com/v1', apiKey: 'sk-test', model: 'test-model' }
+  return { backendUrl: 'https://ai.test' }
 }
 
 function dummyTransport(): ChatTransport<AgentUIMessage> {

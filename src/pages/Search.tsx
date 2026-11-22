@@ -1,17 +1,22 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 
 import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useFacets, useSearch } from '@generated/endpoints/search/search'
 import { SearchSort } from '@generated/model/searchSort'
-import { Funnel, Rows, SquaresFour, Trash, TrendUp, X } from '@phosphor-icons/react'
+import {
+  CaretRight,
+  Funnel,
+  House,
+  Rows,
+  SquaresFour,
+  Trash,
+  TrendUp,
+  X,
+} from '@phosphor-icons/react'
 import { keepPreviousData } from '@tanstack/react-query'
 
-import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/Breadcrumb'
-import { Drawer } from '@/components/ui/Drawer'
-import { ProductCard } from '@/components/ui/ProductCard'
-import { ProductCardSkeleton } from '@/components/ui/Skeleton'
-import { hookErrorMessage, takeData } from '@/lib/api/apiAdapters'
+import { hookErrorMessage, imageHitToSummary, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import {
   activeFilterCount,
@@ -26,19 +31,21 @@ import {
   chipClass,
   cn,
   filterChipClass,
-  FOCUS_RING_CLASS,
-  secondaryButtonClass,
+  primaryButtonClass,
   segmentedItemClass,
   segmentedTrackClass,
 } from '@/lib/ui/styles'
 
+import { ProductCard } from '../components/home/Sections'
 import EmptySearchState from '../components/search/EmptySearchState'
 import FilterPanel from '../components/search/FilterPanel'
+import ImageSearchPanel from '../components/search/ImageSearchPanel'
 import Pagination from '../components/search/Pagination'
 import ProductRow from '../components/search/ProductRow'
 
 import type { SearchFilters } from '@/types/search'
 import type { CategoryResponse } from '@generated/model/categoryResponse'
+import type { ImageSearchHit } from '@generated/model/imageSearchHit'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 import type { SearchFacetsResponse } from '@generated/model/searchFacetsResponse'
 
@@ -83,7 +90,7 @@ function ActiveChips(props: {
   filters: SearchFilters
   categoryName: string | undefined
   onChange: (patch: Partial<SearchFilters>) => void
-  onClearFilters: () => void
+  onClearAll: () => void
 }) {
   const f = props.filters
   const chips: { key: string; label: string; patch: Partial<SearchFilters> }[] = []
@@ -113,16 +120,9 @@ function ActiveChips(props: {
   if (chips.length === 0) {
     return null
   }
-  const hasSidebarFilters =
-    f.category !== null ||
-    f.minPrice !== null ||
-    f.maxPrice !== null ||
-    f.size !== null ||
-    f.color !== null
-
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
-      <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Đang lọc theo:</span>
+      <span className="text-xs font-semibold text-zinc-500">Đang lọc theo:</span>
       {chips.map(function (chip) {
         return (
           <button
@@ -132,26 +132,21 @@ function ActiveChips(props: {
             onClick={function () {
               props.onChange(chip.patch)
             }}
-            className={cn(filterChipClass(), 'cursor-pointer')}
+            className={cn(filterChipClass())}
           >
             <span>{chip.label}</span>
             <X size={12} weight="bold" className="opacity-70" />
           </button>
         )
       })}
-      {hasSidebarFilters && (
-        <button
-          type="button"
-          onClick={props.onClearFilters}
-          className={cn(
-            'flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10',
-            FOCUS_RING_CLASS,
-          )}
-        >
-          <Trash size={12} weight="bold" />
-          <span>Xóa bộ lọc</span>
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={props.onClearAll}
+        className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+      >
+        <Trash size={12} weight="bold" />
+        <span>Xóa tất cả</span>
+      </button>
     </div>
   )
 }
@@ -161,6 +156,32 @@ export default function Search() {
   const filters = parseFilters(params)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+  // Chế độ ảnh dẫn xuất từ URL (?by-image=1) để mở từ nút camera trên header,
+  // refresh không mất; chuyển mode ghi/xóa param nhưng giữ nguyên filter của text mode.
+  const isImageMode = params.get('by-image') === '1'
+  const [imageHits, setImageHits] = useState<ImageSearchHit[]>([])
+  const [imageSearched, setImageSearched] = useState(false)
+
+  function setMode(next: 'text' | 'image'): void {
+    const nextParams = new URLSearchParams(params)
+    if (next === 'image') {
+      nextParams.set('by-image', '1')
+    } else {
+      nextParams.delete('by-image')
+    }
+    setParams(nextParams)
+  }
+
+  function handleImageResults(hits: ImageSearchHit[]): void {
+    setImageHits(hits)
+    setImageSearched(true)
+  }
+
+  function handleImageClear(): void {
+    setImageHits([])
+    setImageSearched(false)
+  }
 
   const searchQuery = useSearch(toApiParams(filters, PAGE_SIZE), {
     query: { placeholderData: keepPreviousData },
@@ -242,310 +263,356 @@ export default function Search() {
 
   const filterCount = activeFilterCount(filters)
 
-  const breadcrumbItems: BreadcrumbItem[] = [{ label: 'Trang chủ', to: '/' }]
-  if (currentCategory !== undefined || filters.q !== null) {
-    breadcrumbItems.push({ label: 'Cửa hàng', to: '/search' })
-  } else {
-    breadcrumbItems.push({ label: 'Cửa hàng' })
-  }
-  if (currentCategory !== undefined && currentCategory.name !== undefined) {
-    if (filters.q !== null) {
-      breadcrumbItems.push({
-        label: currentCategory.name,
-        to: '/search?category=' + encodeURIComponent(currentCategory.slug ?? ''),
-      })
-    } else {
-      breadcrumbItems.push({ label: currentCategory.name })
-    }
-  }
-  if (filters.q !== null) {
-    breadcrumbItems.push({ label: `“${filters.q}”` })
+  let filterPanelVisibility = 'hidden'
+  if (filtersOpen) {
+    filterPanelVisibility = 'block'
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-24 pb-16">
+    <main className="mx-auto max-w-[1440px] px-4 pt-[100px] pb-20">
       {/* 1. Breadcrumb navigation */}
-      <Breadcrumb items={breadcrumbItems} showHomeIcon />
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-zinc-500">
+        <Link
+          to="/"
+          className="flex items-center gap-1 font-semibold hover:text-sky-700 dark:hover:text-white"
+        >
+          <House size={14} weight="bold" />
+          <span>Trang chủ</span>
+        </Link>
+        <CaretRight size={12} weight="bold" className="text-zinc-400" />
+        <Link
+          to="/search"
+          onClick={function (e) {
+            if (filters.q === null && filters.category === null) {
+              e.preventDefault()
+            }
+          }}
+          className="font-semibold hover:text-sky-700 dark:hover:text-white"
+        >
+          Cửa hàng
+        </Link>
+        {currentCategory && (
+          <>
+            <CaretRight size={12} weight="bold" className="text-zinc-400" />
+            <span className="font-bold text-zinc-800 dark:text-zinc-200">
+              {currentCategory.name}
+            </span>
+          </>
+        )}
+        {filters.q && (
+          <>
+            <CaretRight size={12} weight="bold" className="text-zinc-400" />
+            <span className="max-w-xs truncate font-bold text-sky-700 dark:text-sky-300">
+              “{filters.q}”
+            </span>
+          </>
+        )}
+      </nav>
 
       {/* 2. Page Title Header & Subtitle */}
       <div className="mt-3">
-        <h1 className="text-2xl font-black tracking-tight text-[#17203a] md:text-3xl dark:text-white">
+        <h1 className="text-2xl font-black tracking-tight text-zinc-900 md:text-3xl dark:text-white">
           {pageTitle(filters, currentCategory)}
         </h1>
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          Khám phá các thiết kế thời trang hiện đại, dẫn đầu xu hướng cùng DHMQ Marketplace
+          Khám phá các thiết kế thời trang hiện đại, dẫn đầu xu hướng cùng nét Marketplace
         </p>
       </div>
 
-      {/* Hot Search Pills Bar: single-line horizontal scroll on mobile, wrap on desktop */}
-      <div className="mt-3.5 flex items-center gap-2 border-b border-sky-100 pb-3.5 dark:border-white/10">
-        <span className="flex shrink-0 items-center gap-1 text-[11px] font-extrabold tracking-wider text-blue-700 uppercase dark:text-sky-300">
-          <TrendUp size={13} weight="bold" />
-          <span>Xu hướng:</span>
-        </span>
-        <div className="no-scrollbar flex flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
-          {HOT_SEARCH_TAGS.map(function (tag) {
-            const isCurrent = filters.q?.toLowerCase() === tag.toLowerCase()
-            return (
-              <button
-                key={tag}
-                type="button"
-                onClick={function () {
-                  change({ q: tag, page: 0 })
-                }}
-                className={cn(hotTagClass(isCurrent), 'shrink-0')}
-              >
-                {tag}
-              </button>
-            )
-          })}
+      <div className="mt-3 flex items-center gap-2">
+        <div className={cn(segmentedTrackClass(), 'flex-wrap')}>
+          <button
+            type="button"
+            aria-pressed={isImageMode === false}
+            onClick={function () {
+              handleImageClear()
+              setMode('text')
+            }}
+            className={segmentedItemClass(isImageMode === false)}
+          >
+            Tìm bằng từ khóa
+          </button>
+          <button
+            type="button"
+            aria-pressed={isImageMode}
+            onClick={function () {
+              setMode('image')
+            }}
+            className={segmentedItemClass(isImageMode)}
+          >
+            Tìm bằng ảnh
+          </button>
         </div>
       </div>
 
-      {/* Active Filter Chips */}
-      <ActiveChips
-        filters={filters}
-        categoryName={currentCategory?.name}
-        onChange={change}
-        onClearFilters={function () {
-          apply({ ...EMPTY_FILTERS, q: filters.q })
-        }}
-      />
-
-      {/* 3. Main Body: Sidebar (280px) + Results Section */}
-      <div className="mt-6 grid grid-cols-1 gap-7 lg:grid-cols-[280px_1fr]">
-        {/* Left Column: Sticky Desktop Filter Sidebar */}
-        <aside className="hidden lg:block">
-          <div className="glass rounded-3xl p-5 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto">
-            <FilterPanel
-              filters={filters}
-              categories={categories}
-              facets={facets}
-              onChange={change}
-              onClear={function () {
-                apply({ ...EMPTY_FILTERS, q: filters.q })
-              }}
-              totalCount={total}
-            />
-          </div>
-        </aside>
-
-        {/* Right Column: Search Results & Tools */}
-        <section aria-label="Kết quả tìm kiếm" className="min-w-0">
-          {/* Compact Mobile Filter + Sort Toolbar & Desktop Sort Bar */}
-          <div className="rounded-3xl border border-zinc-200/90 bg-white/90 p-3 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
-            <div className="flex items-center justify-between gap-2.5">
-              {/* Left: Mobile compact filter trigger + scrollable sort pills */}
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <button
-                  type="button"
-                  aria-expanded={filtersOpen}
-                  onClick={function () {
-                    setFiltersOpen(true)
-                  }}
-                  className={cn(
-                    secondaryButtonClass(),
-                    'shrink-0 gap-1.5 px-3.5 py-1.5 text-xs font-bold lg:hidden',
-                  )}
-                >
-                  <Funnel size={14} weight="bold" />
-                  <span>Bộ lọc</span>
-                  {filterCount > 0 && (
-                    <span className="btn-primary rounded-full px-1.5 py-0.5 text-[10px] font-extrabold tabular-nums">
-                      {filterCount}
-                    </span>
-                  )}
-                </button>
-
-                <span className="mr-1 hidden shrink-0 text-xs font-extrabold tracking-wider text-zinc-500 uppercase lg:inline dark:text-zinc-400">
-                  Sắp xếp theo:
-                </span>
-
-                <div
-                  className={cn(
-                    segmentedTrackClass(),
-                    'flex-nowrap overflow-x-auto sm:flex-wrap sm:overflow-visible',
-                  )}
-                >
-                  {sortTabs.map(function (s) {
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={function () {
-                          change({ sort: s })
-                        }}
-                        className={cn(sortTabClass(sortValue === s), 'shrink-0 whitespace-nowrap')}
-                      >
-                        {SORT_LABELS[s]}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Right: Result Count & View Switcher */}
-              <div className="hidden shrink-0 items-center gap-3 sm:flex">
-                <p className="text-xs font-semibold text-zinc-500 tabular-nums dark:text-zinc-400">
-                  {searchQuery.isSuccess && (
-                    <>
-                      <span className="font-extrabold text-[#17203a] dark:text-white">{total}</span>{' '}
-                      sản phẩm
-                    </>
-                  )}
-                </p>
-
-                <div className={segmentedTrackClass()}>
+      {isImageMode === false && (
+        <>
+          {/* Hot Search Pills Bar - Cố định ở dòng riêng, không bao giờ bị nhảy dòng */}
+          <div className="mt-3.5 flex flex-wrap items-center gap-2 border-b border-sky-100 pb-3.5 dark:border-white/10">
+            <span className="flex shrink-0 items-center gap-1 text-[11px] font-extrabold tracking-wider text-sky-700 uppercase dark:text-sky-400">
+              <TrendUp size={13} weight="bold" />
+              <span>Xu hướng:</span>
+            </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {HOT_SEARCH_TAGS.map(function (tag) {
+                const isCurrent = filters.q?.toLowerCase() === tag.toLowerCase()
+                return (
                   <button
+                    key={tag}
                     type="button"
-                    title="Xem dạng lưới"
-                    aria-label="Xem dạng lưới"
-                    aria-pressed={viewMode === 'grid'}
                     onClick={function () {
-                      setViewMode('grid')
+                      change({ q: tag, page: 0 })
                     }}
-                    className={viewTabClass(viewMode === 'grid')}
+                    className={hotTagClass(isCurrent)}
                   >
-                    <SquaresFour size={16} weight="bold" />
+                    {tag}
                   </button>
-                  <button
-                    type="button"
-                    title="Xem dạng danh sách"
-                    aria-label="Xem dạng danh sách"
-                    aria-pressed={viewMode === 'list'}
-                    onClick={function () {
-                      setViewMode('list')
-                    }}
-                    className={viewTabClass(viewMode === 'list')}
-                  >
-                    <Rows size={16} weight="bold" />
-                  </button>
-                </div>
-              </div>
+                )
+              })}
             </div>
           </div>
 
-          {/* Product Grid Area */}
-          <div className="mt-5">
-            {/* Loading State */}
-            {searchQuery.isPending && (
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 xl:gap-5">
-                {Array.from({ length: 8 }).map(function (_, i) {
-                  return <ProductCardSkeleton key={i} />
-                })}
-              </div>
-            )}
+          {/* Active Filter Chips */}
+          <ActiveChips
+            filters={filters}
+            categoryName={currentCategory?.name}
+            onChange={change}
+            onClearAll={function () {
+              apply({ ...EMPTY_FILTERS, q: filters.q })
+            }}
+          />
+        </>
+      )}
 
-            {/* Error State */}
-            {searchQuery.isError && (
-              <div className="rounded-3xl border border-rose-200 bg-rose-50/80 p-6 text-center text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
-                {hookErrorMessage('search', searchQuery.error)}
-              </div>
-            )}
+      {isImageMode && (
+        <>
+          <ImageSearchPanel onResults={handleImageResults} onClear={handleImageClear} />
+          {imageSearched && imageHits.length === 0 && (
+            <p className="mt-6 text-center text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+              Không tìm thấy sản phẩm giống ảnh này.
+            </p>
+          )}
+          {imageHits.length > 0 && (
+            <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 xl:gap-5">
+              {imageHits.map(function (hit) {
+                return (
+                  <ProductCard
+                    key={hit.id}
+                    item={imageHitToSummary(hit)}
+                    similarity={hit.similarity ?? 0}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
+      {isImageMode === false && (
+        <div className="mt-6 grid grid-cols-1 gap-7 lg:grid-cols-[280px_1fr]">
+          {/* Left Column: Filter Sidebar */}
+          <aside>
+            {/* Mobile Filter Toggle Button */}
+            <button
+              type="button"
+              aria-expanded={filtersOpen}
+              onClick={function () {
+                setFiltersOpen(!filtersOpen)
+              }}
+              className={cn(
+                primaryButtonClass(),
+                'flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-extrabold shadow-xs lg:hidden',
+              )}
+            >
+              <Funnel size={16} weight="bold" />
+              <span>Bộ lọc nâng cao</span>
+              {filterCount > 0 && (
+                <span className="rounded-full bg-white/25 px-2 py-0.5 text-xs text-white">
+                  {filterCount}
+                </span>
+              )}
+            </button>
 
-            {/* Empty State: card rỗng + mẹo + gợi ý sản phẩm */}
-            {searchQuery.isSuccess && items.length === 0 && (
-              <EmptySearchState
-                filterCount={filterCount}
-                recommendedItems={recommendedItems}
-                onResetAll={function () {
-                  apply(EMPTY_FILTERS)
-                }}
-                onClearFilters={function () {
+            {/* Sticky Desktop Filter Panel */}
+            <div
+              className={
+                'glass mt-3 rounded-3xl p-5 lg:sticky lg:top-28 lg:mt-0 lg:block ' +
+                filterPanelVisibility
+              }
+            >
+              <FilterPanel
+                filters={filters}
+                categories={categories}
+                facets={facets}
+                onChange={change}
+                onClear={function () {
                   apply({ ...EMPTY_FILTERS, q: filters.q })
                 }}
+                totalCount={total}
               />
-            )}
+            </div>
+          </aside>
 
-            {/* Successful Search Results */}
-            {items.length > 0 && viewMode === 'grid' && (
-              <div
-                className={
-                  'grid grid-cols-2 gap-4 transition-opacity md:grid-cols-3 xl:grid-cols-4 xl:gap-5 ' +
-                  resultsOpacityClass(searchQuery.isPlaceholderData)
-                }
-              >
-                {items.map(function (p) {
-                  return <ProductCard key={p.id} item={p} />
-                })}
+          {/* Right Column: Search Results & Tools */}
+          <section aria-label="Kết quả tìm kiếm">
+            {/* Thanh sắp xếp & bộ lọc nhanh */}
+            <div className="rounded-3xl border border-sky-100 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {/* Tabs sắp xếp */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="mr-1 text-xs font-extrabold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                    Sắp xếp theo:
+                  </span>
+
+                  <div className={cn(segmentedTrackClass(), 'flex-wrap')}>
+                    {sortTabs.map(function (s) {
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={function () {
+                            change({ sort: s })
+                          }}
+                          className={sortTabClass(sortValue === s)}
+                        >
+                          {SORT_LABELS[s]}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Result Count & View Switcher */}
+                <div className="flex items-center gap-3">
+                  <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    {searchQuery.isSuccess && (
+                      <>
+                        <span className="font-extrabold text-zinc-900 dark:text-white">
+                          {total}
+                        </span>{' '}
+                        sản phẩm
+                      </>
+                    )}
+                  </p>
+
+                  <div className={cn(segmentedTrackClass(), 'hidden sm:flex')}>
+                    <button
+                      type="button"
+                      title="Xem dạng lưới"
+                      onClick={function () {
+                        setViewMode('grid')
+                      }}
+                      className={viewTabClass(viewMode === 'grid')}
+                    >
+                      <SquaresFour size={16} weight="bold" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Xem dạng danh sách"
+                      onClick={function () {
+                        setViewMode('list')
+                      }}
+                      className={viewTabClass(viewMode === 'list')}
+                    >
+                      <Rows size={16} weight="bold" />
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
-            {items.length > 0 && viewMode === 'list' && (
-              <div
-                className={
-                  'flex flex-col gap-3 transition-opacity ' +
-                  resultsOpacityClass(searchQuery.isPlaceholderData)
-                }
-              >
-                {items.map(function (p) {
-                  return <ProductRow key={p.id} item={p} />
-                })}
-              </div>
-            )}
-          </div>
+            </div>
 
-          {/* Pagination */}
-          {items.length > 0 && (
-            <Pagination
-              page={filters.page}
-              totalPages={totalPages}
-              totalItems={total}
-              pageSize={PAGE_SIZE}
-              onPage={goToPage}
-            />
-          )}
-        </section>
-      </div>
+            {/* Product Grid Area */}
+            <div className="mt-5">
+              {/* Loading State */}
+              {searchQuery.isPending && (
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 xl:gap-5">
+                  {Array.from({ length: 8 }).map(function (_, i) {
+                    return (
+                      <div
+                        key={i}
+                        className="animate-pulse rounded-3xl border border-sky-100 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5"
+                      >
+                        <div className="aspect-[4/5] rounded-2xl bg-zinc-200 dark:bg-white/10" />
+                        <div className="mt-4 h-4 w-3/4 rounded-full bg-zinc-200 dark:bg-white/10" />
+                        <div className="mt-2 h-4 w-1/2 rounded-full bg-zinc-200 dark:bg-white/10" />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
 
-      {/* Mobile Filter Drawer */}
-      <Drawer
-        open={filtersOpen}
-        side="left"
-        title="Bộ lọc nâng cao"
-        onClose={function () {
-          setFiltersOpen(false)
-        }}
-      >
-        <FilterPanel
-          filters={filters}
-          categories={categories}
-          facets={facets}
-          onChange={change}
-          onClear={function () {
-            apply({ ...EMPTY_FILTERS, q: filters.q })
-          }}
-          totalCount={total}
-        />
-        <div className="mt-6 border-t border-zinc-200/80 pt-4 dark:border-white/10">
-          <button
-            type="button"
-            onClick={function () {
-              setFiltersOpen(false)
-            }}
-            className="btn-primary w-full cursor-pointer rounded-full py-3 text-sm font-bold tabular-nums"
-          >
-            Xem {total} kết quả
-          </button>
+              {/* Error State */}
+              {searchQuery.isError && (
+                <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-center text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10">
+                  {hookErrorMessage('search', searchQuery.error)}
+                </div>
+              )}
+
+              {/* Empty State: card rỗng + mẹo + gợi ý sản phẩm */}
+              {searchQuery.isSuccess && items.length === 0 && (
+                <EmptySearchState
+                  filterCount={filterCount}
+                  recommendedItems={recommendedItems}
+                  onResetAll={function () {
+                    apply(EMPTY_FILTERS)
+                  }}
+                  onClearFilters={function () {
+                    apply({ ...EMPTY_FILTERS, q: filters.q })
+                  }}
+                />
+              )}
+
+              {/* Successful Search Results */}
+              {items.length > 0 && viewMode === 'grid' && (
+                <div
+                  className={
+                    'grid grid-cols-2 gap-4 transition-opacity md:grid-cols-3 xl:grid-cols-4 xl:gap-5 ' +
+                    resultsOpacityClass(searchQuery.isPlaceholderData)
+                  }
+                >
+                  {items.map(function (p) {
+                    return <ProductCard key={p.id} item={p} />
+                  })}
+                </div>
+              )}
+              {items.length > 0 && viewMode === 'list' && (
+                <div
+                  className={
+                    'flex flex-col gap-3 transition-opacity ' +
+                    resultsOpacityClass(searchQuery.isPlaceholderData)
+                  }
+                >
+                  {items.map(function (p) {
+                    return <ProductRow key={p.id} item={p} />
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {items.length > 0 && (
+              <Pagination page={filters.page} totalPages={totalPages} onPage={goToPage} />
+            )}
+          </section>
         </div>
-      </Drawer>
+      )}
     </main>
   )
 }
 
 function sortTabClass(selected: boolean): string {
-  return cn(segmentedItemClass(selected), 'cursor-pointer')
+  return cn(segmentedItemClass(selected))
 }
 
 function hotTagClass(isCurrent: boolean): string {
-  return cn(chipClass(isCurrent), 'cursor-pointer')
+  return cn(chipClass(isCurrent))
 }
 
 function viewTabClass(active: boolean): string {
   if (active) {
-    return cn(segmentedItemClass(true), 'cursor-pointer p-1.5')
+    return cn(segmentedItemClass(true), 'p-1.5')
   }
   return cn(
-    'cursor-pointer rounded-full p-1.5 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200',
+    'rounded-full p-1.5 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200',
   )
 }
 

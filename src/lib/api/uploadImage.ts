@@ -7,12 +7,20 @@ import type { PresignRequestPurpose } from '@generated/model/presignRequestPurpo
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 export const MAX_VIDEO_BYTES = 50 * 1024 * 1024
 
+/** Kết quả upload ảnh: uploadId cho request nghiệp vụ, publicUrl để hiển thị (khớp key S3). */
+export interface UploadedImage {
+  uploadId: string
+  publicUrl: string
+}
+
 /**
- * Xin URL presign (backend tạo sẵn row upload) rồi PUT thẳng file lên S3, trả về
- * uploadId để gửi vào request nghiệp vụ. Ảnh giấy tờ KYC dùng purpose 'kyc' để
- * backend đặt key dưới prefix riêng tư.
+ * Xin URL presign (backend tạo sẵn row upload) rồi PUT thẳng file lên S3. Ảnh giấy tờ
+ * KYC dùng purpose 'kyc' để backend đặt key dưới prefix riêng tư.
  */
-export async function uploadImage(file: File, purpose?: PresignRequestPurpose): Promise<string> {
+export async function uploadImageWithUrl(
+  file: File,
+  purpose?: PresignRequestPurpose,
+): Promise<UploadedImage> {
   if (file.type.startsWith('image/') === false) {
     throw new Error('Chỉ nhận file ảnh.')
   }
@@ -24,6 +32,11 @@ export async function uploadImage(file: File, purpose?: PresignRequestPurpose): 
   }
 
   return putViaPresign(file, purpose)
+}
+
+/** Như uploadImageWithUrl nhưng chỉ trả uploadId — đủ cho các request nghiệp vụ. */
+export async function uploadImage(file: File, purpose?: PresignRequestPurpose): Promise<string> {
+  return (await uploadImageWithUrl(file, purpose)).uploadId
 }
 
 export function checkVideoDuration(file: File, maxSeconds = 60): Promise<number> {
@@ -82,12 +95,16 @@ export async function uploadVideo(
 
   await checkVideoDuration(file, maxSeconds)
 
-  return putViaPresign(file, purpose)
+  return (await putViaPresign(file, purpose)).uploadId
 }
 
-async function putViaPresign(file: File, purpose?: PresignRequestPurpose): Promise<string> {
+async function putViaPresign(file: File, purpose?: PresignRequestPurpose): Promise<UploadedImage> {
   const signed = takeData(await presign({ contentType: file.type, purpose }))
-  if (signed.uploadUrl === undefined || signed.uploadId === undefined) {
+  if (
+    signed.uploadUrl === undefined ||
+    signed.uploadId === undefined ||
+    signed.publicUrl === undefined
+  ) {
     throw new Error('Không xin được URL upload.')
   }
 
@@ -99,5 +116,5 @@ async function putViaPresign(file: File, purpose?: PresignRequestPurpose): Promi
   if (response.ok === false) {
     throw new Error('Upload tệp thất bại, thử lại sau.')
   }
-  return signed.uploadId
+  return { uploadId: signed.uploadId, publicUrl: signed.publicUrl }
 }

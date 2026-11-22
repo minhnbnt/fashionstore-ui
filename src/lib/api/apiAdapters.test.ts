@@ -5,6 +5,8 @@ import {
   apiErrorMessage,
   apiErrorText,
   hookErrorMessage,
+  imageHitToSummary,
+  imageSearchErrorText,
   priceInfo,
   takeData,
   urlOrPlaceholder,
@@ -139,5 +141,47 @@ describe('apiErrorText', () => {
 
   it('ApiError message rong thi tra ve fallback', () => {
     expect(apiErrorText(new ApiError(500, ''), 'Fallback')).toBe('Fallback')
+  })
+})
+
+describe('imageSearchErrorText', () => {
+  it('map dung thong diep theo status cua endpoint anh', () => {
+    expect(imageSearchErrorText(new ApiError(400, ''))).toBe(
+      'Ảnh không hợp lệ. Vui lòng chọn ảnh khác.',
+    )
+    expect(imageSearchErrorText(new ApiError(413, ''))).toBe(
+      'Ảnh quá lớn. Dung lượng tối đa là 8 MB.',
+    )
+    expect(imageSearchErrorText(new ApiError(415, ''))).toBe(
+      'Định dạng không được hỗ trợ. Hãy dùng JPG, PNG hoặc WebP.',
+    )
+    expect(imageSearchErrorText(new ApiError(503, ''))).toBe(
+      'Dịch vụ tìm kiếm đang bận. Vui lòng thử lại sau.',
+    )
+  })
+
+  it('fallback khi loi khong co status', () => {
+    expect(imageSearchErrorText(new Error('boom'))).toBe('Đã xảy ra lỗi. Vui lòng thử lại sau.')
+  })
+})
+
+describe('imageHitToSummary', () => {
+  it('chuyen hit anh sang shape summary, khong bi rank', () => {
+    expect(
+      imageHitToSummary({
+        id: 'p1',
+        name: 'Áo',
+        slug: 'ao',
+        minPrice: 250000,
+        defaultImageUrl: 'https://cdn/a.png',
+        similarity: 0.9,
+      }),
+    ).toEqual({
+      id: 'p1',
+      name: 'Áo',
+      slug: 'ao',
+      minPrice: 250000,
+      defaultImageUrl: 'https://cdn/a.png',
+    })
   })
 })

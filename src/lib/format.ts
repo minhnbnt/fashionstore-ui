@@ -100,3 +100,12 @@ export function formatSoldCount(count: number | null | undefined): string {
   }
   return String(count)
 }
+
+/** Backend trả 1 − cosine distance, về mặt lý thuyết nằm trong [-1, 1]; clamp để hiện cho khách. */
+export function similarityPercent(similarity: number): number {
+  if (Number.isNaN(similarity)) {
+    return 0
+  }
+  const clamped = Math.min(1, Math.max(0, similarity))
+  return Math.round(clamped * 100)
+}
