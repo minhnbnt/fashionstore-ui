@@ -70,6 +70,11 @@ const PERMISSION_LABELS: Record<string, string> = {
   REVIEW_TEMPLATE_UPDATE: 'Cập nhật mẫu phản hồi nhanh',
   REVIEW_TEMPLATE_DELETE: 'Xóa mẫu phản hồi nhanh',
   PRODUCT_STATUS_BULK: 'Đổi trạng thái hàng loạt',
+  QNA_ANSWER_CREATE: 'Trả lời câu hỏi sản phẩm',
+  QNA_ANSWER_UPDATE: 'Chỉnh sửa câu trả lời Q&A',
+  QNA_ANSWER_DELETE: 'Xóa câu trả lời Q&A',
+  QNA_QUESTION_CLOSE: 'Đóng câu hỏi sản phẩm',
+  QNA_QUESTION_REOPEN: 'Mở lại câu hỏi sản phẩm',
 }
 
 export interface AuditBadgeMeta {
@@ -91,6 +96,8 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
   WITHDRAWAL: 'Yêu cầu rút tiền',
   REVIEW: 'Đánh giá',
   REVIEW_TEMPLATE: 'Mẫu phản hồi',
+  PRODUCT_QUESTION: 'Câu hỏi sản phẩm',
+  PRODUCT_ANSWER: 'Câu trả lời Q&A',
 }
 
 export function formatTargetType(targetType: string | null | undefined): string {
@@ -114,6 +121,7 @@ const DANGER_ACTIONS = new Set([
   'DELETE_ROLE',
   'DEACTIVATE_MEMBER',
   'REVIEW_TEMPLATE_DELETE',
+  'QNA_ANSWER_DELETE',
 ])
 
 const SUCCESS_ACTIONS = new Set([
@@ -125,6 +133,7 @@ const SUCCESS_ACTIONS = new Set([
   'DECORATION_PUBLISH',
   'PRODUCT_IMPORT',
   'REVIEW_TEMPLATE_CREATE',
+  'QNA_QUESTION_REOPEN',
 ])
 
 const INFO_ACTIONS = new Set([
@@ -141,6 +150,8 @@ const INFO_ACTIONS = new Set([
   'ORDER_SHIP',
   'REVIEW_REPLY',
   'REVIEW_TEMPLATE_UPDATE',
+  'QNA_ANSWER_CREATE',
+  'QNA_ANSWER_UPDATE',
 ])
 
 const WARNING_ACTIONS = new Set([
@@ -149,6 +160,7 @@ const WARNING_ACTIONS = new Set([
   'WITHDRAWAL_CREATE',
   'ORDER_CONFIRM',
   'REVIEW_REPORT',
+  'QNA_QUESTION_CLOSE',
 ])
 
 export function getAuditActionBadgeMeta(action: string): AuditBadgeMeta {
@@ -204,7 +216,7 @@ export function canSeeTab(tab: SellerTabId, permissions: string[], isOwner: bool
     return permissions.includes('PRODUCT_READ') || permissions.includes('PRODUCT_WRITE')
   }
 
-  if (tab === 'ADD_PRODUCT') {
+  if (tab === 'ADD_PRODUCT' || tab === 'EDIT_PRODUCT') {
     return permissions.includes('PRODUCT_WRITE')
   }
 
@@ -229,6 +241,10 @@ export function canSeeTab(tab: SellerTabId, permissions: string[], isOwner: bool
   }
 
   if (tab === 'REVIEWS') {
+    return permissions.includes('REVIEW_READ') || permissions.includes('REVIEW_REPLY')
+  }
+
+  if (tab === 'QNA') {
     return permissions.includes('REVIEW_READ') || permissions.includes('REVIEW_REPLY')
   }
 

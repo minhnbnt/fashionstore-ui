@@ -2,8 +2,14 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
 
 import { useGetPublishedLayout } from '@generated/endpoints/shops-decoration/shops-decoration'
-import { useBySlug, useFollow, useUnfollow } from '@generated/endpoints/shops/shops'
+import {
+  getBySlugQueryKey,
+  useBySlug,
+  useFollow,
+  useUnfollow,
+} from '@generated/endpoints/shops/shops'
 import { ArrowLeft, Storefront } from '@phosphor-icons/react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import ShopAboutTab from '@/components/shop-storefront/ShopAboutTab'
 import ShopDecorationRenderer from '@/components/shop-storefront/ShopDecorationRenderer'
@@ -13,6 +19,7 @@ import ShopStorefrontHeader, {
 } from '@/components/shop-storefront/ShopStorefrontHeader'
 import { useSessionQuery } from '@/hooks/useSession'
 import { takeData } from '@/lib/api/apiAdapters'
+import { notify } from '@/lib/notifications'
 import { decorationBlocks } from '@/lib/seller/sellerAdapters'
 
 import type { DecorationBlock } from '@/types/seller'
@@ -23,6 +30,7 @@ export default function ShopStorefront() {
   const safeSlug = slug ?? ''
 
   const sessionQuery = useSessionQuery()
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -50,10 +58,21 @@ export default function ShopStorefront() {
     },
   })
 
+  function invalidateShop() {
+    if (safeSlug !== '') {
+      void queryClient.invalidateQueries({ queryKey: getBySlugQueryKey(safeSlug) })
+    }
+  }
+
   const followMutation = useFollow({
     mutation: {
       onSuccess: () => {
         setIsFollowing(true)
+        invalidateShop()
+        notify.success('Đã theo dõi gian hàng', shop?.name ?? undefined)
+      },
+      onError: (err) => {
+        notify.fromError(err, 'shopFollow', 'Không thể theo dõi gian hàng')
       },
     },
   })
@@ -62,12 +81,27 @@ export default function ShopStorefront() {
     mutation: {
       onSuccess: () => {
         setIsFollowing(false)
+        invalidateShop()
+        notify.info('Đã bỏ theo dõi gian hàng', shop?.name ?? undefined)
+      },
+      onError: (err) => {
+        notify.fromError(err, 'shopFollow', 'Không thể bỏ theo dõi gian hàng')
       },
     },
   })
 
+  const isFollowPending = followMutation.isPending || unfollowMutation.isPending
+
   const handleToggleFollow = () => {
-    if (!shopId) return
+    const session = sessionQuery.data
+    if (session === null || session === undefined) {
+      notify.info('Vui lòng đăng nhập để theo dõi gian hàng', undefined, {
+        id: 'shop-follow-auth',
+      })
+      void navigate('/login', { state: { from: location.pathname } })
+      return
+    }
+    if (!shopId || isFollowPending) return
     if (isFollowing) {
       unfollowMutation.mutate({ id: shopId })
     } else {
@@ -101,9 +135,12 @@ export default function ShopStorefront() {
 
   if (shopQuery.isPending) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 py-24 text-center">
-        <div className="inline-flex items-center gap-2 text-sm text-zinc-500">
-          <Storefront size={20} className="animate-spin text-indigo-600" />
+      <main className="mx-auto max-w-[1400px] px-4 pt-24 pb-16 text-center">
+        <div className="inline-flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <Storefront
+            size={20}
+            className="text-blue-700 motion-safe:animate-spin dark:text-sky-300"
+          />
           <span>Đang tải thông tin gian hàng...</span>
         </div>
       </main>
@@ -112,12 +149,12 @@ export default function ShopStorefront() {
 
   if (shopQuery.isError || !shop) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 py-24 text-center">
+      <main className="mx-auto max-w-[1400px] px-4 pt-24 pb-16 text-center">
         <Storefront size={48} className="mx-auto text-zinc-300 dark:text-zinc-600" />
-        <h1 className="mt-4 text-2xl font-extrabold text-zinc-800 dark:text-zinc-100">
+        <h1 className="mt-4 text-2xl font-extrabold text-[#17203a] dark:text-zinc-100">
           Không tìm thấy gian hàng
         </h1>
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
           Gian hàng &ldquo;{safeSlug}&rdquo; không tồn tại hoặc đã tạm dừng hoạt động.
         </p>
         <Link
@@ -125,7 +162,7 @@ export default function ShopStorefront() {
           className="btn-primary mt-6 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-bold"
         >
           <ArrowLeft size={16} />
-          Về trang chủ nét
+          Về trang chủ DHMQ
         </Link>
       </main>
     )
@@ -137,13 +174,14 @@ export default function ShopStorefront() {
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] space-y-8 px-4 py-6">
+    <main className="mx-auto max-w-[1400px] space-y-8 px-4 pt-24 pb-16">
       {/* Shop Storefront Hero Header */}
       <ShopStorefrontHeader
         shop={shop}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         isFollowing={isFollowing}
+        isFollowPending={isFollowPending}
         onToggleFollow={handleToggleFollow}
         onOpenChat={handleOpenChat}
         searchQuery={searchQuery}
@@ -154,7 +192,7 @@ export default function ShopStorefront() {
       {activeTab === 'HOME' && (
         <>
           {decorationQuery.isError && (
-            <p className="rounded-2xl border border-red-200 bg-red-50/60 px-4 py-3 text-xs font-semibold text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
+            <p className="rounded-2xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-xs font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
               Không tải được giao diện trang trí của shop. Vui lòng thử lại sau.
             </p>
           )}

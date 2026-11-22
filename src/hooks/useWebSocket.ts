@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef } from 'react'
 
-import type { Client, IMessage } from '@stomp/stompjs'
+import type { Client, IMessage, StompSubscription } from '@stomp/stompjs'
 
 export const WebSocketContext = createContext<Client | null>(null)
 
@@ -24,16 +24,29 @@ export function useWebSocket(destination: string, onMessage: WebSocketMessageHan
 
   useEffect(
     function subscribe() {
-      if (client === null || destination === '') {
+      if (client === null || destination === '' || client.connected === false) {
         return
       }
 
-      const subscription = client.subscribe(destination, function (message: IMessage) {
-        handlerRef.current(message)
-      })
+      let subscription: StompSubscription | null = null
+      try {
+        subscription = client.subscribe(destination, function (message: IMessage) {
+          handlerRef.current(message)
+        })
+      } catch {
+        // Kết nối STOMP vừa đóng ngay trước khi effect chạy; bỏ qua để không vỡ UI.
+        return
+      }
 
       return function cleanup() {
-        subscription.unsubscribe()
+        if (subscription === null || client.connected === false) {
+          return
+        }
+        try {
+          subscription.unsubscribe()
+        } catch {
+          // Socket đã đóng trước khi unmount; broker tự dọn subscription.
+        }
       }
     },
     [client, destination],

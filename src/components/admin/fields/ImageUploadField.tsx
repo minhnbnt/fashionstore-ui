@@ -1,9 +1,10 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import { ImageSquare, Trash, UploadSimple } from '@phosphor-icons/react'
 
-import { urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
+import { PLACEHOLDER_IMAGE, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
+import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 import { ERROR_CLASS, HINT_CLASS, LABEL_CLASS } from '../dialogs/ContentDialog'
 
@@ -33,6 +34,23 @@ export default function ImageUploadField({
   const inputId = useId()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const objectUrlRef = useRef<string | null>(null)
+
+  useEffect(function () {
+    return function () {
+      if (objectUrlRef.current !== null) {
+        URL.revokeObjectURL(objectUrlRef.current)
+        objectUrlRef.current = null
+      }
+    }
+  }, [])
+
+  function revokePreviousObjectUrl() {
+    if (objectUrlRef.current !== null) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
+  }
 
   function setBusy(busy: boolean) {
     setUploading(busy)
@@ -49,7 +67,10 @@ export default function ImageUploadField({
     setBusy(true)
     try {
       const uploadId = await uploadImage(file)
-      onChange(uploadId, URL.createObjectURL(file))
+      revokePreviousObjectUrl()
+      const nextUrl = URL.createObjectURL(file)
+      objectUrlRef.current = nextUrl
+      onChange(uploadId, nextUrl)
     } catch (problem) {
       let message = 'Upload ảnh thất bại, thử lại sau.'
       if (problem instanceof Error && problem.message !== '') {
@@ -59,6 +80,11 @@ export default function ImageUploadField({
     } finally {
       setBusy(false)
     }
+  }
+
+  function handleRemove() {
+    revokePreviousObjectUrl()
+    onChange(null, '')
   }
 
   let uploadLabel = 'Chọn ảnh'
@@ -97,24 +123,27 @@ export default function ImageUploadField({
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <label
           htmlFor={inputId}
-          className="flex cursor-pointer items-center gap-1.5 rounded-full border border-zinc-200 px-4 py-2 text-xs font-bold transition hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-white/10"
+          className="relative flex cursor-pointer items-center gap-1.5 rounded-full border border-zinc-300 bg-white/85 px-4 py-2 text-xs font-bold text-[#17203a] transition focus-within:ring-2 focus-within:ring-blue-600/40 hover:bg-zinc-100 dark:border-white/15 dark:bg-white/10 dark:text-[#e2e8f0] dark:focus-within:ring-sky-400/45 dark:hover:bg-white/15"
         >
           <UploadSimple size={14} weight="bold" />
-          {uploadLabel}
+          <span>{uploadLabel}</span>
+          <input
+            id={inputId}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            onChange={(event) => void handleFile(event)}
+            disabled={uploading}
+            className="sr-only"
+          />
         </label>
-        <input
-          id={inputId}
-          type="file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
-          onChange={(event) => void handleFile(event)}
-          disabled={uploading}
-          className="sr-only"
-        />
         {optional && value !== '' && (
           <button
             type="button"
-            onClick={() => onChange(null, '')}
-            className="flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+            onClick={handleRemove}
+            className={cn(
+              'flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/15',
+              FOCUS_RING_CLASS,
+            )}
           >
             <Trash size={14} weight="bold" />
             Bỏ ảnh
@@ -122,7 +151,11 @@ export default function ImageUploadField({
         )}
       </div>
       <p className={HINT_CLASS}>{hint}</p>
-      {error !== null && <p className={ERROR_CLASS}>{error}</p>}
+      {error !== null && (
+        <p role="alert" className={ERROR_CLASS}>
+          {error}
+        </p>
+      )}
     </div>
   )
 }

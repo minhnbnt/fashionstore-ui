@@ -11,18 +11,38 @@ import type { AddressResponse } from '@generated/model/addressResponse'
 import type { CartCheckoutRequest } from '@generated/model/cartCheckoutRequest'
 import type { CartItemResponse } from '@generated/model/cartItemResponse'
 
-const { checkoutMutate, mockUseList1, state } = vi.hoisted(() => ({
+const {
+  checkoutMutate,
+  mockUseList1,
+  mockNotifySuccess,
+  mockNotifyWarning,
+  mockNotifyFromError,
+  state,
+} = vi.hoisted(() => ({
   checkoutMutate:
     vi.fn<
       (
         variables: { data: CartCheckoutRequest },
-        options?: { onSuccess: () => void; onError: () => void },
+        options?: { onSuccess: () => void; onError: (err?: unknown) => void },
       ) => void
     >(),
   mockUseList1: vi.fn(),
+  mockNotifySuccess: vi.fn(),
+  mockNotifyWarning: vi.fn(),
+  mockNotifyFromError: vi.fn(),
   state: {
     isLoggedIn: true,
     items: [] as CartItemResponse[],
+  },
+}))
+
+vi.mock('@/lib/notifications', () => ({
+  notify: {
+    success: mockNotifySuccess,
+    warning: mockNotifyWarning,
+    fromError: mockNotifyFromError,
+    error: vi.fn(),
+    info: vi.fn(),
   },
 }))
 
@@ -103,6 +123,9 @@ afterEach(cleanup)
 beforeEach(() => {
   checkoutMutate.mockReset()
   mockUseList1.mockReset()
+  mockNotifySuccess.mockReset()
+  mockNotifyWarning.mockReset()
+  mockNotifyFromError.mockReset()
   mockUseList1.mockReturnValue({ data: { status: 200, data: addresses() } })
   state.isLoggedIn = true
   state.items = cartItems()
@@ -171,19 +194,28 @@ describe('Checkout — đặt hàng COD (DOM)', () => {
       shippingAddress: '123 Lê Lợi, P. Bến Nghé, Q.1, TP.HCM',
       shippingFee: 0,
     })
+    expect(mockNotifySuccess).toHaveBeenCalledWith(
+      'Đặt hàng thành công',
+      'Đơn hàng của bạn đã được tiếp nhận.',
+    )
     expect(screen.getByText('orders-page')).toBeTruthy()
   })
 
-  it('đặt hàng lỗi → hiện toast xin thử lại', async () => {
+  it('đặt hàng lỗi → gọi notify.fromError xin thử lại', async () => {
+    const err = new Error('order-failed')
     checkoutMutate.mockImplementation((_variables, options) => {
-      options?.onError()
+      options?.onError(err)
     })
     const user = userEvent.setup()
     renderCheckout()
 
     await user.click(screen.getByRole('button', { name: 'Đặt Hàng (COD)' }))
 
-    expect(screen.getByText('Không thể hoàn tất đặt hàng. Vui lòng thử lại.')).toBeTruthy()
+    expect(mockNotifyFromError).toHaveBeenCalledWith(
+      err,
+      'checkout',
+      'Không thể hoàn tất đặt hàng. Vui lòng thử lại.',
+    )
   })
 
   it('chưa có địa chỉ nào → nút đặt hàng khoá, hiện khối nhắc thêm địa chỉ', () => {

@@ -73,7 +73,7 @@ export default function CollectionConfigModal({
             id="collectionTypeSelect"
             value={collectionType}
             onChange={(e) => setCollectionType(e.target.value as DecorationBlock['collectionType'])}
-            className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
+            className="w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2 text-xs text-[#17203a] focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
           >
             <option value="NEW_ARRIVALS">
               Hàng mới về (New Arrivals - Sắp xếp theo ngày tạo mới nhất)
@@ -100,7 +100,7 @@ export default function CollectionConfigModal({
               id="itemLimitSelect"
               value={itemLimit}
               onChange={(e) => setItemLimit(Number(e.target.value))}
-              className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
+              className="w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2 text-xs text-[#17203a] focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
             >
               <option value={4}>4 sản phẩm</option>
               <option value={8}>8 sản phẩm</option>
@@ -120,7 +120,7 @@ export default function CollectionConfigModal({
               id="displayStyleSelect"
               value={displayStyle}
               onChange={(e) => setDisplayStyle(e.target.value as DecorationBlock['displayStyle'])}
-              className="w-full rounded-full border border-zinc-300 px-3 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
+              className="w-full rounded-full border border-zinc-300 bg-white/85 px-4 py-2 text-xs text-[#17203a] focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-[#0a0f1e] dark:text-white"
             >
               <option value="GRID">Lưới sản phẩm (Grid)</option>
               <option value="SLIDER">Băng chuyền cuộn ngang (Slider)</option>

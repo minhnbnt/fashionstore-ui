@@ -11,6 +11,7 @@ import {
   scheduleError,
   toLocalInput,
 } from '@/lib/content/siteContent'
+import { notify } from '@/lib/notifications'
 
 import ImageUploadField from '../fields/ImageUploadField'
 import ScheduleFields from '../fields/ScheduleFields'
@@ -106,12 +107,21 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
       endsAt: fromLocalInput(schedule.endsAt) ?? undefined,
     }
     if (popup?.id === undefined) {
-      create.mutate({ data }, { onSuccess: () => onDone(`Đã tạo popup "${data.name}".`) })
+      create.mutate(
+        { data },
+        {
+          onSuccess: () => onDone(`Đã tạo popup "${data.name}".`),
+          onError: (err) => notify.fromError(err, 'adminContent'),
+        },
+      )
       return
     }
     update.mutate(
       { id: popup.id, data },
-      { onSuccess: () => onDone(`Đã lưu popup "${data.name}".`) },
+      {
+        onSuccess: () => onDone(`Đã lưu popup "${data.name}".`),
+        onError: (err) => notify.fromError(err, 'adminContent'),
+      },
     )
   }
 
@@ -178,7 +188,11 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
           />
         </label>
       </div>
-      {contentProblem && <p className={ERROR_CLASS}>Popup cần có ảnh hoặc tiêu đề.</p>}
+      {contentProblem && (
+        <p role="alert" className={ERROR_CLASS}>
+          Popup cần có ảnh hoặc tiêu đề.
+        </p>
+      )}
 
       <label className="block">
         <span className={LABEL_CLASS}>Mô tả ngắn</span>
@@ -202,7 +216,7 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
           className={INPUT_CLASS}
         />
         {linkProblem && (
-          <span className={ERROR_CLASS}>
+          <span role="alert" className={ERROR_CLASS}>
             Link phải bắt đầu bằng / hoặc http(s)://, không có khoảng trắng.
           </span>
         )}
@@ -218,7 +232,7 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
           >
             {AUDIENCE_OPTIONS.map(function (option) {
               return (
-                <option key={option.value} value={option.value}>
+                <option key={option.value} value={option.value} className="dark:bg-[#0a0f1e]">
                   {option.label}
                 </option>
               )
@@ -234,7 +248,7 @@ export default function PopupFormDialog({ popup, onClose, onDone }: Props) {
           >
             {FREQUENCY_OPTIONS.map(function (option) {
               return (
-                <option key={option.value} value={option.value}>
+                <option key={option.value} value={option.value} className="dark:bg-[#0a0f1e]">
                   {option.label}
                 </option>
               )

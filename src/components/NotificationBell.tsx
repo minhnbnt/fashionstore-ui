@@ -22,6 +22,7 @@ import {
   realtimeInvalidationKeys,
 } from '@/lib/content/notificationLinks'
 import { formatDateTime } from '@/lib/format'
+import { cn, FOCUS_RING_CLASS, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 import type { GetUnreadNotificationCountParams, ListNotificationsParams } from '@generated/model'
 import type { NotificationResponse } from '@generated/model/notificationResponse'
@@ -39,9 +40,22 @@ export interface NotificationBellProps {
 
 function getNotificationClass(isRead: boolean): string {
   if (isRead) {
-    return 'w-full text-left p-3 rounded-2xl transition hover:bg-zinc-100 dark:hover:bg-white/5 opacity-80'
+    return cn(
+      'w-full cursor-pointer rounded-2xl p-3 text-left opacity-80 transition hover:bg-zinc-100 dark:hover:bg-white/5',
+      FOCUS_RING_CLASS,
+    )
   }
-  return 'w-full text-left p-3 rounded-2xl transition bg-indigo-50/80 hover:bg-indigo-100/80 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50'
+  return cn(
+    'w-full cursor-pointer rounded-2xl bg-sky-50/85 p-3 text-left transition hover:bg-sky-100/80 dark:bg-blue-700/15 dark:hover:bg-blue-700/25',
+    FOCUS_RING_CLASS,
+  )
+}
+
+function tabBadgeClass(active: boolean): string {
+  if (active) {
+    return 'inline-flex items-center justify-center rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold text-white tabular-nums'
+  }
+  return 'inline-flex items-center justify-center rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 tabular-nums dark:bg-white/10 dark:text-sky-300'
 }
 
 export default function NotificationBell(props: NotificationBellProps) {
@@ -224,11 +238,14 @@ export default function NotificationBell(props: NotificationBellProps) {
         aria-expanded={menu.open}
         aria-controls="notification-menu"
         onClick={menu.toggle}
-        className="relative flex h-10 w-10 items-center justify-center rounded-full text-zinc-600 transition hover:bg-indigo-100 active:scale-[0.98] dark:text-zinc-300 dark:hover:bg-white/10"
+        className={cn(
+          'relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-zinc-600 transition hover:bg-indigo-100 active:scale-[0.98] dark:text-zinc-300 dark:hover:bg-white/10',
+          FOCUS_RING_CLASS,
+        )}
       >
         <Bell size={20} weight={bellWeight} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white shadow-sm">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white tabular-nums shadow-sm">
             {unreadBadgeText}
           </span>
         )}
@@ -237,13 +254,13 @@ export default function NotificationBell(props: NotificationBellProps) {
       {menu.open && (
         <div
           id="notification-menu"
-          className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-2xl backdrop-blur-md sm:w-96 dark:border-white/15 dark:bg-[#0a0f1e]"
+          className="fixed inset-x-4 top-[76px] z-50 overflow-hidden rounded-3xl border border-zinc-200/90 bg-white/95 shadow-2xl backdrop-blur-md sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-96 dark:border-white/15 dark:bg-[#0a0f1e]"
         >
           <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3 dark:border-white/10">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Thông báo</h3>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">
+                <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-blue-700 tabular-nums dark:bg-blue-700/25 dark:text-sky-300">
                   {unreadCount} mới
                 </span>
               )}
@@ -253,7 +270,10 @@ export default function NotificationBell(props: NotificationBellProps) {
                 type="button"
                 onClick={handleMarkAllRead}
                 disabled={markAllMutation.isPending}
-                className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-50 dark:text-indigo-400 dark:hover:text-indigo-300"
+                className={cn(
+                  'flex cursor-pointer items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold text-blue-700 transition hover:bg-sky-50 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-50 dark:text-sky-300 dark:hover:bg-white/10 dark:hover:text-sky-200',
+                  FOCUS_RING_CLASS,
+                )}
               >
                 <CheckCircle size={14} />
                 <span>Đã đọc tất cả</span>
@@ -262,40 +282,41 @@ export default function NotificationBell(props: NotificationBellProps) {
           </div>
 
           {categories && categories.length > 1 && (
-            <div className="flex border-b border-zinc-100 px-4 dark:border-white/10">
-              {categories.map((cat) => {
-                let tabClass =
-                  'border-b-2 border-transparent px-3 py-2 text-xs font-semibold text-zinc-500 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-                if (activeTab === cat) {
-                  tabClass =
-                    'border-b-2 border-indigo-600 px-3 py-2 text-xs font-semibold text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-                }
-                let catCount = 0
-                if (countsByCategory[cat] !== undefined) {
-                  catCount = countsByCategory[cat]
-                }
-                let catBadgeText = String(catCount)
-                if (catCount > 99) {
-                  catBadgeText = '99+'
-                }
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setActiveTab(cat)}
-                    className={tabClass}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <span>{TAB_LABELS[cat]}</span>
-                      {catCount > 0 && (
-                        <span className="py-0.2 inline-flex items-center justify-center rounded-full bg-indigo-100 px-1.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                          {catBadgeText}
-                        </span>
-                      )}
-                    </span>
-                  </button>
-                )
-              })}
+            <div className="border-b border-zinc-100 px-3 py-2.5 dark:border-white/10">
+              <div
+                role="tablist"
+                aria-label="Danh mục thông báo"
+                className={cn(segmentedTrackClass(), 'w-full')}
+              >
+                {categories.map((cat) => {
+                  const isSelected = activeTab === cat
+                  let catCount = 0
+                  if (countsByCategory[cat] !== undefined) {
+                    catCount = countsByCategory[cat]
+                  }
+                  let catBadgeText = String(catCount)
+                  if (catCount > 99) {
+                    catBadgeText = '99+'
+                  }
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      role="tab"
+                      aria-selected={isSelected}
+                      onClick={() => setActiveTab(cat)}
+                      className={cn(segmentedItemClass(isSelected), 'flex-1 justify-center')}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span>{TAB_LABELS[cat]}</span>
+                        {catCount > 0 && (
+                          <span className={tabBadgeClass(isSelected)}>{catBadgeText}</span>
+                        )}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 
@@ -318,12 +339,12 @@ export default function NotificationBell(props: NotificationBellProps) {
                     onClick={() => handleItemClick(item)}
                     className={getNotificationClass(isRead)}
                   >
-                    <div className="flex items-start justify-between gap-2 pr-6">
+                    <div className="flex items-start justify-between gap-2 pr-7">
                       <p className="line-clamp-1 text-xs font-bold text-zinc-800 dark:text-zinc-100">
                         {item.title}
                       </p>
                       {!isRead && (
-                        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+                        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-700 dark:bg-sky-400" />
                       )}
                     </div>
                     <p className="mt-1 line-clamp-2 text-xs text-zinc-600 dark:text-zinc-300">
@@ -342,7 +363,10 @@ export default function NotificationBell(props: NotificationBellProps) {
                         deleteMutation.mutate({ id: item.id })
                       }
                     }}
-                    className="absolute top-2 right-2 rounded-full p-1 text-zinc-400 opacity-0 transition group-hover:opacity-100 hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-zinc-200"
+                    className={cn(
+                      'absolute top-2 right-2 cursor-pointer rounded-full p-1.5 text-zinc-400 opacity-100 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:opacity-100 sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100 dark:hover:bg-rose-500/15 dark:hover:text-rose-300',
+                      FOCUS_RING_CLASS,
+                    )}
                   >
                     <X size={14} />
                   </button>

@@ -69,7 +69,7 @@ describe('SellerProfileTab', () => {
 
     // Giới hạn DTS chỉ 1, 2, 3 ngày (không còn option 7 ngày đặt trước)
     expect(html).toContain('1 ngày (Giao hàng hỏa tốc / Chuẩn bị ngay trong ngày)')
-    expect(html).toContain('2 ngày (Tiêu chuẩn sàn nét)')
+    expect(html).toContain('2 ngày (Tiêu chuẩn sàn DHMQ)')
     expect(html).toContain('3 ngày (Mức tối đa cho phép)')
     expect(html).not.toContain('7 ngày (Hàng đặt trước')
   })

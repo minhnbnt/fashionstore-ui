@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { dangerButtonClass } from '@/lib/ui/styles'
+
 import Modal from '../Modal'
 
 interface Props {
@@ -20,19 +22,15 @@ const BUYER_REASONS = [
 
 function reasonChipClass(selected: boolean): string {
   if (selected) {
-    return 'rounded-2xl border border-blue-600 bg-blue-50 px-3.5 py-2.5 text-left text-xs font-bold text-blue-700 dark:border-sky-400 dark:bg-blue-500/20 dark:text-sky-200'
+    return 'cursor-pointer rounded-2xl border border-blue-600 bg-blue-50 px-3.5 py-2.5 text-left text-xs font-bold text-blue-700 dark:border-sky-400 dark:bg-blue-500/20 dark:text-sky-200'
   }
-  return 'rounded-2xl border border-zinc-300 bg-white/80 px-3.5 py-2.5 text-left text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-white/15 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
+  return 'cursor-pointer rounded-2xl border border-zinc-300 bg-white/80 px-3.5 py-2.5 text-left text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-white/15 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10'
 }
 
-export default function CancelOrderModal(props: Props) {
+function CancelOrderForm(props: Omit<Props, 'open'>) {
   const [reason, setReason] = useState<string>('CHANGE_MIND')
   const [note, setNote] = useState('')
   const [validationError, setValidationError] = useState<string | null>(null)
-
-  if (!props.open) {
-    return null
-  }
 
   let heading = 'Hủy đơn hàng'
   if (props.orderCode) {
@@ -108,19 +106,35 @@ export default function CancelOrderModal(props: Props) {
           <button
             type="button"
             onClick={props.onClose}
-            className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+            className="cursor-pointer rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
           >
             Giữ đơn hàng
           </button>
           <button
             type="submit"
             disabled={props.isPending}
-            className="rounded-full bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
+            className={`${dangerButtonClass()} px-5 py-2 text-xs`}
           >
             Xác nhận hủy đơn
           </button>
         </div>
       </form>
     </Modal>
+  )
+}
+
+export default function CancelOrderModal(props: Props) {
+  if (!props.open) {
+    return null
+  }
+  return (
+    <CancelOrderForm
+      key={props.orderCode ?? 'cancel-order'}
+      orderCode={props.orderCode}
+      isPending={props.isPending}
+      error={props.error}
+      onClose={props.onClose}
+      onConfirm={props.onConfirm}
+    />
   )
 }

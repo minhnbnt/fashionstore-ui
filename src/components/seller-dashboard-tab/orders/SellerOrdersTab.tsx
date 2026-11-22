@@ -31,13 +31,23 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { formatDateTime, formatVnd } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 import { timelineTitle } from '@/lib/order/orderMonitoring'
 import { orderItem, returnItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
 import { sellerStatusMeta } from '@/lib/seller/sellerStatus'
+import {
+  cn,
+  dangerButtonClass,
+  PANEL_CLASS,
+  primaryButtonClass,
+  secondaryButtonClass,
+  successButtonClass,
+} from '@/lib/ui/styles'
 
 import type { OrderItem, ReturnItem } from '@/types/seller'
 import type {
@@ -127,8 +137,8 @@ export default function SellerOrdersTab({ shopId }: Props) {
   const [trackingTitle, setTrackingTitle] = useState('')
   const [trackingLocation, setTrackingLocation] = useState('')
   const [trackingDescription, setTrackingDescription] = useState('')
+  const [deliverTargetOrder, setDeliverTargetOrder] = useState<OrderItem | null>(null)
   const [bulkResult, setBulkResult] = useState<BulkConfirmOrderResponse | null>(null)
-  const [notification, setNotification] = useState<string | null>(null)
 
   let queryParams: List5Params = { shopId, limit: 100 }
   if (isSingleOrderDetail) {
@@ -142,6 +152,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+        notify.success('Đã xác nhận đơn hàng thành công!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể xác nhận đơn hàng. Vui lòng thử lại.')
       },
     },
   })
@@ -151,6 +165,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
         setSelectedOrderIds([])
         setBulkResult(takeData(response))
+        notify.success('Đã xử lý xác nhận hàng loạt đơn hàng!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể xác nhận hàng loạt đơn hàng.')
       },
     },
   })
@@ -159,7 +177,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
         setShipTargetOrderId(null)
-        showToast('Đã bàn giao đơn hàng cho đơn vị vận chuyển!')
+        notify.success('Đã bàn giao đơn hàng cho đơn vị vận chuyển!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể bàn giao đơn hàng cho ĐVVC.')
       },
     },
   })
@@ -174,7 +195,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
         setTrackingTitle('')
         setTrackingLocation('')
         setTrackingDescription('')
-        showToast('Đã cập nhật mốc hành trình vận chuyển!')
+        notify.success('Đã cập nhật mốc hành trình vận chuyển!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể cập nhật mốc hành trình vận chuyển.')
       },
     },
   })
@@ -189,6 +213,11 @@ export default function SellerOrdersTab({ shopId }: Props) {
     mutation: {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
+        setDeliverTargetOrder(null)
+        notify.success('Đã xác nhận giao thành công và thu tiền COD!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể xác nhận giao hàng.')
       },
     },
   })
@@ -197,6 +226,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
       onSuccess: function () {
         void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
         void queryClient.invalidateQueries({ queryKey: getInventoryQueryKey(shopId) })
+        notify.success('Đã hủy đơn hàng và tự động hoàn trả tồn kho nguyên tử!')
+      },
+      onError: function (err: unknown) {
+        notify.fromError(err, undefined, 'Không thể hủy đơn hàng.')
       },
     },
   })
@@ -224,13 +257,6 @@ export default function SellerOrdersTab({ shopId }: Props) {
     returns = takeData(returnsQuery.data).map(function (r) {
       return returnItem(r, orderById)
     })
-  }
-
-  function showToast(msg: string) {
-    setNotification(msg)
-    setTimeout(function () {
-      setNotification(null)
-    }, 3000)
   }
 
   function handleConfirmOrder(orderId: string) {
@@ -310,7 +336,6 @@ export default function SellerOrdersTab({ shopId }: Props) {
       })
       setCancelTargetId(null)
       setCancelNote('')
-      showToast('Đã hủy đơn hàng và tự động hoàn trả tồn kho nguyên tử!')
     }
   }
 
@@ -429,16 +454,14 @@ export default function SellerOrdersTab({ shopId }: Props) {
     selectAllBtnText = 'Bỏ chọn tất cả'
   }
 
+  let deliverConfirmDescription =
+    'Xác nhận đơn hàng đã được giao thành công và hoàn tất thu tiền COD.'
+  if (deliverTargetOrder !== null) {
+    deliverConfirmDescription = `Xác nhận đơn hàng #${deliverTargetOrder.code} (${formatVnd(deliverTargetOrder.totalAmount)}) đã giao thành công và thu đủ tiền COD? Hành động này không thể hoàn tác.`
+  }
+
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {notification !== null && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-bold text-white shadow-xl dark:bg-white dark:text-zinc-900">
-          <CheckCircle size={18} weight="bold" className="text-emerald-400" />
-          {notification}
-        </div>
-      )}
-
       {/* Header bar */}
       {isSingleOrderDetail && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -448,16 +471,16 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 type="button"
                 id="btn-back-to-orders"
                 onClick={handleBackToAllOrders}
-                className="inline-flex items-center gap-1.5 rounded-2xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:bg-white/10"
+                className={cn(secondaryButtonClass(), 'px-3.5 py-2 text-xs')}
               >
                 <ArrowLeft size={16} weight="bold" />
                 <span>Tất cả đơn hàng</span>
               </button>
-              <h2 className="text-xl font-black text-zinc-900 dark:text-white">
+              <h2 className="text-xl font-black text-[#17203a] dark:text-white">
                 Chi tiết đơn hàng
               </h2>
             </div>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
               Đang xem chi tiết đơn hàng được chọn từ thông báo. Không hiển thị các đơn hàng khác.
             </p>
           </div>
@@ -467,8 +490,8 @@ export default function SellerOrdersTab({ shopId }: Props) {
       {!isSingleOrderDetail && (
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div>
-            <h2 className="text-xl font-black text-zinc-900 dark:text-white">Quản lý Đơn hàng</h2>
-            <p className="text-xs text-zinc-500">
+            <h2 className="text-xl font-black text-[#17203a] dark:text-white">Quản lý Đơn hàng</h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Xem và xử lý chu trình đơn hàng, xác nhận 24h, bàn giao vận chuyển và đổi trả
             </p>
           </div>
@@ -480,7 +503,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 onClick={function () {
                   handleToggleSelectAll(pendingOrders)
                 }}
-                className="rounded-2xl border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-bold text-zinc-700 shadow-sm transition hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
+                className={cn(secondaryButtonClass(), 'px-3.5 py-1.5 text-xs')}
               >
                 {selectAllBtnText}
               </button>
@@ -490,17 +513,17 @@ export default function SellerOrdersTab({ shopId }: Props) {
       )}
 
       {/* Filter Tabs & Search */}
-      <div className="rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-[#11182a]">
+      <div className={PANEL_CLASS}>
         {!isSingleOrderDetail && (
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div className="flex flex-wrap items-center gap-1.5 border-b border-zinc-100 pb-2 md:border-b-0 md:pb-0 dark:border-white/10">
               {tabs.map(function (tab) {
                 const isCurrent = activeTab === tab.id
                 let tabClass =
-                  'flex items-center gap-2 rounded-2xl px-3.5 py-2 text-xs font-bold transition text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/5'
+                  'flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/5'
                 if (isCurrent) {
                   tabClass =
-                    'flex items-center gap-2 rounded-2xl px-3.5 py-2 text-xs font-bold transition bg-indigo-900 text-white shadow-lg shadow-indigo-900/20 dark:bg-indigo-300 dark:text-indigo-950'
+                    'btn-primary flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition'
                 }
 
                 let countBadgeClass =
@@ -651,11 +674,13 @@ export default function SellerOrdersTab({ shopId }: Props) {
                   'rounded-2xl border-2 border-indigo-600 bg-indigo-50/20 p-4 transition dark:border-indigo-400 dark:bg-indigo-950/20'
               }
 
-              let confirmButtonClass =
-                'btn-primary flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold shadow-sm'
+              let confirmButtonClass = cn(
+                primaryButtonClass(),
+                'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-sm',
+              )
               if (sla.isExpired) {
                 confirmButtonClass =
-                  'flex items-center gap-1.5 rounded-xl bg-zinc-200 px-3.5 py-1.5 text-xs font-bold text-zinc-400 cursor-not-allowed dark:bg-white/10 dark:text-zinc-500'
+                  'flex items-center gap-1.5 rounded-full bg-zinc-200 px-3.5 py-1.5 text-xs font-bold text-zinc-400 cursor-not-allowed dark:bg-white/10 dark:text-zinc-500'
               }
 
               let checkboxTitle: string | undefined = undefined
@@ -664,10 +689,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
               }
 
               let slaBadgeClass =
-                'flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400'
+                'flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300'
               if (sla.isWarning) {
                 slaBadgeClass =
-                  'flex items-center gap-1 rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400'
+                  'flex items-center gap-1 rounded-full border border-rose-300 bg-rose-50 px-2.5 py-0.5 text-[10px] font-bold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300'
               }
 
               let paymentMethodLabel = 'Tổng thanh toán: '
@@ -732,7 +757,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                         onClick={function () {
                           setSelectedOrderForDetail(order)
                         }}
-                        className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1 text-[11px] font-bold text-zinc-600 hover:bg-zinc-100 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/10"
+                        className="flex cursor-pointer items-center gap-1 rounded-full border border-zinc-300 px-2.5 py-1 text-[11px] font-bold text-zinc-600 transition hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10"
                       >
                         <Eye size={12} weight="bold" />
                         <span>Chi tiết</span>
@@ -808,14 +833,14 @@ export default function SellerOrdersTab({ shopId }: Props) {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
                         {order.status === 'PENDING' && can('ORDER_CANCEL') && (
                           <button
                             type="button"
                             onClick={function () {
                               setCancelTargetId(order.id)
                             }}
-                            className="rounded-xl border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 dark:border-red-900/40 dark:hover:bg-red-950/20"
+                            className="cursor-pointer rounded-full border border-rose-200 px-3.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/15"
                           >
                             Hủy đơn
                           </button>
@@ -826,11 +851,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
                             disabled={sla.isExpired}
                             onClick={function () {
                               if (sla.isExpired) {
-                                showToast('Đơn hàng đã quá hạn 24h và đã bị hệ thống tự hủy!')
+                                notify.warning('Đơn hàng đã quá hạn 24h và đã bị hệ thống tự hủy!')
                                 return
                               }
                               handleConfirmOrder(order.id)
-                              showToast('Đã xác nhận đơn hàng thành công!')
                             }}
                             className={confirmButtonClass}
                           >
@@ -845,7 +869,10 @@ export default function SellerOrdersTab({ shopId }: Props) {
                             onClick={function () {
                               handleShipOrder(order.id)
                             }}
-                            className="btn-primary flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-sm"
+                            className={cn(
+                              primaryButtonClass(),
+                              'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-sm',
+                            )}
                           >
                             <Truck size={14} weight="bold" />
                             Giao cho ĐVVC
@@ -863,7 +890,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                                 setTrackingLocation('')
                                 setTrackingDescription('')
                               }}
-                              className="flex items-center gap-1.5 rounded-full border border-zinc-300 bg-white/80 px-3.5 py-1.5 text-xs font-bold text-zinc-700 transition hover:bg-zinc-100 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+                              className={cn(secondaryButtonClass(), 'px-3.5 py-1.5 text-xs')}
                             >
                               <Truck size={14} weight="bold" />
                               Cập nhật hành trình
@@ -871,10 +898,9 @@ export default function SellerOrdersTab({ shopId }: Props) {
                             <button
                               type="button"
                               onClick={function () {
-                                handleDeliverOrder(order.id)
-                                showToast('Đã xác nhận giao thành công và thu tiền COD!')
+                                setDeliverTargetOrder(order)
                               }}
-                              className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+                              className={cn(successButtonClass(), 'px-3.5 py-1.5 text-xs')}
                             >
                               <CheckCircle size={14} weight="bold" />
                               Hoàn tất thu COD
@@ -915,7 +941,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
 
       {/* Sticky Floating Action Bar for Bulk Confirm */}
       {selectedOrderIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-2xl border border-zinc-700 bg-zinc-900/95 px-6 py-3.5 text-white shadow-2xl backdrop-blur-md dark:border-white/20 dark:bg-zinc-950/95">
+        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-3xl border border-white/15 bg-[#11182a]/95 px-6 py-3.5 text-white shadow-2xl backdrop-blur-md dark:bg-[#0a0f1e]/95">
           <div className="flex items-center gap-5">
             <span className="text-xs font-bold">
               Đã chọn{' '}
@@ -929,7 +955,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 onClick={function () {
                   setSelectedOrderIds([])
                 }}
-                className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-zinc-800"
+                className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-white/10"
               >
                 Bỏ chọn
               </button>
@@ -938,7 +964,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 id="btn-bulk-confirm"
                 onClick={handleExecuteBulkConfirm}
                 disabled={bulkConfirmMutation.isPending}
-                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+                className={cn(successButtonClass(), 'px-4 py-1.5 text-xs')}
               >
                 <CheckCircle size={15} weight="bold" />
                 <span>
@@ -1009,7 +1035,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 onClick={function () {
                   setBulkResult(null)
                 }}
-                className="btn-primary rounded-xl px-5 py-2 text-xs font-bold"
+                className={cn(primaryButtonClass(), 'rounded-full px-5 py-2 text-xs font-bold')}
               >
                 Đã hiểu
               </button>
@@ -1116,12 +1142,12 @@ export default function SellerOrdersTab({ shopId }: Props) {
                   takeData(timelineQuery.data).map(function (entry, idx) {
                     return (
                       <div key={idx} className="relative">
-                        <div className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+                        <div className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full bg-blue-600 dark:bg-sky-400" />
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-zinc-900 dark:text-white">
                             {timelineTitle(entry.fromStatus, entry.toStatus, entry.actor)}
                           </span>
-                          <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
                             {entry.actor}
                           </span>
                           <span className="text-[10px] text-zinc-400">
@@ -1143,7 +1169,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 onClick={function () {
                   setSelectedOrderForDetail(null)
                 }}
-                className="rounded-xl border border-zinc-200 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300"
+                className={cn(secondaryButtonClass(), 'text-xs')}
               >
                 Đóng
               </button>
@@ -1232,7 +1258,7 @@ export default function SellerOrdersTab({ shopId }: Props) {
                 type="button"
                 id="btn-confirm-cancel-order"
                 onClick={handleConfirmCancel}
-                className="rounded-full bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-700"
+                className={cn(dangerButtonClass(), 'px-5 text-xs')}
               >
                 Xác nhận hủy & Hoàn kho
               </button>
@@ -1444,6 +1470,22 @@ export default function SellerOrdersTab({ shopId }: Props) {
           </div>
         </Modal>
       )}
+      <ConfirmDialog
+        open={deliverTargetOrder !== null}
+        title="Xác nhận hoàn tất giao hàng & thu COD?"
+        description={deliverConfirmDescription}
+        confirmLabel="Hoàn tất thu COD"
+        cancelLabel="Để sau"
+        isPending={deliverMutation.isPending}
+        onConfirm={function () {
+          if (deliverTargetOrder !== null) {
+            handleDeliverOrder(deliverTargetOrder.id)
+          }
+        }}
+        onCancel={function () {
+          setDeliverTargetOrder(null)
+        }}
+      />
     </div>
   )
 }

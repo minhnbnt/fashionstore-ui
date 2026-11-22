@@ -1,4 +1,4 @@
-# Design system — nét
+# Design system — DHMQ
 
 ## UI kit (code dùng được)
 
@@ -27,12 +27,29 @@ className={cn(iconChipClass(), 'h-9 w-9')} // class ghi đè sau thắng
 Luật: trạng thái active của nút nhóm dùng `btn-primary` (gradient), **không** dùng
 `bg-indigo-900` đặc — gradient là chuẩn nhận diện của trạng thái đang chọn.
 
-## Màu (lock 1 accent)
+## Màu (lock 1 accent + semantic status)
 
 - Nền: `#f6f9ff`. Chữ: `#17203a`.
 - Gradient duy nhất: chàm đêm `#312e81` → xanh hoàng gia `#1d4ed8` → xanh băng `#38bdf8`.
 - Chỉ dùng gradient ở: CTA primary, badge/tag, blob hero, marquee. Còn lại neutrals (zinc/white/sky-100).
 - CTA chữ trắng trên gradient đậm để đạt contrast AA. Không chế thêm màu mới khi chưa bàn.
+- **Semantic Status Tokens** (chuẩn hóa cho badge, cảnh báo, toast, biểu đồ):
+  - Success: `emerald` (`emerald-700`/`emerald-50`/`emerald-200` light; `emerald-300`/`emerald-500/15`/`emerald-500/30` dark).
+  - Warning: `amber` (`amber-800`/`amber-50`/`amber-200` light; `amber-300`/`amber-500/15`/`amber-500/30` dark). Sao đánh giá thống nhất `text-amber-400`.
+  - Error / Danger: `rose` (`rose-700`/`rose-50`/`rose-200`, CTA `rose-600` light; `rose-300`/`rose-500/15`/`rose-500/30`, CTA `rose-500` dark). Không trộn `red-*` hay `orange-*`.
+  - Info: `sky` (`sky-800`/`sky-50`/`sky-200` light; `sky-300`/`sky-500/15`/`sky-500/30` dark).
+- **Toast Notification Semantic (`src/components/ui/sonner.tsx`)**:
+  - Success: xanh lá `emerald` (`bg-emerald-50/95` light / `bg-[#0c231c]/95` dark).
+  - Error: đỏ `rose` (`bg-rose-50/95` light / `bg-[#241019]/95` dark).
+  - Warning: vàng `amber` (`bg-amber-50/95` light / `bg-[#241b0d]/95` dark).
+  - Info: xanh dương `sky` (`bg-sky-50/95` light / `bg-[#0d1d2f]/95` dark).
+  - Z-index `z-[90]` luôn nổi trên Drawer (`z-[70]`) và Modal (`z-[80]`).
+
+## Workspace Surface (Shop & Admin)
+
+- Storefront giữ `.glass` cho Header, Hero và overlay; Admin & Shop ưu tiên **Crisp Surface** (`bg-white/95 dark:bg-[#11182a]`, viền `border-zinc-200/90 dark:border-white/10`) để bảng dữ liệu và form dễ đọc.
+- Container chuẩn hóa: Storefront `max-w-[1400px]`, trang tập trung `max-w-6xl`, Workspace `max-w-[1600px]`, trang con top offset `pt-24`.
+- Footer dùng tông Navy `#070b16` đồng bộ bản sắc DHMQ trên cả 2 chế độ sáng/tối.
 
 ## Font
 

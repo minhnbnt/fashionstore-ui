@@ -5,6 +5,7 @@ import { ArrowSquareOut, ShoppingBagOpen } from '@phosphor-icons/react'
 
 import { urlOrPlaceholder, PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
+import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 import { productResponseToChatItem } from './productItem'
 
@@ -92,7 +93,10 @@ export default function ChatProductCard(props: ChatProductCardProps) {
       <div className="min-w-0 flex-1">
         <Link
           to={productLink}
-          className="block truncate text-[13px] font-bold text-[#17203a] transition group-hover:text-blue-700 dark:text-white dark:group-hover:text-sky-300"
+          className={cn(
+            'block cursor-pointer truncate rounded text-[13px] font-bold text-[#17203a] transition group-hover:text-blue-700 dark:text-white dark:group-hover:text-sky-300',
+            FOCUS_RING_CLASS,
+          )}
         >
           {product.name}
         </Link>
@@ -104,7 +108,10 @@ export default function ChatProductCard(props: ChatProductCardProps) {
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Link
             to={productLink}
-            className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1 text-[11px] font-bold text-[#17203a] transition hover:border-blue-600 hover:text-blue-700 active:scale-[0.97] dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:hover:border-sky-400"
+            className={cn(
+              'inline-flex cursor-pointer items-center gap-1 rounded-full border border-zinc-300 bg-white px-3 py-1 text-[11px] font-bold text-[#17203a] transition hover:border-blue-600 hover:text-blue-700 active:scale-[0.97] dark:border-white/15 dark:bg-white/10 dark:text-slate-100 dark:hover:border-sky-400',
+              FOCUS_RING_CLASS,
+            )}
           >
             <span>Xem chi tiết</span>
             <ArrowSquareOut className="h-3 w-3" />
@@ -117,7 +124,10 @@ export default function ChatProductCard(props: ChatProductCardProps) {
                   onSendProduct({ id: product.id, name: product.name, slug: product.slug })
                 }
               }}
-              className="btn-primary inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold active:scale-[0.97]"
+              className={cn(
+                'btn-primary inline-flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold active:scale-[0.97]',
+                FOCUS_RING_CLASS,
+              )}
             >
               Gửi vào chat
             </button>

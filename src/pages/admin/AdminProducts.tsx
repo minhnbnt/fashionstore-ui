@@ -5,6 +5,7 @@ import {
   useApproveProduct,
   useListAdminProducts,
 } from '@generated/endpoints/admin-products/admin-products'
+import { getGetAdminStatsQueryKey } from '@generated/endpoints/admin-stats/admin-stats'
 import {
   ArrowCounterClockwise,
   CheckCircle,
@@ -17,6 +18,15 @@ import {
 } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
+import AdminProductDetailPanel from '@/components/admin/AdminProductDetailPanel'
+import AdminShell from '@/components/admin/AdminShell'
+import BanProductDialog from '@/components/admin/dialogs/BanProductDialog'
+import DismissReportsDialog from '@/components/admin/dialogs/DismissReportsDialog'
+import RejectProductDialog from '@/components/admin/dialogs/RejectProductDialog'
+import RestoreProductDialog from '@/components/admin/dialogs/RestoreProductDialog'
+import Pagination from '@/components/search/Pagination'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { TableRowsSkeleton } from '@/components/ui/Skeleton'
 import {
   canApprove,
   canBan,
@@ -31,18 +41,21 @@ import {
 } from '@/lib/admin/productModeration'
 import {
   hookErrorMessage,
-  urlOrPlaceholder,
   PLACEHOLDER_IMAGE,
   takeData,
+  urlOrPlaceholder,
 } from '@/lib/api/apiAdapters'
-
-import AdminProductDetailPanel from '../../components/admin/AdminProductDetailPanel'
-import AdminShell from '../../components/admin/AdminShell'
-import BanProductDialog from '../../components/admin/dialogs/BanProductDialog'
-import DismissReportsDialog from '../../components/admin/dialogs/DismissReportsDialog'
-import RejectProductDialog from '../../components/admin/dialogs/RejectProductDialog'
-import RestoreProductDialog from '../../components/admin/dialogs/RestoreProductDialog'
-import Pagination from '../../components/search/Pagination'
+import { notify } from '@/lib/notifications'
+import {
+  cn,
+  FOCUS_RING_CLASS,
+  PANEL_CLASS,
+  primaryButtonClass,
+  secondaryButtonClass,
+  segmentedItemClass,
+  segmentedTrackClass,
+  successButtonClass,
+} from '@/lib/ui/styles'
 
 import type { ProductStatusFilter } from '@/lib/admin/productModeration'
 import type { AdminProductResponse } from '@generated/model/adminProductResponse'
@@ -96,6 +109,7 @@ function isAdminProductKey(queryKey: readonly unknown[]): boolean {
 
 function ProductRow({
   product,
+  approving,
   onOpen,
   onBan,
   onRestore,
@@ -103,6 +117,7 @@ function ProductRow({
   onReject,
 }: {
   product: AdminProductResponse
+  approving: boolean
   onOpen: () => void
   onBan: () => void
   onRestore: () => void
@@ -110,11 +125,14 @@ function ProductRow({
   onReject?: () => void
 }) {
   return (
-    <li className="flex flex-col gap-3 rounded-2xl bg-white/70 p-3 sm:flex-row sm:items-center dark:bg-white/5">
+    <li className="flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-3 sm:flex-row sm:items-center dark:border-white/10 dark:bg-white/5">
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        className={cn(
+          'flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-2xl text-left',
+          FOCUS_RING_CLASS,
+        )}
       >
         <img
           src={urlOrPlaceholder(product.imageUrl)}
@@ -128,14 +146,16 @@ function ProductRow({
           className="h-[70px] w-14 shrink-0 rounded-2xl object-cover"
         />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-bold hover:underline">{product.name}</span>
+          <span className="block truncate text-sm font-bold text-[#17203a] hover:underline dark:text-[#e2e8f0]">
+            {product.name}
+          </span>
           <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
             {product.shopName} · {priceRangeLabel(product.minPrice, product.maxPrice)} · Tồn{' '}
             {product.totalStock ?? 0}
           </span>
           {(product.openReportCount ?? 0) > 0 && (
             <span className="mt-1 flex flex-wrap items-center gap-1.5">
-              <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 dark:bg-red-500/15 dark:text-red-300">
+              <span className="flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
                 <Flag size={12} weight="bold" />
                 {product.openReportCount} báo cáo · {violationLabel(product.topReportReason)}
               </span>
@@ -148,14 +168,14 @@ function ProductRow({
             </span>
           )}
           {product.status === 'BANNED' && (
-            <span className="mt-1 block truncate text-xs text-red-700 dark:text-red-300">
+            <span className="mt-1 block truncate text-xs text-rose-700 dark:text-rose-300">
               {violationLabel(product.violationType)}: {product.statusReason}
             </span>
           )}
         </span>
       </button>
 
-      <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2.5 sm:justify-end">
         <div className="flex flex-col items-start gap-1 sm:items-end">
           <span className={statusBadgeClass(product.status)}>{statusLabel(product.status)}</span>
           <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
@@ -166,7 +186,8 @@ function ProductRow({
           <button
             type="button"
             onClick={onApprove}
-            className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700"
+            disabled={approving}
+            className={cn(successButtonClass(), 'px-4 py-2 text-xs')}
           >
             <CheckCircle size={14} weight="bold" />
             Duyệt
@@ -176,7 +197,10 @@ function ProductRow({
           <button
             type="button"
             onClick={onReject}
-            className="flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+            className={cn(
+              'flex cursor-pointer items-center gap-1.5 rounded-full border border-rose-300 px-4 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/15',
+              FOCUS_RING_CLASS,
+            )}
           >
             <Prohibit size={14} weight="bold" />
             Từ chối
@@ -186,7 +210,10 @@ function ProductRow({
           <button
             type="button"
             onClick={onBan}
-            className="flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+            className={cn(
+              'flex cursor-pointer items-center gap-1.5 rounded-full border border-rose-300 px-4 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300 dark:hover:bg-rose-500/15',
+              FOCUS_RING_CLASS,
+            )}
           >
             <Prohibit size={14} weight="bold" />
             Gỡ
@@ -196,7 +223,10 @@ function ProductRow({
           <button
             type="button"
             onClick={onRestore}
-            className="flex items-center gap-1.5 rounded-full border border-indigo-200 px-4 py-2 text-xs font-bold text-indigo-600 transition hover:bg-indigo-50 dark:border-indigo-500/30 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
+            className={cn(
+              'flex cursor-pointer items-center gap-1.5 rounded-full border border-indigo-200 px-4 py-2 text-xs font-bold text-blue-700 transition hover:bg-sky-50 dark:border-sky-500/30 dark:text-sky-300 dark:hover:bg-sky-500/10',
+              FOCUS_RING_CLASS,
+            )}
           >
             <ArrowCounterClockwise size={14} weight="bold" />
             Khôi phục
@@ -215,12 +245,17 @@ export default function AdminProducts() {
   const page = pageFromUrl(searchParams.get('page'))
 
   const [draft, setDraft] = useState(q)
+  const [syncedQ, setSyncedQ] = useState(q)
+  if (syncedQ !== q) {
+    setSyncedQ(q)
+    setDraft(q)
+  }
   const [openId, setOpenId] = useState<string | null>(null)
+  const [approveTarget, setApproveTarget] = useState<AdminProductResponse | null>(null)
   const [banTarget, setBanTarget] = useState<AdminProductResponse | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<AdminProductResponse | null>(null)
   const [dismissTarget, setDismissTarget] = useState<AdminProductResponse | null>(null)
   const [rejectTarget, setRejectTarget] = useState<AdminProductResponse | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const listQuery = useListAdminProducts(paramsOf(status, q, shopId, page))
   const approveMutation = useApproveProduct()
@@ -243,48 +278,45 @@ export default function AdminProducts() {
   }
 
   function refreshAfterModeration(message: string) {
+    setApproveTarget(null)
     setBanTarget(null)
     setRestoreTarget(null)
     setDismissTarget(null)
     setRejectTarget(null)
-    setNotice(message)
-    void queryClient.invalidateQueries({ predicate: (query) => isAdminProductKey(query.queryKey) })
+    notify.success(message)
+    void Promise.all([
+      queryClient.invalidateQueries({ predicate: (query) => isAdminProductKey(query.queryKey) }),
+      queryClient.invalidateQueries({ queryKey: getGetAdminStatsQueryKey() }),
+    ])
   }
 
-  function handleApprove(product: AdminProductResponse) {
-    if (product.id === undefined || product.id === null) {
+  function confirmApprove() {
+    if (approveTarget === null || approveTarget.id === undefined || approveTarget.id === null) {
       return
     }
+    const targetName = approveTarget.name ?? ''
     approveMutation.mutate(
-      { id: product.id },
+      { id: approveTarget.id },
       {
         onSuccess: () => {
-          refreshAfterModeration(`Đã phê duyệt sản phẩm "${product.name}".`)
+          refreshAfterModeration(`Đã phê duyệt sản phẩm "${targetName}".`)
         },
         onError: (err) => {
-          setNotice(hookErrorMessage('adminProducts', err))
+          notify.fromError(err, 'adminProducts')
         },
       },
     )
   }
 
-  let listBody = (
-    <div className="space-y-2" aria-busy="true">
-      {[0, 1, 2, 3].map(function (index) {
-        return (
-          <div
-            key={index}
-            className="h-[94px] animate-pulse rounded-2xl bg-white/60 dark:bg-white/5"
-          />
-        )
-      })}
-    </div>
-  )
+  let listBody: React.ReactNode = <TableRowsSkeleton rows={5} columns={4} />
   let totalPages = 0
   let total = 0
   if (listQuery.isError) {
     listBody = (
-      <p className="text-sm text-red-600 dark:text-red-400">
+      <p
+        role="alert"
+        className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+      >
         {hookErrorMessage('adminProducts', listQuery.error)}
       </p>
     )
@@ -306,16 +338,17 @@ export default function AdminProducts() {
     )
     if (items.length > 0) {
       listBody = (
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {items.map(function (product) {
             return (
               <ProductRow
                 key={product.id}
                 product={product}
+                approving={approveMutation.isPending}
                 onOpen={() => setOpenId(product.id ?? null)}
                 onBan={() => setBanTarget(product)}
                 onRestore={() => setRestoreTarget(product)}
-                onApprove={() => handleApprove(product)}
+                onApprove={() => setApproveTarget(product)}
                 onReject={() => setRejectTarget(product)}
               />
             )
@@ -330,63 +363,58 @@ export default function AdminProducts() {
       title="Kiểm duyệt sản phẩm"
       description="Xử lý sản phẩm bị người mua báo cáo hoặc hệ thống gắn cờ theo từ khóa cấm, gỡ hàng vi phạm và khôi phục khi shop đã khắc phục."
       actions={
-        <Link
-          to="/admin/products/keywords"
-          className="flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-2 text-sm font-bold text-zinc-700 transition hover:bg-white/70 dark:border-white/10 dark:text-zinc-200 dark:hover:bg-white/10"
-        >
+        <Link to="/admin/products/keywords" className={secondaryButtonClass()}>
           <TextAa size={17} weight="bold" />
           Từ khóa cấm
         </Link>
       }
     >
-      {notice !== null && (
-        <output className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
-          {notice}
-          <button type="button" aria-label="Ẩn thông báo" onClick={() => setNotice(null)}>
-            <X size={16} weight="bold" />
-          </button>
-        </output>
-      )}
-
-      <section>
+      <section className={PANEL_CLASS}>
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Lọc trạng thái">
-            {STATUS_TABS.map(function (tab) {
-              const selected = tab.value === status
-              let tabClass =
-                'rounded-full px-3.5 py-1.5 text-xs font-bold transition text-zinc-600 hover:bg-white/70 dark:text-zinc-300 dark:hover:bg-white/10'
-              if (selected) {
-                tabClass =
-                  'rounded-full px-3.5 py-1.5 text-xs font-bold transition bg-indigo-900 text-white dark:bg-indigo-300 dark:text-indigo-950'
-              }
-              return (
-                <button
-                  key={tab.value}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onClick={() => updateUrl({ status: tab.value, page: null })}
-                  className={tabClass}
-                >
-                  {tab.label}
-                </button>
-              )
-            })}
+          <div className="overflow-x-auto pb-1">
+            <div
+              className={cn(segmentedTrackClass(), 'w-max')}
+              role="tablist"
+              aria-label="Lọc trạng thái"
+            >
+              {STATUS_TABS.map(function (tab) {
+                const selected = tab.value === status
+                return (
+                  <button
+                    key={tab.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => updateUrl({ status: tab.value, page: null })}
+                    className={cn(segmentedItemClass(selected), 'cursor-pointer')}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           <form onSubmit={handleSearch} className="flex w-full items-center gap-2 lg:w-auto">
-            <label className="flex flex-1 items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-4 py-2 lg:w-80 dark:border-white/10 dark:bg-white/5">
-              <MagnifyingGlass size={16} weight="bold" className="shrink-0 text-zinc-400" />
+            <label className="flex flex-1 items-center gap-2 rounded-full border border-zinc-300 bg-white/85 px-4 py-2 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/20 lg:w-80 dark:border-white/15 dark:bg-white/10 dark:focus-within:border-sky-400 dark:focus-within:ring-sky-400/25">
+              <MagnifyingGlass
+                size={16}
+                weight="bold"
+                className="shrink-0 text-zinc-500 dark:text-zinc-400"
+              />
               <input
                 type="search"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="Tên, slug, tên shop hoặc SKU"
                 aria-label="Tìm sản phẩm"
-                className="w-full bg-transparent text-sm outline-none"
+                className="w-full bg-transparent text-sm text-[#17203a] outline-none placeholder:text-zinc-500 dark:text-white dark:placeholder:text-zinc-400"
               />
             </label>
-            <button type="submit" className="btn-primary rounded-full px-4 py-2 text-sm font-bold">
+            <button
+              type="submit"
+              className={cn(primaryButtonClass(), 'rounded-full px-4 py-2 text-sm font-bold')}
+            >
               Tìm
             </button>
           </form>
@@ -400,7 +428,10 @@ export default function AdminProducts() {
             <button
               type="button"
               onClick={() => updateUrl({ shopId: null, page: null })}
-              className="flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 font-semibold dark:bg-white/10"
+              className={cn(
+                'flex cursor-pointer items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 font-semibold transition hover:bg-zinc-200 dark:bg-white/10 dark:hover:bg-white/15',
+                FOCUS_RING_CLASS,
+              )}
             >
               Đang lọc theo 1 shop
               <X size={12} weight="bold" />
@@ -420,14 +451,26 @@ export default function AdminProducts() {
       {openId !== null && (
         <AdminProductDetailPanel
           productId={openId}
+          approving={approveMutation.isPending}
           onClose={() => setOpenId(null)}
           onBan={(product) => setBanTarget(product)}
           onRestore={(product) => setRestoreTarget(product)}
           onDismiss={(product) => setDismissTarget(product)}
-          onApprove={(product) => handleApprove(product)}
+          onApprove={(product) => setApproveTarget(product)}
           onReject={(product) => setRejectTarget(product)}
         />
       )}
+
+      <ConfirmDialog
+        open={approveTarget !== null}
+        title="Phê duyệt sản phẩm?"
+        description={`Xác nhận phê duyệt sản phẩm "${approveTarget?.name ?? ''}" của ${approveTarget?.shopName ?? 'shop'}? Sản phẩm sẽ được phép hiển thị và mở bán trên sàn.`}
+        confirmLabel="Phê duyệt"
+        variant="primary"
+        isPending={approveMutation.isPending}
+        onCancel={() => setApproveTarget(null)}
+        onConfirm={confirmApprove}
+      />
 
       {dismissTarget !== null && (
         <DismissReportsDialog

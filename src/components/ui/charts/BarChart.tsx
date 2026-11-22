@@ -62,20 +62,20 @@ export function BarChart({ data, height, horizontal, formatValue }: BarChartProp
             barPercent = Math.min(100, (item.value / ceiling) * 100)
           }
 
-          let barColor = '#6366f1'
+          let barColor = '#1d4ed8'
           if (item.color !== undefined && item.color !== '') {
             barColor = item.color
           }
 
           let rankBadgeClass = 'bg-zinc-100 text-zinc-700 dark:bg-white/10 dark:text-zinc-200'
           if (index === 0) {
-            rankBadgeClass = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
+            rankBadgeClass = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold'
           }
           if (index === 1) {
-            rankBadgeClass = 'bg-slate-400/15 text-slate-600 dark:text-slate-300 font-bold'
+            rankBadgeClass = 'bg-slate-400/15 text-slate-700 dark:text-slate-300 font-bold'
           }
           if (index === 2) {
-            rankBadgeClass = 'bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold'
+            rankBadgeClass = 'bg-sky-500/15 text-sky-700 dark:text-sky-300 font-bold'
           }
 
           return (
@@ -129,7 +129,7 @@ export function BarChart({ data, height, horizontal, formatValue }: BarChartProp
           heightPercent = (item.value / ceiling) * 100
         }
 
-        let barColor = '#6366f1'
+        let barColor = '#1d4ed8'
         if (item.color !== undefined && item.color !== '') {
           barColor = item.color
         }
@@ -140,12 +140,12 @@ export function BarChart({ data, height, horizontal, formatValue }: BarChartProp
             className="group relative flex h-full flex-1 flex-col items-center justify-end"
           >
             {/* Tooltip on hover */}
-            <div className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-zinc-900 px-2 py-1 text-[11px] font-medium whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:border dark:border-white/15 dark:bg-[#0a0f1e]">
+            <div className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#0a0f1e] px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:border dark:border-white/15">
               {displayValue(item.value)}
             </div>
 
             <div
-              className="w-full max-w-[36px] rounded-t-xl transition-all duration-300 group-hover:brightness-110"
+              className="w-full max-w-[36px] rounded-t-2xl transition-all duration-300 group-hover:brightness-110"
               style={{
                 height: `${heightPercent}%`,
                 backgroundColor: barColor,

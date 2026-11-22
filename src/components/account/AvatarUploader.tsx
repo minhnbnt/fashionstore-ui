@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 import { getMeQueryKey, useChangeAvatar } from '@generated/endpoints/users/users'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { apiErrorText, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
+import { notify } from '@/lib/notifications'
 
 import Modal from '../Modal'
 import UserAvatar from '../UserAvatar'
@@ -49,8 +49,11 @@ export default function AvatarUploader({ name, avatarUrl }: Props) {
       const uploadId = await uploadImage(file)
       await changeAvatar.mutateAsync({ data: { avatarUploadId: uploadId } })
       await queryClient.invalidateQueries({ queryKey: getMeQueryKey() })
+      notify.success('Đã cập nhật ảnh đại diện')
     } catch (err: unknown) {
-      setError(apiErrorText(err, 'Không đổi được ảnh đại diện, thử lại sau.'))
+      const msg = apiErrorText(err, 'Không đổi được ảnh đại diện, thử lại sau.')
+      setError(msg)
+      notify.fromError(err, 'changeAvatar', 'Không đổi được ảnh đại diện, thử lại sau.')
     } finally {
       setUploading(false)
     }
@@ -65,46 +68,43 @@ export default function AvatarUploader({ name, avatarUrl }: Props) {
         }}
         aria-label="Xem ảnh đại diện"
         title="Xem ảnh đại diện"
-        className="shrink-0 rounded-full transition hover:opacity-90"
+        className="shrink-0 cursor-pointer rounded-full transition hover:opacity-90"
       >
         <UserAvatar name={name} size={48} src={src} />
       </button>
 
-      {open &&
-        // Portal ra body để thoát containing block của .glass (backdrop-filter làm fixed quy chiếu theo card).
-        createPortal(
-          <Modal
-            title="Ảnh đại diện"
-            widthClass="max-w-sm"
-            onClose={function () {
-              setOpen(false)
-            }}
-          >
-            <div className="mt-6 flex flex-col items-center gap-5">
-              <UserAvatar name={name} size={200} src={src} />
-              <button
-                type="button"
-                onClick={function () {
-                  inputRef.current?.click()
-                }}
-                disabled={uploading}
-                className="rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-700 disabled:opacity-60 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-              >
-                {actionLabel}
-              </button>
-              {error !== null && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
-            </div>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              onChange={(event) => void handleFile(event)}
+      {open && (
+        <Modal
+          title="Ảnh đại diện"
+          widthClass="max-w-sm"
+          onClose={function () {
+            setOpen(false)
+          }}
+        >
+          <div className="mt-6 flex flex-col items-center gap-5">
+            <UserAvatar name={name} size={200} src={src} />
+            <button
+              type="button"
+              onClick={function () {
+                inputRef.current?.click()
+              }}
               disabled={uploading}
-              className="sr-only"
-            />
-          </Modal>,
-          document.body,
-        )}
+              className="btn-primary cursor-pointer rounded-full px-6 py-2.5 text-sm font-bold shadow-md shadow-indigo-900/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {actionLabel}
+            </button>
+            {error !== null && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
+          </div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            onChange={(event) => void handleFile(event)}
+            disabled={uploading}
+            className="sr-only"
+          />
+        </Modal>
+      )}
     </>
   )
 }

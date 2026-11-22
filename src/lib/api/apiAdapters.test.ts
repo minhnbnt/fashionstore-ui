@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 
 import {
+  PLACEHOLDER_IMAGE,
   apiErrorMessage,
   apiErrorText,
   hookErrorMessage,
@@ -32,9 +33,12 @@ function product(variants: VariantResponse[]): ProductResponse {
 }
 
 describe('urlOrPlaceholder', () => {
-  it('url null hoac rong thi tra placeholder', () => {
-    expect(urlOrPlaceholder(null)).toBe(urlOrPlaceholder(undefined))
-    expect(urlOrPlaceholder('')).toBe(urlOrPlaceholder(undefined))
+  it('url null hoac rong thi tra placeholder SVG noi bo (khong goi mang ngoai)', () => {
+    expect(PLACEHOLDER_IMAGE.startsWith('data:image/svg+xml')).toBe(true)
+    expect(PLACEHOLDER_IMAGE).not.toContain('picsum.photos')
+    expect(urlOrPlaceholder(null)).toBe(PLACEHOLDER_IMAGE)
+    expect(urlOrPlaceholder(undefined)).toBe(PLACEHOLDER_IMAGE)
+    expect(urlOrPlaceholder('')).toBe(PLACEHOLDER_IMAGE)
   })
 
   it('url tu response thi tra nguyen ven, khong ghep base', () => {

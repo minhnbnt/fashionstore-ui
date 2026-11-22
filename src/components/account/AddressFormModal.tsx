@@ -1,21 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 import { getListQueryKey, useAdd, useUpdate } from '@generated/endpoints/addresses/addresses'
 import { useListProvinces, useListWards } from '@generated/endpoints/locations/locations'
-import {
-  ArrowClockwise,
-  CaretDown,
-  Check,
-  MagnifyingGlass,
-  WarningCircle,
-  X,
-} from '@phosphor-icons/react'
+import { ArrowClockwise, CaretDown, Check, MagnifyingGlass, X } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { formatAddressLabel, splitFullAddress } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 
 import Modal from '../Modal'
 
@@ -130,8 +123,6 @@ export default function AddressFormModal(props: {
 }) {
   const queryClient = useQueryClient()
 
-  const [toastError, setToastError] = useState<string | null>(null)
-
   // Form states — khởi tạo một lần lúc mount từ địa chỉ gốc (component mount lại mỗi lần mở)
   const initial = initialAddressValues(props.initial)
   const [recipientName, setRecipientName] = useState(initial.recipientName)
@@ -214,17 +205,11 @@ export default function AddressFormModal(props: {
     removeVietnameseAccents(w.name ?? '').includes(wardQuery),
   )
 
-  function showToastError(msg: string) {
-    setToastError(msg)
-    window.setTimeout(function () {
-      setToastError(null)
-    }, 4000)
-  }
-
   const addAddressMutation = useAdd({
     mutation: {
       onSuccess: function (res) {
         void queryClient.invalidateQueries({ queryKey: getListQueryKey() })
+        notify.success('Đã thêm địa chỉ nhận hàng mới', undefined, { id: 'address-saved' })
         if (props.onSaved !== undefined) {
           props.onSaved(takeData(res))
         }
@@ -232,9 +217,13 @@ export default function AddressFormModal(props: {
       },
       onError: function (err) {
         if (err instanceof ApiError && err.status === 400) {
-          showToastError(maxAddressErrorMessage(err.message))
+          notify.error(maxAddressErrorMessage(err.message), undefined, {
+            id: 'address-save-error',
+          })
         } else {
-          showToastError('Không thể thêm địa chỉ. Vui lòng thử lại.')
+          notify.fromError(err, 'addresses', 'Không thể thêm địa chỉ. Vui lòng thử lại.', {
+            id: 'address-save-error',
+          })
         }
       },
     },
@@ -244,13 +233,19 @@ export default function AddressFormModal(props: {
     mutation: {
       onSuccess: function (res) {
         void queryClient.invalidateQueries({ queryKey: getListQueryKey() })
+        notify.success('Đã cập nhật địa chỉ nhận hàng', undefined, { id: 'address-saved' })
         if (props.onSaved !== undefined) {
           props.onSaved(takeData(res))
         }
         props.onClose()
       },
-      onError: function () {
-        showToastError('Không thể cập nhật địa chỉ. Vui lòng kiểm tra lại thông tin.')
+      onError: function (err) {
+        notify.fromError(
+          err,
+          'addresses',
+          'Không thể cập nhật địa chỉ. Vui lòng kiểm tra lại thông tin.',
+          { id: 'address-save-error' },
+        )
       },
     },
   })
@@ -271,15 +266,19 @@ export default function AddressFormModal(props: {
       cleanWard === '' ||
       cleanDetail === ''
     ) {
-      showToastError(
+      notify.warning(
         'Vui lòng điền đầy đủ tên, số điện thoại, tỉnh/thành, phường/xã và địa chỉ chi tiết.',
+        undefined,
+        { id: 'address-form-validation' },
       )
       return
     }
 
     const phoneRegex = /^[0-9+() -]{9,15}$/
     if (!phoneRegex.test(cleanPhone)) {
-      showToastError('Số điện thoại không hợp lệ (cần từ 9 đến 15 số).')
+      notify.warning('Số điện thoại không hợp lệ (cần từ 9 đến 15 số).', undefined, {
+        id: 'address-form-validation',
+      })
       return
     }
 
@@ -300,16 +299,8 @@ export default function AddressFormModal(props: {
 
   const isMutating = addAddressMutation.isPending || updateAddressMutation.isPending
 
-  return createPortal(
+  return (
     <Modal title={modalTitle(props.mode)} onClose={props.onClose}>
-      {/* Error Toast */}
-      {toastError !== null && (
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
-          <WarningCircle size={18} weight="fill" className="shrink-0 text-rose-600" />
-          <span>{toastError}</span>
-        </div>
-      )}
-
       {/* Modal Form */}
       <form onSubmit={handleSubmitAddress} className="mt-4 space-y-4">
         {/* Row 1: Recipient Name & Phone */}
@@ -393,18 +384,20 @@ export default function AddressFormModal(props: {
                     setWard('')
                     setWardSearch('')
                   }}
-                  className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="cursor-pointer rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                   title="Xóa lựa chọn"
+                  aria-label="Xóa tỉnh/thành phố đã chọn"
                 >
                   <X size={12} weight="bold" />
                 </button>
               )}
               <button
                 type="button"
+                aria-label="Mở danh sách tỉnh/thành phố"
                 onClick={function () {
                   setProvinceDropdownOpen(!provinceDropdownOpen)
                 }}
-                className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="cursor-pointer rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               >
                 <CaretDown size={12} weight="bold" />
               </button>
@@ -488,8 +481,9 @@ export default function AddressFormModal(props: {
                     setWard('')
                     setWardSearch('')
                   }}
-                  className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="cursor-pointer rounded-full p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                   title="Xóa lựa chọn"
+                  aria-label="Xóa phường/xã đã chọn"
                 >
                   <X size={12} weight="bold" />
                 </button>
@@ -497,10 +491,11 @@ export default function AddressFormModal(props: {
               <button
                 type="button"
                 disabled={provinceCode === ''}
+                aria-label="Mở danh sách phường/xã"
                 onClick={function () {
                   setWardDropdownOpen(!wardDropdownOpen)
                 }}
-                className="rounded-full p-1 text-zinc-400 hover:text-zinc-600 disabled:opacity-50 dark:hover:text-zinc-200"
+                className="cursor-pointer rounded-full p-1 text-zinc-400 hover:text-zinc-600 disabled:opacity-50 dark:hover:text-zinc-200"
               >
                 <CaretDown size={12} weight="bold" />
               </button>
@@ -571,10 +566,10 @@ export default function AddressFormModal(props: {
           </span>
           <div className="mt-1.5 flex flex-wrap gap-2">
             {ADDRESS_LABELS.map(function (l) {
-              let chipClass = 'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition '
+              let chipClass =
+                'cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-semibold transition '
               if (label === l) {
-                chipClass +=
-                  'border-blue-600 bg-sky-100 text-blue-700 dark:border-skytint-500/60 dark:bg-white/15 dark:text-sky-300'
+                chipClass += 'btn-primary border-transparent shadow-xs'
               } else {
                 chipClass +=
                   'border-zinc-300 bg-white text-zinc-600 hover:border-blue-500 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300'
@@ -619,7 +614,7 @@ export default function AddressFormModal(props: {
           <button
             type="button"
             onClick={props.onClose}
-            className="rounded-full border border-zinc-200 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10"
+            className="cursor-pointer rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10"
           >
             Hủy
           </button>
@@ -627,14 +622,13 @@ export default function AddressFormModal(props: {
             id="submitAddressBtn"
             type="submit"
             disabled={isMutating}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-indigo-900 via-blue-700 to-sky-400 px-5 py-2 text-xs font-bold text-white shadow-sm shadow-indigo-900/20 hover:opacity-90 disabled:opacity-50"
+            className="btn-primary inline-flex cursor-pointer items-center gap-1.5 rounded-full px-5 py-2 text-xs font-bold shadow-sm shadow-indigo-900/20 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isMutating && <ArrowClockwise size={14} className="animate-spin" />}
             <span>{submitLabel(props.mode)}</span>
           </button>
         </div>
       </form>
-    </Modal>,
-    document.body,
+    </Modal>
   )
 }

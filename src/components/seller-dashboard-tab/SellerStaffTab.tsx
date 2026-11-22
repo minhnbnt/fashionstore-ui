@@ -40,9 +40,11 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 
 import Modal from '@/components/Modal'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { apiErrorText, takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { formatDateTime } from '@/lib/format'
+import { notify } from '@/lib/notifications'
 import { auditItem, memberItem, roleItem } from '@/lib/seller/sellerAdapters'
 import {
   formatTargetType,
@@ -72,7 +74,7 @@ const ALL_SYSTEM_PERMISSIONS = [
   { key: 'REVENUE_WITHDRAW', label: 'Yêu cầu rút tiền về tài khoản ngân hàng', group: 'Tài chính' },
   { key: 'REVIEW_READ', label: 'Xem đánh giá của khách hàng', group: 'CSKH' },
   { key: 'REVIEW_REPLY', label: 'Phản hồi đánh giá & báo cáo vi phạm', group: 'CSKH' },
-  { key: 'CHAT_ACCESS', label: 'Nhắn tin trực tiếp với người mua (nét Chat)', group: 'CSKH' },
+  { key: 'CHAT_ACCESS', label: 'Nhắn tin trực tiếp với người mua (DHMQ Chat)', group: 'CSKH' },
   { key: 'DECORATION_WRITE', label: 'Trang trí gian hàng & xếp layout', group: 'Gian hàng' },
 ]
 
@@ -117,9 +119,9 @@ function resolveAuditAction(filter: string): string | undefined {
 
 function getSubTabClass(isActive: boolean): string {
   if (isActive) {
-    return 'flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-all border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-300'
+    return 'flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-xs font-semibold transition-all border-blue-700 text-blue-700 dark:border-sky-400 dark:text-sky-300'
   }
-  return 'flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold transition-all border-transparent text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+  return 'flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-xs font-semibold transition-all border-transparent text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
 }
 
 export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
@@ -127,6 +129,14 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<'MEMBERS' | 'INVITATIONS' | 'ROLES' | 'AUDIT'>(
     'MEMBERS',
   )
+
+  // Confirm dialogs state
+  const [confirmDeactivateMember, setConfirmDeactivateMember] = useState<ShopMemberItem | null>(
+    null,
+  )
+  const [confirmDeleteRole, setConfirmDeleteRole] = useState<ShopRoleItem | null>(null)
+  const [confirmRevokeInvitation, setConfirmRevokeInvitation] =
+    useState<StaffInvitationResponse | null>(null)
 
   // Invite modal state
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
@@ -145,8 +155,6 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
   const [auditActionFilter, setAuditActionFilter] = useState<string>('')
   const [auditSearchQuery, setAuditSearchQuery] = useState('')
   const [auditPage, setAuditPage] = useState(0)
-
-  const [notification, setNotification] = useState('')
 
   const rolesQuery = useListRoles(shopId, { query: { enabled: shopId !== '' } })
   const membersQuery = useListMembers(shopId, { query: { enabled: shopId !== '' } })
@@ -174,13 +182,15 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã tạo vai trò mới thành công!')
+        notify.success('Đã tạo vai trò mới thành công!')
         setIsRoleModalOpen(false)
         setRoleNameInput('')
         setSelectedPermissions([])
       },
       onError: function (err: unknown) {
-        setRoleError(apiErrorText(err, 'Có lỗi xảy ra khi tạo vai trò.'))
+        const msg = apiErrorText(err, 'Có lỗi xảy ra khi tạo vai trò.')
+        setRoleError(msg)
+        notify.error(msg)
       },
     },
   })
@@ -196,14 +206,16 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã cập nhật vai trò thành công!')
+        notify.success('Đã cập nhật vai trò thành công!')
         setIsRoleModalOpen(false)
         setEditingRoleId(null)
         setRoleNameInput('')
         setSelectedPermissions([])
       },
       onError: function (err: unknown) {
-        setRoleError(apiErrorText(err, 'Có lỗi xảy ra khi sửa vai trò.'))
+        const msg = apiErrorText(err, 'Có lỗi xảy ra khi sửa vai trò.')
+        setRoleError(msg)
+        notify.error(msg)
       },
     },
   })
@@ -220,10 +232,10 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã xóa vai trò thành công!')
+        notify.success('Đã xóa vai trò thành công!')
       },
       onError: function (err: unknown) {
-        setNotification(apiErrorText(err, 'Không thể xóa vai trò này.'))
+        notify.fromError(err, undefined, 'Không thể xóa vai trò này.')
       },
     },
   })
@@ -239,7 +251,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification(
+        notify.success(
           `Đã gửi lời mời trong website tới tài khoản ${inviteEmail.trim()} thành công!`,
         )
         setInviteEmail('')
@@ -259,6 +271,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
           msg = apiErrorText(err, msg)
         }
         setInviteError(msg)
+        notify.error(msg)
       },
     },
   })
@@ -274,10 +287,10 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã thu hồi lời mời thành công!')
+        notify.success('Đã thu hồi lời mời thành công!')
       },
       onError: function (err: unknown) {
-        setNotification(apiErrorText(err, 'Không thể thu hồi lời mời.'))
+        notify.fromError(err, undefined, 'Không thể thu hồi lời mời.')
       },
     },
   })
@@ -293,10 +306,10 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã cập nhật trạng thái nhân viên thành công!')
+        notify.success('Đã cập nhật trạng thái nhân viên thành công!')
       },
       onError: function (err: unknown) {
-        setNotification(apiErrorText(err, 'Không thể đổi trạng thái nhân viên.'))
+        notify.fromError(err, undefined, 'Không thể đổi trạng thái nhân viên.')
       },
     },
   })
@@ -313,10 +326,10 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
             size: 20,
           }),
         })
-        setNotification('Đã đổi vai trò nhân viên thành công!')
+        notify.success('Đã đổi vai trò nhân viên thành công!')
       },
       onError: function (err: unknown) {
-        setNotification(apiErrorText(err, 'Không thể đổi vai trò.'))
+        notify.fromError(err, undefined, 'Không thể đổi vai trò.')
       },
     },
   })
@@ -324,6 +337,13 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
   let rawMembers: ShopMemberDetailResponse[] = []
   if (membersQuery.data !== undefined) {
     rawMembers = takeData(membersQuery.data)
+  }
+
+  const ownerUserIds = new Set<string>()
+  for (const raw of rawMembers) {
+    if (raw.role === 'OWNER' && raw.userId !== undefined && raw.userId !== null) {
+      ownerUserIds.add(String(raw.userId))
+    }
   }
 
   let roles: ShopRoleItem[] = []
@@ -461,7 +481,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
       <div className="flex flex-col justify-between gap-4 rounded-3xl border border-zinc-200/80 bg-white/80 p-5 shadow-sm md:flex-row md:items-center dark:border-white/10 dark:bg-[#11182a]">
         <div>
           <div className="flex items-center gap-2">
-            <UsersThree size={24} className="text-indigo-600 dark:text-indigo-400" />
+            <UsersThree size={24} className="text-blue-700 dark:text-sky-300" />
             <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">
               Quản Lý Nhân Viên & Phân Quyền Shop (RBAC)
             </h2>
@@ -472,11 +492,11 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleOpenCreateRole}
-            className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+            className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3.5 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
           >
             <Shield size={16} className="text-zinc-500 dark:text-zinc-400" />
             <span>Tạo vai trò mới</span>
@@ -498,25 +518,8 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         </div>
       </div>
 
-      {/* Notification Toast */}
-      {notification && (
-        <div className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900/30 dark:bg-green-950/30 dark:text-green-300">
-          <div className="flex items-center gap-2">
-            <CheckCircle size={18} className="text-green-600 dark:text-green-400" />
-            <span>{notification}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setNotification('')}
-            className="text-xs font-medium text-green-700 underline hover:text-green-900 dark:text-green-400"
-          >
-            Đóng
-          </button>
-        </div>
-      )}
-
       {/* Sub-tab navigation */}
-      <div className="flex rounded-t-3xl border-b border-zinc-200/80 bg-white/80 px-4 dark:border-white/10 dark:bg-[#11182a]">
+      <div className="flex overflow-x-auto rounded-t-3xl border-b border-zinc-200/80 bg-white/80 px-4 dark:border-white/10 dark:bg-[#11182a]">
         <button
           type="button"
           onClick={() => setActiveSubTab('MEMBERS')}
@@ -580,13 +583,17 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
                 {members.map((member) => {
-                  const isOwner = member.roleName.includes('Owner')
+                  const normalizedRole = member.roleName.toLowerCase()
+                  const isOwner =
+                    ownerUserIds.has(member.id) ||
+                    normalizedRole.includes('owner') ||
+                    normalizedRole.includes('chủ')
                   const isActive = member.status === 'ACTIVE'
                   return (
                     <tr key={member.id} className="hover:bg-zinc-50/80 dark:hover:bg-white/5">
                       <td className="p-3 pl-4" aria-label={member.displayName}>
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-blue-700 dark:bg-sky-500/20 dark:text-sky-300">
                             {member.displayName.charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -601,7 +608,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                       </td>
                       <td className="p-3">
                         {isOwner && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:border-blue-900/40 dark:bg-blue-950/40 dark:text-blue-300">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:border-sky-900/40 dark:bg-sky-950/40 dark:text-sky-300">
                             <Key size={12} />
                             <span>{member.roleName}</span>
                           </span>
@@ -611,7 +618,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                             aria-label={`Đổi vai trò cho ${member.email}`}
                             value={member.roleId}
                             onChange={(e) => handleChangeRole(member, e.target.value)}
-                            className="w-44 rounded-full border border-zinc-300 bg-white px-2.5 py-1.5 text-[11px] font-medium text-zinc-700 focus:border-indigo-600 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                            className="w-44 rounded-full border border-zinc-300 bg-white px-2.5 py-1.5 text-[11px] font-medium text-zinc-700 focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-[#0a0f1e] dark:text-zinc-200"
                           >
                             {roles.map((r) => (
                               <option key={r.id} value={r.id}>
@@ -623,13 +630,13 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                       </td>
                       <td className="p-3">
                         {isActive && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300">
                             <CheckCircle size={12} />
                             <span>Đang hoạt động</span>
                           </span>
                         )}
                         {!isActive && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:border-white/10 dark:bg-white/10 dark:text-zinc-400">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-[11px] font-medium text-zinc-600 dark:border-white/10 dark:bg-white/10 dark:text-zinc-400">
                             <UserMinus size={12} />
                             <span>Đã vô hiệu hóa</span>
                           </span>
@@ -645,8 +652,8 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                         {!isOwner && isActive && (
                           <button
                             type="button"
-                            onClick={() => handleToggleStatus(member)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50/60 px-2.5 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-900/30 dark:bg-red-950/20 dark:text-red-400"
+                            onClick={() => setConfirmDeactivateMember(member)}
+                            className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50/70 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/50"
                           >
                             <UserMinus size={13} />
                             <span>Vô hiệu hóa</span>
@@ -656,7 +663,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(member)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50/60 px-2.5 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/30 dark:bg-emerald-950/20 dark:text-emerald-300"
+                            className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50/70 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300 dark:hover:bg-emerald-950/50"
                           >
                             <UserCheck size={13} />
                             <span>Kích hoạt lại</span>
@@ -718,7 +725,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                         {inv.email}
                       </td>
                       <td className="p-3">
-                        <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-medium text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
+                        <span className="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-sky-950/50 dark:text-sky-300">
                           {roleName}
                         </span>
                       </td>
@@ -731,9 +738,9 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                       <td className="p-3 pr-4 text-right">
                         <button
                           type="button"
-                          onClick={() => handleRevokeInvitation(inv.id ?? '')}
+                          onClick={() => setConfirmRevokeInvitation(inv)}
                           disabled={revokeInvitationMutation.isPending}
-                          className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-950/20"
+                          className="inline-flex items-center gap-1 rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900/40 dark:text-rose-400 dark:hover:bg-rose-950/30"
                         >
                           <Trash size={13} />
                           <span>Thu hồi</span>
@@ -774,7 +781,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                         </span>
                       )}
                       {!role.isSystem && (
-                        <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:border-indigo-900/40 dark:bg-indigo-950/40 dark:text-indigo-300">
+                        <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:border-sky-900/40 dark:bg-sky-950/40 dark:text-sky-300">
                           Tùy chỉnh
                         </span>
                       )}
@@ -789,17 +796,17 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                       <button
                         type="button"
                         onClick={() => handleOpenEditRole(role)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/5"
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/5"
                       >
                         <PencilSimple size={13} />
                         <span>Sửa</span>
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDeleteRole(role)}
+                        onClick={() => setConfirmDeleteRole(role)}
                         disabled={role.memberCount > 0}
                         title={deleteRoleTitle}
-                        className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-40 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-950/20"
+                        className="inline-flex items-center gap-1 rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-40 dark:border-rose-900/40 dark:text-rose-400 dark:hover:bg-rose-950/30"
                       >
                         <Trash size={13} />
                         <span>Xóa</span>
@@ -860,6 +867,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                 {auditSearchQuery && (
                   <button
                     type="button"
+                    aria-label="Xóa từ khóa tìm kiếm nhật ký"
                     onClick={() => setAuditSearchQuery('')}
                     className="absolute top-1/2 right-3 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                     title="Xóa tìm kiếm"
@@ -876,12 +884,13 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                   <span>Lọc loại:</span>
                 </div>
                 <select
+                  aria-label="Lọc loại hành động nhật ký"
                   value={auditActionFilter}
                   onChange={(e) => {
                     setAuditActionFilter(e.target.value)
                     setAuditPage(0)
                   }}
-                  className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors focus:border-indigo-600 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:text-zinc-200"
+                  className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-[#0a0f1e] dark:text-zinc-200"
                 >
                   <option value="">Tất cả ({totalAuditLogs})</option>
                   {AUDIT_ACTIONS.map((action) => (
@@ -955,7 +964,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
 
                   {/* Detail Box */}
                   {log.detail && (
-                    <div className="rounded-xl border border-zinc-200/60 bg-zinc-50/70 p-3 text-xs leading-relaxed text-zinc-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-300">
+                    <div className="rounded-2xl border border-zinc-200/60 bg-zinc-50/70 p-3 text-xs leading-relaxed text-zinc-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-300">
                       {detailSections.length <= 1 && <div>{log.detail}</div>}
                       {detailSections.length > 1 && (
                         <div className="space-y-1.5">
@@ -966,7 +975,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                             {detailSections.slice(1).map((section, idx) => (
                               <span
                                 key={idx}
-                                className="inline-flex items-center rounded-lg border border-zinc-200/90 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-700 shadow-2xs dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
+                                className="inline-flex items-center rounded-full border border-zinc-200/90 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-700 shadow-2xs dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
                               >
                                 {section}
                               </span>
@@ -1019,7 +1028,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         >
           <form onSubmit={handleInviteSubmit} className="space-y-4">
             {inviteError && (
-              <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+              <div className="flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">
                 <WarningCircle size={16} className="mt-0.5 shrink-0" />
                 <span>{inviteError}</span>
               </div>
@@ -1039,7 +1048,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                 placeholder="nhanvien@gmail.com"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                className="w-full rounded-full border border-zinc-300 px-3.5 py-2 text-xs focus:border-indigo-600 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:text-zinc-100"
+                className="w-full rounded-full border border-zinc-300 px-3.5 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:text-zinc-100"
               />
               <span className="mt-1.5 block text-[11px] text-zinc-500 dark:text-zinc-400">
                 Hệ thống gửi thông báo trong website cho tài khoản này (không gửi email). Người được
@@ -1059,7 +1068,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                 value={inviteRoleId}
                 onChange={(e) => setInviteRoleId(e.target.value)}
                 required
-                className="w-full rounded-full border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-800 focus:border-indigo-600 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:text-zinc-100"
+                className="w-full rounded-full border border-zinc-300 bg-white px-3.5 py-2 text-xs text-zinc-800 focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-[#0a0f1e] dark:text-zinc-100"
               >
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>
@@ -1099,7 +1108,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
         >
           <form onSubmit={handleRoleSubmit} className="space-y-4">
             {roleError && (
-              <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+              <div className="flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">
                 <WarningCircle size={16} className="mt-0.5 shrink-0" />
                 <span>{roleError}</span>
               </div>
@@ -1119,7 +1128,7 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                 placeholder="Ví dụ: Kiểm hàng phụ, CSKH ca tối…"
                 value={roleNameInput}
                 onChange={(e) => setRoleNameInput(e.target.value)}
-                className="w-full rounded-full border border-zinc-300 px-3.5 py-2 text-xs focus:border-indigo-600 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:text-zinc-100"
+                className="w-full rounded-full border border-zinc-300 px-3.5 py-2 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10 dark:text-zinc-100"
               />
             </div>
 
@@ -1135,14 +1144,14 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
                       key={perm.key}
                       htmlFor={`perm-${perm.key}`}
                       aria-label={perm.label}
-                      className="flex cursor-pointer items-start gap-2.5 rounded-xl p-2 transition hover:bg-zinc-50 dark:hover:bg-white/5"
+                      className="flex cursor-pointer items-start gap-2.5 rounded-2xl p-2 transition hover:bg-zinc-50 dark:hover:bg-white/5"
                     >
                       <input
                         id={`perm-${perm.key}`}
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => handleTogglePermission(perm.key)}
-                        className="mt-0.5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                        className="mt-0.5 rounded-sm border-zinc-300 text-blue-700 focus:ring-blue-600"
                       />
                       <div>
                         <div className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
@@ -1182,6 +1191,57 @@ export function SellerStaffTab({ shopId }: SellerStaffTabProps) {
           </form>
         </Modal>
       )}
+
+      {/* CONFIRM 1: Deactivate staff member */}
+      <ConfirmDialog
+        open={confirmDeactivateMember !== null}
+        title="Vô hiệu hóa nhân viên?"
+        description={`Nhân viên "${confirmDeactivateMember?.displayName ?? ''}" (${confirmDeactivateMember?.email ?? ''}) sẽ tạm thời mất quyền truy cập gian hàng cho đến khi được kích hoạt lại.`}
+        confirmLabel="Vô hiệu hóa"
+        variant="danger"
+        isPending={updateMemberStatusMutation.isPending}
+        onCancel={() => setConfirmDeactivateMember(null)}
+        onConfirm={() => {
+          if (confirmDeactivateMember !== null) {
+            handleToggleStatus(confirmDeactivateMember)
+            setConfirmDeactivateMember(null)
+          }
+        }}
+      />
+
+      {/* CONFIRM 2: Delete custom role */}
+      <ConfirmDialog
+        open={confirmDeleteRole !== null}
+        title="Xóa vai trò tùy chỉnh?"
+        description={`Bạn có chắc muốn xóa vai trò "${confirmDeleteRole?.name ?? ''}"? Hành động này không thể hoàn tác.`}
+        confirmLabel="Xóa vai trò"
+        variant="danger"
+        isPending={deleteRoleMutation.isPending}
+        onCancel={() => setConfirmDeleteRole(null)}
+        onConfirm={() => {
+          if (confirmDeleteRole !== null) {
+            handleDeleteRole(confirmDeleteRole)
+            setConfirmDeleteRole(null)
+          }
+        }}
+      />
+
+      {/* CONFIRM 3: Revoke pending invitation */}
+      <ConfirmDialog
+        open={confirmRevokeInvitation !== null}
+        title="Thu hồi lời mời nhân viên?"
+        description={`Thu hồi lời mời đã gửi tới ${confirmRevokeInvitation?.email ?? ''}? Người này sẽ không thể chấp nhận lời mời cũ nữa.`}
+        confirmLabel="Thu hồi lời mời"
+        variant="danger"
+        isPending={revokeInvitationMutation.isPending}
+        onCancel={() => setConfirmRevokeInvitation(null)}
+        onConfirm={() => {
+          if (confirmRevokeInvitation !== null) {
+            handleRevokeInvitation(confirmRevokeInvitation.id ?? '')
+            setConfirmRevokeInvitation(null)
+          }
+        }}
+      />
     </div>
   )
 }

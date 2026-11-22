@@ -4,6 +4,7 @@ import { useCreateFaq, useUpdateFaq } from '@generated/endpoints/admin-faq/admin
 
 import { hookErrorMessage } from '@/lib/api/apiAdapters'
 import { FAQ_CATEGORY_OPTIONS } from '@/lib/content/siteContent'
+import { notify } from '@/lib/notifications'
 
 import Markdown from '../../Markdown'
 import ContentDialog, {
@@ -63,10 +64,22 @@ export default function FaqFormDialog({ faq, defaultCategory, onClose, onDone }:
       published,
     }
     if (faq?.id === undefined) {
-      create.mutate({ data }, { onSuccess: () => onDone('Đã thêm câu hỏi.') })
+      create.mutate(
+        { data },
+        {
+          onSuccess: () => onDone('Đã thêm câu hỏi.'),
+          onError: (err) => notify.fromError(err, 'adminContent'),
+        },
+      )
       return
     }
-    update.mutate({ id: faq.id, data }, { onSuccess: () => onDone('Đã lưu câu hỏi.') })
+    update.mutate(
+      { id: faq.id, data },
+      {
+        onSuccess: () => onDone('Đã lưu câu hỏi.'),
+        onError: (err) => notify.fromError(err, 'adminContent'),
+      },
+    )
   }
 
   let dialogTitle = 'Sửa câu hỏi'
@@ -95,7 +108,7 @@ export default function FaqFormDialog({ faq, defaultCategory, onClose, onDone }:
           >
             {FAQ_CATEGORY_OPTIONS.map(function (option) {
               return (
-                <option key={option.value} value={option.value}>
+                <option key={option.value} value={option.value} className="dark:bg-[#0a0f1e]">
                   {option.label}
                 </option>
               )

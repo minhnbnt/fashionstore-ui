@@ -601,7 +601,7 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
 
     expect(screen.queryByRole('button', { name: 'Đoạn chat mới' })).toBeNull()
     expect(screen.queryByText('Đăng nhập để lưu lại lịch sử tư vấn AI.')).toBeNull()
-    expect(screen.getByText(/Trợ lý nét AI · Gợi ý phối đồ/)).toBeTruthy()
+    expect(screen.getByText(/Trợ lý DHMQ AI · Gợi ý phối đồ/)).toBeTruthy()
   })
 
   describe('đính kèm ảnh', function () {

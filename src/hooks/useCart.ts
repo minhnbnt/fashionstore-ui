@@ -43,7 +43,10 @@ export function useCart() {
 
   const addItemMutation = useAddItem({
     mutation: {
-      onSuccess: function () {
+      onSuccess: function (response) {
+        if (response.status === 200) {
+          queryClient.setQueryData(getViewQueryKey(), response)
+        }
         void queryClient.invalidateQueries({ queryKey: getViewQueryKey() })
       },
     },
@@ -51,7 +54,10 @@ export function useCart() {
 
   const updateQuantityMutation = useUpdateQuantity({
     mutation: {
-      onSuccess: function () {
+      onSuccess: function (response) {
+        if (response.status === 200) {
+          queryClient.setQueryData(getViewQueryKey(), response)
+        }
         void queryClient.invalidateQueries({ queryKey: getViewQueryKey() })
       },
     },
@@ -59,7 +65,10 @@ export function useCart() {
 
   const removeItemMutation = useRemoveItem({
     mutation: {
-      onSuccess: function () {
+      onSuccess: function (response) {
+        if (response.status === 200) {
+          queryClient.setQueryData(getViewQueryKey(), response)
+        }
         void queryClient.invalidateQueries({ queryKey: getViewQueryKey() })
       },
     },
@@ -67,7 +76,10 @@ export function useCart() {
 
   const clearCartMutation = useClear({
     mutation: {
-      onSuccess: function () {
+      onSuccess: function (response) {
+        if (response.status === 200) {
+          queryClient.setQueryData(getViewQueryKey(), response)
+        }
         void queryClient.invalidateQueries({ queryKey: getViewQueryKey() })
       },
     },
@@ -84,6 +96,7 @@ export function useCart() {
   return {
     isLoggedIn,
     isLoading: cartQuery.isLoading,
+    isFetching: cartQuery.isFetching,
     isError: cartQuery.isError,
     error: cartQuery.error,
     cart: cartData,

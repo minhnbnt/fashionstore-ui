@@ -25,7 +25,7 @@ fashionstore-ui/
 │   │   ├── shop/          # ShopKycRegistrationModal (+ ShopRegistrationModal alias)
 │   │   ├── shop-storefront/ # khối storefront trang shop công khai
 │   │   ├── common/        # LocationAddressSelector
-│   │   ├── ui/            # nút/badge/editor dùng chung; con: charts/ (barrel index.ts)
+│   │   ├── ui/            # nút/badge/editor/sonner.tsx dùng chung; con: charts/ (barrel index.ts)
 │   │   └── UserAvatar.tsx # avatar marble sinh từ tên
 │   ├── hooks/             # useSession (queryOptions), useAuthMutations, useTheme
 │   ├── lib/               # dùng chung: auth, format, pagination, searchFilters (+test cạnh file)
@@ -35,6 +35,7 @@ fashionstore-ui/
 │   │   ├── order/         # orderMonitoring, orderStatus, holidays
 │   │   ├── shop/          # cartView, variants, ratingSummary, bankSearch, addressParser
 │   │   ├── content/       # siteContent, notificationLinks
+│   │   ├── notifications/ # toast/notification helpers dùng chung
 │   │   └── ai/            # agent (facade compose), tools/ (mỗi tool 1 file), chatTransport
 │   ├── pages/             # barrel index.ts export lazy mọi trang; root: Home, Search, ProductDetail, Faq, StaticPage
 │   │   ├── admin/         # 10 trang admin (Dashboard/Shops/ShopDetail/Users/UserDetail/Orders/Products/BannedKeywords/Content/Holidays)

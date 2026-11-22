@@ -5,7 +5,23 @@ import type { ImageSearchHit } from '@generated/model/imageSearchHit'
 import type { ProductResponse } from '@generated/model/productResponse'
 import type { ProductSummaryResponse } from '@generated/model/productSummaryResponse'
 
-export const PLACEHOLDER_IMAGE = 'https://picsum.photos/seed/net-noimage/600/750'
+const PLACEHOLDER_SVG = [
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750" width="600" height="750">',
+  '<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">',
+  '<stop offset="0%" stop-color="#eef2ff"/>',
+  '<stop offset="100%" stop-color="#e2e8f0"/>',
+  '</linearGradient></defs>',
+  '<rect width="600" height="750" fill="url(#bg)"/>',
+  '<rect x="36" y="36" width="528" height="678" rx="32" fill="none" stroke="#c7d2fe" stroke-width="2" stroke-dasharray="10 10"/>',
+  '<g fill="none" stroke="#64748b" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">',
+  '<path d="M276 286a24 24 0 1 1 40 18c-9 8-16 14-16 26v12"/>',
+  '<path d="M300 342l128 84c14 9 8 30-9 30H181c-17 0-23-21-9-30l128-84z"/>',
+  '</g>',
+  '<text x="300" y="516" text-anchor="middle" fill="#64748b" font-family="system-ui,sans-serif" font-size="24" font-weight="700" letter-spacing="6">DHMQ</text>',
+  '</svg>',
+].join('')
+
+export const PLACEHOLDER_IMAGE = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(PLACEHOLDER_SVG)}`
 
 /** URL ảnh từ response; null/undefined/rỗng thì dùng placeholder ảnh mặc định. */
 export function urlOrPlaceholder(url: string | null | undefined): string {

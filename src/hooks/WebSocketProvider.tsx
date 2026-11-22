@@ -8,6 +8,12 @@ import { WebSocketContext } from './useWebSocket'
 
 import type { Client } from '@stomp/stompjs'
 
+interface ConnectedSocket {
+  client: Client
+  userId: string
+  token: string
+}
+
 /**
  * Giữ một kết nối STOMP cho cả app khi đã đăng nhập, tự hủy khi đăng xuất.
  * Context chỉ nhận giá trị sau khi socket CONNECT xong (onConnect).
@@ -16,7 +22,7 @@ import type { Client } from '@stomp/stompjs'
  */
 export function WebSocketProvider({ children }: PropsWithChildren) {
   const session = useSessionQuery().data
-  const [client, setClient] = useState<Client | null>(null)
+  const [connected, setConnected] = useState<ConnectedSocket | null>(null)
 
   const token = session?.access_token
   const userId = session?.user.id
@@ -39,10 +45,13 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
           }
           stompClient = created
           created.onConnect = function onConnected() {
-            setClient(created)
+            setConnected({ client: created, userId, token })
+          }
+          created.onDisconnect = function onDisconnected() {
+            setConnected(null)
           }
           created.onWebSocketClose = function onClosed() {
-            setClient(null)
+            setConnected(null)
           }
           created.activate()
         })
@@ -52,8 +61,10 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
 
       return function cleanup() {
         cancelled = true
+        setConnected(null)
         if (stompClient !== null) {
           stompClient.onConnect = function () {}
+          stompClient.onDisconnect = function () {}
           stompClient.onWebSocketClose = function () {}
           void stompClient.deactivate()
         }
@@ -62,5 +73,17 @@ export function WebSocketProvider({ children }: PropsWithChildren) {
     [userId, token],
   )
 
-  return <WebSocketContext.Provider value={client}>{children}</WebSocketContext.Provider>
+  let activeClient: Client | null = null
+  if (
+    connected !== null &&
+    userId !== undefined &&
+    token !== undefined &&
+    connected.userId === userId &&
+    connected.token === token &&
+    connected.client.connected
+  ) {
+    activeClient = connected.client
+  }
+
+  return <WebSocketContext.Provider value={activeClient}>{children}</WebSocketContext.Provider>
 }

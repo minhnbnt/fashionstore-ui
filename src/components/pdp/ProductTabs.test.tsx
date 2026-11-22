@@ -121,7 +121,7 @@ describe('ProductTabs — xem danh gia, highlight huu ich va tương tác (DOM)'
     renderTabs()
 
     expect(screen.getByText('Áo sơ mi lụa tơ tằm')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Đánh giá (2)' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Đánh giá (2)' })).toBeTruthy()
     expect(screen.queryByText(/Áo đẹp, vải mát/)).toBeNull()
   })
 
@@ -139,7 +139,7 @@ describe('ProductTabs — xem danh gia, highlight huu ich va tương tác (DOM)'
     const user = userEvent.setup()
     renderTabs()
 
-    await user.click(screen.getByRole('button', { name: 'Đánh giá (2)' }))
+    await user.click(screen.getByRole('tab', { name: 'Đánh giá (2)' }))
 
     expect(screen.getByText('4.6')).toBeTruthy()
     expect(screen.getByText('2 đánh giá')).toBeTruthy()
@@ -172,7 +172,7 @@ describe('ProductTabs — xem danh gia, highlight huu ich va tương tác (DOM)'
     const user = userEvent.setup()
     renderTabs()
 
-    await user.click(screen.getByRole('button', { name: 'Đánh giá (0)' }))
+    await user.click(screen.getByRole('tab', { name: 'Đánh giá (0)' }))
 
     expect(screen.getByText('Chưa có đánh giá nào phù hợp cho sản phẩm này.')).toBeTruthy()
   })

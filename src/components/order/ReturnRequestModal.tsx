@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Trash, UploadSimple, VideoCamera } from '@phosphor-icons/react'
 
@@ -31,16 +31,23 @@ interface UploadedMedia {
   isVideo: boolean
 }
 
-export default function ReturnRequestModal(props: Props) {
+function ReturnRequestForm(props: Omit<Props, 'open'>) {
   const [reason, setReason] = useState<string>('DAMAGED')
   const [description, setDescription] = useState('')
   const [mediaList, setMediaList] = useState<UploadedMedia[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const objectUrlsRef = useRef<Set<string>>(new Set())
 
-  if (!props.open) {
-    return null
-  }
+  useEffect(() => {
+    const urls = objectUrlsRef.current
+    return () => {
+      for (const url of urls) {
+        URL.revokeObjectURL(url)
+      }
+      urls.clear()
+    }
+  }, [])
 
   let heading = 'Yêu cầu đổi trả / hoàn tiền'
   if (props.orderCode) {
@@ -65,10 +72,16 @@ export default function ReturnRequestModal(props: Props) {
         } else {
           uploadId = await uploadImage(file)
         }
-        next.push({ uploadId, previewUrl: URL.createObjectURL(file), isVideo })
+        const previewUrl = URL.createObjectURL(file)
+        objectUrlsRef.current.add(previewUrl)
+        next.push({ uploadId, previewUrl, isVideo })
       }
       setMediaList((prev) => [...prev, ...next])
     } catch (err) {
+      for (const item of next) {
+        URL.revokeObjectURL(item.previewUrl)
+        objectUrlsRef.current.delete(item.previewUrl)
+      }
       if (err instanceof Error) {
         setUploadError(err.message)
       } else {
@@ -80,7 +93,14 @@ export default function ReturnRequestModal(props: Props) {
   }
 
   function removeMedia(uploadId: string) {
-    setMediaList((prev) => prev.filter((item) => item.uploadId !== uploadId))
+    setMediaList((prev) => {
+      const target = prev.find((item) => item.uploadId === uploadId)
+      if (target !== undefined) {
+        URL.revokeObjectURL(target.previewUrl)
+        objectUrlsRef.current.delete(target.previewUrl)
+      }
+      return prev.filter((item) => item.uploadId !== uploadId)
+    })
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -176,7 +196,7 @@ export default function ReturnRequestModal(props: Props) {
                     type="button"
                     aria-label="Xóa tệp"
                     onClick={() => removeMedia(media.uploadId)}
-                    className="absolute top-1 right-1 rounded-full bg-black/70 p-1 text-white"
+                    className="absolute top-1 right-1 cursor-pointer rounded-full bg-black/70 p-1 text-white"
                   >
                     <Trash size={12} />
                   </button>
@@ -196,19 +216,35 @@ export default function ReturnRequestModal(props: Props) {
           <button
             type="button"
             onClick={props.onClose}
-            className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
+            className="cursor-pointer rounded-full border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-700 hover:bg-zinc-100 dark:border-white/15 dark:text-zinc-200 dark:hover:bg-white/10"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={props.isPending || uploading}
-            className="btn-primary rounded-full px-5 py-2 text-xs font-bold disabled:opacity-50"
+            className="btn-primary cursor-pointer rounded-full px-5 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50"
           >
             Gửi yêu cầu đổi trả
           </button>
         </div>
       </form>
     </Modal>
+  )
+}
+
+export default function ReturnRequestModal(props: Props) {
+  if (!props.open) {
+    return null
+  }
+  return (
+    <ReturnRequestForm
+      key={props.orderCode ?? 'return-request'}
+      orderCode={props.orderCode}
+      isPending={props.isPending}
+      error={props.error}
+      onClose={props.onClose}
+      onSubmit={props.onSubmit}
+    />
   )
 }

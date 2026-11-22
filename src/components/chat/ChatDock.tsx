@@ -24,6 +24,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'motion/react'
 
+import { isTopOverlay, popOverlay, pushOverlay } from '@/components/ui/overlayStack'
 import UserAvatar from '@/components/UserAvatar'
 import { useAllShopProducts } from '@/hooks/useAllShopProducts'
 import { useChatMessagesRealtime, useConversationListRealtime } from '@/hooks/useChatRealtime'
@@ -32,7 +33,8 @@ import { useSessionQuery } from '@/hooks/useSession'
 import { apiErrorText, takeData } from '@/lib/api/apiAdapters'
 import { uploadImage } from '@/lib/api/uploadImage'
 import { formatDateTime } from '@/lib/format'
-import { cn, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
+import { notify } from '@/lib/notifications'
+import { cn, FOCUS_RING_CLASS, segmentedItemClass, segmentedTrackClass } from '@/lib/ui/styles'
 
 import {
   bubbleClass,
@@ -132,9 +134,27 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
     uploadId: string
     objectUrl: string
   } | null>(null)
+  const pendingObjectUrlRef = useRef<string | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [showProductPickerModal, setShowProductPickerModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(function () {
+    return function () {
+      if (pendingObjectUrlRef.current !== null) {
+        URL.revokeObjectURL(pendingObjectUrlRef.current)
+        pendingObjectUrlRef.current = null
+      }
+    }
+  }, [])
+
+  function clearPendingImage() {
+    if (pendingObjectUrlRef.current !== null) {
+      URL.revokeObjectURL(pendingObjectUrlRef.current)
+      pendingObjectUrlRef.current = null
+    }
+    setPendingImage(null)
+  }
   const shopId = conversation.shopId ?? ''
   const shopProductsQuery = useAllShopProducts(shopId, showProductPickerModal)
   const location = useLocation()
@@ -182,10 +202,18 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
     setIsUploadingImage(true)
     void uploadImage(file)
       .then(function (uploadId) {
-        setPendingImage({ uploadId, objectUrl: URL.createObjectURL(file) })
+        if (pendingObjectUrlRef.current !== null) {
+          URL.revokeObjectURL(pendingObjectUrlRef.current)
+        }
+        const nextUrl = URL.createObjectURL(file)
+        pendingObjectUrlRef.current = nextUrl
+        setPendingImage({ uploadId, objectUrl: nextUrl })
       })
       .catch(function (err) {
-        console.error('Lỗi tải ảnh:', err)
+        notify.error(
+          'Không tải được ảnh lên',
+          notify.safeErrorMessage(err, 'upload', 'Vui lòng thử lại sau.'),
+        )
       })
       .finally(function () {
         setIsUploadingImage(false)
@@ -203,22 +231,25 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
     if (conversationId === '') {
       return
     }
+    const imageUploadId = pendingImage?.uploadId
     sendMutation.mutate({
       id: conversationId,
       data: {
         content: trimmed,
-        imageUploadId: pendingImage?.uploadId,
+        imageUploadId,
       },
     })
     setMessageInput('')
-    setPendingImage(null)
+    clearPendingImage()
     pinNow()
   }
 
   let headerClass =
     'flex shrink-0 items-center gap-3 border-b border-zinc-200/70 bg-white/80 px-4 py-2.5 backdrop-blur-xs dark:border-white/10 dark:bg-white/[0.03]'
-  let backButtonClass =
-    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-500 transition hover:bg-[#f6f9ff] hover:text-[#17203a] active:scale-95 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white'
+  let backButtonClass = cn(
+    'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-500 transition hover:bg-[#f6f9ff] hover:text-[#17203a] active:scale-95 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-white',
+    FOCUS_RING_CLASS,
+  )
   let avatarSize = 36
   let shopNameClass = 'truncate text-[13px] font-bold text-[#17203a] dark:text-white'
   let scrollPaddingClass = 'px-4 py-4'
@@ -249,9 +280,8 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
         <UserAvatar name={conversation.shopName ?? 'Shop'} size={avatarSize} />
         <div className="min-w-0">
           <p className={shopNameClass}>{conversation.shopName ?? 'Shop'}</p>
-          <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-            <span>Shop thường phản hồi trong ít phút</span>
+          <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+            Hội thoại trực tiếp với gian hàng
           </p>
         </div>
       </div>
@@ -321,7 +351,10 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
                 })
                 pinNow()
               }}
-              className="btn-primary shrink-0 rounded-full px-3.5 py-1 text-[11px] font-bold active:scale-[0.97]"
+              className={cn(
+                'btn-primary shrink-0 cursor-pointer rounded-full px-3.5 py-1 text-[11px] font-bold active:scale-[0.97]',
+                FOCUS_RING_CLASS,
+              )}
             >
               Gửi ngay
             </button>
@@ -337,9 +370,12 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
             />
             <button
               type="button"
-              onClick={() => setPendingImage(null)}
+              onClick={clearPendingImage}
               aria-label="Xóa ảnh đính kèm"
-              className="rounded-full p-1 text-zinc-500 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/20"
+              className={cn(
+                'cursor-pointer rounded-full p-1 text-zinc-500 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-white/20',
+                FOCUS_RING_CLASS,
+              )}
             >
               <X size={14} />
             </button>
@@ -364,7 +400,10 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploadingImage}
             aria-label="Đính kèm hình ảnh"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-blue-600 hover:text-blue-700 active:scale-95 disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:border-sky-400"
+            className={cn(
+              'flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-blue-600 hover:text-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:border-sky-400',
+              FOCUS_RING_CLASS,
+            )}
           >
             <ImageIcon size={18} />
           </button>
@@ -375,7 +414,10 @@ export function ChatDockThread({ conversation, onBack, variant = 'dock' }: Threa
             }}
             disabled={shopId === ''}
             aria-label="Gửi sản phẩm"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-blue-600 hover:text-blue-700 active:scale-95 disabled:opacity-40 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:border-sky-400"
+            className={cn(
+              'flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-600 transition hover:border-blue-600 hover:text-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15 dark:bg-white/10 dark:text-zinc-300 dark:hover:border-sky-400',
+              FOCUS_RING_CLASS,
+            )}
           >
             <ShoppingBagOpen size={18} />
           </button>
@@ -478,7 +520,10 @@ function ChatDockList({
           type="button"
           onClick={handleChatWithShop}
           disabled={isStarting}
-          className="btn-primary mx-3.5 mt-3 flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold active:scale-[0.98] disabled:opacity-60"
+          className={cn(
+            'btn-primary mx-3.5 mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60',
+            FOCUS_RING_CLASS,
+          )}
         >
           <ChatCircleDots size={16} weight="bold" />
           {shopCtaLabel(existingForShop, shopNameFromProduct)}
@@ -495,7 +540,10 @@ function ChatDockList({
               onClick={function () {
                 onSelect(convId)
               }}
-              className="flex w-full items-center gap-3 rounded-2xl bg-white/85 p-3 text-left shadow-2xs transition hover:border-blue-500/30 hover:bg-white dark:bg-white/[0.04] dark:hover:bg-white/10"
+              className={cn(
+                'flex w-full cursor-pointer items-center gap-3 rounded-2xl bg-white/85 p-3 text-left shadow-2xs transition hover:border-blue-500/30 hover:bg-white dark:bg-white/[0.04] dark:hover:bg-white/10',
+                FOCUS_RING_CLASS,
+              )}
             >
               <UserAvatar name={conv.shopName ?? 'Shop'} size={42} />
               <div className="min-w-0 flex-1">
@@ -512,7 +560,7 @@ function ChatDockList({
                 </p>
               </div>
               {(conv.unreadCount ?? 0) > 0 && (
-                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-[10px] font-bold text-white">
+                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white tabular-nums">
                   {conv.unreadCount}
                 </span>
               )}
@@ -651,15 +699,47 @@ function ChatDockBody(props: ChatDockProps) {
     }
   }, [conversations, isLoggedIn, markReadMutation, startMutation])
 
+  useEffect(
+    function closeOnEscape() {
+      if (open === false) {
+        return
+      }
+      const token = pushOverlay()
+      function handleKey(event: KeyboardEvent) {
+        if (isTopOverlay(token) === false) {
+          return
+        }
+        if (event.key === 'Escape') {
+          setOpen(false)
+        }
+      }
+      document.addEventListener('keydown', handleKey)
+      return function () {
+        popOverlay(token)
+        document.removeEventListener('keydown', handleKey)
+      }
+    },
+    [open],
+  )
+
   let product: ProductResponse | null = null
   if (productQuery.data !== undefined) {
     product = takeData(productQuery.data)
   }
   let shopIdFromProduct = ''
-  let shopNameFromProduct = ''
+  let shopNameFromProduct = 'cửa hàng'
   if (product !== null) {
     shopIdFromProduct = product.shopId ?? ''
-    shopNameFromProduct = product.name ?? 'shop'
+    const matchingConv = conversations.find(function (c) {
+      return shopIdFromProduct !== '' && c.shopId === shopIdFromProduct
+    })
+    if (
+      matchingConv !== undefined &&
+      matchingConv.shopName !== undefined &&
+      matchingConv.shopName !== ''
+    ) {
+      shopNameFromProduct = matchingConv.shopName
+    }
   }
 
   const totalUnread = conversations.reduce(function (sum, conv) {
@@ -709,12 +789,16 @@ function ChatDockBody(props: ChatDockProps) {
         id="chat-dock-toggle"
         onClick={handleToggle}
         aria-label={chatToggleLabel(open)}
-        className="btn-primary fixed right-5 bottom-5 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-xl ring-2 ring-white/40 transition hover:scale-105 active:scale-95 dark:ring-white/15"
+        aria-expanded={open}
+        className={cn(
+          'btn-primary fixed right-5 bottom-5 z-50 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-xl ring-2 ring-white/40 transition hover:scale-105 active:scale-95 dark:ring-white/15',
+          FOCUS_RING_CLASS,
+        )}
       >
         {!open && <ChatCircleDots size={24} weight="bold" />}
         {open && <X size={22} weight="bold" />}
         {!open && isLoggedIn && totalUnread > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white tabular-nums">
             {unreadBadgeText}
           </span>
         )}
@@ -724,9 +808,13 @@ function ChatDockBody(props: ChatDockProps) {
         <ChatPanel className="glass fixed inset-x-3 bottom-[88px] z-50 flex h-[min(68dvh,540px)] flex-col overflow-hidden rounded-3xl bg-white/92 shadow-2xl md:inset-x-auto md:right-6 md:w-[560px] dark:bg-[#11182a]/94">
           {/* Header: 2 tab + expand button */}
           <div className="flex shrink-0 items-center justify-between border-b border-zinc-200/70 bg-white/80 px-3.5 py-2.5 backdrop-blur-xs dark:border-white/10 dark:bg-white/[0.03]">
-            <div className={cn(segmentedTrackClass())}>
+            <fieldset
+              aria-label="Chế độ trò chuyện"
+              className={cn(segmentedTrackClass(), 'm-0 border-0')}
+            >
               <button
                 type="button"
+                aria-pressed={activeTab === 'agent'}
                 onClick={function () {
                   setChosenTab('agent')
                 }}
@@ -738,6 +826,7 @@ function ChatDockBody(props: ChatDockProps) {
               {isLoggedIn && (
                 <button
                   type="button"
+                  aria-pressed={activeTab === 'messages'}
                   onClick={function () {
                     setChosenTab('messages')
                   }}
@@ -747,7 +836,7 @@ function ChatDockBody(props: ChatDockProps) {
                   Tin nhắn
                 </button>
               )}
-            </div>
+            </fieldset>
 
             <Link
               to={expandHref}
@@ -756,7 +845,10 @@ function ChatDockBody(props: ChatDockProps) {
               }}
               title="Mở trang tin nhắn toàn màn hình"
               aria-label="Mở trang tin nhắn toàn màn hình"
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200/80 bg-white/80 text-zinc-600 transition hover:border-blue-500/40 hover:text-blue-700 active:scale-95 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:text-white"
+              className={cn(
+                'flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-zinc-200/80 bg-white/80 text-zinc-600 transition hover:border-blue-500/40 hover:text-blue-700 active:scale-95 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300 dark:hover:text-white',
+                FOCUS_RING_CLASS,
+              )}
             >
               <ArrowsOut size={15} weight="bold" />
             </Link>
@@ -786,7 +878,7 @@ function ChatDockBody(props: ChatDockProps) {
                 />
               )}
               {!showThread && startError !== '' && (
-                <p className="px-4 pb-2 text-xs font-semibold text-red-600 dark:text-red-400">
+                <p className="px-4 pb-2 text-xs font-semibold text-rose-600 dark:text-rose-400">
                   {startError}
                 </p>
               )}

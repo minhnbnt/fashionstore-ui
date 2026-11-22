@@ -98,7 +98,7 @@ describe('Messages Page', () => {
     renderWithClient(<Messages />)
 
     // Guest mode defaults to AI tab
-    expect(screen.getByText('Trợ lý nét AI')).not.toBeNull()
+    expect(screen.getByText('Trợ lý DHMQ AI')).not.toBeNull()
     expect(screen.getByTestId('agent-tab-mock')).not.toBeNull()
 
     // Switch to Shop tab

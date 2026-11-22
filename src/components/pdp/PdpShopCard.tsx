@@ -12,7 +12,8 @@ import {
 
 import UserAvatar from '@/components/UserAvatar'
 import { useSessionQuery } from '@/hooks/useSession'
-import { takeData } from '@/lib/api/apiAdapters'
+import { takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
+import { CARD_CLASS, cn, FOCUS_RING_CLASS, secondaryButtonClass } from '@/lib/ui/styles'
 
 import type { ShopResponse } from '@generated/model/shopResponse'
 
@@ -40,12 +41,12 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
 
   if (shopQuery.isLoading) {
     return (
-      <div className="my-6 animate-pulse rounded-2xl border border-zinc-200/80 bg-zinc-50 p-4 dark:border-white/10 dark:bg-white/5">
+      <div className={cn(CARD_CLASS, 'my-6 motion-safe:animate-pulse p-4 sm:p-5')}>
         <div className="flex items-center gap-4">
           <div className="h-14 w-14 rounded-full bg-zinc-200 dark:bg-white/10" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 w-36 rounded bg-zinc-200 dark:bg-white/10" />
-            <div className="h-3 w-48 rounded bg-zinc-200 dark:bg-white/10" />
+            <div className="h-4 w-36 rounded-full bg-zinc-200 dark:bg-white/10" />
+            <div className="h-3 w-48 rounded-full bg-zinc-200 dark:bg-white/10" />
           </div>
         </div>
       </div>
@@ -60,6 +61,10 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
   let shopSlug = shop.id ?? ''
   if (shop.slug !== undefined && shop.slug !== null && shop.slug !== '') {
     shopSlug = shop.slug
+  }
+  let logoSrc: string | undefined
+  if (shop.logoUrl !== undefined && shop.logoUrl !== null && shop.logoUrl !== '') {
+    logoSrc = urlOrPlaceholder(shop.logoUrl)
   }
   const rating = shop.rating ?? 5.0
   const ratingCount = shop.ratingCount ?? 0
@@ -91,19 +96,19 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
   return (
     <section
       aria-label="Thông tin gian hàng"
-      className="my-6 rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm transition-all sm:p-5 dark:border-white/10 dark:bg-[#11182a]"
+      className={cn(CARD_CLASS, 'my-6 p-4 transition-all sm:p-5')}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Left: Avatar & Basic Info */}
         <div className="flex items-center gap-4">
           <Link
             to={`/shops/${shopSlug}`}
-            className="group relative flex-shrink-0"
+            className={cn('group relative flex-shrink-0 rounded-full', FOCUS_RING_CLASS)}
             title={`Xem gian hàng ${shopName}`}
           >
             {/* flex: tránh line-box cộng descender dưới inline-block làm khung avatar méo ellipse */}
-            <div className="flex rounded-full ring-2 ring-indigo-100 transition-transform group-hover:scale-105 dark:ring-white/10">
-              <UserAvatar name={shopName} size={56} />
+            <div className="flex rounded-full ring-2 ring-sky-100 transition-transform group-hover:scale-105 dark:ring-white/10">
+              <UserAvatar name={shopName} size={56} src={logoSrc} />
             </div>
             {isTrusted && (
               <span
@@ -119,27 +124,34 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 to={`/shops/${shopSlug}`}
-                className="text-base font-bold text-zinc-900 transition-colors hover:text-indigo-600 dark:text-zinc-100 dark:hover:text-indigo-400"
+                className={cn(
+                  'rounded-2xl text-base font-bold text-[#17203a] transition-colors hover:text-blue-700 dark:text-[#e2e8f0] dark:hover:text-sky-300',
+                  FOCUS_RING_CLASS,
+                )}
               >
                 {shopName}
               </Link>
               {sellerTypeBadge !== '' && (
-                <span className="rounded bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+                <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-[10px] font-bold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
                   {sellerTypeBadge}
                 </span>
               )}
             </div>
 
             <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
-              <div className="flex items-center gap-1 font-medium text-amber-500">
-                <Star size={14} weight="fill" />
+              <div className="flex items-center gap-1 font-semibold text-amber-500 tabular-nums">
+                <Star size={14} weight="fill" className="text-amber-400" />
                 <span>{rating.toFixed(1)}</span>
-                <span className="text-zinc-400 dark:text-zinc-500">({ratingCount})</span>
+                <span className="font-normal text-zinc-400 dark:text-zinc-500">
+                  ({ratingCount})
+                </span>
               </div>
               <span className="text-zinc-300 dark:text-white/20">•</span>
-              <span>{followerCount.toLocaleString('vi-VN')} Người theo dõi</span>
+              <span className="tabular-nums">
+                {followerCount.toLocaleString('vi-VN')} Người theo dõi
+              </span>
               <span className="text-zinc-300 dark:text-white/20">•</span>
-              <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+              <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
                 <Clock size={13} />
                 <span>Chuẩn bị hàng: {processingDays} ngày</span>
               </div>
@@ -151,7 +163,10 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
         <div className="flex items-center gap-2 self-start sm:self-center">
           <Link
             to={`/shops/${shopSlug}`}
-            className="flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-600 transition-all hover:bg-indigo-100 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
+            className={cn(
+              'flex cursor-pointer items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/80 px-4 py-2 text-xs font-bold text-blue-700 transition-all hover:bg-blue-100 dark:border-sky-400/30 dark:bg-sky-400/10 dark:text-sky-300 dark:hover:bg-sky-400/20',
+              FOCUS_RING_CLASS,
+            )}
           >
             <Storefront size={16} />
             <span>Xem Shop</span>
@@ -161,7 +176,7 @@ export function PdpShopCard({ shopId }: PdpShopCardProps) {
           <button
             type="button"
             onClick={handleOpenChat}
-            className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-2 text-xs font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:bg-zinc-50 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200 dark:hover:bg-white/10"
+            className={cn(secondaryButtonClass(), 'px-3.5 py-2 text-xs')}
           >
             <ChatCircleDots size={16} />
             <span>Chat ngay</span>
