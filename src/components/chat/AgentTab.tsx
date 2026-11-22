@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 
@@ -79,7 +79,6 @@ const AI_QUICK_PROMPTS = [
 interface AttachedImage {
   previewUrl: string | null
   status: 'uploading' | 'ready' | 'error'
-  mediaType?: string
   filename?: string
   image?: AgentImageContext
   error?: string
@@ -283,10 +282,6 @@ export default function AgentTab(props: AgentTabProps) {
     [location.pathname, filters],
   )
 
-  function updateAttached(next: AttachedImage | null) {
-    setAttached(next)
-  }
-
   function clearAttached() {
     attachSeqRef.current += 1
     setAttached(function (current) {
@@ -304,26 +299,25 @@ export default function AgentTab(props: AgentTabProps) {
       return
     }
     if (file.type.startsWith('image/') === false) {
-      updateAttached({ previewUrl: null, status: 'error', error: 'Chỉ nhận file ảnh.' })
+      setAttached({ previewUrl: null, status: 'error', error: 'Chỉ nhận file ảnh.' })
       return
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      updateAttached({ previewUrl: null, status: 'error', error: 'Ảnh tối đa 5 MB.' })
+      setAttached({ previewUrl: null, status: 'error', error: 'Ảnh tối đa 5 MB.' })
       return
     }
     clearAttached()
     const seq = attachSeqRef.current
     const previewUrl = window.URL.createObjectURL(file)
-    updateAttached({ previewUrl, status: 'uploading', mediaType: file.type, filename: file.name })
+    setAttached({ previewUrl, status: 'uploading', filename: file.name })
     uploadImageWithUrl(file)
       .then(function (uploaded) {
         if (attachSeqRef.current !== seq) {
           return
         }
-        updateAttached({
+        setAttached({
           previewUrl,
           status: 'ready',
-          mediaType: file.type,
           filename: file.name,
           // publicUrl từ presign khớp key S3 thật (có extension) — tự build từ
           // uploadId sẽ 404 vì key gồm cả đuôi file.
@@ -334,27 +328,13 @@ export default function AgentTab(props: AgentTabProps) {
         if (attachSeqRef.current !== seq) {
           return
         }
-        updateAttached({
+        setAttached({
           previewUrl,
           status: 'error',
           error: 'Không gửi được ảnh, thử ảnh khác nhé.',
         })
       })
   }
-
-  function readyImageContext(): AgentImageContext | undefined {
-    if (attached === null || attached.status !== 'ready' || attached.image === undefined) {
-      return undefined
-    }
-    return attached.image
-  }
-
-  const getContext = useCallback(
-    function (): AgentContext {
-      return context
-    },
-    [context],
-  )
 
   // Transport dựng một lần: agent chạy ở ai-backend, Bearer + context gắn theo từng request.
   const agentTransport = useMemo(
@@ -365,9 +345,14 @@ export default function AgentTab(props: AgentTabProps) {
       if (config === null) {
         return undefined
       }
-      return createChatTransport({ backendUrl: config.backendUrl, getContext })
+      return createChatTransport({
+        backendUrl: config.backendUrl,
+        getContext: function () {
+          return context
+        },
+      })
     },
-    [props.transport, config, getContext],
+    [props.transport, config, context],
   )
 
   const chat = useChat<AgentUIMessage>({ transport: agentTransport })
@@ -492,7 +477,9 @@ export default function AgentTab(props: AgentTabProps) {
       return
     }
     const id = crypto.randomUUID()
+    const options: ChatRequestOptions = {}
     if (image !== undefined) {
+      options.body = { image }
       setSentImageByMessageId(function (current) {
         const next = new Map(current)
         next.set(id, image.url)
@@ -501,10 +488,6 @@ export default function AgentTab(props: AgentTabProps) {
     }
     // Full message object (không phải {text}) để id mình truyền được giữ lại —
     // cần cho thumbnail theo message. Ảnh đi qua body để transport merge vào context.
-    const options: ChatRequestOptions = {}
-    if (image !== undefined) {
-      options.body = { image }
-    }
     void chat.sendMessage({ id, role: 'user', parts: [{ type: 'text', text }] }, options)
     pinNow()
 
@@ -542,7 +525,7 @@ export default function AgentTab(props: AgentTabProps) {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const image = readyImageContext()
+    const image = attached?.image
     if (input.trim() === '' && image === undefined) {
       return
     }
@@ -555,11 +538,11 @@ export default function AgentTab(props: AgentTabProps) {
     void navigate('/search?' + toQueryString(withFilter(filters, patch)))
   }
 
-  const imageReady = attached !== null && attached.image !== undefined
+  const readyImage = attached?.image
   const sendDisabled =
     config === null ||
-    (attached !== null && attached.image === undefined) ||
-    (input.trim() === '' && imageReady === false)
+    (attached !== null && readyImage === undefined) ||
+    (input.trim() === '' && readyImage === undefined)
 
   const isPageVariant = props.variant === 'page'
 

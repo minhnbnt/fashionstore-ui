@@ -2,9 +2,7 @@ import { DefaultChatTransport } from 'ai'
 
 import { getAuthClient } from '@/lib/auth'
 
-import type { AgentContext } from './agent'
-import type { AgentImageContext } from './agent'
-import type { AgentUIMessage } from './agent'
+import type { AgentContext, AgentImageContext, AgentUIMessage } from './agent'
 import type { ChatTransport } from 'ai'
 
 /** Transport mỏng: gọi POST /api/chat của ai-backend, gắn Bearer token và context hiện tại. */
