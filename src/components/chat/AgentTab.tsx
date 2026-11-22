@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 
@@ -26,7 +26,7 @@ import { usePinToBottom } from '@/hooks/usePinToBottom'
 import { useSessionQuery } from '@/hooks/useSession'
 import { readAgentConfig } from '@/lib/ai/agent'
 import { deserializeAgentMessage, serializeAgentMessage } from '@/lib/ai/agentHistory'
-import { createAgentTransport } from '@/lib/ai/chatTransport'
+import { createChatTransport } from '@/lib/ai/chatTransport'
 import { EMPTY_FILTERS, parseFilters, toQueryString, withFilter } from '@/lib/searchFilters'
 
 import {
@@ -42,7 +42,7 @@ import { extractProductSlugs, stripProductLinks } from './messageParser'
 import type { ChatSurfaceVariant } from './bubble'
 import type {
   AgentConfig,
-  AgentMessageMetadata,
+  AgentContext,
   AgentTools,
   AgentUIMessage,
   SearchToolOutput,
@@ -52,7 +52,7 @@ import type { SearchFilters } from '@/types/search'
 import type { ToolUIPart, ChatTransport } from 'ai'
 
 export interface AgentTabProps {
-  /** Inject cho test; bỏ trống thì đọc từ biến env VITE_AI_*. */
+  /** Inject cho test; bỏ trống thì đọc VITE_AI_BACKEND_URL. */
   config?: AgentConfig
   /** Inject cho test; bỏ trống thì dựng transport chạy agent trong browser. */
   transport?: ChatTransport<AgentUIMessage>
@@ -246,7 +246,33 @@ export default function AgentTab(props: AgentTabProps) {
     [props.config],
   )
 
-  // Transport dựng một lần: agent chạy trong browser, bộ lọc gửi kèm metadata từng tin nhắn.
+  const filters = useMemo(
+    function () {
+      return filtersFromLocation(location.pathname, location.search)
+    },
+    [location.pathname, location.search],
+  )
+
+  // Context tươi theo location hiện tại — không đóng băng vào từng tin nhắn.
+  const context = useMemo<AgentContext>(
+    function () {
+      const productId = productIdFromLocation(location.pathname)
+      if (productId !== undefined) {
+        return { route: location.pathname, filters, productId }
+      }
+      return { route: location.pathname, filters }
+    },
+    [location.pathname, filters],
+  )
+
+  const getContext = useCallback(
+    function () {
+      return context
+    },
+    [context],
+  )
+
+  // Transport dựng một lần: agent chạy ở ai-backend, Bearer + context gắn theo từng request.
   const agentTransport = useMemo(
     function () {
       if (props.transport !== undefined) {
@@ -255,16 +281,9 @@ export default function AgentTab(props: AgentTabProps) {
       if (config === null) {
         return undefined
       }
-      return createAgentTransport({ config })
+      return createChatTransport({ backendUrl: config.backendUrl, getContext })
     },
-    [props.transport, config],
-  )
-
-  const filters = useMemo(
-    function () {
-      return filtersFromLocation(location.pathname, location.search)
-    },
-    [location.pathname, location.search],
+    [props.transport, config, getContext],
   )
 
   const chat = useChat<AgentUIMessage>({ transport: agentTransport })
@@ -388,12 +407,7 @@ export default function AgentTab(props: AgentTabProps) {
     if (text === '') {
       return
     }
-    const metadata: AgentMessageMetadata = { filters }
-    const productId = productIdFromLocation(location.pathname)
-    if (productId !== undefined) {
-      metadata.product = { id: productId }
-    }
-    void chat.sendMessage({ text, metadata })
+    void chat.sendMessage({ text })
     pinNow()
 
     if (isLoggedIn) {

@@ -52,9 +52,7 @@ vi.mock('@generated/endpoints/products/products', () => ({
 import AgentTab from './AgentTab'
 
 const CONFIG: AgentConfig = {
-  baseUrl: 'https://api.example.com/v1',
-  apiKey: 'test-key',
-  model: 'gemini-2.5-flash',
+  backendUrl: 'https://ai.test',
 }
 
 function createChunkTransport(chunks: UIMessageChunk[]): ChatTransport<AgentUIMessage> {

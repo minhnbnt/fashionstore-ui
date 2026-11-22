@@ -80,7 +80,7 @@ function conversationsOf(unreadCount: number) {
 }
 
 function configFixture(): AgentConfig {
-  return { baseUrl: 'https://ai.example.com/v1', apiKey: 'sk-test', model: 'test-model' }
+  return { backendUrl: 'https://ai.test' }
 }
 
 function transportOf(chunks: UIMessageChunk[]): ChatTransport<AgentUIMessage> {
