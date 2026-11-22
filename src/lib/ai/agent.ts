@@ -41,6 +41,12 @@ export interface AgentProductDetailOutput {
   sizeGuide?: string | null
   averageRating?: number | null
   reviewCount?: number
+  /** URL ảnh đại diện (sortOrder nhỏ nhất), null nếu sản phẩm chưa có ảnh. */
+  defaultImageUrl?: string | null
+  /** URL public ảnh garment thử đồ ảo, null nếu backend chưa tạo. */
+  garmentUrl?: string | null
+  /** Sản phẩm có hỗ trợ thử đồ ảo hay không. */
+  tryOnEnabled?: boolean
   variants: Array<{
     size?: string
     color?: string
@@ -49,7 +55,8 @@ export interface AgentProductDetailOutput {
   }>
 }
 
-/** I/O thuần của 5 tool — ToolUIPart<AgentTools> nhận trực tiếp shape này. */
+/** I/O thuần của 8 tool — ToolUIPart<AgentTools> nhận trực tiếp shape này.
+ *  Schema/execute nằm ở ai-backend; frontend chỉ đọc để render part. */
 // type alias (không phải interface) để có index signature thỏa constraint UITools.
 export type AgentTools = {
   getPageContext: {
@@ -80,6 +87,23 @@ export type AgentTools = {
   showProducts: {
     input: { productIds: string[] }
     output: ShowToolOutput
+  }
+  readImage: {
+    input: { url: string }
+    output: { url: string; mediaType: string; data: string }
+  }
+  tryOn: {
+    input: {
+      personImageUrl: string
+      garmentImageUrl: string
+      category: 'tops' | 'bottoms' | 'one-pieces'
+      garmentPhotoType: 'model' | 'flat-lay'
+    }
+    output: { image: { key: string; url: string } }
+  }
+  showImage: {
+    input: { url: string }
+    output: { url: string }
   }
 }
 

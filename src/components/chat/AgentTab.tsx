@@ -87,6 +87,7 @@ interface AttachedImage {
 type SearchToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-searchProducts' }>
 type ShowToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-showProducts' }>
 type ProductDetailToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-getProductDetail' }>
+type TryOnToolPart = Extract<ToolUIPart<AgentTools>, { type: 'tool-tryOn' }>
 
 function StatusPill(props: { text: string }) {
   return (
@@ -95,6 +96,32 @@ function StatusPill(props: { text: string }) {
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500" />
         <span>{props.text}</span>
       </span>
+    </div>
+  )
+}
+
+/** Trạng thái tool tryOn: đang chạy thì hiện pill chờ (tạo ảnh mất vài chục giây),
+ *  xong thì không render gì — ảnh kết quả do tool showImage phụ trách. */
+function TryOnBlock(props: { part: TryOnToolPart }) {
+  const part = props.part
+  if (part.state === 'output-available') {
+    return null
+  }
+  if (part.state === 'output-error') {
+    return <StatusPill text="Có lỗi khi tạo ảnh thử đồ." />
+  }
+  return <StatusPill text="Đang tạo ảnh thử đồ, chờ chút nhé…" />
+}
+
+/** Ảnh kết quả tool showImage trả về — hiển thị thẳng trong khung chat. */
+function ShowImageBlock(props: { url: string }) {
+  return (
+    <div className="flex flex-col items-start">
+      <img
+        src={props.url}
+        alt="Ảnh kết quả thử đồ"
+        className="max-h-80 max-w-[85%] rounded-2xl border border-zinc-200/80 bg-white object-contain shadow-2xs dark:border-white/10 dark:bg-white/10"
+      />
     </div>
   )
 }
@@ -665,6 +692,12 @@ export default function AgentTab(props: AgentTabProps) {
           }
           if (part.type === 'tool-getProductDetail') {
             return <ProductDetailToolBlock key={key} part={part} />
+          }
+          if (part.type === 'tool-tryOn') {
+            return <TryOnBlock key={key} part={part} />
+          }
+          if (part.type === 'tool-showImage' && part.state === 'output-available') {
+            return <ShowImageBlock key={key} url={part.output.url} />
           }
           return null
         })}

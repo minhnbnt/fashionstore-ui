@@ -167,6 +167,57 @@ const SEARCH_ONLY_CHUNKS: UIMessageChunk[] = [
   { type: 'finish' },
 ]
 
+const TRYON_INPUT = {
+  personImageUrl: 'https://assets.test/person.png',
+  garmentImageUrl: 'https://assets.test/garment.png',
+  category: 'tops',
+  garmentPhotoType: 'model',
+}
+
+// tryOn đang chạy — khách thấy pill chờ, chưa thấy ảnh.
+const TRYON_PENDING_CHUNKS: UIMessageChunk[] = [
+  { type: 'start', messageId: 'a1' },
+  { type: 'start-step' },
+  {
+    type: 'tool-input-available',
+    toolCallId: 'tc1',
+    toolName: 'tryOn',
+    input: TRYON_INPUT,
+  },
+  { type: 'finish-step' },
+  { type: 'finish' },
+]
+
+// tryOn xong rồi model gọi showImage — khách thấy ảnh kết quả trong khung chat.
+const TRYON_DONE_CHUNKS: UIMessageChunk[] = [
+  { type: 'start', messageId: 'a1' },
+  { type: 'start-step' },
+  {
+    type: 'tool-input-available',
+    toolCallId: 'tc1',
+    toolName: 'tryOn',
+    input: TRYON_INPUT,
+  },
+  {
+    type: 'tool-output-available',
+    toolCallId: 'tc1',
+    output: { image: { key: 'tryon/x.png', url: 'https://assets.test/tryon/x.png' } },
+  },
+  {
+    type: 'tool-input-available',
+    toolCallId: 'tc2',
+    toolName: 'showImage',
+    input: { url: 'https://assets.test/tryon/x.png' },
+  },
+  {
+    type: 'tool-output-available',
+    toolCallId: 'tc2',
+    output: { url: 'https://assets.test/tryon/x.png' },
+  },
+  { type: 'finish-step' },
+  { type: 'finish' },
+]
+
 describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
   it('hiện sẵn ô nhập câu hỏi (không còn nút launcher riêng)', function () {
     renderTab({ config: configFixture() })
@@ -196,6 +247,35 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     expect(await screen.findByText('váy hoa dưới 500k')).toBeTruthy()
     expect(await screen.findByText('Mình tìm được 1 sản phẩm nhé.')).toBeTruthy()
     expect(screen.getByText('Váy hoa nhí')).toBeTruthy()
+  })
+
+  it('tryOn đang chạy thì hiện pill chờ, chưa hiện ảnh', async function () {
+    const user = userEvent.setup()
+    renderTab({
+      config: configFixture(),
+      transport: transportOf(TRYON_PENDING_CHUNKS),
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử đồ cái áo này')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    expect(await screen.findByText('Đang tạo ảnh thử đồ, chờ chút nhé…')).toBeTruthy()
+    expect(screen.queryByAltText('Ảnh kết quả thử đồ')).toBeNull()
+  })
+
+  it('showImage trả kết quả thì hiện ảnh thử đồ cho khách', async function () {
+    const user = userEvent.setup()
+    renderTab({
+      config: configFixture(),
+      transport: transportOf(TRYON_DONE_CHUNKS),
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử đồ cái áo này')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    const image = (await screen.findByAltText('Ảnh kết quả thử đồ')) as HTMLImageElement
+    expect(image.getAttribute('src')).toBe('https://assets.test/tryon/x.png')
+    expect(screen.queryByText('Đang tạo ảnh thử đồ, chờ chút nhé…')).toBeNull()
   })
 
   it('tin nhắn user giữ bubble indigo bên phải', async function () {
