@@ -91,7 +91,10 @@ describe('createChatTransport', function () {
     await transport.sendMessages(sendOptions() as never)
 
     const call = fetchMock.mock.calls[0]
-    const body = JSON.parse(String(call[1]?.body))
+    const body = JSON.parse(String(call[1]?.body)) as unknown as {
+      context: { route: string; productId?: string }
+      messages: AgentUIMessage[]
+    }
     expect(body.context.route).toBe('/product/ao-polo')
     expect(body.context.productId).toBe('slug-ao-polo')
     expect(body.messages).toHaveLength(1)
