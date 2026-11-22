@@ -351,6 +351,7 @@ export default function SellerQnaDetailModal({
                   <img
                     src={urlOrPlaceholder(question.productImageUrl)}
                     alt={question.productName ?? 'Sản phẩm'}
+                    loading="lazy"
                     onError={fallbackImageOnError}
                     className="h-12 w-12 shrink-0 rounded-lg border border-zinc-200 object-cover dark:border-white/10"
                   />
@@ -479,6 +480,7 @@ export default function SellerQnaDetailModal({
                       {isEditingThis && (
                         <div className="mt-3 space-y-2">
                           <textarea
+                            aria-label="Chỉnh sửa câu trả lời của shop"
                             value={editContent}
                             onChange={function (e) {
                               setEditContent(e.target.value)

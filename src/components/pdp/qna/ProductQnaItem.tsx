@@ -207,6 +207,7 @@ function AnswerItem(props: {
       {isEditing && (
         <div className="mt-2.5 space-y-2">
           <textarea
+            aria-label="Chỉnh sửa câu trả lời"
             value={content}
             onChange={function (e) {
               setContent(e.target.value)
@@ -474,6 +475,7 @@ export default function ProductQnaItem(props: ProductQnaItemProps) {
       {isEditingQuestion && (
         <div className="mt-3 space-y-2">
           <textarea
+            aria-label="Chỉnh sửa câu hỏi"
             value={editQuestionContent}
             onChange={function (e) {
               setEditQuestionContent(e.target.value)
@@ -529,6 +531,7 @@ export default function ProductQnaItem(props: ProductQnaItemProps) {
         <div className="mt-3">
           <button
             type="button"
+            aria-expanded={isExpanded}
             onClick={function () {
               setIsExpanded(!isExpanded)
             }}
@@ -578,6 +581,7 @@ export default function ProductQnaItem(props: ProductQnaItemProps) {
           {isReplying && (
             <div className="space-y-2">
               <textarea
+                aria-label="Nội dung câu trả lời"
                 value={replyContent}
                 onChange={function (e) {
                   setReplyContent(e.target.value)

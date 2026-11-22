@@ -31,13 +31,16 @@ const {
   mockCreateAnswerMutate: vi.fn(),
   mockUpdateAnswerMutate: vi.fn(),
   mockDeleteAnswerMutate: vi.fn(),
-  mockSessionState: { loggedIn: true },
+  mockSessionState: { loggedIn: true, pending: false },
   mockNotifySuccess: vi.fn(),
   mockNotifyError: vi.fn(),
 }))
 
 vi.mock('@/hooks/useSession', () => ({
   useSessionQuery: () => {
+    if (mockSessionState.pending) {
+      return { data: undefined, isPending: true }
+    }
     if (mockSessionState.loggedIn) {
       return { data: { user: { id: 'u-1', email: 'test@example.com' } }, isPending: false }
     }
@@ -166,6 +169,7 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   mockSessionState.loggedIn = true
+  mockSessionState.pending = false
 })
 
 describe('ProductQnaSection — PDP Q&A Component', () => {
@@ -742,5 +746,50 @@ describe('ProductQnaSection — PDP Q&A Component', () => {
       expect.objectContaining({ page: 0 }),
       expect.any(Object),
     )
+  })
+
+  it('scrolls to the deep-linked question once Q&A data is available', () => {
+    const scrollSpy = vi.fn()
+    const original = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollIntoView')
+    Element.prototype.scrollIntoView = scrollSpy
+    try {
+      mockQnaPage()
+      renderQnaSection('/product/prod-100?questionId=q-1')
+      expect(scrollSpy).toHaveBeenCalled()
+      expect(document.getElementById('q-1')).not.toBeNull()
+    } finally {
+      if (original === undefined) {
+        Reflect.deleteProperty(Element.prototype, 'scrollIntoView')
+      } else {
+        Object.defineProperty(Element.prototype, 'scrollIntoView', original)
+      }
+    }
+  })
+
+  it('shows a retry state instead of the empty state when fetching fails', () => {
+    mockUseListProductQuestions.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: new Error('network down'),
+      refetch: vi.fn(),
+    })
+    renderQnaSection()
+
+    expect(screen.getByText('Không thể tải danh sách câu hỏi')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Thử lại' })).toBeTruthy()
+    expect(
+      screen.queryByText('Chưa có câu hỏi nào cho sản phẩm này. Hãy là người đầu tiên đặt câu hỏi!'),
+    ).toBeNull()
+  })
+
+  it('does not show the guest CTA while the session is still pending', () => {
+    mockSessionState.loggedIn = false
+    mockSessionState.pending = true
+    mockQnaPage()
+    renderQnaSection()
+
+    expect(screen.queryByText('Đăng nhập để đặt câu hỏi về sản phẩm')).toBeNull()
+    expect(screen.queryByPlaceholderText('Nhập câu hỏi của bạn về sản phẩm...')).toBeNull()
   })
 })

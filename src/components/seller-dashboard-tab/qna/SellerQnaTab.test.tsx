@@ -1,8 +1,8 @@
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 
 // @vitest-environment happy-dom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import SellerQnaTab from './SellerQnaTab'
@@ -339,12 +339,14 @@ describe('SellerQnaTab', () => {
     )
     fireEvent.change(searchInput, { target: { value: 'phong cách' } })
 
-    expect(useListSellerQuestionsMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        q: 'phong cách',
-        page: 0,
-      }),
-      expect.anything(),
+    await waitFor(() =>
+      expect(useListSellerQuestionsMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          q: 'phong cách',
+          page: 0,
+        }),
+        expect.anything(),
+      ),
     )
 
     // Clear search
@@ -567,5 +569,42 @@ describe('SellerQnaTab', () => {
       expect(screen.queryByRole('button', { name: /báo cáo/i })).toBeNull()
       expect(screen.queryByText(/báo cáo vi phạm/i)).toBeNull()
     })
+  })
+
+  it('shows a retry state when the question list request fails', () => {
+    useListSellerQuestionsMock.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isFetching: false,
+      isError: true,
+      refetch: vi.fn(),
+    })
+
+    renderComponent({ shopId: 'shop-1' })
+
+    expect(screen.getByText('Không thể tải danh sách câu hỏi')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Thử lại' })).toBeTruthy()
+  })
+
+  it('removes questionId from the URL when the detail modal is closed', () => {
+    function LocationProbe() {
+      return <span data-testid="location-search">{useLocation().search}</span>
+    }
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/shop?shopId=shop-1&tab=qna&questionId=q-999']}>
+          <LocationProbe />
+          <SellerQnaTab shopId="shop-1" initialQuestionId="q-999" />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(screen.getByTestId('location-search').textContent).toContain('questionId=q-999')
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng' }))
+    expect(screen.getByTestId('location-search').textContent).not.toContain('questionId')
   })
 })

@@ -66,7 +66,9 @@ export default function ProductQnaSection(props: ProductQnaSectionProps) {
   )
 
   const queryClient = useQueryClient()
-  const { data: session } = useSessionQuery()
+  const sessionQuery = useSessionQuery()
+  const { data: session } = sessionQuery
+  const isSessionPending = sessionQuery.isPending === true
   const isLoggedIn = session !== null && session !== undefined
 
   let queryParams: ListProductQuestionsParams = { page, size: 10 }
@@ -101,6 +103,20 @@ export default function ProductQnaSection(props: ProductQnaSectionProps) {
     })
     displayedQuestions = [...extraQuestions, ...uniqueNew]
   }
+
+  useEffect(
+    function scrollToDeepLinkedQuestion() {
+      if (deepLinkedQuestionId === '' || questionsQuery.data === undefined) {
+        return
+      }
+      const questionElement = document.getElementById(deepLinkedQuestionId)
+      const targetElement = questionElement ?? document.getElementById('product-qna')
+      if (targetElement !== null) {
+        targetElement.scrollIntoView({ block: 'center' })
+      }
+    },
+    [deepLinkedQuestionId, questionsQuery.data],
+  )
 
   function handleSearchSubmit(e?: React.FormEvent) {
     if (e !== undefined) {
@@ -172,8 +188,12 @@ export default function ProductQnaSection(props: ProductQnaSectionProps) {
 
   const hasSearchKeyword = activeKeyword !== ''
   const isSearchEmpty = hasSearchKeyword && displayedQuestions.length === 0
+  const isFetchFailed = questionsQuery.isError === true
   const isOverallEmpty =
-    !hasSearchKeyword && displayedQuestions.length === 0 && !questionsQuery.isPending
+    !hasSearchKeyword &&
+    displayedQuestions.length === 0 &&
+    !questionsQuery.isPending &&
+    !isFetchFailed
   const canLoadMore = displayedQuestions.length < total
 
   return (
@@ -194,6 +214,7 @@ export default function ProductQnaSection(props: ProductQnaSectionProps) {
         <form onSubmit={handleSearchSubmit} className="relative flex w-full max-w-md items-center">
           <input
             type="text"
+            aria-label="Tìm kiếm câu hỏi hoặc câu trả lời"
             value={searchInput}
             onChange={function (e) {
               setSearchInput(e.target.value)
@@ -224,7 +245,7 @@ export default function ProductQnaSection(props: ProductQnaSectionProps) {
       </div>
 
       <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50/50 p-4 dark:border-white/10 dark:bg-white/5">
-        {!isLoggedIn && (
+        {!isSessionPending && !isLoggedIn && (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Đăng nhập để đặt câu hỏi về sản phẩm
@@ -235,7 +256,7 @@ export default function ProductQnaSection(props: ProductQnaSectionProps) {
           </div>
         )}
 
-        {isLoggedIn && (
+        {!isSessionPending && isLoggedIn && (
           <div className="space-y-2.5">
             <label
               htmlFor="ask-question-textarea"
@@ -302,6 +323,26 @@ export default function ProductQnaSection(props: ProductQnaSectionProps) {
             action={
               <button type="button" onClick={handleClearSearch} className={secondaryButtonClass()}>
                 Xóa từ khóa
+              </button>
+            }
+          />
+        </div>
+      )}
+
+      {isFetchFailed && (
+        <div className="mt-6">
+          <EmptyState
+            title="Không thể tải danh sách câu hỏi"
+            description="Vui lòng thử lại sau ít phút."
+            action={
+              <button
+                type="button"
+                onClick={function () {
+                  void questionsQuery.refetch()
+                }}
+                className={secondaryButtonClass()}
+              >
+                Thử lại
               </button>
             }
           />

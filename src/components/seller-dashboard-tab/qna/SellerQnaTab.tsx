@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 
 import {
   useGetSellerQnaStats,
@@ -74,8 +75,10 @@ export default function SellerQnaTab({ shopId, initialQuestionId }: SellerQnaTab
   const { can } = useSellerPermissions(shopId)
   const canReply = can('REVIEW_REPLY')
 
+  const [, setSearchParams] = useSearchParams()
   const [statusFilter, setStatusFilter] = useState<TabStatusFilter>('ALL')
   const [selectedProductId, setSelectedProductId] = useState('')
+  const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<ListSellerQuestionsSort>('NEWEST')
   const [fromDate, setFromDate] = useState('')
@@ -98,6 +101,20 @@ export default function SellerQnaTab({ shopId, initialQuestionId }: SellerQnaTab
     }
     setActiveQuestionId(nextId)
   }
+
+  useEffect(
+    function debounceSearchQuery() {
+      const timer = setTimeout(function () {
+        setSearchQuery(searchInput.trim())
+        setPage(0)
+      }, 300)
+
+      return function () {
+        clearTimeout(timer)
+      }
+    },
+    [searchInput],
+  )
 
   // Stats Query
   const statsQuery = useGetSellerQnaStats({ shopId }, { query: { enabled: shopId !== '' } })
@@ -176,6 +193,9 @@ export default function SellerQnaTab({ shopId, initialQuestionId }: SellerQnaTab
     }
   }
 
+  const isLoading = questionsQuery.isPending && questionsQuery.isFetching
+  const isFetchFailed = questionsQuery.isError === true
+
   function handleFilterStatus(status: TabStatusFilter) {
     setStatusFilter(status)
     setPage(0)
@@ -187,11 +207,11 @@ export default function SellerQnaTab({ shopId, initialQuestionId }: SellerQnaTab
   }
 
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setSearchQuery(e.target.value)
-    setPage(0)
+    setSearchInput(e.target.value)
   }
 
   function handleClearSearch() {
+    setSearchInput('')
     setSearchQuery('')
     setPage(0)
   }
@@ -444,7 +464,8 @@ export default function SellerQnaTab({ shopId, initialQuestionId }: SellerQnaTab
           </div>
           <input
             type="text"
-            value={searchQuery}
+            aria-label="Tìm câu hỏi trong gian hàng"
+            value={searchInput}
             onChange={handleSearchChange}
             placeholder="Tìm tên sản phẩm, SKU, mã câu hỏi, người hỏi, nội dung..."
             className={cn(
@@ -467,13 +488,34 @@ export default function SellerQnaTab({ shopId, initialQuestionId }: SellerQnaTab
 
       {/* Question List Content */}
       <div className="space-y-3">
-        {questionsQuery.isPending && (
+        {isLoading && (
           <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
             Đang tải danh sách câu hỏi...
           </div>
         )}
 
-        {!questionsQuery.isPending && questions.length === 0 && (
+        {isFetchFailed && (
+          <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
+            <EmptyState
+              icon={<ChatCircleDots size={32} className="text-zinc-400" />}
+              title="Không thể tải danh sách câu hỏi"
+              description="Vui lòng thử lại sau ít phút."
+              action={
+                <button
+                  type="button"
+                  onClick={function () {
+                    void questionsQuery.refetch()
+                  }}
+                  className={primaryButtonClass()}
+                >
+                  Thử lại
+                </button>
+              }
+            />
+          </div>
+        )}
+
+        {!isLoading && !isFetchFailed && questions.length === 0 && (
           <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-xs dark:border-white/10 dark:bg-[#11182a]">
             <EmptyState
               icon={<ChatCircleDots size={32} className="text-zinc-400" />}
@@ -483,7 +525,7 @@ export default function SellerQnaTab({ shopId, initialQuestionId }: SellerQnaTab
           </div>
         )}
 
-        {!questionsQuery.isPending && questions.length > 0 && (
+        {!isLoading && questions.length > 0 && (
           <div className="space-y-3">
             {questions.map(function (item) {
               const actionLabel = getActionLabel(item.status)
@@ -499,6 +541,7 @@ export default function SellerQnaTab({ shopId, initialQuestionId }: SellerQnaTab
                     <img
                       src={urlOrPlaceholder(item.productImageUrl)}
                       alt={item.productName ?? 'Sản phẩm'}
+                      loading="lazy"
                       onError={fallbackImageOnError}
                       className="h-14 w-14 shrink-0 rounded-xl border border-zinc-200 object-cover dark:border-white/10"
                     />
@@ -578,6 +621,11 @@ export default function SellerQnaTab({ shopId, initialQuestionId }: SellerQnaTab
         isOpen={activeQuestionId !== null}
         onClose={function () {
           setActiveQuestionId(null)
+          setSearchParams(function (prev) {
+            const next = new URLSearchParams(prev)
+            next.delete('questionId')
+            return next
+          }, { replace: true })
         }}
       />
     </div>
