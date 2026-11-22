@@ -29,8 +29,7 @@ import { useSessionQuery } from '@/hooks/useSession'
 import { readAgentConfig } from '@/lib/ai/agent'
 import { deserializeAgentMessage, serializeAgentMessage } from '@/lib/ai/agentHistory'
 import { createChatTransport } from '@/lib/ai/chatTransport'
-import { imageUrl } from '@/lib/api/apiAdapters'
-import { MAX_IMAGE_BYTES, uploadImage } from '@/lib/api/uploadImage'
+import { MAX_IMAGE_BYTES, uploadImageWithUrl } from '@/lib/api/uploadImage'
 import { EMPTY_FILTERS, parseFilters, toQueryString, withFilter } from '@/lib/searchFilters'
 
 import {
@@ -316,8 +315,8 @@ export default function AgentTab(props: AgentTabProps) {
     const seq = attachSeqRef.current
     const previewUrl = window.URL.createObjectURL(file)
     updateAttached({ previewUrl, status: 'uploading', mediaType: file.type, filename: file.name })
-    uploadImage(file)
-      .then(function (key) {
+    uploadImageWithUrl(file)
+      .then(function (uploaded) {
         if (attachSeqRef.current !== seq) {
           return
         }
@@ -326,7 +325,9 @@ export default function AgentTab(props: AgentTabProps) {
           status: 'ready',
           mediaType: file.type,
           filename: file.name,
-          image: { url: imageUrl(key), mediaType: file.type },
+          // publicUrl từ presign khớp key S3 thật (có extension) — tự build từ
+          // uploadId sẽ 404 vì key gồm cả đuôi file.
+          image: { url: uploaded.publicUrl, mediaType: file.type },
         })
       })
       .catch(function () {

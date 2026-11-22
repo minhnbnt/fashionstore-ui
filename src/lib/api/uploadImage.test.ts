@@ -1,7 +1,13 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, uploadImage, uploadVideo } from './uploadImage'
+import {
+  MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
+  uploadImage,
+  uploadImageWithUrl,
+  uploadVideo,
+} from './uploadImage'
 
 const { presignMock } = vi.hoisted(() => ({
   presignMock: vi.fn(),
@@ -14,7 +20,12 @@ vi.mock('@generated/endpoints/uploads/uploads', () => ({
 function stubPresign(uploadId: string) {
   presignMock.mockResolvedValue({
     status: 200,
-    data: { uploadId, uploadUrl: 'https://s3.test/put-here', expiresAt: '2026-11-14T00:10:00Z' },
+    data: {
+      uploadId,
+      uploadUrl: 'https://s3.test/put-here',
+      publicUrl: `https://assets.test/${uploadId}.jpeg`,
+      expiresAt: '2026-11-14T00:10:00Z',
+    },
   })
 }
 
@@ -42,20 +53,30 @@ afterEach(() => {
 })
 
 describe('uploadImage', () => {
-  it('presign rồi PUT file, trả về uploadId và truyền purpose', async () => {
+  it('presign rồi PUT file, trả về uploadId + publicUrl và truyền purpose', async () => {
     stubPresign('u-1')
     const putMock = vi.fn().mockResolvedValue({ ok: true, status: 200 })
     vi.stubGlobal('fetch', putMock)
     const file = new File(['x'], 'a.jpg', { type: 'image/jpeg' })
 
-    const id = await uploadImage(file, 'kyc')
+    const result = await uploadImageWithUrl(file, 'kyc')
 
-    expect(id).toBe('u-1')
+    expect(result).toEqual({ uploadId: 'u-1', publicUrl: 'https://assets.test/u-1.jpeg' })
     expect(presignMock).toHaveBeenCalledWith({ contentType: 'image/jpeg', purpose: 'kyc' })
     expect(putMock).toHaveBeenCalledWith(
       'https://s3.test/put-here',
       expect.objectContaining({ method: 'PUT', body: file }),
     )
+  })
+
+  it('uploadImage bọc uploadImageWithUrl, chỉ trả uploadId', async () => {
+    stubPresign('u-1b')
+    stubPutResponse(true)
+    const file = new File(['x'], 'a.jpg', { type: 'image/jpeg' })
+
+    const id = await uploadImage(file)
+
+    expect(id).toBe('u-1b')
   })
 
   it('mặc định không gửi purpose', async () => {

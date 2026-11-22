@@ -18,12 +18,12 @@ vi.mock('motion/react', () => ({
   useReducedMotion: () => true,
 }))
 
-const { uploadImageMock } = vi.hoisted(function () {
-  return { uploadImageMock: vi.fn() }
+const { uploadWithUrlMock } = vi.hoisted(function () {
+  return { uploadWithUrlMock: vi.fn() }
 })
 
 vi.mock('@/lib/api/uploadImage', function () {
-  return { uploadImage: uploadImageMock, MAX_IMAGE_BYTES: 5 * 1024 * 1024 }
+  return { uploadImageWithUrl: uploadWithUrlMock, MAX_IMAGE_BYTES: 5 * 1024 * 1024 }
 })
 
 // Ép trạng thái "chưa cấu hình" cho test tương ứng — không phụ thuộc .env của máy chạy test.
@@ -96,7 +96,7 @@ function renderTab(props: {
 }
 
 beforeEach(function () {
-  uploadImageMock.mockReset()
+  uploadWithUrlMock.mockReset()
 })
 
 afterEach(function () {
@@ -633,9 +633,11 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
       }
     }
 
-    it('gửi ảnh → context.image.url đi trong request, không đính FileUIPart vào message', async function () {
-      vi.stubEnv('VITE_ASSETS_URL', 'https://assets.test')
-      uploadImageMock.mockResolvedValue('chat-img-1')
+    it('gửi ảnh → context.image.url là publicUrl từ presign, không đính FileUIPart vào message', async function () {
+      uploadWithUrlMock.mockResolvedValue({
+        uploadId: 'chat-img-1',
+        publicUrl: 'https://assets.test/chat-img-1.jpeg',
+      })
       const fetchMock = streamFetchMock()
       vi.stubGlobal('fetch', fetchMock)
       const user = userEvent.setup()
@@ -651,7 +653,7 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
 
       expect(await screen.findByText('món này còn không')).toBeTruthy()
       const body = requestBodyOf(fetchMock)
-      expect(body.context.image?.url).toBe('https://assets.test/chat-img-1')
+      expect(body.context.image?.url).toBe('https://assets.test/chat-img-1.jpeg')
       const last = body.messages[body.messages.length - 1]
       expect(
         last?.parts.some(function (part) {
@@ -661,8 +663,10 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     })
 
     it('chỉ có ảnh, không có chữ thì vẫn gửi được', async function () {
-      vi.stubEnv('VITE_ASSETS_URL', 'https://assets.test')
-      uploadImageMock.mockResolvedValue('chat-img-2')
+      uploadWithUrlMock.mockResolvedValue({
+        uploadId: 'chat-img-2',
+        publicUrl: 'https://assets.test/chat-img-2.jpeg',
+      })
       const fetchMock = streamFetchMock()
       vi.stubGlobal('fetch', fetchMock)
       const user = userEvent.setup()
@@ -677,7 +681,9 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
       await waitFor(function () {
         expect(fetchMock).toHaveBeenCalled()
       })
-      expect(requestBodyOf(fetchMock).context.image?.url).toBe('https://assets.test/chat-img-2')
+      expect(requestBodyOf(fetchMock).context.image?.url).toBe(
+        'https://assets.test/chat-img-2.jpeg',
+      )
     })
 
     it('file không phải ảnh thì báo lỗi và không upload', function () {
@@ -689,7 +695,7 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
       })
 
       return screen.findByText('Chỉ nhận file ảnh.').then(function () {
-        expect(uploadImageMock).not.toHaveBeenCalled()
+        expect(uploadWithUrlMock).not.toHaveBeenCalled()
       })
     })
 
@@ -702,11 +708,11 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
       await user.upload(screen.getByLabelText('Đính kèm ảnh'), big)
 
       expect(await screen.findByText('Ảnh tối đa 5 MB.')).toBeTruthy()
-      expect(uploadImageMock).not.toHaveBeenCalled()
+      expect(uploadWithUrlMock).not.toHaveBeenCalled()
     })
 
     it('upload thất bại thì hiện lỗi và khóa nút gửi', async function () {
-      uploadImageMock.mockRejectedValue(new Error('lỗi mạng'))
+      uploadWithUrlMock.mockRejectedValue(new Error('lỗi mạng'))
       const user = userEvent.setup()
       renderTab({ config: configFixture() })
 
@@ -717,8 +723,10 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     })
 
     it('gỡ ảnh thì bỏ preview và không gửi image trong context', async function () {
-      vi.stubEnv('VITE_ASSETS_URL', 'https://assets.test')
-      uploadImageMock.mockResolvedValue('chat-img-3')
+      uploadWithUrlMock.mockResolvedValue({
+        uploadId: 'chat-img-3',
+        publicUrl: 'https://assets.test/chat-img-3.jpeg',
+      })
       const fetchMock = streamFetchMock()
       vi.stubGlobal('fetch', fetchMock)
       const user = userEvent.setup()
@@ -741,8 +749,10 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     })
 
     it('ảnh đã gửi hiện thumbnail trong tin nhắn user', async function () {
-      vi.stubEnv('VITE_ASSETS_URL', 'https://assets.test')
-      uploadImageMock.mockResolvedValue('chat-img-4')
+      uploadWithUrlMock.mockResolvedValue({
+        uploadId: 'chat-img-4',
+        publicUrl: 'https://assets.test/chat-img-4.jpeg',
+      })
       const captured: { messages: AgentUIMessage[] } = { messages: [] }
       const user = userEvent.setup()
       renderTab({ config: configFixture(), transport: capturingTransport([], captured) })
