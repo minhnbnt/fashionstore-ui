@@ -2,8 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import { getGetMyShopsQueryKey } from '@generated/endpoints/seller-staff-roles/seller-staff-roles'
-import { useMe } from '@generated/endpoints/users/users'
-import { ArrowLeft, Heart, MapPin, Package, ShieldWarning, SignOut } from '@phosphor-icons/react'
+import { getMeQueryKey, useMe, useUpsert } from '@generated/endpoints/users/users'
+import {
+  ArrowLeft,
+  FloppyDisk,
+  Heart,
+  MapPin,
+  Package,
+  PencilSimple,
+  ShieldWarning,
+  SignOut,
+} from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import AccountLayout from '@/components/account/AccountLayout'
@@ -12,6 +21,7 @@ import AvatarUploader from '@/components/account/AvatarUploader'
 import ChangePasswordForm from '@/components/account/ChangePasswordForm'
 import MyShopsTab from '@/components/account/MyShopsTab'
 import ShopKycRegistrationModal from '@/components/shop/ShopKycRegistrationModal'
+import RoleBadge from '@/components/ui/RoleBadge'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { useSignOut } from '@/hooks/useAuthMutations'
 import { useSessionQuery } from '@/hooks/useSession'
@@ -29,11 +39,15 @@ export default function Account() {
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [modalOpen, setModalOpen] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [displayNameDraft, setDisplayNameDraft] = useState('')
+  const [displayNameError, setDisplayNameError] = useState('')
   const roleRefreshAttempted = useRef(false)
 
   const isAddressesDeepLink = searchParams.get('tab') === 'addresses'
 
   const profileQuery = useMe()
+  const updateProfile = useUpsert()
   let profile: UserResponse | undefined
   if (profileQuery.data !== undefined) {
     profile = takeData(profileQuery.data)
@@ -62,6 +76,31 @@ export default function Account() {
         notify.fromError(err, 'signOut', 'Không thể đăng xuất. Vui lòng thử lại.')
       },
     })
+  }
+
+  function handleSaveProfile() {
+    const nextName = displayNameDraft.trim()
+    if (nextName === '') {
+      setDisplayNameError('Tên hiển thị không được để trống')
+      return
+    }
+    if (profile === undefined) {
+      return
+    }
+    setDisplayNameError('')
+    updateProfile.mutate(
+      { data: { email: profile.email ?? userEmail, displayName: nextName } },
+      {
+        onSuccess: function () {
+          setIsEditing(false)
+          void queryClient.invalidateQueries({ queryKey: getMeQueryKey() })
+          notify.success('Hồ sơ đã được cập nhật')
+        },
+        onError: function (err) {
+          notify.fromError(err, 'upsert', 'Không thể cập nhật hồ sơ. Vui lòng thử lại.')
+        },
+      },
+    )
   }
 
   function handleShopCreated() {
@@ -128,37 +167,136 @@ export default function Account() {
               </h1>
             </div>
 
-            <button
-              type="button"
-              id="btn-account-logout"
-              onClick={handleSignOut}
-              disabled={signOut.isPending}
-              className={cn(
-                'inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50/80 px-4 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/25',
-                FOCUS_RING_CLASS,
+            <div className="flex flex-wrap items-center gap-2">
+              {isEditing === false && profile !== undefined && (
+                <button
+                  type="button"
+                  id="btn-account-edit"
+                  onClick={function () {
+                    setDisplayNameDraft(profile.displayName ?? '')
+                    setDisplayNameError('')
+                    setIsEditing(true)
+                  }}
+                  className={cn(
+                    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 transition hover:border-blue-300 hover:text-blue-700 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:text-sky-300',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <PencilSimple size={15} weight="bold" />
+                  <span>Chỉnh sửa</span>
+                </button>
               )}
-            >
-              <SignOut size={15} weight="bold" />
-              {signOut.isPending && <span>Đang đăng xuất…</span>}
-              {signOut.isPending === false && <span>Đăng xuất</span>}
-            </button>
+
+              {isEditing && (
+                <button
+                  type="button"
+                  id="btn-account-cancel"
+                  onClick={function () {
+                    setDisplayNameError('')
+                    setIsEditing(false)
+                  }}
+                  className={cn(
+                    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 transition hover:border-blue-300 hover:text-blue-700 dark:border-white/15 dark:bg-white/10 dark:text-zinc-200 dark:hover:text-sky-300',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <span>Hủy</span>
+                </button>
+              )}
+
+              {isEditing && (
+                <button
+                  type="button"
+                  id="btn-account-save"
+                  onClick={handleSaveProfile}
+                  disabled={updateProfile.isPending}
+                  className={cn(
+                    'btn-primary inline-flex cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-60',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <FloppyDisk size={15} weight="bold" />
+                  {updateProfile.isPending && <span>Đang lưu…</span>}
+                  {updateProfile.isPending === false && <span>Lưu</span>}
+                </button>
+              )}
+
+              <button
+                type="button"
+                id="btn-account-logout"
+                onClick={handleSignOut}
+                disabled={signOut.isPending}
+                className={cn(
+                  'inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50/80 px-4 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/25',
+                  FOCUS_RING_CLASS,
+                )}
+              >
+                <SignOut size={15} weight="bold" />
+                {signOut.isPending && <span>Đang đăng xuất…</span>}
+                {signOut.isPending === false && <span>Đăng xuất</span>}
+              </button>
+            </div>
           </div>
 
           {session !== undefined && session !== null && (
             <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/5">
               <div className="flex min-w-0 items-center gap-3.5">
                 <AvatarUploader name={userEmail || 'guest'} avatarUrl={profile?.avatarUrl} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-extrabold text-[#17203a] dark:text-white">
-                    {userEmail}
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-zinc-600 dark:text-zinc-300">
-                      Khách hàng thành viên
-                    </span>
-                    <StatusBadge status={profile?.status} />
+                {isEditing ? (
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div>
+                      <label
+                        htmlFor="profile-display-name"
+                        className="block text-xs font-bold text-zinc-600 dark:text-zinc-300"
+                      >
+                        Tên hiển thị
+                      </label>
+                      <input
+                        id="profile-display-name"
+                        type="text"
+                        value={displayNameDraft}
+                        maxLength={100}
+                        onChange={function (event) {
+                          setDisplayNameDraft(event.target.value)
+                          setDisplayNameError('')
+                        }}
+                        aria-invalid={displayNameError !== ''}
+                        aria-describedby={
+                          displayNameError === '' ? undefined : 'profile-display-name-error'
+                        }
+                        className={cn(
+                          'mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-[#17203a] dark:border-white/15 dark:bg-white/10 dark:text-white',
+                          FOCUS_RING_CLASS,
+                        )}
+                      />
+                      {displayNameError !== '' && (
+                        <p
+                          id="profile-display-name-error"
+                          role="alert"
+                          className="mt-1 text-xs font-semibold text-rose-600 dark:text-rose-300"
+                        >
+                          {displayNameError}
+                        </p>
+                      )}
+                    </div>
+                    <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">{userEmail}</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-extrabold text-[#17203a] dark:text-white">
+                      {profile?.displayName || userEmail}
+                    </p>
+                    {profile?.displayName && (
+                      <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                        {userEmail}
+                      </p>
+                    )}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <RoleBadge role={profile?.role ?? 'customer'} />
+                      <StatusBadge status={profile?.status} />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
