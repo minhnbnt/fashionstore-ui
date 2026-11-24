@@ -1,3 +1,4 @@
+import { getMeQueryKey } from '@generated/endpoints/users/users'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import {
@@ -44,6 +45,8 @@ export function useSignOut() {
     },
     onSuccess: function () {
       queryClient.setQueryData(SESSION_KEY, null)
+      // Profile của user cũ không được sống qua lần đăng nhập tiếp theo.
+      queryClient.removeQueries({ queryKey: getMeQueryKey() })
     },
   })
 }
