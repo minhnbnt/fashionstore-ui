@@ -13,7 +13,6 @@ import {
   MagnifyingGlass,
   Moon,
   Receipt,
-  ShieldCheck,
   ShoppingBag,
   SignIn,
   SignOut,
@@ -26,11 +25,11 @@ import {
 } from '@phosphor-icons/react'
 
 import { Drawer } from '@/components/ui/Drawer'
+import RoleBadge from '@/components/ui/RoleBadge'
 import { useTheme } from '@/hooks/useTheme'
 import { takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { notify } from '@/lib/notifications'
 import {
-  badgeToneClass,
   chipClass,
   cn,
   FOCUS_RING_CLASS,
@@ -52,40 +51,6 @@ import NotificationBell from './NotificationBell'
 import UserAvatar from './UserAvatar'
 
 import type { CategoryResponse } from '@generated/model/categoryResponse'
-
-function RoleBadge({ role }: { role: string }) {
-  if (role === 'admin') {
-    return (
-      <span
-        className={cn(
-          badgeToneClass('danger'),
-          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold',
-        )}
-      >
-        <ShieldCheck size={11} weight="bold" />
-        Admin
-      </span>
-    )
-  }
-  if (role === 'shop') {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:border-indigo-400/30 dark:bg-indigo-500/15 dark:text-indigo-300">
-        <Storefront size={11} weight="bold" />
-        Shop
-      </span>
-    )
-  }
-  return (
-    <span
-      className={cn(
-        badgeToneClass('info'),
-        'inline-flex rounded-full px-2 py-0.5 text-xs font-bold',
-      )}
-    >
-      Khách hàng
-    </span>
-  )
-}
 
 function desktopNavLinkClass(active: boolean): string {
   if (active) {
