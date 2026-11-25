@@ -8,8 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import Cart from './Cart'
 
 import type { CartItemResponse } from '@generated/model/cartItemResponse'
+import type { CheckoutPreviewResponse } from '@generated/model/checkoutPreviewResponse'
 
 const {
+  mockUseCheckoutPreview,
   updateQuantityMutate,
   removeItemMutate,
   clearCartMutate,
@@ -19,6 +21,7 @@ const {
   mockNotifyFromError,
   state,
 } = vi.hoisted(() => ({
+  mockUseCheckoutPreview: vi.fn(),
   updateQuantityMutate:
     vi.fn<
       (
@@ -76,6 +79,10 @@ vi.mock('@/hooks/useCart', () => ({
     removeItem: { mutate: removeItemMutate, isPending: false },
     clearCart: { mutate: clearCartMutate, isPending: false },
   }),
+}))
+
+vi.mock('@/hooks/useCheckoutPreview', () => ({
+  useCheckoutPreview: mockUseCheckoutPreview,
 }))
 
 vi.mock('@/hooks/useWishlist', () => ({
@@ -142,6 +149,39 @@ function setCart(items: CartItemResponse[]) {
   }
 }
 
+// Giả lập server: shop-1 freeship từ 500.000 ₫, phí 30.000 ₫
+function fakePreview(variantIds: string[]): CheckoutPreviewResponse {
+  let subtotal = 0
+  for (const item of state.items) {
+    if (variantIds.includes(item.variantId ?? '')) {
+      subtotal += (item.unitPrice ?? 0) * (item.quantity ?? 0)
+    }
+  }
+  let shippingFee = 30000
+  let amountToFreeShip = 500000 - subtotal
+  if (amountToFreeShip <= 0) {
+    shippingFee = 0
+    amountToFreeShip = 0
+  }
+  return {
+    shops: [
+      {
+        shopId: 'shop-1',
+        itemCount: variantIds.length,
+        subtotal,
+        shippingFee,
+        originalShippingFee: 30000,
+        freeShipApplied: shippingFee === 0,
+        amountToFreeShip,
+        total: subtotal + shippingFee,
+      },
+    ],
+    subtotal,
+    shippingFee,
+    total: subtotal + shippingFee,
+  }
+}
+
 function CheckoutProbe() {
   const [searchParams] = useSearchParams()
   return <p>checkout-page:{searchParams.get('variantIds') ?? ''}</p>
@@ -173,6 +213,14 @@ afterEach(() => {
 })
 
 beforeEach(() => {
+  mockUseCheckoutPreview
+    .mockReset()
+    .mockImplementation((variantIds: string[], enabled: boolean) => {
+      if (!enabled) {
+        return { preview: null, isLoading: false, isError: false }
+      }
+      return { preview: fakePreview(variantIds), isLoading: false, isError: false }
+    })
   updateQuantityMutate.mockReset()
   removeItemMutate.mockReset()
   clearCartMutate.mockReset()
@@ -350,16 +398,31 @@ describe('Cart — chọn món, tổng tiền và thanh toán (DOM)', () => {
     expect(removedIds).toEqual(['v-1', 'v-2'])
   })
 
-  it('thanh tiến độ miễn phí vận chuyển: đạt 500k hiện chúc mừng, dưới 500k hiện số tiền còn thiếu', async () => {
+  it('freeship theo từng shop lấy từ server: đạt ngưỡng hiện miễn phí, chưa đạt hiện số tiền còn thiếu và phí', async () => {
     const user = userEvent.setup()
     renderCart()
 
-    // Mặc định 748.000 ₫ ≥ 500.000 ₫
-    expect(summary().getByText('Đã đạt miễn phí vận chuyển!')).toBeTruthy()
+    // Chỉ xin xem trước các món đang chọn (món hết hàng không chọn được)
+    expect(mockUseCheckoutPreview).toHaveBeenLastCalledWith(['v-1', 'v-2'], true)
+    // 748.000 ₫ ≥ ngưỡng → đơn shop-1 miễn phí
+    expect(screen.getByText('Đơn của shop được miễn phí vận chuyển')).toBeTruthy()
+    expect(summary().getByText('Miễn phí')).toBeTruthy()
 
-    // Bỏ chọn Áo Sơ Mi Lụa → còn 350.000 ₫ (thiếu 150.000 ₫)
+    // Bỏ chọn Áo Sơ Mi Lụa → còn 350.000 ₫: thiếu 150.000 ₫, phí 30.000 ₫
     await user.click(screen.getByRole('checkbox', { name: 'Chọn Áo Sơ Mi Lụa' }))
-    expect(summary().getByText('150.000 ₫')).toBeTruthy()
+    expect(mockUseCheckoutPreview).toHaveBeenLastCalledWith(['v-2'], true)
+    expect(screen.getByText('150.000 ₫')).toBeTruthy()
+    expect(summary().getByText('30.000 ₫')).toBeTruthy()
+  })
+
+  it('không chọn món nào → không xin xem trước, phí ship tính ở bước đặt hàng', async () => {
+    const user = userEvent.setup()
+    renderCart()
+
+    await user.click(screen.getByRole('checkbox', { name: 'Chọn tất cả (2)' }))
+
+    expect(mockUseCheckoutPreview).toHaveBeenLastCalledWith([], false)
+    expect(summary().getByText('Tính ở bước đặt hàng')).toBeTruthy()
   })
 
   it('giỏ rỗng → empty state kèm link đi mua sắm', () => {

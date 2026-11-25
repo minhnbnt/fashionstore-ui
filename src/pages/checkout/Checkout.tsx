@@ -24,6 +24,7 @@ import Modal from '@/components/Modal'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import { PageSkeleton } from '@/components/ui/Skeleton'
 import { useCart } from '@/hooks/useCart'
+import { useCheckoutPreview } from '@/hooks/useCheckoutPreview'
 import { useSessionQuery } from '@/hooks/useSession'
 import { fallbackImageOnError, takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { formatFullAddress, formatVnd } from '@/lib/format'
@@ -33,6 +34,7 @@ import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 import type { AddressResponse } from '@generated/model/addressResponse'
 import type { CartCheckoutRequest } from '@generated/model/cartCheckoutRequest'
+import type { ShopCheckoutPreview } from '@generated/model/shopCheckoutPreview'
 
 function resolveShippingAddress(fullAddress: string): string {
   if (fullAddress !== '') {
@@ -56,6 +58,54 @@ function radioIndicatorClass(selected: boolean): string {
     return 'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 border-blue-600 dark:border-sky-400'
   }
   return 'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 border-zinc-300 dark:border-white/25'
+}
+
+interface FeeState {
+  loading: boolean
+  error: boolean
+}
+
+// Hiển thị một số tiền phí ship từ bản xem trước của server: đang tính / lỗi / miễn phí / số tiền.
+function ShippingFeeValue(props: { fee: number | undefined; state: FeeState }) {
+  if (props.fee === undefined) {
+    if (props.state.loading) {
+      return <span className="text-zinc-500 dark:text-zinc-400">Đang tính…</span>
+    }
+    return <span className="text-zinc-500 dark:text-zinc-400">—</span>
+  }
+  if (props.fee === 0) {
+    return <span className="text-emerald-600 dark:text-emerald-300">Miễn phí</span>
+  }
+  return <span className="tabular-nums">{formatVnd(props.fee)}</span>
+}
+
+function ShopShippingRow(props: { quote: ShopCheckoutPreview }) {
+  const amountToFreeShip = props.quote.amountToFreeShip ?? 0
+  return (
+    <div className="mt-2 rounded-2xl border border-zinc-200/80 bg-white/60 px-3.5 py-2.5 text-xs dark:border-white/10 dark:bg-white/5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
+          <Truck size={14} weight="bold" className="shrink-0" />
+          Phí vận chuyển đơn này
+        </span>
+        <span className="font-extrabold text-[#17203a] dark:text-white">
+          <ShippingFeeValue
+            fee={props.quote.shippingFee}
+            state={{ loading: false, error: false }}
+          />
+        </span>
+      </div>
+      {amountToFreeShip > 0 && (
+        <p className="mt-1 text-zinc-500 dark:text-zinc-400">
+          Mua thêm{' '}
+          <strong className="font-extrabold text-blue-700 tabular-nums dark:text-sky-300">
+            {formatVnd(amountToFreeShip)}
+          </strong>{' '}
+          từ shop này để được miễn phí vận chuyển
+        </p>
+      )}
+    </div>
+  )
 }
 
 function CheckoutSteps(props: { hasAddress: boolean }) {
@@ -156,12 +206,30 @@ export default function Checkout() {
     selectedSubtotal += (item.unitPrice ?? 0) * (item.quantity ?? 1)
   }
 
-  // Phí vận chuyển
-  let shippingFee = 30000
-  if (selectedSubtotal >= 500000) {
-    shippingFee = 0
+  // Phí ship và tổng tiền do server tính (mỗi shop 1 đơn), FE chỉ hiển thị.
+  const checkoutPreview = useCheckoutPreview(wanted, cart.isLoggedIn && orderItems.length > 0)
+  const preview = checkoutPreview.preview
+  const shopQuotes = new Map<string, ShopCheckoutPreview>()
+  if (preview !== null) {
+    for (const shopQuote of preview.shops ?? []) {
+      shopQuotes.set(shopQuote.shopId ?? '', shopQuote)
+    }
   }
-  const finalTotal = selectedSubtotal + shippingFee
+  let displaySubtotal = selectedSubtotal
+  if (preview !== null) {
+    displaySubtotal = preview.subtotal ?? 0
+  }
+  const feeState: FeeState = {
+    loading: checkoutPreview.isLoading,
+    error: checkoutPreview.isError,
+  }
+  let totalLabel = '—'
+  if (feeState.loading) {
+    totalLabel = 'Đang tính…'
+  }
+  if (preview !== null) {
+    totalLabel = formatVnd(preview.total ?? 0)
+  }
 
   function handlePlaceOrder() {
     if (currentAddress === null) {
@@ -185,7 +253,6 @@ export default function Checkout() {
       shippingName: nameToUse,
       shippingPhone: phoneToUse,
       shippingAddress: resolveShippingAddress(fullAddr),
-      shippingFee: shippingFee,
     }
     if (wanted.length > 0) {
       payload.variantIds = wanted
@@ -396,6 +463,7 @@ export default function Checkout() {
 
             <div className="mt-4 space-y-5">
               {shopGroups.map(function (group, groupIdx) {
+                const shopQuote = shopQuotes.get(group.shopId)
                 return (
                   <div key={group.shopId || `shop-group-${groupIdx}`}>
                     {group.shopName !== '' && (
@@ -449,6 +517,8 @@ export default function Checkout() {
                         )
                       })}
                     </div>
+
+                    {shopQuote !== undefined && <ShopShippingRow quote={shopQuote} />}
                   </div>
                 )
               })}
@@ -472,20 +542,13 @@ export default function Checkout() {
                       Vận chuyển tiêu chuẩn (Toàn quốc)
                     </p>
                     <p className="text-zinc-600 dark:text-zinc-300">
-                      Dự kiến nhận hàng trong 2-3 ngày
+                      Dự kiến nhận hàng trong 2-3 ngày · mỗi shop giao một kiện riêng
                     </p>
                   </div>
                 </div>
-                {shippingFee === 0 && (
-                  <span className="shrink-0 font-extrabold text-emerald-600 dark:text-emerald-300">
-                    Miễn phí
-                  </span>
-                )}
-                {shippingFee > 0 && (
-                  <span className="shrink-0 font-extrabold text-[#17203a] tabular-nums dark:text-white">
-                    {formatVnd(shippingFee)}
-                  </span>
-                )}
+                <span className="shrink-0 font-extrabold text-[#17203a] dark:text-white">
+                  <ShippingFeeValue fee={preview?.shippingFee} state={feeState} />
+                </span>
               </div>
 
               <div className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white/70 p-4 text-xs dark:border-white/10 dark:bg-white/5">
@@ -521,33 +584,39 @@ export default function Checkout() {
               <div className="flex justify-between">
                 <span className="text-zinc-600 dark:text-zinc-300">Tổng tiền hàng:</span>
                 <span className="font-bold text-[#17203a] tabular-nums dark:text-zinc-200">
-                  {formatVnd(selectedSubtotal)}
+                  {formatVnd(displaySubtotal)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-600 dark:text-zinc-300">Phí vận chuyển:</span>
-                <span className="font-bold text-[#17203a] tabular-nums dark:text-zinc-200">
-                  {shippingFee === 0 && (
-                    <span className="text-emerald-600 dark:text-emerald-300">Miễn phí</span>
-                  )}
-                  {shippingFee > 0 && formatVnd(shippingFee)}
+                <span className="font-bold text-[#17203a] dark:text-zinc-200">
+                  <ShippingFeeValue fee={preview?.shippingFee} state={feeState} />
                 </span>
               </div>
               <div className="border-t border-zinc-200/70 pt-3 dark:border-white/10">
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm font-extrabold">Tổng thanh toán:</span>
                   <span className="text-xl font-extrabold text-blue-700 tabular-nums dark:text-sky-300">
-                    {formatVnd(finalTotal)}
+                    {totalLabel}
                   </span>
                 </div>
               </div>
+              {feeState.error && (
+                <p
+                  role="alert"
+                  className="flex items-start gap-1.5 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200"
+                >
+                  <WarningCircle size={14} weight="fill" className="mt-0.5 shrink-0" />
+                  <span>Không tính được phí vận chuyển. Vui lòng tải lại trang.</span>
+                </p>
+              )}
             </div>
 
             <button
               type="button"
               id="btn-confirm-order"
               onClick={handlePlaceOrder}
-              disabled={cart.checkout.isPending || currentAddress === null}
+              disabled={cart.checkout.isPending || currentAddress === null || preview === null}
               className={cn(
                 'btn-primary mt-6 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full py-4 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
                 FOCUS_RING_CLASS,
@@ -573,13 +642,13 @@ export default function Checkout() {
               Thanh toán COD
             </p>
             <p className="truncate text-base font-extrabold text-blue-700 tabular-nums dark:text-sky-300">
-              Tổng: {formatVnd(finalTotal)}
+              Tổng: {totalLabel}
             </p>
           </div>
           <button
             type="button"
             onClick={handlePlaceOrder}
-            disabled={cart.checkout.isPending || currentAddress === null}
+            disabled={cart.checkout.isPending || currentAddress === null || preview === null}
             className={cn(
               'btn-primary shrink-0 cursor-pointer rounded-full px-5 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
               FOCUS_RING_CLASS,

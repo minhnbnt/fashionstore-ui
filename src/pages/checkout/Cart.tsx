@@ -17,6 +17,7 @@ import {
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { useCheckoutPreview } from '@/hooks/useCheckoutPreview'
 import { hookErrorMessage, urlOrPlaceholder, PLACEHOLDER_IMAGE } from '@/lib/api/apiAdapters'
 import { formatVnd } from '@/lib/format'
 import { notify } from '@/lib/notifications'
@@ -28,8 +29,60 @@ import { useWishlist } from '../../hooks/useWishlist'
 
 import type { CartShopGroup } from '@/lib/shop/cartView'
 import type { CartItemResponse } from '@generated/model/cartItemResponse'
+import type { ShopCheckoutPreview } from '@generated/model/shopCheckoutPreview'
 
-const FREE_SHIPPING_THRESHOLD = 500000
+function FreeShipHint(props: { quote: ShopCheckoutPreview }) {
+  const subtotal = props.quote.subtotal ?? 0
+  const amountToFreeShip = props.quote.amountToFreeShip ?? 0
+
+  if (props.quote.freeShipApplied === true) {
+    return (
+      <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+        <CheckCircle size={14} weight="fill" className="shrink-0" />
+        Đơn của shop được miễn phí vận chuyển
+      </p>
+    )
+  }
+
+  if (amountToFreeShip <= 0) {
+    return null
+  }
+
+  let progress = Math.round((subtotal / (subtotal + amountToFreeShip)) * 100)
+  if (progress > 100) {
+    progress = 100
+  }
+
+  return (
+    <div className="mt-2 text-xs">
+      <p className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
+        <Truck size={14} weight="fill" className="shrink-0 text-blue-700 dark:text-sky-300" />
+        <span>
+          Mua thêm{' '}
+          <strong className="font-extrabold text-blue-700 tabular-nums dark:text-sky-300">
+            {formatVnd(amountToFreeShip)}
+          </strong>{' '}
+          để được miễn phí vận chuyển đơn của shop
+        </span>
+      </p>
+      <progress
+        value={progress}
+        max={100}
+        aria-label="Tiến độ miễn phí vận chuyển"
+        className="sr-only"
+      />
+      <div
+        aria-hidden="true"
+        className="mt-1.5 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-zinc-200/80 dark:bg-white/10"
+      >
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  )
+}
 
 type CartConfirmState = null | { kind: 'clear' } | { kind: 'removeSelected'; count: number }
 
@@ -61,17 +114,16 @@ export default function Cart() {
   const allSelected = selectable.length > 0 && selected.length === selectable.length
   const shopGroups = groupCartByShop(items)
 
-  const freeShippingReached = selectedTotal >= FREE_SHIPPING_THRESHOLD
-  let freeShippingRemaining = FREE_SHIPPING_THRESHOLD - selectedTotal
-  if (freeShippingRemaining < 0) {
-    freeShippingRemaining = 0
-  }
-  let freeShippingProgress = Math.round((selectedTotal / FREE_SHIPPING_THRESHOLD) * 100)
-  if (freeShippingProgress > 100) {
-    freeShippingProgress = 100
-  }
-  if (freeShippingProgress < 0) {
-    freeShippingProgress = 0
+  // Phí ship/freeship theo từng đơn shop do server tính trên các món đang chọn.
+  const selectedIds = selected.map(function (item) {
+    return item.variantId ?? ''
+  })
+  const { preview } = useCheckoutPreview(selectedIds, selectedIds.length > 0)
+  const shopQuotes = new Map<string, ShopCheckoutPreview>()
+  if (preview !== null) {
+    for (const shopQuote of preview.shops ?? []) {
+      shopQuotes.set(shopQuote.shopId ?? '', shopQuote)
+    }
   }
 
   function toggle(variantId: string) {
@@ -285,13 +337,6 @@ export default function Cart() {
   }
 
   if (isLoading === false && items.length > 0) {
-    let shippingBarClass =
-      'h-full rounded-full bg-gradient-to-r from-[#312e81] via-[#1d4ed8] to-[#38bdf8] transition-all duration-300'
-    if (freeShippingReached) {
-      shippingBarClass =
-        'h-full rounded-full bg-emerald-500 transition-all duration-300 dark:bg-emerald-400'
-    }
-
     body = (
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section className="glass rounded-3xl p-4 sm:p-6">
@@ -343,6 +388,7 @@ export default function Cart() {
                 shopIds.every(function (id) {
                   return excluded.includes(id) === false
                 })
+              const shopQuote = shopQuotes.get(group.shopId)
 
               return (
                 <div key={group.shopId}>
@@ -372,6 +418,7 @@ export default function Cart() {
                       </span>
                     </div>
                   </div>
+                  {shopQuote !== undefined && <FreeShipHint quote={shopQuote} />}
 
                   <ul className="divide-y divide-zinc-200/70 dark:divide-white/10">
                     {group.items.map(function (item) {
@@ -565,52 +612,6 @@ export default function Cart() {
         <aside className="glass h-fit rounded-3xl p-5 lg:sticky lg:top-24">
           <h2 className="text-lg font-extrabold tracking-tight">Tóm tắt</h2>
 
-          {/* Free Shipping Progress Bar */}
-          <div className="mt-4 rounded-2xl border border-zinc-200/80 bg-white/70 p-3.5 dark:border-white/10 dark:bg-white/5">
-            <div className="flex items-start gap-2 text-xs">
-              {freeShippingReached && (
-                <>
-                  <CheckCircle
-                    size={16}
-                    weight="fill"
-                    className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
-                  />
-                  <span className="font-bold text-emerald-700 dark:text-emerald-300">
-                    Đã đạt miễn phí vận chuyển!
-                  </span>
-                </>
-              )}
-              {freeShippingReached === false && (
-                <>
-                  <Truck
-                    size={16}
-                    weight="fill"
-                    className="mt-0.5 shrink-0 text-blue-700 dark:text-sky-300"
-                  />
-                  <span className="text-zinc-600 dark:text-zinc-300">
-                    Mua thêm{' '}
-                    <strong className="font-extrabold text-blue-700 tabular-nums dark:text-sky-300">
-                      {formatVnd(freeShippingRemaining)}
-                    </strong>{' '}
-                    để được miễn phí vận chuyển
-                  </span>
-                </>
-              )}
-            </div>
-            <progress
-              value={freeShippingProgress}
-              max={100}
-              aria-label="Tiến độ miễn phí vận chuyển"
-              className="sr-only"
-            />
-            <div
-              aria-hidden="true"
-              className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-zinc-200/80 dark:bg-white/10"
-            >
-              <div className={shippingBarClass} style={{ width: `${freeShippingProgress}%` }} />
-            </div>
-          </div>
-
           <dl className="mt-4 space-y-2.5 text-sm">
             <div className="flex justify-between">
               <dt className="text-zinc-500 dark:text-zinc-400">Đã chọn</dt>
@@ -623,10 +624,13 @@ export default function Cart() {
             <div className="flex justify-between">
               <dt className="text-zinc-500 dark:text-zinc-400">Phí ship</dt>
               <dd className="font-semibold">
-                {freeShippingReached && (
+                {preview !== null && preview.shippingFee === 0 && (
                   <span className="text-emerald-600 dark:text-emerald-400">Miễn phí</span>
                 )}
-                {freeShippingReached === false && <span>Tính ở bước đặt hàng</span>}
+                {preview !== null && (preview.shippingFee ?? 0) > 0 && (
+                  <span className="tabular-nums">{formatVnd(preview.shippingFee ?? 0)}</span>
+                )}
+                {preview === null && <span>Tính ở bước đặt hàng</span>}
               </dd>
             </div>
           </dl>

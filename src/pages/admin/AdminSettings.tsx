@@ -64,6 +64,8 @@ interface SettingsFormState {
   supportEmail: string
   freeShippingThreshold: string
   baseItems: string
+  shippingBaseFee: string
+  shippingExtraItemFee: string
   paymentHoldMinutes: string
   autoCompleteDays: string
   codMinTotal: string
@@ -78,6 +80,8 @@ const EMPTY_FORM: SettingsFormState = {
   supportEmail: '',
   freeShippingThreshold: '0',
   baseItems: '1',
+  shippingBaseFee: '0',
+  shippingExtraItemFee: '0',
   paymentHoldMinutes: '30',
   autoCompleteDays: '7',
   codMinTotal: '0',
@@ -101,6 +105,8 @@ function toFormState(settings: SystemSettingsResponse | undefined): SettingsForm
     supportEmail: settings.supportEmail ?? '',
     freeShippingThreshold: toNumberString(settings.freeShippingThreshold, '0'),
     baseItems: toNumberString(settings.baseItems, '1'),
+    shippingBaseFee: toNumberString(settings.shippingBaseFee, '0'),
+    shippingExtraItemFee: toNumberString(settings.shippingExtraItemFee, '0'),
     paymentHoldMinutes: toNumberString(settings.paymentHoldMinutes, '30'),
     autoCompleteDays: toNumberString(settings.autoCompleteDays, '7'),
     codMinTotal: toNumberString(settings.codMinTotal, '0'),
@@ -115,6 +121,8 @@ function formsEqual(a: SettingsFormState, b: SettingsFormState): boolean {
     a.supportEmail === b.supportEmail &&
     a.freeShippingThreshold === b.freeShippingThreshold &&
     a.baseItems === b.baseItems &&
+    a.shippingBaseFee === b.shippingBaseFee &&
+    a.shippingExtraItemFee === b.shippingExtraItemFee &&
     a.paymentHoldMinutes === b.paymentHoldMinutes &&
     a.autoCompleteDays === b.autoCompleteDays &&
     a.codMinTotal === b.codMinTotal &&
@@ -352,6 +360,22 @@ export default function AdminSettings() {
       return
     }
 
+    const shippingBaseFee = parseStrictInt(form.shippingBaseFee)
+    if (shippingBaseFee === null || shippingBaseFee < 0) {
+      const msg = 'Phí ship cơ bản phải là số nguyên từ 0 trở lên.'
+      setFieldErrors({ shippingBaseFee: msg })
+      notify.warning('Phí ship cơ bản không hợp lệ', msg)
+      return
+    }
+
+    const shippingExtraItemFee = parseStrictInt(form.shippingExtraItemFee)
+    if (shippingExtraItemFee === null || shippingExtraItemFee < 0) {
+      const msg = 'Phí mỗi món thêm phải là số nguyên từ 0 trở lên.'
+      setFieldErrors({ shippingExtraItemFee: msg })
+      notify.warning('Phí mỗi món thêm không hợp lệ', msg)
+      return
+    }
+
     const paymentHoldMinutes = parseStrictInt(form.paymentHoldMinutes)
     if (paymentHoldMinutes === null || paymentHoldMinutes < 5 || paymentHoldMinutes > 1440) {
       const msg = 'Số phút giữ đơn chờ thanh toán phải từ 5 đến 1440 phút.'
@@ -400,6 +424,8 @@ export default function AdminSettings() {
       supportEmail: trimmedEmail,
       freeShippingThreshold,
       baseItems,
+      shippingBaseFee,
+      shippingExtraItemFee,
       paymentHoldMinutes,
       autoCompleteDays,
       codMinTotal,
@@ -440,6 +466,8 @@ export default function AdminSettings() {
   }
 
   const freeShippingPreview = vndPreviewText(form.freeShippingThreshold)
+  const shippingBaseFeePreview = vndPreviewText(form.shippingBaseFee)
+  const shippingExtraItemFeePreview = vndPreviewText(form.shippingExtraItemFee)
   const codMinPreview = vndPreviewText(form.codMinTotal)
   const codMaxPreview = vndPreviewText(form.codMaxTotal, true)
 
@@ -675,6 +703,75 @@ export default function AdminSettings() {
                       Cho phép từ 1 đến 20 sản phẩm
                     </p>
                   )}
+                </div>
+
+                <div>
+                  <label htmlFor="setting-shipping-base-fee" className={LABEL_CLASS}>
+                    Phí ship cơ bản (VND)
+                  </label>
+                  <input
+                    id="setting-shipping-base-fee"
+                    type="number"
+                    min={0}
+                    step={1000}
+                    value={form.shippingBaseFee}
+                    aria-invalid={fieldErrors.shippingBaseFee !== undefined}
+                    onChange={function (event) {
+                      updateField('shippingBaseFee', event.target.value)
+                    }}
+                    className={fieldInputClass(
+                      fieldErrors.shippingBaseFee !== undefined,
+                      'tabular-nums',
+                    )}
+                  />
+                  {fieldErrors.shippingBaseFee !== undefined && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                    >
+                      {fieldErrors.shippingBaseFee}
+                    </p>
+                  )}
+                  {fieldErrors.shippingBaseFee === undefined && shippingBaseFeePreview !== null && (
+                    <p className="mt-1.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                      {shippingBaseFeePreview} mỗi đơn (mỗi shop)
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="setting-shipping-extra-item-fee" className={LABEL_CLASS}>
+                    Phí mỗi món thêm (VND)
+                  </label>
+                  <input
+                    id="setting-shipping-extra-item-fee"
+                    type="number"
+                    min={0}
+                    step={500}
+                    value={form.shippingExtraItemFee}
+                    aria-invalid={fieldErrors.shippingExtraItemFee !== undefined}
+                    onChange={function (event) {
+                      updateField('shippingExtraItemFee', event.target.value)
+                    }}
+                    className={fieldInputClass(
+                      fieldErrors.shippingExtraItemFee !== undefined,
+                      'tabular-nums',
+                    )}
+                  />
+                  {fieldErrors.shippingExtraItemFee !== undefined && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                    >
+                      {fieldErrors.shippingExtraItemFee}
+                    </p>
+                  )}
+                  {fieldErrors.shippingExtraItemFee === undefined &&
+                    shippingExtraItemFeePreview !== null && (
+                      <p className="mt-1.5 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                        {shippingExtraItemFeePreview} cho mỗi món vượt số SP phí cơ bản
+                      </p>
+                    )}
                 </div>
 
                 <div>

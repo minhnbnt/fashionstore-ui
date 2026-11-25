@@ -91,6 +91,8 @@ const MOCK_SETTINGS = {
   supportEmail: 'support@dhmq.vn',
   freeShippingThreshold: 500000,
   baseItems: 3,
+  shippingBaseFee: 30000,
+  shippingExtraItemFee: 5000,
   paymentHoldMinutes: 30,
   autoCompleteDays: 7,
   codMinTotal: 100000,
@@ -200,6 +202,8 @@ describe('AdminSettings', () => {
     const emailInput = screen.getByLabelText('Email hỗ trợ') as HTMLInputElement
     const freeShipInput = screen.getByLabelText('Ngưỡng freeship (VND)') as HTMLInputElement
     const baseItemsInput = screen.getByLabelText('Số SP tối đa phí cơ bản') as HTMLInputElement
+    const baseFeeInput = screen.getByLabelText('Phí ship cơ bản (VND)') as HTMLInputElement
+    const extraFeeInput = screen.getByLabelText('Phí mỗi món thêm (VND)') as HTMLInputElement
     const paymentHoldInput = screen.getByLabelText(
       'Phút giữ đơn chờ thanh toán',
     ) as HTMLInputElement
@@ -212,6 +216,8 @@ describe('AdminSettings', () => {
     expect(emailInput.value).toBe('support@dhmq.vn')
     expect(freeShipInput.value).toBe('500000')
     expect(baseItemsInput.value).toBe('3')
+    expect(baseFeeInput.value).toBe('30000')
+    expect(extraFeeInput.value).toBe('5000')
     expect(paymentHoldInput.value).toBe('30')
     expect(autoCompleteInput.value).toBe('7')
     expect(codMinInput.value).toBe('100000')
@@ -263,6 +269,7 @@ describe('AdminSettings', () => {
 
     fireEvent.change(siteNameInput, { target: { value: 'DHMQ Fashion' } })
     fireEvent.change(freeShipInput, { target: { value: '600000' } })
+    fireEvent.change(screen.getByLabelText('Phí ship cơ bản (VND)'), { target: { value: '25000' } })
     fireEvent.change(codMaxInput, { target: { value: '0' } })
 
     fireEvent.click(screen.getByRole('button', { name: 'Lưu cấu hình' }))
@@ -278,6 +285,8 @@ describe('AdminSettings', () => {
         supportEmail: 'support@dhmq.vn',
         freeShippingThreshold: 600000,
         baseItems: 3,
+        shippingBaseFee: 25000,
+        shippingExtraItemFee: 5000,
         paymentHoldMinutes: 30,
         autoCompleteDays: 7,
         codMinTotal: 100000,

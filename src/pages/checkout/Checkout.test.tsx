@@ -10,10 +10,13 @@ import Checkout from './Checkout'
 import type { AddressResponse } from '@generated/model/addressResponse'
 import type { CartCheckoutRequest } from '@generated/model/cartCheckoutRequest'
 import type { CartItemResponse } from '@generated/model/cartItemResponse'
+import type { CheckoutPreviewResponse } from '@generated/model/checkoutPreviewResponse'
+import type { ShopCheckoutPreview } from '@generated/model/shopCheckoutPreview'
 
 const {
   checkoutMutate,
   mockUseList1,
+  mockUseCheckoutPreview,
   mockNotifySuccess,
   mockNotifyWarning,
   mockNotifyFromError,
@@ -27,6 +30,7 @@ const {
       ) => void
     >(),
   mockUseList1: vi.fn(),
+  mockUseCheckoutPreview: vi.fn(),
   mockNotifySuccess: vi.fn(),
   mockNotifyWarning: vi.fn(),
   mockNotifyFromError: vi.fn(),
@@ -53,6 +57,10 @@ vi.mock('@/hooks/useCart', () => ({
     totalQuantity: 0,
     checkout: { mutate: checkoutMutate, isPending: false },
   }),
+}))
+
+vi.mock('@/hooks/useCheckoutPreview', () => ({
+  useCheckoutPreview: mockUseCheckoutPreview,
 }))
 
 vi.mock('@/hooks/useSession', () => ({
@@ -91,6 +99,8 @@ function cartItems(): CartItemResponse[] {
     {
       variantId: 'v-1',
       productId: 'p-1',
+      shopId: 'shop-a',
+      shopName: 'Shop A',
       productName: 'Áo Sơ Mi Lụa',
       variantLabel: 'M / Đen',
       unitPrice: 199000,
@@ -99,12 +109,46 @@ function cartItems(): CartItemResponse[] {
     {
       variantId: 'v-2',
       productId: 'p-2',
+      shopId: 'shop-a',
+      shopName: 'Shop A',
       productName: 'Quần Jeans',
       variantLabel: 'L / Xanh',
       unitPrice: 350000,
       quantity: 1,
     },
   ]
+}
+
+function shopQuote(
+  shopId: string,
+  subtotal: number,
+  shippingFee: number,
+  amountToFreeShip: number,
+): ShopCheckoutPreview {
+  return {
+    shopId,
+    itemCount: 1,
+    subtotal,
+    shippingFee,
+    originalShippingFee: 30000,
+    freeShipApplied: shippingFee === 0,
+    amountToFreeShip,
+    total: subtotal + shippingFee,
+  }
+}
+
+function previewOf(shops: ShopCheckoutPreview[]): CheckoutPreviewResponse {
+  let subtotal = 0
+  let shippingFee = 0
+  for (const shop of shops) {
+    subtotal += shop.subtotal ?? 0
+    shippingFee += shop.shippingFee ?? 0
+  }
+  return { shops, subtotal, shippingFee, total: subtotal + shippingFee }
+}
+
+function mockPreview(preview: CheckoutPreviewResponse) {
+  mockUseCheckoutPreview.mockReturnValue({ preview, isLoading: false, isError: false })
 }
 
 function renderCheckout(initialEntry = '/checkout') {
@@ -127,6 +171,8 @@ beforeEach(() => {
   mockNotifyWarning.mockReset()
   mockNotifyFromError.mockReset()
   mockUseList1.mockReturnValue({ data: { status: 200, data: addresses() } })
+  mockUseCheckoutPreview.mockReset()
+  mockPreview(previewOf([shopQuote('shop-a', 748000, 0, 0)]))
   state.isLoggedIn = true
   state.items = cartItems()
 })
@@ -148,7 +194,7 @@ describe('Checkout — đặt hàng COD (DOM)', () => {
     expect(screen.getByRole('link', { name: 'Về Giỏ Hàng' }).getAttribute('href')).toBe('/cart')
   })
 
-  it('render đầy đủ: món hàng, địa chỉ mặc định, miễn phí ship khi đạt 500k', () => {
+  it('render đầy đủ: món hàng, địa chỉ mặc định, phí ship lấy từ server (miễn phí)', () => {
     renderCheckout()
 
     expect(screen.getByText('Thanh Toán')).toBeTruthy()
@@ -161,20 +207,64 @@ describe('Checkout — đặt hàng COD (DOM)', () => {
     expect(screen.getByText('Nhà riêng')).toBeTruthy()
     expect(screen.getByText('Mặc định')).toBeTruthy()
     expect(screen.getByText('123 Lê Lợi, P. Bến Nghé, Q.1, TP.HCM')).toBeTruthy()
-    // 748.000 ≥ 500.000 → miễn phí ship; tổng tiền hàng và tổng thanh toán đều 748.000
-    expect(screen.getAllByText('Miễn phí')).toHaveLength(2)
+    expect(mockUseCheckoutPreview).toHaveBeenCalledWith([], true)
+    // Server báo đơn shop A được freeship: dòng phí của shop, thẻ vận chuyển, bảng tổng
+    expect(screen.getAllByText('Miễn phí')).toHaveLength(3)
     expect(screen.getAllByText('748.000 ₫')).toHaveLength(2)
   })
 
-  it('?variantIds= lọc đúng món, phí ship tính trên phần được chọn', () => {
+  it('?variantIds= lọc đúng món, xin server xem trước đúng phần được chọn', () => {
+    mockPreview(previewOf([shopQuote('shop-a', 350000, 30000, 150000)]))
     renderCheckout('/checkout?variantIds=v-2')
 
     expect(screen.getByText('Sản Phẩm Đặt Mua (1)')).toBeTruthy()
     expect(screen.getByText('Quần Jeans')).toBeTruthy()
     expect(screen.queryByText('Áo Sơ Mi Lụa')).toBeNull()
-    // 350.000 < 500.000 → phí 30.000, tổng 380.000
-    expect(screen.getAllByText('30.000 ₫')).toHaveLength(2)
+    expect(mockUseCheckoutPreview).toHaveBeenCalledWith(['v-2'], true)
+    // Phí 30.000 ở dòng shop, thẻ vận chuyển, bảng tổng; tổng 380.000 theo server
+    expect(screen.getAllByText('30.000 ₫')).toHaveLength(3)
     expect(screen.getByText('380.000 ₫')).toBeTruthy()
+    expect(screen.getByText('150.000 ₫')).toBeTruthy()
+  })
+
+  it('giỏ nhiều shop → mỗi shop một phí ship, tổng phí cộng dồn theo server', () => {
+    const [first, second] = cartItems()
+    state.items = [
+      { ...first, shopId: 'shop-a', shopName: 'Shop A' },
+      { ...second, shopId: 'shop-b', shopName: 'Shop B' },
+    ]
+    mockPreview(
+      previewOf([
+        shopQuote('shop-a', 398000, 30000, 102000),
+        shopQuote('shop-b', 350000, 30000, 150000),
+      ]),
+    )
+    renderCheckout()
+
+    expect(screen.getByText('Shop A')).toBeTruthy()
+    expect(screen.getByText('Shop B')).toBeTruthy()
+    // 30.000 ở 2 dòng shop; tổng phí 60.000 ở thẻ vận chuyển và bảng tổng
+    expect(screen.getAllByText('30.000 ₫')).toHaveLength(2)
+    expect(screen.getAllByText('60.000 ₫')).toHaveLength(2)
+    expect(screen.getByText('808.000 ₫')).toBeTruthy()
+  })
+
+  it('đang tính phí ship → khoá nút đặt hàng', () => {
+    mockUseCheckoutPreview.mockReturnValue({ preview: null, isLoading: true, isError: false })
+    renderCheckout()
+
+    expect(screen.getAllByText('Đang tính…').length).toBeGreaterThan(0)
+    const placeOrder = screen.getByRole('button', { name: 'Đặt Hàng (COD)' }) as HTMLButtonElement
+    expect(placeOrder.disabled).toBe(true)
+  })
+
+  it('không tính được phí ship → báo lỗi và khoá nút đặt hàng', () => {
+    mockUseCheckoutPreview.mockReturnValue({ preview: null, isLoading: false, isError: true })
+    renderCheckout()
+
+    expect(screen.getByText('Không tính được phí vận chuyển. Vui lòng tải lại trang.')).toBeTruthy()
+    const placeOrder = screen.getByRole('button', { name: 'Đặt Hàng (COD)' }) as HTMLButtonElement
+    expect(placeOrder.disabled).toBe(true)
   })
 
   it('đặt hàng thành công → payload đúng thông tin giao hàng, điều hướng sang đơn hàng', async () => {
@@ -192,7 +282,6 @@ describe('Checkout — đặt hàng COD (DOM)', () => {
       shippingName: 'Nguyễn Văn A',
       shippingPhone: '0901112222',
       shippingAddress: '123 Lê Lợi, P. Bến Nghé, Q.1, TP.HCM',
-      shippingFee: 0,
     })
     expect(mockNotifySuccess).toHaveBeenCalledWith(
       'Đặt hàng thành công',
@@ -263,7 +352,6 @@ describe('Checkout — đặt hàng COD (DOM)', () => {
       shippingName: 'buyer@test.vn',
       shippingPhone: '0900000000',
       shippingAddress: 'Địa chỉ giao hàng mặc định',
-      shippingFee: 0,
     })
   })
 })
