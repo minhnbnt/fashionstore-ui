@@ -413,12 +413,11 @@ describe('AdminPayments', () => {
     const accountNumberInput = screen.getByLabelText('Số tài khoản nhận tiền') as HTMLInputElement
     const accountNameInput = screen.getByLabelText('Tên chủ tài khoản') as HTMLInputElement
     const webhookSecretInput = screen.getByLabelText('Webhook Secret') as HTMLInputElement
-    const sandboxSwitch = screen.getByRole('switch', { name: 'Chế độ Demo Sandbox' })
 
     expect(accountNumberInput.value).toBe('0123456789')
     expect(accountNameInput.value).toBe('CONG TY TNHH DHMQ')
     expect(webhookSecretInput.placeholder).toBe('Đã thiết lập — để trống nếu giữ nguyên')
-    expect(sandboxSwitch.getAttribute('aria-checked')).toBe('true')
+    expect(screen.queryByRole('switch', { name: 'Chế độ Demo Sandbox' })).toBeNull()
 
     fireEvent.change(accountNumberInput, { target: { value: '9999888877' } })
     fireEvent.click(bankTrigger)
@@ -439,7 +438,6 @@ describe('AdminPayments', () => {
     expect(screen.getByText('Đã xác thực Napas 24/7')).toBeTruthy()
 
     fireEvent.change(webhookSecretInput, { target: { value: 'secret-2026' } })
-    fireEvent.click(sandboxSwitch)
 
     fireEvent.click(screen.getByRole('button', { name: 'Lưu cấu hình VietQR' }))
 
@@ -455,7 +453,6 @@ describe('AdminPayments', () => {
         accountNumber: '9999888877',
         accountName: 'CONG TY CP DHMQ',
         webhookSecret: 'secret-2026',
-        sandboxMode: false,
       },
     })
   })
@@ -518,9 +515,13 @@ describe('AdminPayments', () => {
     expect(
       screen.getByRole('heading', { name: 'Xác nhận nhận tiền chuyển khoản VietQR' }),
     ).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: /Giả lập chuyển thiếu 50%/i }))
+    expect(screen.queryByText(/Chọn nhanh kịch bản đối soát \/ giả lập/i)).toBeNull()
+    expect(screen.queryByRole('button', { name: /Giả lập chuyển thiếu 50%/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Nhận đủ 100%/i })).toBeNull()
+
     const amountInput = screen.getByLabelText('Số tiền thực nhận (VNĐ)') as HTMLInputElement
-    expect(amountInput.value).toBe('250000')
+    expect(amountInput.value).toBe('500000')
+    fireEvent.change(amountInput, { target: { value: '250000' } })
 
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận đã nhận tiền' }))
 

@@ -100,7 +100,6 @@ const WITHDRAWAL_STATUS_FILTERS: { value: WithdrawalStatusFilter; label: string 
 
 interface VietQrDraftState {
   enabled: boolean
-  sandboxMode: boolean
   bankBin: string
   accountNumber: string
   accountName: string
@@ -111,7 +110,6 @@ function toVietQrDraft(gateway: PaymentGatewayResponse | undefined): VietQrDraft
   if (gateway === undefined) {
     return {
       enabled: true,
-      sandboxMode: false,
       bankBin: '',
       accountNumber: '',
       accountName: '',
@@ -120,7 +118,6 @@ function toVietQrDraft(gateway: PaymentGatewayResponse | undefined): VietQrDraft
   }
   return {
     enabled: gateway.enabled ?? true,
-    sandboxMode: gateway.sandboxMode ?? false,
     bankBin: gateway.bankBin ?? '',
     accountNumber: gateway.accountNumber ?? '',
     accountName: gateway.accountName ?? '',
@@ -352,7 +349,6 @@ export default function AdminPayments() {
       bankBin: vietQrForm.bankBin.trim(),
       accountNumber: vietQrForm.accountNumber.trim(),
       accountName: vietQrForm.accountName.trim(),
-      sandboxMode: vietQrForm.sandboxMode,
     }
     if (vietQrForm.webhookSecret.trim() !== '') {
       payload.webhookSecret = vietQrForm.webhookSecret.trim()
@@ -782,72 +778,37 @@ export default function AdminPayments() {
                       <span className={badgeClass(vietQrStatus.tone)}>{vietQrStatus.label}</span>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      <div className="flex items-center justify-between rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-3.5 dark:border-white/10 dark:bg-white/5">
-                        <div>
-                          <p className="text-sm font-bold text-[#17203a] dark:text-[#e2e8f0]">
-                            Kích hoạt cổng VietQR
-                          </p>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                            Hiển thị tùy chọn quét mã VietQR khi đặt hàng
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-label="Bật thanh toán VietQR"
-                          aria-checked={vietQrForm.enabled}
-                          onClick={function () {
-                            updateVietQrField('enabled', vietQrForm.enabled === false)
-                          }}
-                          className={cn(
-                            'relative inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors',
-                            switchTrackClass(vietQrForm.enabled),
-                            FOCUS_RING_CLASS,
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              switchKnobClass(),
-                              'h-4 w-4',
-                              switchKnobOffsetClass(vietQrForm.enabled),
-                            )}
-                          />
-                        </button>
+                    <div className="flex items-center justify-between rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-white/10 dark:bg-white/5">
+                      <div>
+                        <p className="text-sm font-bold text-[#17203a] dark:text-[#e2e8f0]">
+                          Kích hoạt cổng VietQR
+                        </p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          Hiển thị tùy chọn quét mã VietQR khi đặt hàng
+                        </p>
                       </div>
-
-                      <div className="flex items-center justify-between rounded-2xl border border-amber-200/80 bg-amber-50/60 p-3.5 dark:border-amber-500/25 dark:bg-amber-500/10">
-                        <div>
-                          <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
-                            Chế độ Demo Sandbox
-                          </p>
-                          <p className="text-xs text-amber-800/80 dark:text-amber-300/80">
-                            Cho phép Admin giả lập biến động số dư tại tab Giao dịch
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-label="Chế độ Demo Sandbox"
-                          aria-checked={vietQrForm.sandboxMode}
-                          onClick={function () {
-                            updateVietQrField('sandboxMode', vietQrForm.sandboxMode === false)
-                          }}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-label="Bật thanh toán VietQR"
+                        aria-checked={vietQrForm.enabled}
+                        onClick={function () {
+                          updateVietQrField('enabled', vietQrForm.enabled === false)
+                        }}
+                        className={cn(
+                          'relative inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors',
+                          switchTrackClass(vietQrForm.enabled),
+                          FOCUS_RING_CLASS,
+                        )}
+                      >
+                        <span
                           className={cn(
-                            'relative inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors',
-                            switchTrackClass(vietQrForm.sandboxMode),
-                            FOCUS_RING_CLASS,
+                            switchKnobClass(),
+                            'h-4 w-4',
+                            switchKnobOffsetClass(vietQrForm.enabled),
                           )}
-                        >
-                          <span
-                            className={cn(
-                              switchKnobClass(),
-                              'h-4 w-4',
-                              switchKnobOffsetClass(vietQrForm.sandboxMode),
-                            )}
-                          />
-                        </button>
-                      </div>
+                        />
+                      </button>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -1503,7 +1464,7 @@ export default function AdminPayments() {
         )}
       </div>
 
-      {/* Modal xác nhận / giả lập nhận tiền chuyển khoản VietQR */}
+      {/* Modal xác nhận nhận tiền chuyển khoản VietQR */}
       {confirmTransferTarget !== null && (
         <Modal
           title="Xác nhận nhận tiền chuyển khoản VietQR"
@@ -1524,46 +1485,6 @@ export default function AdminPayments() {
                     Người mua: {confirmTransferTarget.buyerEmail}
                   </p>
                 )}
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                Chọn nhanh kịch bản đối soát / giả lập:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={function () {
-                    setConfirmTransferAmount(String(confirmTransferTarget.amount ?? 0))
-                    setConfirmTransferError(null)
-                  }}
-                  className={cn(
-                    'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-200',
-                    FOCUS_RING_CLASS,
-                  )}
-                >
-                  <CheckCircle size={14} weight="bold" />
-                  <span>Nhận đủ 100% ({formatVnd(confirmTransferTarget.amount ?? 0)})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={function () {
-                    const half = Math.floor((confirmTransferTarget.amount ?? 0) / 2)
-                    setConfirmTransferAmount(String(half))
-                    setConfirmTransferError(null)
-                  }}
-                  className={cn(
-                    'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200',
-                    FOCUS_RING_CLASS,
-                  )}
-                >
-                  <WarningCircle size={14} weight="bold" />
-                  <span>
-                    Giả lập chuyển thiếu 50% (
-                    {formatVnd(Math.floor((confirmTransferTarget.amount ?? 0) / 2))})
-                  </span>
-                </button>
-              </div>
             </div>
 
             <div>
