@@ -193,7 +193,13 @@ export default function Orders() {
   const [pendingReorderOrderId, setPendingReorderOrderId] = useState<string | null>(null)
   const [pendingRetryOrderId, setPendingRetryOrderId] = useState<string | null>(null)
 
-  const ordersQuery = useMine3({ query: { enabled: isLoggedIn } })
+  const ordersQuery = useMine3({
+    query: {
+      enabled: isLoggedIn,
+      staleTime: 0,
+      refetchOnMount: 'always',
+    },
+  })
   const returnsQuery = useMyReturns({ query: { enabled: isLoggedIn } })
   const reviewsQuery = useMyReviews({ query: { enabled: isLoggedIn } })
 

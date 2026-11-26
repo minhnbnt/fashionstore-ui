@@ -106,7 +106,13 @@ export default function OrderDetail() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  const detailQuery = useDetail2(id, { query: { enabled: id !== '' } })
+  const detailQuery = useDetail2(id, {
+    query: {
+      enabled: id !== '',
+      staleTime: 0,
+      refetchOnMount: 'always',
+    },
+  })
   const trackingQuery = useTracking1(id, { query: { enabled: id !== '' } })
   const timelineQuery = useTimeline1(id, { query: { enabled: id !== '' } })
   const returnsQuery = useMyReturns({ query: { enabled: id !== '' } })
