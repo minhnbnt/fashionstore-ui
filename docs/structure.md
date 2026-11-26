@@ -40,7 +40,7 @@ fashionstore-ui/
 │   ├── pages/             # barrel index.ts export lazy mọi trang; root: Home, Search, ProductDetail, Faq, StaticPage
 │   │   ├── admin/         # 10 trang admin (Dashboard/Shops/ShopDetail/Users/UserDetail/Orders/Products/BannedKeywords/Content/Holidays)
 │   │   ├── shop/          # ShopDashboard, ShopStorefront, InvitationAccept
-│   │   ├── checkout/      # Cart, Checkout, Orders, OrderDetail, Wishlist
+│   │   ├── checkout/      # Cart, Checkout, VietQrPayment, Orders, OrderDetail, Wishlist
 │   │   └── account/       # Account, Addresses, Login, ResetPassword, AuthCallback
 │   ├── types/             # type dùng chung theo domain (seller/ con, admin.ts, auth.ts, product.ts, search.ts, ui.ts; index.ts re-export)
 │   ├── App.tsx            # ráp Header/Routes/Footer + ScrollToHash; lazy import './pages/<domain>/X'

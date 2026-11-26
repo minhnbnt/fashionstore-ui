@@ -41,6 +41,7 @@ import {
   ShopDashboard,
   ShopStorefront,
   StaticPage,
+  VietQrPayment,
   Wishlist,
 } from './pages'
 
@@ -168,6 +169,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <Checkout />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/payment/qr/:txnRef"
+              element={
+                <RequireAuth>
+                  <VietQrPayment />
                 </RequireAuth>
               }
             />

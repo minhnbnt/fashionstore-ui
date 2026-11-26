@@ -15,6 +15,7 @@ import {
   useCancel1,
   useConfirmReceipt,
   useDetail2,
+  useRetryVietQrPayment,
   useTimeline1,
   useTracking1,
 } from '@generated/endpoints/orders/orders'
@@ -32,6 +33,7 @@ import {
   ChatCircleDots,
   CheckCircle,
   MapPin,
+  QrCode,
   Star,
   Storefront,
 } from '@phosphor-icons/react'
@@ -112,6 +114,7 @@ export default function OrderDetail() {
 
   const cancelMutation = useCancel1()
   const confirmReceiptMutation = useConfirmReceipt()
+  const retryVietQrMutation = useRetryVietQrPayment()
   const createReturnMutation = useCreateReturn()
   const createReviewMutation = useCreateReview()
   const updateReviewMutation = useUpdateReview()
@@ -225,6 +228,30 @@ export default function OrderDetail() {
           },
           onError: (err) => {
             notify.fromError(err, 'confirmReceipt', 'Không thể xác nhận nhận hàng')
+          },
+        },
+      )
+    }
+
+    function handleRetryVietQr() {
+      const fallbackRef = order?.paymentTxnRef
+      retryVietQrMutation.mutate(
+        { id },
+        {
+          onSuccess: (res) => {
+            const sessionData = takeData(res)
+            const targetTxnRef = sessionData.txnRef || fallbackRef
+            if (targetTxnRef) {
+              void navigate('/payment/qr/' + targetTxnRef)
+            }
+          },
+          onError: (err) => {
+            notify.fromError(
+              err,
+              'retryVietQrPayment',
+              'Không thể khởi tạo phiên thanh toán VietQR',
+            )
+            invalidateAll()
           },
         },
       )
@@ -390,6 +417,18 @@ export default function OrderDetail() {
                 >
                   <ChatCircleDots size={15} weight="bold" />
                   <span>Chat với Shop</span>
+                </button>
+              )}
+
+              {order.status === 'AWAITING_PAYMENT' && (
+                <button
+                  type="button"
+                  disabled={retryVietQrMutation.isPending}
+                  onClick={handleRetryVietQr}
+                  className="btn-primary inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold disabled:opacity-50"
+                >
+                  <QrCode size={15} weight="bold" />
+                  <span>Thanh toán ngay (Mã QR)</span>
                 </button>
               )}
 

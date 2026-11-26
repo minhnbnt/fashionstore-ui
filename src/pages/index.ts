@@ -32,6 +32,7 @@ export const AdminSettings = lazy(() => import('./admin/AdminSettings'))
 // Checkout
 export const Cart = lazy(() => import('./checkout/Cart'))
 export const Checkout = lazy(() => import('./checkout/Checkout'))
+export const VietQrPayment = lazy(() => import('./checkout/VietQrPayment'))
 export const Orders = lazy(() => import('./checkout/Orders'))
 export const OrderDetail = lazy(() => import('./checkout/OrderDetail'))
 export const Wishlist = lazy(() => import('./checkout/Wishlist'))
