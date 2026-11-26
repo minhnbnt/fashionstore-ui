@@ -6,6 +6,7 @@ export type SellerTabId =
   | 'ADD_PRODUCT'
   | 'EDIT_PRODUCT'
   | 'INVENTORY'
+  | 'VOUCHERS'
   | 'ORDERS'
   | 'RETURNS'
   | 'REVENUE'

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import { useList } from '@generated/endpoints/addresses/addresses'
+import { useListPaymentMethods } from '@generated/endpoints/public-payments/public-payments'
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,14 +13,18 @@ import {
   House,
   MapPin,
   Plus,
+  QrCode,
   ShieldCheck,
   ShoppingBag,
   Storefront,
+  Ticket,
   Truck,
   WarningCircle,
+  X,
 } from '@phosphor-icons/react'
 
 import AddressFormModal from '@/components/account/AddressFormModal'
+import ShopVoucherModal from '@/components/checkout/ShopVoucherModal'
 import Modal from '@/components/Modal'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import { PageSkeleton } from '@/components/ui/Skeleton'
@@ -29,11 +34,13 @@ import { useSessionQuery } from '@/hooks/useSession'
 import { fallbackImageOnError, takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
 import { formatFullAddress, formatVnd } from '@/lib/format'
 import { notify } from '@/lib/notifications'
+import { codUnavailableReason } from '@/lib/order/orderStatus'
 import { groupCartByShop } from '@/lib/shop/cartView'
 import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 import type { AddressResponse } from '@generated/model/addressResponse'
 import type { CartCheckoutRequest } from '@generated/model/cartCheckoutRequest'
+import type { PaymentMethodOption } from '@generated/model/paymentMethodOption'
 import type { ShopCheckoutPreview } from '@generated/model/shopCheckoutPreview'
 
 function resolveShippingAddress(fullAddress: string): string {
@@ -154,12 +161,50 @@ export default function Checkout() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'COD' | 'VIETQR'>('COD')
+  const [selectedVouchers, setSelectedVouchers] = useState<Record<string, string>>({})
+  const [activeVoucherShop, setActiveVoucherShop] = useState<{
+    shopId: string
+    shopName: string
+  } | null>(null)
 
   const addressesQuery = useList({
     query: {
       enabled: cart.isLoggedIn,
     },
   })
+
+  const paymentMethodsQuery = useListPaymentMethods({
+    query: {
+      enabled: cart.isLoggedIn,
+    },
+  })
+
+  let codMinTotal = 0
+  let codMaxTotal = 0
+  let codOption: PaymentMethodOption | null = {
+    code: 'COD',
+    name: 'Thanh toán khi nhận hàng (COD)',
+  }
+  let vietQrOption: PaymentMethodOption | null = {
+    code: 'VIETQR',
+    name: 'Chuyển khoản ngân hàng (VietQR)',
+  }
+  if (paymentMethodsQuery?.data !== undefined) {
+    const pmData = takeData(paymentMethodsQuery.data)
+    codMinTotal = pmData.codMinTotal ?? 0
+    codMaxTotal = pmData.codMaxTotal ?? 0
+    if (pmData.methods !== undefined && pmData.methods.length > 0) {
+      codOption =
+        pmData.methods.find(function (m) {
+          return m.code === 'COD'
+        }) ?? null
+      vietQrOption =
+        pmData.methods.find(function (m) {
+          return m.code === 'VIETQR'
+        }) ?? null
+    }
+  }
 
   let addresses: AddressResponse[] = []
   if (addressesQuery.data !== undefined) {
@@ -207,7 +252,11 @@ export default function Checkout() {
   }
 
   // Phí ship và tổng tiền do server tính (mỗi shop 1 đơn), FE chỉ hiển thị.
-  const checkoutPreview = useCheckoutPreview(wanted, cart.isLoggedIn && orderItems.length > 0)
+  const checkoutPreview = useCheckoutPreview(
+    wanted,
+    cart.isLoggedIn && orderItems.length > 0,
+    selectedVouchers,
+  )
   const preview = checkoutPreview.preview
   const shopQuotes = new Map<string, ShopCheckoutPreview>()
   if (preview !== null) {
@@ -219,6 +268,18 @@ export default function Checkout() {
   if (preview !== null) {
     displaySubtotal = preview.subtotal ?? 0
   }
+  let displayTotal = displaySubtotal
+  if (preview !== null) {
+    displayTotal = preview.total ?? displaySubtotal
+  }
+  const codBlockReason = codUnavailableReason(displayTotal, codMinTotal, codMaxTotal)
+  const codDisabled = codBlockReason !== null || codOption === null
+
+  let paymentMethod: 'COD' | 'VIETQR' = selectedPaymentMethod
+  if (paymentMethod === 'COD' && codDisabled && vietQrOption !== null) {
+    paymentMethod = 'VIETQR'
+  }
+
   const feeState: FeeState = {
     loading: checkoutPreview.isLoading,
     error: checkoutPreview.isError,
@@ -253,15 +314,44 @@ export default function Checkout() {
       shippingName: nameToUse,
       shippingPhone: phoneToUse,
       shippingAddress: resolveShippingAddress(fullAddr),
+      paymentMethod,
     }
     if (wanted.length > 0) {
       payload.variantIds = wanted
     }
 
+    const validShopVouchers: Record<string, string> = {}
+    let hasValidVoucher = false
+    for (const [shopId, code] of Object.entries(selectedVouchers)) {
+      const trimmedCode = code.trim()
+      const quote = shopQuotes.get(shopId)
+      const hasVoucherError =
+        quote !== undefined &&
+        quote.voucherError !== null &&
+        quote.voucherError !== undefined &&
+        quote.voucherError !== ''
+      if (shopId !== '' && trimmedCode !== '' && !hasVoucherError) {
+        validShopVouchers[shopId] = trimmedCode
+        hasValidVoucher = true
+      }
+    }
+    if (hasValidVoucher) {
+      payload.shopVouchers = validShopVouchers
+    }
+
     cart.checkout.mutate(
       { data: payload },
       {
-        onSuccess: function () {
+        onSuccess: function (res) {
+          if (paymentMethod === 'VIETQR' && res !== undefined) {
+            const createdOrders = takeData(res)
+            const firstOrder = createdOrders[0]
+            if (firstOrder?.paymentTxnRef) {
+              notify.success('Đặt hàng thành công', 'Vui lòng quét mã VietQR để thanh toán.')
+              void navigate('/payment/qr/' + firstOrder.paymentTxnRef)
+              return
+            }
+          }
           notify.success('Đặt hàng thành công', 'Đơn hàng của bạn đã được tiếp nhận.')
           void navigate('/account/orders')
         },
@@ -519,6 +609,75 @@ export default function Checkout() {
                     </div>
 
                     {shopQuote !== undefined && <ShopShippingRow quote={shopQuote} />}
+
+                    {group.shopId !== '' && (
+                      <div className="mt-2 rounded-2xl border border-zinc-200/80 bg-white/60 px-3.5 py-2.5 text-xs dark:border-white/10 dark:bg-white/5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
+                            <Ticket
+                              size={14}
+                              weight="bold"
+                              className="shrink-0 text-blue-700 dark:text-sky-300"
+                            />
+                            <span>Voucher của Shop</span>
+                            {Boolean(selectedVouchers[group.shopId] || shopQuote?.voucherCode) && (
+                              <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[11px] font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300">
+                                {selectedVouchers[group.shopId] || shopQuote?.voucherCode}
+                              </span>
+                            )}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {(shopQuote?.discountAmount ?? 0) > 0 && (
+                              <span className="font-extrabold text-emerald-600 tabular-nums dark:text-emerald-300">
+                                -{formatVnd(shopQuote?.discountAmount ?? 0)}
+                              </span>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={function () {
+                                setActiveVoucherShop({
+                                  shopId: group.shopId,
+                                  shopName: group.shopName,
+                                })
+                              }}
+                              className={cn(
+                                'cursor-pointer font-bold text-blue-700 hover:underline dark:text-sky-300',
+                                FOCUS_RING_CLASS,
+                              )}
+                            >
+                              {Boolean(selectedVouchers[group.shopId]) && 'Đổi mã'}
+                              {!selectedVouchers[group.shopId] && 'Chọn hoặc nhập mã'}
+                            </button>
+
+                            {Boolean(selectedVouchers[group.shopId]) && (
+                              <button
+                                type="button"
+                                aria-label={`Gỡ mã giảm giá của ${group.shopName || 'Shop'}`}
+                                onClick={function () {
+                                  setSelectedVouchers(function (prev) {
+                                    const next = { ...prev }
+                                    delete next[group.shopId]
+                                    return next
+                                  })
+                                }}
+                                className="inline-flex cursor-pointer items-center text-zinc-400 hover:text-rose-600 dark:hover:text-rose-300"
+                              >
+                                <X size={13} weight="bold" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {Boolean(shopQuote?.voucherError) && (
+                          <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-rose-600 dark:text-rose-300">
+                            <WarningCircle size={13} weight="fill" className="shrink-0" />
+                            <span>{shopQuote?.voucherError}</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -551,26 +710,108 @@ export default function Checkout() {
                 </span>
               </div>
 
-              <div className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-white/70 p-4 text-xs dark:border-white/10 dark:bg-white/5">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] text-white shadow-lg">
-                    <CreditCard size={20} weight="fill" />
-                  </span>
-                  <div>
-                    <p className="font-extrabold text-[#17203a] dark:text-white">
-                      Thanh toán khi nhận hàng (COD)
-                    </p>
-                    <p className="text-zinc-600 dark:text-zinc-300">
-                      Kiểm tra hàng trước khi thanh toán cho shipper
-                    </p>
+              <fieldset className="space-y-3">
+                <legend className="sr-only">Chọn phương thức thanh toán</legend>
+
+                <label
+                  className={cn(
+                    'flex items-center justify-between gap-3 rounded-2xl border p-4 text-xs transition',
+                    paymentMethod === 'COD' &&
+                      'border-blue-600 bg-blue-600/5 dark:border-sky-400 dark:bg-white/10',
+                    paymentMethod !== 'COD' &&
+                      'border-zinc-200/80 bg-white/70 dark:border-white/10 dark:bg-white/5',
+                    !codDisabled &&
+                      'cursor-pointer hover:border-blue-600 dark:hover:border-sky-400',
+                    codDisabled && 'cursor-not-allowed opacity-60',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="checkout-payment-method"
+                    value="COD"
+                    checked={paymentMethod === 'COD'}
+                    disabled={codDisabled}
+                    onChange={function () {
+                      setSelectedPaymentMethod('COD')
+                    }}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] text-white shadow-lg">
+                      <CreditCard size={20} weight="fill" />
+                    </span>
+                    <div>
+                      <p className="font-extrabold text-[#17203a] dark:text-white">
+                        Thanh toán khi nhận hàng (COD)
+                      </p>
+                      <p className="text-zinc-600 dark:text-zinc-300">
+                        Kiểm tra hàng trước khi thanh toán cho shipper
+                      </p>
+                      {codBlockReason !== null && (
+                        <p className="mt-1 font-semibold text-amber-700 dark:text-amber-300">
+                          {codBlockReason}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <CheckCircle
-                  size={18}
-                  weight="fill"
-                  className="shrink-0 text-blue-700 dark:text-sky-300"
-                />
-              </div>
+                  <span aria-hidden="true" className={radioIndicatorClass(paymentMethod === 'COD')}>
+                    {paymentMethod === 'COD' && (
+                      <span className="h-2 w-2 rounded-full bg-blue-600 dark:bg-sky-400" />
+                    )}
+                  </span>
+                </label>
+
+                {vietQrOption !== null && (
+                  <label
+                    className={cn(
+                      'flex cursor-pointer items-center justify-between gap-3 rounded-2xl border p-4 text-xs transition hover:border-blue-600 dark:hover:border-sky-400',
+                      paymentMethod === 'VIETQR' &&
+                        'border-blue-600 bg-blue-600/5 dark:border-sky-400 dark:bg-white/10',
+                      paymentMethod !== 'VIETQR' &&
+                        'border-zinc-200/80 bg-white/70 dark:border-white/10 dark:bg-white/5',
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="checkout-payment-method"
+                      value="VIETQR"
+                      checked={paymentMethod === 'VIETQR'}
+                      onChange={function () {
+                        setSelectedPaymentMethod('VIETQR')
+                      }}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#312e81] via-[#1d4ed8] to-[#38bdf8] text-white shadow-lg">
+                        <QrCode size={20} weight="fill" />
+                      </span>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-extrabold text-[#17203a] dark:text-white">
+                            Chuyển khoản ngân hàng (VietQR)
+                          </p>
+                          {Boolean(vietQrOption.bankName || vietQrOption.bankCode) && (
+                            <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-800 dark:bg-sky-500/15 dark:text-sky-200">
+                              {vietQrOption.bankName || vietQrOption.bankCode}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-zinc-600 dark:text-zinc-300">
+                          Quét mã QR bằng ứng dụng ngân hàng — Tự động xác nhận
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      aria-hidden="true"
+                      className={radioIndicatorClass(paymentMethod === 'VIETQR')}
+                    >
+                      {paymentMethod === 'VIETQR' && (
+                        <span className="h-2 w-2 rounded-full bg-blue-600 dark:bg-sky-400" />
+                      )}
+                    </span>
+                  </label>
+                )}
+              </fieldset>
             </div>
           </div>
         </div>
@@ -593,6 +834,14 @@ export default function Checkout() {
                   <ShippingFeeValue fee={preview?.shippingFee} state={feeState} />
                 </span>
               </div>
+              {(preview?.discountAmount ?? 0) > 0 && (
+                <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
+                  <span>Voucher giảm giá từ Shop:</span>
+                  <span className="font-bold tabular-nums">
+                    -{formatVnd(preview?.discountAmount ?? 0)}
+                  </span>
+                </div>
+              )}
               <div className="border-t border-zinc-200/70 pt-3 dark:border-white/10">
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm font-extrabold">Tổng thanh toán:</span>
@@ -623,7 +872,10 @@ export default function Checkout() {
               )}
             >
               {cart.checkout.isPending && <span>Đang xử lý đặt hàng…</span>}
-              {!cart.checkout.isPending && <span>Đặt Hàng (COD)</span>}
+              {!cart.checkout.isPending && paymentMethod === 'COD' && <span>Đặt Hàng (COD)</span>}
+              {!cart.checkout.isPending && paymentMethod === 'VIETQR' && (
+                <span>Đặt Hàng &amp; Quét Mã QR</span>
+              )}
             </button>
 
             <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -753,6 +1005,37 @@ export default function Checkout() {
             if (a.id !== undefined) {
               setSelectedAddressId(a.id)
             }
+          }}
+        />
+      )}
+
+      {/* Modal Chọn hoặc Nhập Mã Giảm Giá Của Shop */}
+      {activeVoucherShop !== null && (
+        <ShopVoucherModal
+          key={activeVoucherShop.shopId}
+          open={true}
+          shopId={activeVoucherShop.shopId}
+          shopName={activeVoucherShop.shopName}
+          shopItems={
+            shopGroups.find(function (g) {
+              return g.shopId === activeVoucherShop.shopId
+            })?.items ?? []
+          }
+          currentCode={selectedVouchers[activeVoucherShop.shopId] ?? null}
+          onApply={function (code) {
+            const targetShopId = activeVoucherShop.shopId
+            setSelectedVouchers(function (prev) {
+              const next = { ...prev }
+              if (code === null || code.trim() === '') {
+                delete next[targetShopId]
+              } else {
+                next[targetShopId] = code.trim().toUpperCase()
+              }
+              return next
+            })
+          }}
+          onClose={function () {
+            setActiveVoucherShop(null)
           }}
         />
       )}

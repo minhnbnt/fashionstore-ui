@@ -39,7 +39,7 @@ import ProductMediaUploader, {
 import RichTextEditor from '@/components/ui/RichTextEditor'
 import { takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime, formatNumberWithDots, parseNumberFromDots } from '@/lib/format'
 import { notify } from '@/lib/notifications'
 import {
   cn,
@@ -70,21 +70,6 @@ interface EditableVariantRow {
   compareAtPrice: number | null
   stockQuantity: number
   isDefault: boolean
-}
-
-function formatNumberWithDots(val: number | null | undefined): string {
-  if (val === null || val === undefined || isNaN(val)) {
-    return ''
-  }
-  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-}
-
-function parseNumberFromDots(val: string): number | null {
-  const clean = val.replace(/\D/g, '')
-  if (clean === '') {
-    return null
-  }
-  return parseInt(clean, 10)
 }
 
 function renderActionBadge(action: string) {

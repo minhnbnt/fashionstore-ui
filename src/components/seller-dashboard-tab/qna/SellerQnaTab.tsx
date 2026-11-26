@@ -621,11 +621,14 @@ export default function SellerQnaTab({ shopId, initialQuestionId }: SellerQnaTab
         isOpen={activeQuestionId !== null}
         onClose={function () {
           setActiveQuestionId(null)
-          setSearchParams(function (prev) {
-            const next = new URLSearchParams(prev)
-            next.delete('questionId')
-            return next
-          }, { replace: true })
+          setSearchParams(
+            function (prev) {
+              const next = new URLSearchParams(prev)
+              next.delete('questionId')
+              return next
+            },
+            { replace: true },
+          )
         }}
       />
     </div>

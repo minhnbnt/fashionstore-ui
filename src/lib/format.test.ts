@@ -5,8 +5,11 @@ import {
   formatAddressLabel,
   formatDateTime,
   formatFullAddress,
+  formatMoneyInput,
+  formatNumberWithDots,
   formatSoldCount,
   formatVnd,
+  parseNumberFromDots,
   priceLabel,
   similarityPercent,
   splitFullAddress,
@@ -149,5 +152,34 @@ describe('similarityPercent', () => {
     expect(similarityPercent(-0.4)).toBe(0)
     expect(similarityPercent(1.4)).toBe(100)
     expect(similarityPercent(Number.NaN)).toBe(0)
+  })
+})
+
+describe('formatNumberWithDots / parseNumberFromDots / formatMoneyInput', () => {
+  it('dinh dang so nguyen sang chuoi ngan cach hang nghin bang dau cham (XXX.XXX)', () => {
+    expect(formatNumberWithDots(0)).toBe('0')
+    expect(formatNumberWithDots(500)).toBe('500')
+    expect(formatNumberWithDots(50000)).toBe('50.000')
+    expect(formatNumberWithDots(1500000)).toBe('1.500.000')
+    expect(formatNumberWithDots(null)).toBe('')
+    expect(formatNumberWithDots(undefined)).toBe('')
+    expect(formatNumberWithDots(Number.NaN)).toBe('')
+  })
+
+  it('parse chuoi XXX.XXX ve so nguyen hoac null khi rong', () => {
+    expect(parseNumberFromDots('0')).toBe(0)
+    expect(parseNumberFromDots('50.000')).toBe(50000)
+    expect(parseNumberFromDots('1.500.000')).toBe(1500000)
+    expect(parseNumberFromDots('250000')).toBe(250000)
+    expect(parseNumberFromDots('')).toBeNull()
+    expect(parseNumberFromDots('abc')).toBeNull()
+  })
+
+  it('dinh dang truc tiep gia tri nguoi dung go trong o input tien te', () => {
+    expect(formatMoneyInput('50000')).toBe('50.000')
+    expect(formatMoneyInput('50.000')).toBe('50.000')
+    expect(formatMoneyInput('1250000')).toBe('1.250.000')
+    expect(formatMoneyInput('0')).toBe('0')
+    expect(formatMoneyInput('')).toBe('')
   })
 })

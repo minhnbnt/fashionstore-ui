@@ -17,6 +17,7 @@ import ShopProductsTab from '@/components/shop-storefront/ShopProductsTab'
 import ShopStorefrontHeader, {
   type StorefrontTab,
 } from '@/components/shop-storefront/ShopStorefrontHeader'
+import ShopVoucherStrip from '@/components/shop-storefront/ShopVoucherStrip'
 import { useSessionQuery } from '@/hooks/useSession'
 import { takeData } from '@/lib/api/apiAdapters'
 import { notify } from '@/lib/notifications'
@@ -187,6 +188,8 @@ export default function ShopStorefront() {
         searchQuery={searchQuery}
         onSearch={handleSearch}
       />
+
+      {shopId !== '' && <ShopVoucherStrip shopId={shopId} />}
 
       {/* Tab 1: Home (Decoration Layout) */}
       {activeTab === 'HOME' && (

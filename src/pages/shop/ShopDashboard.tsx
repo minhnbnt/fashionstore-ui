@@ -36,6 +36,7 @@ import {
   SellerStatsCustomersTab,
   SellerStatsProductsTab,
   SellerStatsRevenueTab,
+  SellerVouchersTab,
 } from '../../components/seller-dashboard-tab'
 import { SellerLayout } from '../../components/seller-dashboard-tab/SellerLayout'
 
@@ -411,6 +412,10 @@ export default function ShopDashboard() {
       )}
 
       {isTabAllowed && activeTab === 'INVENTORY' && <SellerInventoryTab shopId={shopId} />}
+
+      {isTabAllowed && activeTab === 'VOUCHERS' && (
+        <SellerVouchersTab key={shopId} shopId={shopId} />
+      )}
 
       {isTabAllowed && activeTab === 'ORDERS' && <SellerOrdersTab shopId={shopId} />}
 

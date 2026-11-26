@@ -31,6 +31,7 @@ import RichTextEditor from '@/components/ui/RichTextEditor'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
 import { uploadImage } from '@/lib/api/uploadImage'
+import { formatNumberWithDots, parseNumberFromDots } from '@/lib/format'
 import { notify } from '@/lib/notifications'
 import {
   cn,
@@ -67,21 +68,6 @@ interface VariantRow {
   stockQuantity: number
   isDefault: boolean
   imageUploadId: string | null
-}
-
-function formatNumberWithDots(val: number | null | undefined): string {
-  if (val === null || val === undefined || isNaN(val)) {
-    return ''
-  }
-  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-}
-
-function parseNumberFromDots(val: string): number | null {
-  const clean = val.replace(/\D/g, '')
-  if (clean === '') {
-    return null
-  }
-  return parseInt(clean, 10)
 }
 
 function safeSkuPart(str: string): string {

@@ -7,6 +7,31 @@ export function formatVnd(n: number | null | undefined): string {
   return n.toLocaleString('vi-VN') + ' ₫'
 }
 
+export function formatNumberWithDots(val: number | null | undefined): string {
+  if (val === null || val === undefined || Number.isNaN(val)) {
+    return ''
+  }
+  return Math.trunc(val)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+export function parseNumberFromDots(val: string): number | null {
+  const clean = val.replace(/\D/g, '')
+  if (clean === '') {
+    return null
+  }
+  return parseInt(clean, 10)
+}
+
+export function formatMoneyInput(raw: string): string {
+  const parsed = parseNumberFromDots(raw)
+  if (parsed === null) {
+    return ''
+  }
+  return formatNumberWithDots(parsed)
+}
+
 export function priceLabel(price: number | null | undefined): string {
   if (price === null || price === undefined) {
     return 'Liên hệ'

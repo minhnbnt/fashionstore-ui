@@ -1,4 +1,4 @@
-import { MemoryRouter, Route, Routes } from 'react-router'
+import { MemoryRouter, Route, Routes, useParams } from 'react-router'
 
 // @vitest-environment happy-dom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -22,6 +22,7 @@ const {
   reviewsState,
   cancelMutate,
   confirmReceiptMutate,
+  retryVietQrMutate,
   reorderMutateAsync,
 } = vi.hoisted(() => ({
   orderState: { value: null as OrderResponse | null },
@@ -31,6 +32,7 @@ const {
   reviewsState: { list: [] as ReviewResponse[] },
   cancelMutate: vi.fn(),
   confirmReceiptMutate: vi.fn(),
+  retryVietQrMutate: vi.fn(),
   reorderMutateAsync: vi.fn(),
 }))
 
@@ -64,6 +66,7 @@ vi.mock('@generated/endpoints/orders/orders', () => ({
   }),
   useCancel1: () => ({ mutate: cancelMutate, isPending: false }),
   useConfirmReceipt: () => ({ mutate: confirmReceiptMutate, isPending: false }),
+  useRetryVietQrPayment: () => ({ mutate: retryVietQrMutate, isPending: false }),
 }))
 
 vi.mock('@generated/endpoints/buyer-returns/buyer-returns', () => ({
@@ -92,6 +95,11 @@ vi.mock('@generated/endpoints/cart/cart', () => ({
   useReorder: () => ({ mutateAsync: reorderMutateAsync, isPending: false }),
 }))
 
+function QrRouteProbe() {
+  const { txnRef } = useParams()
+  return <p>qr-page:{txnRef}</p>
+}
+
 function renderDetail(id = 'o-1') {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -102,6 +110,7 @@ function renderDetail(id = 'o-1') {
         <Routes>
           <Route path="/account/orders/:id" element={<OrderDetail />} />
           <Route path="/cart" element={<p>cart-page-target</p>} />
+          <Route path="/payment/qr/:txnRef" element={<QrRouteProbe />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -179,6 +188,7 @@ beforeEach(() => {
   reviewsState.list = []
   cancelMutate.mockReset()
   confirmReceiptMutate.mockReset()
+  retryVietQrMutate.mockReset()
   reorderMutateAsync.mockReset()
 })
 
@@ -229,5 +239,41 @@ describe('OrderDetail (1.4.5 + 1.4.6)', () => {
       { id: 'o-pending', data: { reason: 'FOUND_CHEAPER', note: null } },
       expect.anything(),
     )
+  })
+
+  it('đơn AWAITING_PAYMENT hiển thị nút Thanh toán ngay (Mã QR), bấm vào gọi retryVietQrPayment và chuyển hướng tới /payment/qr/:txnRef', async () => {
+    const user = userEvent.setup()
+    orderState.value = {
+      id: 'o-awaiting',
+      code: 'ORD-AWAIT-1',
+      shopId: 's-1',
+      shopName: 'Boutique',
+      status: 'AWAITING_PAYMENT',
+      paymentMethod: 'VIETQR',
+      paymentStatus: 'UNPAID',
+      paymentTxnRef: 'DHMQ1122334455',
+      total: 420000,
+      items: [],
+      createdAt: '2026-11-26T08:00:00Z',
+    }
+    returnsState.list = []
+    trackingState.list = []
+    retryVietQrMutate.mockImplementation((_variables, options) => {
+      options?.onSuccess?.({
+        status: 200,
+        data: { txnRef: 'DHMQ1122334455' },
+        headers: new Headers(),
+      })
+    })
+
+    renderDetail('o-awaiting')
+
+    const payBtn = screen.getByRole('button', { name: 'Thanh toán ngay (Mã QR)' })
+    expect(payBtn).toBeTruthy()
+
+    await user.click(payBtn)
+
+    expect(retryVietQrMutate).toHaveBeenCalledWith({ id: 'o-awaiting' }, expect.anything())
+    expect(screen.getByText('qr-page:DHMQ1122334455')).toBeTruthy()
   })
 })

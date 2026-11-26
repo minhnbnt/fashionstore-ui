@@ -18,6 +18,7 @@ import {
   AdminDashboard,
   AdminHolidays,
   AdminOrders,
+  AdminPayments,
   AdminProducts,
   AdminSettings,
   AdminShopDetail,
@@ -41,6 +42,7 @@ import {
   ShopDashboard,
   ShopStorefront,
   StaticPage,
+  VietQrPayment,
   Wishlist,
 } from './pages'
 
@@ -172,6 +174,14 @@ export default function App() {
               }
             />
             <Route
+              path="/payment/qr/:txnRef"
+              element={
+                <RequireAuth>
+                  <VietQrPayment />
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/admin"
               element={
                 <RequireRole requiredRole="admin">
@@ -232,6 +242,14 @@ export default function App() {
               element={
                 <RequireRole requiredRole="admin">
                   <AdminOrders />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/payments"
+              element={
+                <RequireRole requiredRole="admin">
+                  <AdminPayments />
                 </RequireRole>
               }
             />

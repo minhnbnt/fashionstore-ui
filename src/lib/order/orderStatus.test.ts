@@ -4,6 +4,7 @@ import {
   BUYER_ORDER_TABS,
   canCancel,
   canConfirmReceipt,
+  codUnavailableReason,
   orderItemSummary,
   orderStatusMeta,
   paymentStatusLabel,
@@ -13,6 +14,13 @@ import {
 describe('orderStatusMeta', () => {
   it('PENDING cua don hang la Cho xac nhan, khong phai Cho duyet', () => {
     expect(orderStatusMeta('PENDING').label).toBe('Chờ xác nhận')
+  })
+
+  it('AWAITING_PAYMENT la Cho thanh toan voi mau sky', () => {
+    expect(orderStatusMeta('AWAITING_PAYMENT')).toEqual({
+      label: 'Chờ thanh toán',
+      className: 'bg-sky-100 text-sky-800 dark:bg-sky-400/15 dark:text-sky-200',
+    })
   })
 
   it('map nhan cac trang thai don hang', () => {
@@ -49,8 +57,9 @@ describe('orderItemSummary', () => {
 })
 
 describe('canCancel', () => {
-  it('chi huy duoc khi PENDING', () => {
+  it('chi huy duoc khi PENDING hoac AWAITING_PAYMENT', () => {
     expect(canCancel('PENDING')).toBe(true)
+    expect(canCancel('AWAITING_PAYMENT')).toBe(true)
   })
 
   it('khong huy duoc khi don da di tiep', () => {
@@ -63,9 +72,12 @@ describe('canCancel', () => {
 })
 
 describe('paymentStatusLabel', () => {
-  it('map trang thai thanh toan COD', () => {
+  it('map trang thai thanh toan COD va VietQR', () => {
     expect(paymentStatusLabel('UNPAID')).toBe('Chưa thanh toán')
+    expect(paymentStatusLabel('PAID')).toBe('Đã thanh toán')
     expect(paymentStatusLabel('COLLECTED')).toBe('Đã thu tiền')
+    expect(paymentStatusLabel('REFUND_PENDING')).toBe('Chờ hoàn tiền')
+    expect(paymentStatusLabel('REFUNDED')).toBe('Đã hoàn tiền')
   })
 
   it('map trang thai thanh toan loi FAILED', () => {
@@ -73,14 +85,34 @@ describe('paymentStatusLabel', () => {
   })
 
   it('trang thai la thi hien nguyen van', () => {
-    expect(paymentStatusLabel('REFUNDED')).toBe('REFUNDED')
+    expect(paymentStatusLabel('UNKNOWN_STATUS')).toBe('UNKNOWN_STATUS')
+  })
+})
+
+describe('codUnavailableReason', () => {
+  it('tra ve ly do khi tong don nho hon han muc toi thieu', () => {
+    expect(codUnavailableReason(50_000, 100_000, 5_000_000)).toBe(
+      'Đơn hàng dưới 100.000 ₫ không hỗ trợ thanh toán COD',
+    )
+  })
+
+  it('tra ve ly do khi tong don vuot han muc toi da', () => {
+    expect(codUnavailableReason(6_000_000, 100_000, 5_000_000)).toBe(
+      'Đơn hàng trên 5.000.000 ₫ không hỗ trợ thanh toán COD',
+    )
+  })
+
+  it('tra ve null khi tong don nam trong han muc hoac han muc bang 0', () => {
+    expect(codUnavailableReason(500_000, 100_000, 5_000_000)).toBeNull()
+    expect(codUnavailableReason(50_000, 0, 0)).toBeNull()
   })
 })
 
 describe('BUYER_ORDER_TABS', () => {
-  it('co du 7 tab dong bo 1-1 voi shop', () => {
+  it('co du 8 tab voi AWAITING_PAYMENT dung ngay sau ALL', () => {
     expect(BUYER_ORDER_TABS.map((t) => [t.key, t.label])).toEqual([
       ['ALL', 'Tất cả'],
+      ['AWAITING_PAYMENT', 'Chờ thanh toán'],
       ['PENDING', 'Chờ xác nhận'],
       ['CONFIRMED', 'Đang chuẩn bị'],
       ['SHIPPING', 'Đang giao'],

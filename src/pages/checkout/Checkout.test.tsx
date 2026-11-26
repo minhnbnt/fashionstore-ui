@@ -1,4 +1,4 @@
-import { MemoryRouter, Route, Routes } from 'react-router'
+import { MemoryRouter, Route, Routes, useParams } from 'react-router'
 
 // @vitest-environment happy-dom
 import { cleanup, render, screen } from '@testing-library/react'
@@ -11,25 +11,34 @@ import type { AddressResponse } from '@generated/model/addressResponse'
 import type { CartCheckoutRequest } from '@generated/model/cartCheckoutRequest'
 import type { CartItemResponse } from '@generated/model/cartItemResponse'
 import type { CheckoutPreviewResponse } from '@generated/model/checkoutPreviewResponse'
+import type { OrderResponse } from '@generated/model/orderResponse'
+import type { PaymentMethodsResponse } from '@generated/model/paymentMethodsResponse'
+import type { PublicShopVoucherResponse } from '@generated/model/publicShopVoucherResponse'
 import type { ShopCheckoutPreview } from '@generated/model/shopCheckoutPreview'
 
 const {
   checkoutMutate,
   mockUseList1,
+  mockUseListPaymentMethods,
+  mockUseListPublicShopVouchers,
   mockUseCheckoutPreview,
   mockNotifySuccess,
   mockNotifyWarning,
   mockNotifyFromError,
   state,
 } = vi.hoisted(() => ({
-  checkoutMutate:
-    vi.fn<
-      (
-        variables: { data: CartCheckoutRequest },
-        options?: { onSuccess: () => void; onError: (err?: unknown) => void },
-      ) => void
-    >(),
+  checkoutMutate: vi.fn<
+    (
+      variables: { data: CartCheckoutRequest },
+      options?: {
+        onSuccess: (res?: { status: 201; data: OrderResponse[]; headers: Headers }) => void
+        onError: (err?: unknown) => void
+      },
+    ) => void
+  >(),
   mockUseList1: vi.fn(),
+  mockUseListPaymentMethods: vi.fn(),
+  mockUseListPublicShopVouchers: vi.fn(),
   mockUseCheckoutPreview: vi.fn(),
   mockNotifySuccess: vi.fn(),
   mockNotifyWarning: vi.fn(),
@@ -72,6 +81,40 @@ vi.mock('@/hooks/useSession', () => ({
 vi.mock('@generated/endpoints/addresses/addresses', () => ({
   useList: mockUseList1,
 }))
+
+vi.mock('@generated/endpoints/public-payments/public-payments', () => ({
+  useListPaymentMethods: mockUseListPaymentMethods,
+}))
+
+vi.mock('@generated/endpoints/shop-vouchers/shop-vouchers', () => ({
+  useListPublicShopVouchers: mockUseListPublicShopVouchers,
+}))
+
+function defaultPaymentMethods(
+  overrides: Partial<PaymentMethodsResponse> = {},
+): PaymentMethodsResponse {
+  return {
+    methods: [
+      { code: 'COD', name: 'Thanh toán khi nhận hàng (COD)' },
+      {
+        code: 'VIETQR',
+        name: 'Chuyển khoản ngân hàng (VietQR)',
+        bankCode: 'MB',
+        bankName: 'MB Bank',
+        sandboxMode: true,
+      },
+    ],
+    codMinTotal: 0,
+    codMaxTotal: 10000000,
+    paymentHoldMinutes: 15,
+    ...overrides,
+  }
+}
+
+function QrRouteProbe() {
+  const { txnRef } = useParams()
+  return <p>qr-page:{txnRef}</p>
+}
 
 function addresses(): AddressResponse[] {
   return [
@@ -157,6 +200,7 @@ function renderCheckout(initialEntry = '/checkout') {
       <Routes>
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/account/orders" element={<p>orders-page</p>} />
+        <Route path="/payment/qr/:txnRef" element={<QrRouteProbe />} />
       </Routes>
     </MemoryRouter>,
   )
@@ -167,10 +211,42 @@ afterEach(cleanup)
 beforeEach(() => {
   checkoutMutate.mockReset()
   mockUseList1.mockReset()
+  mockUseListPaymentMethods.mockReset()
   mockNotifySuccess.mockReset()
   mockNotifyWarning.mockReset()
   mockNotifyFromError.mockReset()
   mockUseList1.mockReturnValue({ data: { status: 200, data: addresses() } })
+  mockUseListPaymentMethods.mockReturnValue({
+    data: { status: 200, data: defaultPaymentMethods() },
+    isLoading: false,
+    isError: false,
+  })
+  mockUseListPublicShopVouchers.mockReset()
+  mockUseListPublicShopVouchers.mockReturnValue({
+    data: {
+      status: 200,
+      data: [
+        {
+          id: 'vch-1',
+          shopId: 'shop-a',
+          code: 'SUMMER50K',
+          name: 'Giảm 50k mùa hè',
+          discountType: 'FIXED_AMOUNT',
+          discountValue: 50000,
+          minOrderSubtotal: 200000,
+          productScope: 'ALL_PRODUCTS',
+          usageLimit: 100,
+          usedCount: 5,
+          perBuyerLimit: 1,
+          status: 'ONGOING',
+          applicableProductIds: [],
+          exhaustedByBuyer: false,
+        } satisfies PublicShopVoucherResponse,
+      ],
+    },
+    isLoading: false,
+    isError: false,
+  })
   mockUseCheckoutPreview.mockReset()
   mockPreview(previewOf([shopQuote('shop-a', 748000, 0, 0)]))
   state.isLoggedIn = true
@@ -207,7 +283,7 @@ describe('Checkout — đặt hàng COD (DOM)', () => {
     expect(screen.getByText('Nhà riêng')).toBeTruthy()
     expect(screen.getByText('Mặc định')).toBeTruthy()
     expect(screen.getByText('123 Lê Lợi, P. Bến Nghé, Q.1, TP.HCM')).toBeTruthy()
-    expect(mockUseCheckoutPreview).toHaveBeenCalledWith([], true)
+    expect(mockUseCheckoutPreview).toHaveBeenCalledWith([], true, {})
     // Server báo đơn shop A được freeship: dòng phí của shop, thẻ vận chuyển, bảng tổng
     expect(screen.getAllByText('Miễn phí')).toHaveLength(3)
     expect(screen.getAllByText('748.000 ₫')).toHaveLength(2)
@@ -220,7 +296,7 @@ describe('Checkout — đặt hàng COD (DOM)', () => {
     expect(screen.getByText('Sản Phẩm Đặt Mua (1)')).toBeTruthy()
     expect(screen.getByText('Quần Jeans')).toBeTruthy()
     expect(screen.queryByText('Áo Sơ Mi Lụa')).toBeNull()
-    expect(mockUseCheckoutPreview).toHaveBeenCalledWith(['v-2'], true)
+    expect(mockUseCheckoutPreview).toHaveBeenCalledWith(['v-2'], true, {})
     // Phí 30.000 ở dòng shop, thẻ vận chuyển, bảng tổng; tổng 380.000 theo server
     expect(screen.getAllByText('30.000 ₫')).toHaveLength(3)
     expect(screen.getByText('380.000 ₫')).toBeTruthy()
@@ -282,6 +358,7 @@ describe('Checkout — đặt hàng COD (DOM)', () => {
       shippingName: 'Nguyễn Văn A',
       shippingPhone: '0901112222',
       shippingAddress: '123 Lê Lợi, P. Bến Nghé, Q.1, TP.HCM',
+      paymentMethod: 'COD',
     })
     expect(mockNotifySuccess).toHaveBeenCalledWith(
       'Đặt hàng thành công',
@@ -352,6 +429,151 @@ describe('Checkout — đặt hàng COD (DOM)', () => {
       shippingName: 'buyer@test.vn',
       shippingPhone: '0900000000',
       shippingAddress: 'Địa chỉ giao hàng mặc định',
+      paymentMethod: 'COD',
+    })
+  })
+
+  it('hiển thị 2 lựa chọn radio COD và VietQR kèm thông tin ngân hàng', () => {
+    renderCheckout()
+
+    const codRadio = screen.getByRole('radio', {
+      name: /Thanh toán khi nhận hàng \(COD\)/i,
+    }) as HTMLInputElement
+    const vietQrRadio = screen.getByRole('radio', {
+      name: /Chuyển khoản ngân hàng \(VietQR\)/i,
+    }) as HTMLInputElement
+
+    expect(codRadio.checked).toBe(true)
+    expect(vietQrRadio.checked).toBe(false)
+    expect(screen.getByText(/Quét mã QR bằng ứng dụng ngân hàng — Tự động xác nhận/i)).toBeTruthy()
+  })
+
+  it('chọn VIETQR và bấm Đặt Hàng & Quét Mã QR → gửi paymentMethod VIETQR và điều hướng sang /payment/qr/:txnRef', async () => {
+    checkoutMutate.mockImplementation((_variables, options) => {
+      options?.onSuccess({
+        status: 201,
+        data: [
+          {
+            id: 'ord-qr-1',
+            code: 'ORD-QR-1',
+            status: 'AWAITING_PAYMENT',
+            paymentMethod: 'VIETQR',
+            paymentTxnRef: 'DHMQ1234567890',
+          },
+        ],
+        headers: new Headers(),
+      })
+    })
+    const user = userEvent.setup()
+    renderCheckout()
+
+    await user.click(screen.getByRole('radio', { name: /Chuyển khoản ngân hàng \(VietQR\)/i }))
+
+    const placeOrderBtn = screen.getByRole('button', { name: 'Đặt Hàng & Quét Mã QR' })
+    expect(placeOrderBtn).toBeTruthy()
+
+    await user.click(placeOrderBtn)
+
+    expect(checkoutMutate).toHaveBeenCalledTimes(1)
+    const payload = checkoutMutate.mock.calls[0]?.[0]?.data
+    expect(payload).toEqual({
+      shippingName: 'Nguyễn Văn A',
+      shippingPhone: '0901112222',
+      shippingAddress: '123 Lê Lợi, P. Bến Nghé, Q.1, TP.HCM',
+      paymentMethod: 'VIETQR',
+    })
+    expect(screen.getByText('qr-page:DHMQ1234567890')).toBeTruthy()
+  })
+
+  it('tổng đơn vượt codMaxTotal → radio COD bị disabled kèm lý do từ codUnavailableReason và tự chọn VIETQR', () => {
+    mockPreview(previewOf([shopQuote('shop-a', 15000000, 0, 0)]))
+    renderCheckout()
+
+    const codRadio = screen.getByRole('radio', {
+      name: /Thanh toán khi nhận hàng \(COD\)/i,
+    }) as HTMLInputElement
+    const vietQrRadio = screen.getByRole('radio', {
+      name: /Chuyển khoản ngân hàng \(VietQR\)/i,
+    }) as HTMLInputElement
+
+    expect(codRadio.disabled).toBe(true)
+    expect(screen.getByText('Đơn hàng trên 10.000.000 ₫ không hỗ trợ thanh toán COD')).toBeTruthy()
+    expect(vietQrRadio.checked).toBe(true)
+    expect(screen.getByRole('button', { name: 'Đặt Hàng & Quét Mã QR' })).toBeTruthy()
+  })
+
+  it('hiển thị dòng Voucher của Shop dưới mỗi khối Shop; khi mở modal nhập mã giảm giá thì gọi useCheckoutPreview với shopVouchers', async () => {
+    const user = userEvent.setup()
+    renderCheckout()
+
+    expect(screen.getByText('Voucher của Shop')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: /Chọn hoặc nhập mã/i }))
+
+    const input = screen.getByPlaceholderText(/Nhập mã giảm giá của Shop/i)
+    await user.type(input, 'summer50k')
+    await user.click(screen.getByRole('button', { name: 'Áp dụng' }))
+
+    expect(mockUseCheckoutPreview).toHaveBeenLastCalledWith([], true, {
+      'shop-a': 'SUMMER50K',
+    })
+  })
+
+  it('khi preview trả về discountAmount = 50000 thì hiển thị -50.000 ₫ ở dòng Shop và bảng Chi tiết thanh toán, bấm Đặt hàng gửi kèm shopVouchers', async () => {
+    mockUseCheckoutPreview.mockImplementation(
+      (_variantIds: string[], _enabled: boolean, shopVouchers?: Record<string, string>) => {
+        if (shopVouchers?.['shop-a'] === 'SUMMER50K') {
+          return {
+            preview: {
+              shops: [
+                {
+                  ...shopQuote('shop-a', 748000, 0, 0),
+                  voucherCode: 'SUMMER50K',
+                  discountAmount: 50000,
+                  total: 698000,
+                },
+              ],
+              subtotal: 748000,
+              shippingFee: 0,
+              discountAmount: 50000,
+              total: 698000,
+            },
+            isLoading: false,
+            isError: false,
+          }
+        }
+        return {
+          preview: previewOf([shopQuote('shop-a', 748000, 0, 0)]),
+          isLoading: false,
+          isError: false,
+        }
+      },
+    )
+    checkoutMutate.mockImplementation((_variables, options) => {
+      options?.onSuccess()
+    })
+
+    const user = userEvent.setup()
+    renderCheckout()
+
+    await user.click(screen.getByRole('button', { name: /Chọn hoặc nhập mã/i }))
+    await user.click(screen.getByRole('button', { name: /Dùng mã SUMMER50K/i }))
+
+    expect(screen.getByText('Voucher giảm giá từ Shop:')).toBeTruthy()
+    expect(screen.getAllByText('-50.000 ₫').length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByText('698.000 ₫')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Đặt Hàng (COD)' }))
+
+    expect(checkoutMutate).toHaveBeenCalledTimes(1)
+    const payload = checkoutMutate.mock.calls[0]?.[0]?.data
+    expect(payload).toEqual({
+      shippingName: 'Nguyễn Văn A',
+      shippingPhone: '0901112222',
+      shippingAddress: '123 Lê Lợi, P. Bến Nghé, Q.1, TP.HCM',
+      paymentMethod: 'COD',
+      shopVouchers: {
+        'shop-a': 'SUMMER50K',
+      },
     })
   })
 })
