@@ -109,11 +109,6 @@ function MoneyRow({ label, value, strong }: { label: string; value: number; stro
   )
 }
 
-interface OrderVoucherFields {
-  voucherCode?: string | null
-  discountAmount?: number
-}
-
 function DetailBody({
   detail,
   onCancel,
@@ -133,10 +128,8 @@ function DetailBody({
     return <p className="text-sm text-zinc-500 dark:text-zinc-400">Không có dữ liệu đơn hàng.</p>
   }
   const alert = ALERT_OPTIONS.find((option) => option.value === order.alert)
-  const orderWithVoucher = order as AdminOrderResponse & OrderVoucherFields
-  const detailWithVoucher = detail as AdminOrderDetailResponse & OrderVoucherFields
-  const discountAmount = orderWithVoucher.discountAmount ?? detailWithVoucher.discountAmount ?? 0
-  const voucherCode = orderWithVoucher.voucherCode ?? detailWithVoucher.voucherCode ?? null
+  const discountAmount = detail.discountAmount ?? 0
+  const voucherCode = detail.voucherCode ?? null
 
   return (
     <div className="space-y-6">
