@@ -30,8 +30,10 @@ interface Props {
   onVideoChange: (video: ProductMediaValue | null) => void
   tryOnEnabled: boolean
   onTryOnToggle: (enabled: boolean) => void
-  garment: ProductMediaValue | null
-  onGarmentChange: (garment: ProductMediaValue | null) => void
+  garment?: ProductMediaValue | null
+  onGarmentChange?: (garment: ProductMediaValue | null) => void
+  garments?: ProductMediaItem[]
+  onGarmentsChange?: (garments: ProductMediaItem[]) => void
 }
 
 /** Một ảnh gallery: uploadId gửi vào ImageItemRequest, url (object URL hoặc URL response) để xem trước. */
@@ -55,6 +57,8 @@ export default function ProductMediaUploader({
   onTryOnToggle,
   garment,
   onGarmentChange,
+  garments,
+  onGarmentsChange,
 }: Props) {
   const [isUploadingImages, setIsUploadingImages] = useState(false)
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
@@ -239,9 +243,40 @@ export default function ProductMediaUploader({
     onVideoChange(null)
   }
 
-  async function handleGarmentFile(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file === undefined) {
+  let effectiveGarments: ProductMediaItem[] = []
+  if (garments !== undefined) {
+    effectiveGarments = garments
+  } else if (
+    garment !== undefined &&
+    garment !== null &&
+    garment.uploadId !== null &&
+    garment.uploadId !== ''
+  ) {
+    effectiveGarments = [{ uploadId: garment.uploadId, url: garment.url }]
+  }
+
+  function emitGarments(next: ProductMediaItem[]) {
+    if (onGarmentsChange !== undefined) {
+      onGarmentsChange(next)
+    }
+    if (onGarmentChange !== undefined) {
+      if (next.length > 0 && next[0] !== undefined) {
+        onGarmentChange({ uploadId: next[0].uploadId, url: next[0].url })
+      } else {
+        onGarmentChange(null)
+      }
+    }
+  }
+
+  async function handleGarmentFiles(e: ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (files === null || files.length === 0) {
+      return
+    }
+
+    if (effectiveGarments.length + files.length > 9) {
+      setErrorMessage('Sản phẩm chỉ được tải lên tối đa 9 ảnh garment.')
+      e.target.value = ''
       return
     }
 
@@ -249,8 +284,13 @@ export default function ProductMediaUploader({
     setErrorMessage(null)
 
     try {
-      const uploadId = await uploadImage(file)
-      onGarmentChange({ uploadId, url: URL.createObjectURL(file) })
+      const uploadPromises = Array.from(files).map(function (file) {
+        return uploadImage(file).then(function (uploadId) {
+          return { uploadId, url: URL.createObjectURL(file) }
+        })
+      })
+      const uploadedItems = await Promise.all(uploadPromises)
+      emitGarments([...effectiveGarments, ...uploadedItems])
     } catch (err: unknown) {
       let msg = 'Upload ảnh garment thất bại.'
       if (err instanceof Error) {
@@ -261,6 +301,36 @@ export default function ProductMediaUploader({
       setIsUploadingGarment(false)
       e.target.value = ''
     }
+  }
+
+  function handleMoveGarment(index: number, direction: 'left' | 'right') {
+    let targetIndex = index + 1
+    if (direction === 'left') {
+      targetIndex = index - 1
+    }
+    if (targetIndex < 0 || targetIndex >= effectiveGarments.length) {
+      return
+    }
+    const updated = [...effectiveGarments]
+    const temp = updated[index]
+    const targetItem = updated[targetIndex]
+    if (temp !== undefined && targetItem !== undefined) {
+      updated[index] = targetItem
+      updated[targetIndex] = temp
+      emitGarments(updated)
+    }
+  }
+
+  function handleRemoveGarment(index: number) {
+    const removed = effectiveGarments[index]
+    if (removed !== undefined && removed.url.startsWith('blob:')) {
+      URL.revokeObjectURL(removed.url)
+    }
+    emitGarments(
+      effectiveGarments.filter(function (_, i) {
+        return i !== index
+      }),
+    )
   }
 
   let videoStatusText = 'Video đã được tải lên và sẵn sàng phát trên trang chi tiết sản phẩm.'
@@ -602,75 +672,143 @@ export default function ProductMediaUploader({
 
         {tryOnEnabled && (
           <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50/50 p-4 dark:border-sky-500/30 dark:bg-sky-500/10">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              {garment !== null && (
-                <div className="relative aspect-3/4 w-32 overflow-hidden rounded-2xl border border-sky-200 bg-white shadow-xs dark:border-sky-500/30">
-                  <img
-                    src={garment.url}
-                    alt="Ảnh Garment phẳng nền trắng"
-                    onError={handleImageError}
-                    className="h-full w-full object-contain p-1"
-                  />
-                  <button
-                    type="button"
-                    aria-label="Xóa ảnh garment"
-                    title="Xóa ảnh garment"
-                    onClick={function () {
-                      onGarmentChange(null)
-                    }}
-                    className="absolute top-1 right-1 cursor-pointer rounded-full bg-rose-600/90 p-1 text-white hover:bg-rose-600"
-                  >
-                    <Trash size={12} weight="bold" />
-                  </button>
-                </div>
-              )}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-zinc-900 dark:text-white">
+                  Danh sách ảnh Garment trải phẳng
+                </span>
+                <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-blue-700 shadow-2xs dark:bg-white/10 dark:text-sky-300">
+                  {effectiveGarments.length}/9 ảnh Garment
+                </span>
+              </div>
 
-              {garment === null && (
+              <button
+                type="button"
+                disabled={effectiveGarments.length >= 9 || isUploadingGarment}
+                onClick={function () {
+                  garmentInputRef.current?.click()
+                }}
+                className="btn-primary flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shadow-xs transition disabled:opacity-50"
+              >
+                {isUploadingGarment && (
+                  <SpinnerGap size={14} weight="bold" className="animate-spin" />
+                )}
+                {isUploadingGarment === false && <UploadSimple size={14} weight="bold" />}
+                Thêm ảnh garment
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+              {effectiveGarments.map(function (item, index) {
+                return (
+                  <div
+                    key={item.uploadId}
+                    className="group relative flex aspect-3/4 flex-col overflow-hidden rounded-2xl border border-sky-200 bg-white shadow-xs dark:border-sky-500/30 dark:bg-[#0a0f1e]"
+                  >
+                    <img
+                      src={item.url}
+                      alt={'Ảnh Garment ' + (index + 1)}
+                      onError={handleImageError}
+                      className="h-full w-full object-contain p-1.5"
+                    />
+
+                    {index === 0 && (
+                      <span className="absolute top-2 left-2 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs">
+                        Mặc định
+                      </span>
+                    )}
+
+                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/60 p-1.5 opacity-95 transition group-hover:opacity-100">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={function () {
+                            handleMoveGarment(index, 'left')
+                          }}
+                          aria-label="Chuyển garment sang trái"
+                          title="Chuyển garment sang trái"
+                          className="cursor-pointer rounded-full bg-white/20 p-1 text-white hover:bg-white/40 disabled:cursor-not-allowed disabled:opacity-20"
+                        >
+                          <ArrowLeft size={12} weight="bold" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === effectiveGarments.length - 1}
+                          onClick={function () {
+                            handleMoveGarment(index, 'right')
+                          }}
+                          aria-label="Chuyển garment sang phải"
+                          title="Chuyển garment sang phải"
+                          className="cursor-pointer rounded-full bg-white/20 p-1 text-white hover:bg-white/40 disabled:cursor-not-allowed disabled:opacity-20"
+                        >
+                          <ArrowRight size={12} weight="bold" />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        aria-label="Xóa ảnh garment"
+                        title="Xóa ảnh garment"
+                        onClick={function () {
+                          handleRemoveGarment(index)
+                        }}
+                        className="cursor-pointer rounded-full bg-rose-600/90 p-1 text-white hover:bg-rose-600"
+                      >
+                        <Trash size={12} weight="bold" />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+
+              {effectiveGarments.length < 9 && (
                 <button
                   type="button"
                   disabled={isUploadingGarment}
                   onClick={function () {
                     garmentInputRef.current?.click()
                   }}
-                  className="flex aspect-3/4 w-32 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-sky-300 bg-white p-2 text-center text-blue-700 transition hover:border-blue-600 disabled:opacity-50 dark:border-sky-500/40 dark:bg-white/5 dark:text-sky-300"
+                  className="flex aspect-3/4 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-sky-300 bg-white p-2 text-center text-blue-700 transition hover:border-blue-600 disabled:opacity-50 dark:border-sky-500/40 dark:bg-white/5 dark:text-sky-300"
                 >
                   {isUploadingGarment && (
                     <SpinnerGap size={20} weight="bold" className="animate-spin" />
                   )}
                   {isUploadingGarment === false && <TShirt size={24} weight="bold" />}
                   <span className="mt-1 text-[11px] font-bold">Tải ảnh garment</span>
-                  <span className="text-[9px] text-zinc-400">Nền trắng</span>
+                  <span className="text-[9px] text-zinc-400">Nền trắng (Tối đa 9 ảnh)</span>
                 </button>
               )}
+            </div>
 
-              <div className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300">
-                <p className="font-bold text-zinc-900 dark:text-white">
-                  Yêu cầu quy chuẩn ảnh Garment:
-                </p>
-                <ul className="list-disc space-y-1 pl-4 text-[11px] text-zinc-500">
-                  <li>
-                    Ảnh trang phục trải phẳng (Flat Lay) hoặc mặc ma-nơ-canh tàng hình (Ghost
-                    Mannequin).
-                  </li>
-                  <li>
-                    Phải chụp trên <strong>nền trắng tinh khiết (RGB: 255, 255, 255)</strong>, không
-                    bóng đổ.
-                  </li>
-                  <li>
-                    Sản phẩm được là phẳng phiu, căn chính giữa khung hình, không bị che khuất.
-                  </li>
-                  <li className="font-semibold text-indigo-600 dark:text-indigo-400">
-                    Bắt buộc có ảnh Garment khi bật tính năng thử đồ ảo.
-                  </li>
-                </ul>
-              </div>
+            <div className="mt-4 space-y-1.5 border-t border-sky-200/70 pt-3 text-xs text-zinc-600 dark:border-sky-500/20 dark:text-zinc-300">
+              <p className="font-bold text-zinc-900 dark:text-white">
+                Yêu cầu quy chuẩn ảnh Garment:
+              </p>
+              <ul className="list-disc space-y-1 pl-4 text-[11px] text-zinc-500">
+                <li>
+                  Ảnh trang phục trải phẳng (Flat Lay) hoặc mặc ma-nơ-canh tàng hình (Ghost
+                  Mannequin). Có thể tải lên nhiều mẫu/màu khác nhau (tối đa 9 ảnh) để khách chọn
+                  thử.
+                </li>
+                <li>
+                  Phải chụp trên <strong>nền trắng tinh khiết (RGB: 255, 255, 255)</strong>, không
+                  bóng đổ.
+                </li>
+                <li>Sản phẩm được là phẳng phiu, căn chính giữa khung hình, không bị che khuất.</li>
+                <li className="font-semibold text-indigo-600 dark:text-indigo-400">
+                  Bắt buộc có ít nhất 1 ảnh Garment khi bật tính năng thử đồ ảo.
+                </li>
+              </ul>
             </div>
             <input
               ref={garmentInputRef}
               type="file"
               accept="image/*"
+              multiple
+              aria-label="Input tải ảnh garment"
               onChange={(e) => {
-                void handleGarmentFile(e)
+                void handleGarmentFiles(e)
               }}
               className="hidden"
             />

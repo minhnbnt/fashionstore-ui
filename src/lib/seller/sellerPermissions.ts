@@ -36,8 +36,14 @@ const PERMISSION_LABELS: Record<string, string> = {
   REVIEW_REPLY: 'Phản hồi đánh giá',
   CHAT_ACCESS: 'Truy cập tin nhắn CSKH',
   DECORATION_WRITE: 'Trang trí gian hàng',
+  VOUCHER_READ: 'Xem mã giảm giá',
+  VOUCHER_WRITE: 'Quản lý mã giảm giá',
 
   // Hành động nhật ký (audit)
+  VOUCHER_CREATE: 'Tạo mã giảm giá',
+  VOUCHER_UPDATE: 'Cập nhật mã giảm giá',
+  VOUCHER_STATUS: 'Đổi trạng thái mã giảm giá',
+  VOUCHER_DELETE: 'Xóa mã giảm giá',
   PRODUCT_CREATE: 'Tạo sản phẩm',
   PRODUCT_UPDATE: 'Cập nhật sản phẩm',
   PRODUCT_DELETE: 'Xóa sản phẩm',
@@ -98,6 +104,7 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
   REVIEW_TEMPLATE: 'Mẫu phản hồi',
   PRODUCT_QUESTION: 'Câu hỏi sản phẩm',
   PRODUCT_ANSWER: 'Câu trả lời Q&A',
+  VOUCHER: 'Mã giảm giá',
 }
 
 export function formatTargetType(targetType: string | null | undefined): string {
@@ -122,6 +129,7 @@ const DANGER_ACTIONS = new Set([
   'DEACTIVATE_MEMBER',
   'REVIEW_TEMPLATE_DELETE',
   'QNA_ANSWER_DELETE',
+  'VOUCHER_DELETE',
 ])
 
 const SUCCESS_ACTIONS = new Set([
@@ -134,6 +142,7 @@ const SUCCESS_ACTIONS = new Set([
   'PRODUCT_IMPORT',
   'REVIEW_TEMPLATE_CREATE',
   'QNA_QUESTION_REOPEN',
+  'VOUCHER_CREATE',
 ])
 
 const INFO_ACTIONS = new Set([
@@ -152,6 +161,8 @@ const INFO_ACTIONS = new Set([
   'REVIEW_TEMPLATE_UPDATE',
   'QNA_ANSWER_CREATE',
   'QNA_ANSWER_UPDATE',
+  'VOUCHER_UPDATE',
+  'VOUCHER_STATUS',
 ])
 
 const WARNING_ACTIONS = new Set([
@@ -222,6 +233,10 @@ export function canSeeTab(tab: SellerTabId, permissions: string[], isOwner: bool
 
   if (tab === 'INVENTORY') {
     return permissions.includes('INVENTORY_READ') || permissions.includes('INVENTORY_WRITE')
+  }
+
+  if (tab === 'VOUCHERS') {
+    return permissions.includes('VOUCHER_READ') || permissions.includes('VOUCHER_WRITE')
   }
 
   if (tab === 'ORDERS') {

@@ -15,6 +15,29 @@ export interface BackendAiMessageResponse {
   sentAt?: string
 }
 
+export function serializeUserMessageMetadata(text: string, imageUrl?: string): string {
+  if (imageUrl !== undefined && imageUrl !== '') {
+    return JSON.stringify({
+      parts: [{ type: 'text', text }],
+      imageUrl,
+    })
+  }
+  return JSON.stringify({
+    parts: [{ type: 'text', text }],
+  })
+}
+
+export function getMessageImageUrl(message: AgentUIMessage): string | undefined {
+  const rawMeta = message.metadata
+  if (rawMeta !== null && rawMeta !== undefined && typeof rawMeta === 'object') {
+    const candidate = (rawMeta as { imageUrl?: unknown }).imageUrl
+    if (typeof candidate === 'string' && candidate !== '') {
+      return candidate
+    }
+  }
+  return undefined
+}
+
 /**
  * Serialize AgentUIMessage thành payload lưu vào Backend AI Message.
  * Lưu toàn bộ mảng `parts` (gồm text và tool invocations/results) vào metadata JSON
@@ -52,11 +75,18 @@ export function serializeAgentMessage(message: AgentUIMessage): SerializedAiMess
  */
 export function deserializeAgentMessage(res: BackendAiMessageResponse): AgentUIMessage {
   let parts: AgentUIMessage['parts'] = []
+  let imageUrl: string | undefined
   if (res.metadata) {
     try {
-      const parsed = JSON.parse(res.metadata) as { parts?: AgentUIMessage['parts'] }
+      const parsed = JSON.parse(res.metadata) as {
+        parts?: AgentUIMessage['parts']
+        imageUrl?: unknown
+      }
       if (Array.isArray(parsed.parts) && parsed.parts.length > 0) {
         parts = parsed.parts
+      }
+      if (typeof parsed.imageUrl === 'string' && parsed.imageUrl !== '') {
+        imageUrl = parsed.imageUrl
       }
     } catch {
       // Bỏ qua lỗi JSON hỏng, fallback về text part
@@ -75,6 +105,16 @@ export function deserializeAgentMessage(res: BackendAiMessageResponse): AgentUIM
   let createdAt = new Date()
   if (res.sentAt) {
     createdAt = new Date(res.sentAt)
+  }
+
+  if (imageUrl !== undefined) {
+    return {
+      id: res.id,
+      role,
+      parts,
+      createdAt,
+      metadata: { imageUrl },
+    } as unknown as AgentUIMessage
   }
 
   return {

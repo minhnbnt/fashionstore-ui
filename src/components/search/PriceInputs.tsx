@@ -1,20 +1,14 @@
 import { useState } from 'react'
 
+import { formatMoneyInput, formatNumberWithDots, parseNumberFromDots } from '@/lib/format'
 import { cn, FOCUS_RING_CLASS } from '@/lib/ui/styles'
 
 function priceText(value: number | null): string {
-  if (value === null) {
-    return ''
-  }
-  return String(value)
+  return formatNumberWithDots(value)
 }
 
 function parsePrice(raw: string): number | null {
-  const digits = raw.replace(/[^0-9]/g, '')
-  if (digits === '') {
-    return null
-  }
-  return Number(digits)
+  return parseNumberFromDots(raw)
 }
 
 // Nhập khoảng giá tùy chọn: validate min <= max rồi mới gửi lên bộ lọc.
@@ -55,7 +49,7 @@ export default function PriceInputs(props: {
             placeholder="Từ"
             value={min}
             onChange={function (e) {
-              setMin(e.target.value)
+              setMin(formatMoneyInput(e.target.value))
             }}
             className={inputClass}
           />
@@ -75,7 +69,7 @@ export default function PriceInputs(props: {
             placeholder="Đến"
             value={max}
             onChange={function (e) {
-              setMax(e.target.value)
+              setMax(formatMoneyInput(e.target.value))
             }}
             className={inputClass}
           />

@@ -19,6 +19,7 @@ import {
   SignOut,
   Star,
   Storefront,
+  Ticket,
   UsersThree,
   Wallet,
 } from '@phosphor-icons/react'
@@ -90,6 +91,13 @@ function getPageMeta(activeTab: SellerTabId): PageMeta {
     return {
       title: 'Quản lý tồn kho & SKU',
       description: 'Theo dõi số lượng tồn kho theo từng phân loại và nhật ký biến động xuất nhập.',
+    }
+  }
+  if (activeTab === 'VOUCHERS') {
+    return {
+      title: 'Mã giảm giá của Shop',
+      description:
+        'Tạo và quản lý các chương trình mã giảm giá theo số tiền hoặc phần trăm cho gian hàng.',
     }
   }
   if (activeTab === 'ORDERS') {
@@ -217,6 +225,9 @@ function buildBreadcrumbs(
     }
     return [root, parent, { label: 'Quản lý tồn kho & SKU' }]
   }
+  if (activeTab === 'VOUCHERS') {
+    return [root, { label: 'Kênh Marketing & Khuyến mãi' }, { label: 'Mã giảm giá của Shop' }]
+  }
   if (activeTab === 'ORDERS') {
     return [root, { label: 'Quản lý đơn hàng' }, { label: 'Danh sách đơn hàng' }]
   }
@@ -333,6 +344,11 @@ export function SellerLayout({
           icon: Archive,
           badgeCount: lowStockCount,
           badgeColor: 'bg-amber-600',
+        },
+        {
+          id: 'VOUCHERS',
+          label: 'Mã giảm giá',
+          icon: Ticket,
         },
       ],
     },

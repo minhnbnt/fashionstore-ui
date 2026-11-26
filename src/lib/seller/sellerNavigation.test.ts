@@ -11,12 +11,14 @@ describe('parseSellerTab', () => {
     expect(parseSellerTab('ORDERS')).toBe('ORDERS')
     expect(parseSellerTab('CHAT')).toBe('CHAT')
     expect(parseSellerTab('EDIT_PRODUCT')).toBe('EDIT_PRODUCT')
+    expect(parseSellerTab('VOUCHERS')).toBe('VOUCHERS')
   })
 
   it('khong phan biet hoa thuong', () => {
     expect(parseSellerTab('orders')).toBe('ORDERS')
     expect(parseSellerTab('Add_Product')).toBe('ADD_PRODUCT')
     expect(parseSellerTab('edit_product')).toBe('EDIT_PRODUCT')
+    expect(parseSellerTab('vouchers')).toBe('VOUCHERS')
   })
 
   it('param khong hop le quay ve OVERVIEW', () => {
@@ -34,6 +36,7 @@ describe('sellerTabParam', () => {
     expect(sellerTabParam('ORDERS')).toBe('orders')
     expect(sellerTabParam('ADD_PRODUCT')).toBe('add_product')
     expect(sellerTabParam('PROFILE')).toBe('profile')
+    expect(sellerTabParam('VOUCHERS')).toBe('vouchers')
   })
 
   it('vong tron param <-> tab van ve dung tab', () => {

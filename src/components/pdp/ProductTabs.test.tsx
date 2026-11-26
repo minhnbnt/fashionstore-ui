@@ -43,8 +43,12 @@ function mockReviews(reviews: ReviewResponse[], summary?: ReviewSummaryResponse)
     isError: false,
     error: null,
   })
+  let summaryPayload: { status: number; data: ReviewSummaryResponse } | undefined = undefined
+  if (summary !== undefined) {
+    summaryPayload = { status: 200, data: summary }
+  }
   mockUseSummary2.mockReturnValue({
-    data: summary ? { status: 200, data: summary } : undefined,
+    data: summaryPayload,
     isPending: false,
     isError: false,
     error: null,
@@ -107,7 +111,7 @@ afterEach(() => {
 })
 
 describe('ProductTabs — xem danh gia, highlight huu ich va tương tác (DOM)', () => {
-  it('mặc định mở tab Mô tả, số đánh giá trên nút lấy từ summary API', () => {
+  it('hiển thị lần lượt Mô tả, Thông số và Đánh giá trong 1 tab duy nhất', () => {
     mockReviews(sampleReviews(), {
       reviewCount: 2,
       averageRating: 4.5,
@@ -120,12 +124,14 @@ describe('ProductTabs — xem danh gia, highlight huu ich va tương tác (DOM)'
     })
     renderTabs()
 
+    expect(screen.getByRole('tab', { name: /Mô tả · Thông số · Đánh giá \(2\)/i })).toBeTruthy()
     expect(screen.getByText('Áo sơ mi lụa tơ tằm')).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'Đánh giá (2)' })).toBeTruthy()
-    expect(screen.queryByText(/Áo đẹp, vải mát/)).toBeNull()
+    expect(screen.getByText('Kích cỡ có sẵn')).toBeTruthy()
+    expect(screen.getByText('Chi tiết sản phẩm')).toBeTruthy()
+    expect(screen.getByText(/Áo đẹp, vải mát và đường may rất chắc chắn\./)).toBeTruthy()
   })
 
-  it('click Đánh giá → hiện summary 1 chữ số thập phân, badge Hữu ích nhất, phân loại hàng, tag, phản hồi shop và nút Hữu ích', async () => {
+  it('hiển thị summary 1 chữ số thập phân, badge Hữu ích nhất, phân loại hàng, tag, phản hồi shop và nút Hữu ích', async () => {
     mockReviews(sampleReviews(), {
       reviewCount: 2,
       averageRating: 4.56,
@@ -138,8 +144,6 @@ describe('ProductTabs — xem danh gia, highlight huu ich va tương tác (DOM)'
     })
     const user = userEvent.setup()
     renderTabs()
-
-    await user.click(screen.getByRole('tab', { name: 'Đánh giá (2)' }))
 
     expect(screen.getByText('4.6')).toBeTruthy()
     expect(screen.getByText('2 đánh giá')).toBeTruthy()
@@ -158,7 +162,7 @@ describe('ProductTabs — xem danh gia, highlight huu ich va tương tác (DOM)'
     expect(mockToggleHelpfulMutate).toHaveBeenCalledWith({ reviewId: 'r-1' }, expect.any(Object))
   })
 
-  it('chưa có đánh giá nào → mở tab hiện thông báo rỗng', async () => {
+  it('chưa có đánh giá nào → hiện thông báo rỗng bên dưới phần Mô tả và Thông số', () => {
     mockReviews([], {
       reviewCount: 0,
       averageRating: null,
@@ -169,10 +173,7 @@ describe('ProductTabs — xem danh gia, highlight huu ich va tương tác (DOM)'
       oneStarCount: 0,
       withMediaCount: 0,
     })
-    const user = userEvent.setup()
     renderTabs()
-
-    await user.click(screen.getByRole('tab', { name: 'Đánh giá (0)' }))
 
     expect(screen.getByText('Chưa có đánh giá nào phù hợp cho sản phẩm này.')).toBeTruthy()
   })

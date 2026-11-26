@@ -6,6 +6,7 @@ import {
   ArrowSquareOut,
   CalendarBlank,
   ChartBar,
+  CreditCard,
   GearSix,
   Package,
   Prohibit,
@@ -84,6 +85,7 @@ const NAV_GROUPS: AdminNavGroup[] = [
         badgeKey: 'pendingOrders',
         badgeTone: 'warning',
       },
+      { to: '/admin/payments', label: 'Thanh toán', icon: CreditCard, end: false },
     ],
   },
   {
@@ -148,6 +150,9 @@ function deriveAdminBreadcrumbs(pathname: string, pageTitle: string): Breadcrumb
   }
   if (pathname === '/admin/orders') {
     return [root, { label: 'Đơn hàng' }]
+  }
+  if (pathname === '/admin/payments') {
+    return [root, { label: 'Thanh toán' }]
   }
   if (pathname === '/admin/products') {
     return [root, { label: 'Sản phẩm' }]

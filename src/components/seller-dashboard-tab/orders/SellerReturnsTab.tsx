@@ -17,7 +17,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
-import { formatVnd } from '@/lib/format'
+import { formatNumberWithDots, formatVnd, parseNumberFromDots } from '@/lib/format'
 import { notify } from '@/lib/notifications'
 import { orderStatusMeta } from '@/lib/order/orderStatus'
 import { returnItem } from '@/lib/seller/sellerAdapters'
@@ -502,14 +502,14 @@ export default function SellerReturnsTab({ shopId, shopPickupAddress = '' }: Pro
               </label>
               <input
                 id="returnRefundAmountInput"
-                type="number"
-                min={0}
-                value={refundAmount}
+                type="text"
+                inputMode="numeric"
+                value={formatNumberWithDots(refundAmount)}
                 onChange={function (e) {
-                  setRefundAmount(Number(e.target.value))
+                  setRefundAmount(parseNumberFromDots(e.target.value) ?? 0)
                 }}
                 placeholder="Nhập số tiền hoàn theo giá trị đơn hàng"
-                className={cn(INPUT_CLASS, 'mt-1.5 text-xs font-bold')}
+                className={cn(INPUT_CLASS, 'mt-1.5 text-xs font-bold tabular-nums')}
               />
             </div>
 

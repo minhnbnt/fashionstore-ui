@@ -1,4 +1,4 @@
-import { MemoryRouter, Route, Routes } from 'react-router'
+import { MemoryRouter, Route, Routes, useParams } from 'react-router'
 
 // @vitest-environment happy-dom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -18,6 +18,7 @@ const {
   reviewsState,
   confirmReceiptMutate,
   cancelMutate,
+  retryVietQrMutate,
   reorderMutateAsync,
   createReviewMutate,
   updateReviewMutate,
@@ -28,6 +29,7 @@ const {
   reviewsState: { list: [] as ReviewResponse[] },
   confirmReceiptMutate: vi.fn(),
   cancelMutate: vi.fn(),
+  retryVietQrMutate: vi.fn(),
   reorderMutateAsync: vi.fn(),
   createReviewMutate: vi.fn(),
   updateReviewMutate: vi.fn(),
@@ -49,6 +51,7 @@ vi.mock('@generated/endpoints/orders/orders', () => ({
   }),
   useCancel1: () => ({ mutate: cancelMutate, isPending: false }),
   useConfirmReceipt: () => ({ mutate: confirmReceiptMutate, isPending: false }),
+  useRetryVietQrPayment: () => ({ mutate: retryVietQrMutate, isPending: false }),
 }))
 
 vi.mock('@generated/endpoints/buyer-returns/buyer-returns', () => ({
@@ -122,6 +125,11 @@ function sampleOrders(): OrderResponse[] {
   ]
 }
 
+function QrRouteProbe() {
+  const { txnRef } = useParams()
+  return <p>qr-page:{txnRef}</p>
+}
+
 function renderOrders(initialPath = '/account/orders') {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -132,6 +140,7 @@ function renderOrders(initialPath = '/account/orders') {
         <Routes>
           <Route path="/account/orders" element={<Orders />} />
           <Route path="/cart" element={<p>cart-page-target</p>} />
+          <Route path="/payment/qr/:txnRef" element={<QrRouteProbe />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -180,6 +189,7 @@ beforeEach(() => {
   ]
   confirmReceiptMutate.mockReset()
   cancelMutate.mockReset()
+  retryVietQrMutate.mockReset()
   reorderMutateAsync.mockReset()
   createReviewMutate.mockReset()
   updateReviewMutate.mockReset()
@@ -366,5 +376,43 @@ describe('Orders page (1.4.5 + 1.4.6)', () => {
     const buyAgainButtons = screen.getAllByRole('button', { name: 'Mua lại' })
     await user.click(buyAgainButtons[0])
     expect(await screen.findByText(/Kết quả mua lại đơn hàng/i)).toBeTruthy()
+  })
+
+  it('tab Chờ thanh toán hiển thị đơn AWAITING_PAYMENT kèm nút Thanh toán ngay (Mã QR)', async () => {
+    const user = userEvent.setup()
+    ordersState.list = [
+      ...sampleOrders(),
+      {
+        id: 'o-awaiting',
+        code: 'ORD-AWAITING',
+        shopId: 's1',
+        shopName: 'Shop Alpha',
+        status: 'AWAITING_PAYMENT',
+        paymentMethod: 'VIETQR',
+        paymentStatus: 'UNPAID',
+        paymentTxnRef: 'DHMQ5566778899',
+        total: 520000,
+        items: [],
+        createdAt: '2026-11-26T08:00:00Z',
+      },
+    ]
+    retryVietQrMutate.mockImplementation((_variables, options) => {
+      options?.onSuccess?.({
+        status: 200,
+        data: { txnRef: 'DHMQ5566778899' },
+        headers: new Headers(),
+      })
+    })
+
+    renderOrders()
+
+    await user.click(screen.getByRole('button', { name: /Chờ thanh toán/ }))
+    expect(screen.getByText('ORD-AWAITING')).toBeTruthy()
+
+    const payNowBtn = screen.getByRole('button', { name: 'Thanh toán ngay (Mã QR)' })
+    await user.click(payNowBtn)
+
+    expect(retryVietQrMutate).toHaveBeenCalledWith({ id: 'o-awaiting' }, expect.anything())
+    expect(screen.getByText('qr-page:DHMQ5566778899')).toBeTruthy()
   })
 })

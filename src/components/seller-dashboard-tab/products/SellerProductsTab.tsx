@@ -37,7 +37,7 @@ import Modal from '@/components/Modal'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PLACEHOLDER_IMAGE, takeData } from '@/lib/api/apiAdapters'
 import { ApiError } from '@/lib/api/apiFetch'
-import { formatDateTime, formatVnd } from '@/lib/format'
+import { formatDateTime, formatMoneyInput, formatVnd, parseNumberFromDots } from '@/lib/format'
 import { notify } from '@/lib/notifications'
 import { productItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
@@ -336,12 +336,12 @@ export default function SellerProductsTab({
     }
 
     // 4. Lọc theo Khoảng giá
-    const minVal = parseFloat(minPriceInput)
-    if (!Number.isNaN(minVal) && minVal > 0 && p.price < minVal) {
+    const minVal = parseNumberFromDots(minPriceInput)
+    if (minVal !== null && minVal > 0 && p.price < minVal) {
       return false
     }
-    const maxVal = parseFloat(maxPriceInput)
-    if (!Number.isNaN(maxVal) && maxVal > 0 && p.price > maxVal) {
+    const maxVal = parseNumberFromDots(maxPriceInput)
+    if (maxVal !== null && maxVal > 0 && p.price > maxVal) {
       return false
     }
 
@@ -405,13 +405,14 @@ export default function SellerProductsTab({
   // Xem trước giá mới khi đổi giá
   let previewNewPriceText = ''
   if (singleSelectedProduct !== undefined && bulkPriceValue !== '') {
-    const val = parseFloat(bulkPriceValue)
-    if (!Number.isNaN(val)) {
-      if (bulkPriceMode === 'FIXED') {
-        if (val > 0) {
-          previewNewPriceText = formatVnd(Math.round(val))
-        }
-      } else {
+    if (bulkPriceMode === 'FIXED') {
+      const fixedVal = parseNumberFromDots(bulkPriceValue)
+      if (fixedVal !== null && fixedVal > 0) {
+        previewNewPriceText = formatVnd(Math.round(fixedVal))
+      }
+    } else {
+      const val = parseFloat(bulkPriceValue)
+      if (!Number.isNaN(val)) {
         const factor = 1 + val / 100
         const calculated = Math.max(1000, Math.round(singleSelectedProduct.price * factor))
         let sign = ''
@@ -461,13 +462,15 @@ export default function SellerProductsTab({
   }
 
   let priceInputStep = '1'
+  let bulkPriceInputType: 'text' | 'number' = 'number'
   if (bulkPriceMode === 'FIXED') {
     priceInputStep = '1000'
+    bulkPriceInputType = 'text'
   }
 
   let priceInputPlaceholder = 'Ví dụ: -10 (giảm 10%) hoặc 15'
   if (bulkPriceMode === 'FIXED') {
-    priceInputPlaceholder = 'Ví dụ: 199000'
+    priceInputPlaceholder = 'Ví dụ: 199.000'
   }
 
   let totalNewStock = 0
@@ -595,7 +598,15 @@ export default function SellerProductsTab({
       setBulkPriceError('Chỉ được cập nhật giá khi chọn đúng 1 sản phẩm')
       return
     }
-    const val = parseFloat(bulkPriceValue)
+    let val = Number.NaN
+    if (bulkPriceMode === 'FIXED') {
+      const parsedFixed = parseNumberFromDots(bulkPriceValue)
+      if (parsedFixed !== null) {
+        val = parsedFixed
+      }
+    } else {
+      val = parseFloat(bulkPriceValue)
+    }
     if (Number.isNaN(val)) {
       setBulkPriceError('Vui lòng nhập giá trị số hợp lệ')
       return
@@ -997,27 +1008,25 @@ export default function SellerProductsTab({
               <span className="font-semibold">Khoảng giá (VND):</span>
               <div className="flex items-center gap-1.5">
                 <input
-                  type="number"
-                  min="0"
-                  step="10000"
+                  type="text"
+                  inputMode="numeric"
                   value={minPriceInput}
                   onChange={function (e) {
-                    setMinPriceInput(e.target.value)
+                    setMinPriceInput(formatMoneyInput(e.target.value))
                   }}
                   placeholder="Từ..."
-                  className="w-28 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                  className="w-28 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-xs tabular-nums outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
                 />
                 <span className="text-zinc-400">-</span>
                 <input
-                  type="number"
-                  min="0"
-                  step="10000"
+                  type="text"
+                  inputMode="numeric"
                   value={maxPriceInput}
                   onChange={function (e) {
-                    setMaxPriceInput(e.target.value)
+                    setMaxPriceInput(formatMoneyInput(e.target.value))
                   }}
                   placeholder="Đến..."
-                  className="w-28 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                  className="w-28 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-xs tabular-nums outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
                 />
               </div>
             </div>
@@ -1547,6 +1556,7 @@ export default function SellerProductsTab({
                 type="button"
                 onClick={function () {
                   setBulkPriceMode('FIXED')
+                  setBulkPriceValue(formatMoneyInput(bulkPriceValue))
                 }}
                 className={fixedPriceBtnClass}
               >
@@ -1557,6 +1567,7 @@ export default function SellerProductsTab({
                 type="button"
                 onClick={function () {
                   setBulkPriceMode('PERCENT')
+                  setBulkPriceValue(bulkPriceValue.replace(/\./g, ''))
                 }}
                 className={percentPriceBtnClass}
               >
@@ -1575,14 +1586,19 @@ export default function SellerProductsTab({
               </label>
               <input
                 id="bulkPriceValueInput"
-                type="number"
+                type={bulkPriceInputType}
+                inputMode="numeric"
                 step={priceInputStep}
                 value={bulkPriceValue}
                 onChange={function (e) {
-                  setBulkPriceValue(e.target.value)
+                  if (bulkPriceMode === 'FIXED') {
+                    setBulkPriceValue(formatMoneyInput(e.target.value))
+                  } else {
+                    setBulkPriceValue(e.target.value)
+                  }
                 }}
                 placeholder={priceInputPlaceholder}
-                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-zinc-50 p-2.5 text-xs outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
+                className="mt-1.5 w-full rounded-2xl border border-zinc-300 bg-zinc-50 p-2.5 text-xs tabular-nums outline-none focus:border-blue-600 dark:border-white/15 dark:bg-white/10 dark:text-white"
               />
             </div>
 

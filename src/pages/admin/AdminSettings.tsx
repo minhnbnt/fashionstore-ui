@@ -25,7 +25,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import { Skeleton, TableRowsSkeleton } from '@/components/ui/Skeleton'
 import StatePanel from '@/components/ui/StatePanel'
 import { takeData } from '@/lib/api/apiAdapters'
-import { formatDateTime, formatVnd } from '@/lib/format'
+import { formatDateTime, formatMoneyInput, formatNumberWithDots, formatVnd } from '@/lib/format'
 import { notify, safeErrorMessage } from '@/lib/notifications'
 import {
   cn,
@@ -95,6 +95,13 @@ function toNumberString(value: number | undefined, fallback: string): string {
   return String(value)
 }
 
+function toMoneyString(value: number | undefined, fallback: string): string {
+  if (value === undefined || value === null || Number.isNaN(value)) {
+    return fallback
+  }
+  return formatNumberWithDots(value)
+}
+
 function toFormState(settings: SystemSettingsResponse | undefined): SettingsFormState {
   if (settings === undefined) {
     return EMPTY_FORM
@@ -103,14 +110,14 @@ function toFormState(settings: SystemSettingsResponse | undefined): SettingsForm
     siteName: settings.siteName ?? '',
     hotline: settings.hotline ?? '',
     supportEmail: settings.supportEmail ?? '',
-    freeShippingThreshold: toNumberString(settings.freeShippingThreshold, '0'),
+    freeShippingThreshold: toMoneyString(settings.freeShippingThreshold, '0'),
     baseItems: toNumberString(settings.baseItems, '1'),
-    shippingBaseFee: toNumberString(settings.shippingBaseFee, '0'),
-    shippingExtraItemFee: toNumberString(settings.shippingExtraItemFee, '0'),
+    shippingBaseFee: toMoneyString(settings.shippingBaseFee, '0'),
+    shippingExtraItemFee: toMoneyString(settings.shippingExtraItemFee, '0'),
     paymentHoldMinutes: toNumberString(settings.paymentHoldMinutes, '30'),
     autoCompleteDays: toNumberString(settings.autoCompleteDays, '7'),
-    codMinTotal: toNumberString(settings.codMinTotal, '0'),
-    codMaxTotal: toNumberString(settings.codMaxTotal, '0'),
+    codMinTotal: toMoneyString(settings.codMinTotal, '0'),
+    codMaxTotal: toMoneyString(settings.codMaxTotal, '0'),
   }
 }
 
@@ -142,8 +149,12 @@ function parseStrictInt(raw: string): number | null {
   return parsed
 }
 
+function parseMoneyInt(raw: string): number | null {
+  return parseStrictInt(raw.replace(/\./g, ''))
+}
+
 function vndPreviewText(raw: string, allowZeroUnlimited?: boolean): string | null {
-  const parsed = parseStrictInt(raw)
+  const parsed = parseMoneyInt(raw)
   if (parsed === null || parsed < 0) {
     return null
   }
@@ -322,6 +333,10 @@ export default function AdminSettings() {
     }
   }
 
+  function updateMoneyField(field: keyof SettingsFormState, rawValue: string) {
+    updateField(field, formatMoneyInput(rawValue))
+  }
+
   function handleReset() {
     setDraft(null)
     setFieldErrors({})
@@ -344,7 +359,7 @@ export default function AdminSettings() {
       return
     }
 
-    const freeShippingThreshold = parseStrictInt(form.freeShippingThreshold)
+    const freeShippingThreshold = parseMoneyInt(form.freeShippingThreshold)
     if (freeShippingThreshold === null || freeShippingThreshold < 0) {
       const msg = 'Ngưỡng miễn phí vận chuyển phải là số nguyên từ 0 trở lên.'
       setFieldErrors({ freeShippingThreshold: msg })
@@ -360,7 +375,7 @@ export default function AdminSettings() {
       return
     }
 
-    const shippingBaseFee = parseStrictInt(form.shippingBaseFee)
+    const shippingBaseFee = parseMoneyInt(form.shippingBaseFee)
     if (shippingBaseFee === null || shippingBaseFee < 0) {
       const msg = 'Phí ship cơ bản phải là số nguyên từ 0 trở lên.'
       setFieldErrors({ shippingBaseFee: msg })
@@ -368,7 +383,7 @@ export default function AdminSettings() {
       return
     }
 
-    const shippingExtraItemFee = parseStrictInt(form.shippingExtraItemFee)
+    const shippingExtraItemFee = parseMoneyInt(form.shippingExtraItemFee)
     if (shippingExtraItemFee === null || shippingExtraItemFee < 0) {
       const msg = 'Phí mỗi món thêm phải là số nguyên từ 0 trở lên.'
       setFieldErrors({ shippingExtraItemFee: msg })
@@ -392,7 +407,7 @@ export default function AdminSettings() {
       return
     }
 
-    const codMinTotal = parseStrictInt(form.codMinTotal)
+    const codMinTotal = parseMoneyInt(form.codMinTotal)
     if (codMinTotal === null || codMinTotal < 0) {
       const msg = 'Tổng đơn tối thiểu cho COD phải là số nguyên từ 0 trở lên.'
       setFieldErrors({ codMinTotal: msg })
@@ -400,7 +415,7 @@ export default function AdminSettings() {
       return
     }
 
-    const codMaxTotal = parseStrictInt(form.codMaxTotal)
+    const codMaxTotal = parseMoneyInt(form.codMaxTotal)
     if (codMaxTotal === null || codMaxTotal < 0) {
       const msg = 'Tổng đơn tối đa cho COD phải là số nguyên từ 0 trở lên (0 = không giới hạn).'
       setFieldErrors({ codMaxTotal: msg })
@@ -645,13 +660,12 @@ export default function AdminSettings() {
                   </label>
                   <input
                     id="setting-free-shipping"
-                    type="number"
-                    min={0}
-                    step={1000}
+                    type="text"
+                    inputMode="numeric"
                     value={form.freeShippingThreshold}
                     aria-invalid={fieldErrors.freeShippingThreshold !== undefined}
                     onChange={function (event) {
-                      updateField('freeShippingThreshold', event.target.value)
+                      updateMoneyField('freeShippingThreshold', event.target.value)
                     }}
                     className={fieldInputClass(
                       fieldErrors.freeShippingThreshold !== undefined,
@@ -711,13 +725,12 @@ export default function AdminSettings() {
                   </label>
                   <input
                     id="setting-shipping-base-fee"
-                    type="number"
-                    min={0}
-                    step={1000}
+                    type="text"
+                    inputMode="numeric"
                     value={form.shippingBaseFee}
                     aria-invalid={fieldErrors.shippingBaseFee !== undefined}
                     onChange={function (event) {
-                      updateField('shippingBaseFee', event.target.value)
+                      updateMoneyField('shippingBaseFee', event.target.value)
                     }}
                     className={fieldInputClass(
                       fieldErrors.shippingBaseFee !== undefined,
@@ -745,13 +758,12 @@ export default function AdminSettings() {
                   </label>
                   <input
                     id="setting-shipping-extra-item-fee"
-                    type="number"
-                    min={0}
-                    step={500}
+                    type="text"
+                    inputMode="numeric"
                     value={form.shippingExtraItemFee}
                     aria-invalid={fieldErrors.shippingExtraItemFee !== undefined}
                     onChange={function (event) {
-                      updateField('shippingExtraItemFee', event.target.value)
+                      updateMoneyField('shippingExtraItemFee', event.target.value)
                     }}
                     className={fieldInputClass(
                       fieldErrors.shippingExtraItemFee !== undefined,
@@ -868,13 +880,12 @@ export default function AdminSettings() {
                   </label>
                   <input
                     id="setting-cod-min"
-                    type="number"
-                    min={0}
-                    step={1000}
+                    type="text"
+                    inputMode="numeric"
                     value={form.codMinTotal}
                     aria-invalid={fieldErrors.codMinTotal !== undefined}
                     onChange={function (event) {
-                      updateField('codMinTotal', event.target.value)
+                      updateMoneyField('codMinTotal', event.target.value)
                     }}
                     className={fieldInputClass(
                       fieldErrors.codMinTotal !== undefined,
@@ -902,13 +913,12 @@ export default function AdminSettings() {
                   </label>
                   <input
                     id="setting-cod-max"
-                    type="number"
-                    min={0}
-                    step={1000}
+                    type="text"
+                    inputMode="numeric"
                     value={form.codMaxTotal}
                     aria-invalid={fieldErrors.codMaxTotal !== undefined}
                     onChange={function (event) {
-                      updateField('codMaxTotal', event.target.value)
+                      updateMoneyField('codMaxTotal', event.target.value)
                     }}
                     className={fieldInputClass(
                       fieldErrors.codMaxTotal !== undefined,

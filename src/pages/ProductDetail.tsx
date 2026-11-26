@@ -4,6 +4,7 @@ import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useDetail1 } from '@generated/endpoints/products/products'
 import { ArrowClockwise } from '@phosphor-icons/react'
 
+import ShopVoucherStrip from '@/components/shop-storefront/ShopVoucherStrip'
 import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/Breadcrumb'
 import { DetailSkeleton } from '@/components/ui/Skeleton'
 import { apiErrorMessage, takeData } from '@/lib/api/apiAdapters'
@@ -21,7 +22,7 @@ import type { CategoryResponse } from '@generated/model/categoryResponse'
 
 function NotFound() {
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-24 pb-16 text-center">
+    <main className="mx-auto max-w-6xl px-4 pt-20 pb-16 text-center md:pb-12">
       <div className={cn(CARD_CLASS, 'mx-auto max-w-lg p-8')}>
         <h1 className="text-2xl font-extrabold text-[#17203a] dark:text-white">
           Không tìm thấy sản phẩm
@@ -57,7 +58,7 @@ export default function ProductDetail() {
 
   if (detailQuery.isPending) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-24 pb-16">
+      <main className="mx-auto max-w-6xl px-4 pt-20 pb-16 md:pb-12">
         <DetailSkeleton />
       </main>
     )
@@ -73,7 +74,7 @@ export default function ProductDetail() {
       status = error.status
     }
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pt-24 pb-16 text-center">
+      <main className="mx-auto max-w-6xl px-4 pt-20 pb-16 text-center md:pb-12">
         <div className={cn(CARD_CLASS, 'mx-auto max-w-lg space-y-4 p-8')}>
           <h1 className="text-xl font-extrabold text-[#17203a] dark:text-white">
             Không thể tải thông tin sản phẩm
@@ -127,19 +128,28 @@ export default function ProductDetail() {
   breadcrumbItems.push({ label: product.name ?? 'Sản phẩm' })
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pt-24 pb-24 md:pb-16">
-      <Breadcrumb items={breadcrumbItems} showHomeIcon className="mb-6" />
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <ProductGallery
-          key={'gallery-' + productId}
-          images={product.images ?? []}
-          videoUrl={product.videoUrl ?? null}
-          name={product.name ?? ''}
-        />
-        <ProductInfo key={'info-' + productId} product={product} />
-      </div>
+    <main className="mx-auto max-w-6xl px-4 pt-20 pb-16 md:pb-12">
+      <Breadcrumb items={breadcrumbItems} showHomeIcon className="mb-4" />
+      <section className="rounded-3xl border border-zinc-200/80 bg-white/90 p-5 shadow-xs sm:p-6 lg:p-7 dark:border-white/10 dark:bg-[#11182a]">
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-10 lg:gap-8">
+          <div className="lg:col-span-6">
+            <ProductGallery
+              key={'gallery-' + productId}
+              images={product.images ?? []}
+              videoUrl={product.videoUrl ?? null}
+              name={product.name ?? ''}
+            />
+          </div>
+          <div className="flex lg:col-span-4">
+            <ProductInfo key={'info-' + productId} product={product} />
+          </div>
+        </div>
+      </section>
       {product.shopId !== undefined && product.shopId !== null && product.shopId !== '' && (
-        <PdpShopCard shopId={product.shopId} />
+        <>
+          <ShopVoucherStrip shopId={product.shopId} productId={productId} />
+          <PdpShopCard shopId={product.shopId} />
+        </>
       )}
       <ProductTabs product={product} />
       <ProductQnaSection key={'qna-' + productId} productId={productId} />

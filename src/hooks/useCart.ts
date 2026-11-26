@@ -7,6 +7,8 @@ import {
   useUpdateQuantity,
   useView,
 } from '@generated/endpoints/cart/cart'
+import { getMine3QueryKey, type mine3Response } from '@generated/endpoints/orders/orders'
+import { getList5QueryKey } from '@generated/endpoints/seller-orders/seller-orders'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { takeData } from '@/lib/api/apiAdapters'
@@ -15,6 +17,7 @@ import { useSessionQuery } from './useSession'
 
 import type { CartItemResponse } from '@generated/model/cartItemResponse'
 import type { CartResponse } from '@generated/model/cartResponse'
+import type { OrderResponse } from '@generated/model/orderResponse'
 
 export function useCart() {
   const queryClient = useQueryClient()
@@ -87,8 +90,38 @@ export function useCart() {
 
   const checkoutMutation = useCheckout1({
     mutation: {
-      onSuccess: function () {
+      onSuccess: function (response) {
+        const createdOrders = takeData(response)
+        if (Array.isArray(createdOrders) && createdOrders.length > 0) {
+          queryClient.setQueryData<mine3Response>(getMine3QueryKey(), function (prev) {
+            if (prev === undefined || prev.status !== 200 || !Array.isArray(prev.data)) {
+              return {
+                status: 200,
+                data: createdOrders,
+                headers: response.headers,
+              }
+            }
+            const createdIds = new Set<string>()
+            for (const ord of createdOrders) {
+              if (ord.id !== undefined) {
+                createdIds.add(ord.id)
+              }
+            }
+            const remaining: OrderResponse[] = prev.data.filter(function (existing) {
+              if (existing.id === undefined) {
+                return true
+              }
+              return !createdIds.has(existing.id)
+            })
+            return {
+              ...prev,
+              data: [...createdOrders, ...remaining],
+            }
+          })
+        }
         void queryClient.invalidateQueries({ queryKey: getViewQueryKey() })
+        void queryClient.invalidateQueries({ queryKey: getMine3QueryKey() })
+        void queryClient.invalidateQueries({ queryKey: getList5QueryKey() })
       },
     },
   })

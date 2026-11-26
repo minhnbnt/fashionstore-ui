@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { CaretLeft, CaretRight, MagnifyingGlassPlus, Play } from '@phosphor-icons/react'
+import { MagnifyingGlassPlus, Play } from '@phosphor-icons/react'
 
 import { MediaLightbox } from '@/components/ui/MediaLightbox'
 import { fallbackImageOnError, urlOrPlaceholder } from '@/lib/api/apiAdapters'
@@ -27,7 +27,7 @@ export default function ProductGallery(props: {
   const total = imgs.length + videoOffset
   if (total === 0) {
     return (
-      <div className="flex aspect-[4/5] items-center justify-center rounded-3xl border border-zinc-200/80 bg-zinc-100/80 p-10 text-sm font-semibold text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+      <div className="flex h-[360px] items-center justify-center rounded-2xl border border-zinc-200/80 bg-zinc-50/90 p-6 text-sm font-semibold text-zinc-500 sm:h-[420px] dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
         Chưa có ảnh
       </div>
     )
@@ -38,7 +38,7 @@ export default function ProductGallery(props: {
   const activeImage = imgs[safeActive - videoOffset]
   if (videoActive === false && activeImage === undefined) {
     return (
-      <div className="flex aspect-[4/5] items-center justify-center rounded-3xl border border-zinc-200/80 bg-zinc-100/80 p-10 text-sm font-semibold text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
+      <div className="flex h-[360px] items-center justify-center rounded-2xl border border-zinc-200/80 bg-zinc-50/90 p-6 text-sm font-semibold text-zinc-500 sm:h-[420px] dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
         Chưa có ảnh
       </div>
     )
@@ -75,7 +75,7 @@ export default function ProductGallery(props: {
 
   return (
     <div>
-      <div className="group relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/90 dark:border-white/10 dark:bg-[#11182a]">
+      <div className="group relative flex h-[360px] w-full items-center justify-center overflow-hidden rounded-2xl border border-zinc-200/80 bg-zinc-50/90 sm:h-[420px] dark:border-white/10 dark:bg-zinc-900/50">
         {videoActive && (
           // eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track
           <video
@@ -84,7 +84,7 @@ export default function ProductGallery(props: {
             controls
             playsInline
             preload="metadata"
-            className="aspect-[4/5] w-full bg-black object-contain"
+            className="h-full w-full bg-black object-contain"
           />
         )}
         {videoActive === false && (
@@ -95,7 +95,7 @@ export default function ProductGallery(props: {
             }}
             aria-label={'Phóng to ' + props.name}
             className={cn(
-              'relative block w-full cursor-zoom-in overflow-hidden rounded-3xl',
+              'relative flex h-full w-full cursor-zoom-in items-center justify-center overflow-hidden rounded-2xl',
               FOCUS_RING_CLASS,
             )}
           >
@@ -105,7 +105,7 @@ export default function ProductGallery(props: {
               width={600}
               height={750}
               onError={fallbackImageOnError}
-              className="aspect-[4/5] w-full object-cover"
+              className="h-full w-full object-contain p-3"
             />
             <span
               aria-hidden="true"
@@ -115,33 +115,6 @@ export default function ProductGallery(props: {
               Phóng to
             </span>
           </button>
-        )}
-
-        {total > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={goPrev}
-              aria-label="Ảnh trước"
-              className={cn(
-                'glass absolute top-1/2 left-3 -translate-y-1/2 cursor-pointer rounded-full p-2.5 text-[#17203a] transition hover:scale-105 dark:text-white',
-                FOCUS_RING_CLASS,
-              )}
-            >
-              <CaretLeft size={18} weight="bold" />
-            </button>
-            <button
-              type="button"
-              onClick={goNext}
-              aria-label="Ảnh tiếp theo"
-              className={cn(
-                'glass absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded-full p-2.5 text-[#17203a] transition hover:scale-105 dark:text-white',
-                FOCUS_RING_CLASS,
-              )}
-            >
-              <CaretRight size={18} weight="bold" />
-            </button>
-          </>
         )}
       </div>
 
@@ -156,13 +129,13 @@ export default function ProductGallery(props: {
               aria-label="Video sản phẩm"
               aria-current={safeActive === 0}
               className={cn(
-                'shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-zinc-200/80 transition dark:border-white/10',
+                'shrink-0 cursor-pointer overflow-hidden rounded-xl border border-zinc-200/80 transition dark:border-white/10',
                 FOCUS_RING_CLASS,
                 safeActive === 0 &&
                   'border-blue-600 ring-2 ring-blue-600 dark:border-sky-400 dark:ring-sky-400',
               )}
             >
-              <span className="flex h-20 w-16 items-center justify-center bg-zinc-900 text-white">
+              <span className="flex h-16 w-16 items-center justify-center bg-zinc-900 text-white">
                 <Play size={22} weight="fill" />
               </span>
             </button>
@@ -180,7 +153,7 @@ export default function ProductGallery(props: {
                 aria-label={'Ảnh ' + (i + 1)}
                 aria-current={isSelected}
                 className={cn(
-                  'shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-zinc-200/80 transition dark:border-white/10',
+                  'shrink-0 cursor-pointer overflow-hidden rounded-xl border border-zinc-200/80 transition dark:border-white/10',
                   FOCUS_RING_CLASS,
                   isSelected &&
                     'border-blue-600 ring-2 ring-blue-600 dark:border-sky-400 dark:ring-sky-400',
@@ -193,7 +166,7 @@ export default function ProductGallery(props: {
                   width={150}
                   height={188}
                   onError={fallbackImageOnError}
-                  className="h-20 w-16 object-cover"
+                  className="h-16 w-16 object-cover"
                 />
               </button>
             )

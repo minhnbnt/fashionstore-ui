@@ -6,6 +6,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
+import { aiConversationsOptions, aiMessagesOptions } from '@/hooks/useAiHistory'
+import { SESSION_KEY } from '@/hooks/useSession'
+
 import AgentTab from './AgentTab'
 
 import type { AgentConfig, AgentUIMessage } from '@/lib/ai/agent'
@@ -276,6 +279,34 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
     const image = (await screen.findByAltText('Ảnh kết quả thử đồ')) as HTMLImageElement
     expect(image.getAttribute('src')).toBe('https://assets.test/tryon/x.png')
     expect(screen.queryByText('Đang tạo ảnh thử đồ, chờ chút nhé…')).toBeNull()
+  })
+
+  it('showImage cho phép phóng to ảnh kết quả thử đồ qua MediaLightbox và có liên kết Tải ảnh về', async function () {
+    const user = userEvent.setup()
+    renderTab({
+      config: configFixture(),
+      transport: transportOf(TRYON_DONE_CHUNKS),
+    })
+
+    await user.type(screen.getByPlaceholderText('Mô tả món bạn muốn tìm…'), 'thử đồ cái áo này')
+    await user.click(screen.getByRole('button', { name: 'Gửi câu hỏi' }))
+
+    await screen.findByAltText('Ảnh kết quả thử đồ')
+
+    const downloadLink = screen.getByRole('link', { name: /Tải ảnh về/ })
+    expect(downloadLink.getAttribute('href')).toBe('https://assets.test/tryon/x.png')
+    expect(downloadLink.getAttribute('download')).toBe('ket-qua-thu-do.png')
+
+    const zoomBtn = screen.getByRole('button', { name: 'Phóng to ảnh kết quả thử đồ' })
+    await user.click(zoomBtn)
+
+    const zoomedImg = await screen.findByAltText('Ảnh kết quả thử đồ (phóng to)')
+    expect(zoomedImg.getAttribute('src')).toBe('https://assets.test/tryon/x.png')
+
+    const closeButtons = screen.getAllByRole('button', { name: 'Đóng xem phóng to' })
+    await user.click(closeButtons[0] as HTMLElement)
+
+    expect(screen.queryByAltText('Ảnh kết quả thử đồ (phóng to)')).toBeNull()
   })
 
   it('tin nhắn user giữ bubble indigo bên phải', async function () {
@@ -845,6 +876,47 @@ describe('AgentTab — tab trợ lý AI trong ChatDock', () => {
       await user.click(sendButton())
 
       expect(await screen.findByAltText('Ảnh bạn đã gửi')).toBeTruthy()
+    })
+
+    it('hydrate tin nhắn user từ lịch sử DB có metadata.imageUrl thì khôi phục được thumbnail ảnh', async function () {
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: Infinity } },
+      })
+      queryClient.setQueryData(SESSION_KEY, {
+        user: { id: 'u-1', email: 'buyer@test.com' },
+      })
+      queryClient.setQueryData(aiConversationsOptions.queryKey, [
+        { id: 'conv-img-1', title: 'Thử đồ ảo với AI', createdAt: '', updatedAt: '' },
+      ])
+      queryClient.setQueryData(aiMessagesOptions('conv-img-1').queryKey, [
+        {
+          id: 'msg-hist-1',
+          conversationId: 'conv-img-1',
+          role: 'user',
+          content: 'Mặc thử mẫu này giúp mình',
+          metadata: JSON.stringify({
+            parts: [{ type: 'text', text: 'Mặc thử mẫu này giúp mình' }],
+            imageUrl: 'https://assets.test/history-person.jpeg',
+          }),
+          sentAt: '2026-11-11T10:00:00Z',
+        },
+      ])
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/']}>
+            <AgentTab
+              config={configFixture()}
+              transport={transportOf([])}
+              activeConversationId="conv-img-1"
+            />
+          </MemoryRouter>
+        </QueryClientProvider>,
+      )
+
+      expect(await screen.findByText('Mặc thử mẫu này giúp mình')).toBeTruthy()
+      const restoredImg = (await screen.findByAltText('Ảnh bạn đã gửi')) as HTMLImageElement
+      expect(restoredImg.getAttribute('src')).toBe('https://assets.test/history-person.jpeg')
     })
   })
 })

@@ -2,7 +2,7 @@
 import { MemoryRouter } from 'react-router'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import ProductTabs from './ProductTabs'
@@ -65,8 +65,6 @@ describe('ProductTabs edited review indicator', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     )
-
-    fireEvent.click(screen.getByRole('tab', { name: /Đánh giá/i }))
 
     expect(screen.getAllByText('Đã chỉnh sửa')).toHaveLength(1)
     expect(screen.queryByRole('button', { name: /Xóa/i })).toBeNull()

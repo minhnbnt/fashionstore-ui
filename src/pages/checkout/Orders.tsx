@@ -14,6 +14,7 @@ import {
   useCancel1,
   useConfirmReceipt,
   useMine3,
+  useRetryVietQrPayment,
 } from '@generated/endpoints/orders/orders'
 import {
   getList1QueryKey as getProductReviewsQueryKey,
@@ -29,6 +30,7 @@ import {
   CheckCircle,
   MagnifyingGlass,
   Package,
+  QrCode,
   Star,
   Storefront,
   Truck,
@@ -189,13 +191,21 @@ export default function Orders() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [pendingReceiptOrderId, setPendingReceiptOrderId] = useState<string | null>(null)
   const [pendingReorderOrderId, setPendingReorderOrderId] = useState<string | null>(null)
+  const [pendingRetryOrderId, setPendingRetryOrderId] = useState<string | null>(null)
 
-  const ordersQuery = useMine3({ query: { enabled: isLoggedIn } })
+  const ordersQuery = useMine3({
+    query: {
+      enabled: isLoggedIn,
+      staleTime: 0,
+      refetchOnMount: 'always',
+    },
+  })
   const returnsQuery = useMyReturns({ query: { enabled: isLoggedIn } })
   const reviewsQuery = useMyReviews({ query: { enabled: isLoggedIn } })
 
   const cancelMutation = useCancel1()
   const confirmReceiptMutation = useConfirmReceipt()
+  const retryVietQrMutation = useRetryVietQrPayment()
   const createReturnMutation = useCreateReturn()
   const createReviewMutation = useCreateReview()
   const updateReviewMutation = useUpdateReview()
@@ -254,6 +264,7 @@ export default function Orders() {
   const tabCounts = useMemo(() => {
     const counts: Record<BuyerOrderTabKey, number> = {
       ALL: combinedOrders.length,
+      AWAITING_PAYMENT: 0,
       PENDING: 0,
       CONFIRMED: 0,
       SHIPPING: 0,
@@ -262,7 +273,9 @@ export default function Orders() {
       RETURNS: 0,
     }
     for (const order of combinedOrders) {
-      if (order.status === 'PENDING') {
+      if (order.status === 'AWAITING_PAYMENT') {
+        counts.AWAITING_PAYMENT += 1
+      } else if (order.status === 'PENDING') {
         counts.PENDING += 1
       } else if (order.status === 'CONFIRMED') {
         counts.CONFIRMED += 1
@@ -358,6 +371,36 @@ export default function Orders() {
         },
         onSettled: () => {
           setPendingReceiptOrderId(null)
+        },
+      },
+    )
+  }
+
+  function handleRetryVietQr(order: OrderResponse) {
+    if (!order.id) {
+      if (order.paymentTxnRef) {
+        void navigate('/payment/qr/' + order.paymentTxnRef)
+      }
+      return
+    }
+    const orderId = order.id
+    setPendingRetryOrderId(orderId)
+    retryVietQrMutation.mutate(
+      { id: orderId },
+      {
+        onSuccess: (res) => {
+          const sessionData = takeData(res)
+          const targetTxnRef = sessionData.txnRef || order.paymentTxnRef
+          if (targetTxnRef) {
+            void navigate('/payment/qr/' + targetTxnRef)
+          }
+        },
+        onError: (err) => {
+          notify.fromError(err, 'retryVietQrPayment', 'Không thể khởi tạo phiên thanh toán VietQR')
+          invalidateOrderCaches(orderId)
+        },
+        onSettled: () => {
+          setPendingRetryOrderId(null)
         },
       },
     )
@@ -759,6 +802,18 @@ export default function Orders() {
                     <Package size={14} />
                     <span>Chi tiết</span>
                   </Link>
+
+                  {order.status === 'AWAITING_PAYMENT' && (
+                    <button
+                      type="button"
+                      disabled={retryVietQrMutation.isPending && pendingRetryOrderId === order.id}
+                      onClick={() => handleRetryVietQr(order)}
+                      className="btn-primary inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <QrCode size={14} weight="bold" />
+                      <span>Thanh toán ngay (Mã QR)</span>
+                    </button>
+                  )}
 
                   {canCancel(order.status) && (
                     <button

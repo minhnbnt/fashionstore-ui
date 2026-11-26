@@ -15,6 +15,7 @@ import {
   useCancel1,
   useConfirmReceipt,
   useDetail2,
+  useRetryVietQrPayment,
   useTimeline1,
   useTracking1,
 } from '@generated/endpoints/orders/orders'
@@ -32,6 +33,7 @@ import {
   ChatCircleDots,
   CheckCircle,
   MapPin,
+  QrCode,
   Star,
   Storefront,
 } from '@phosphor-icons/react'
@@ -104,7 +106,13 @@ export default function OrderDetail() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  const detailQuery = useDetail2(id, { query: { enabled: id !== '' } })
+  const detailQuery = useDetail2(id, {
+    query: {
+      enabled: id !== '',
+      staleTime: 0,
+      refetchOnMount: 'always',
+    },
+  })
   const trackingQuery = useTracking1(id, { query: { enabled: id !== '' } })
   const timelineQuery = useTimeline1(id, { query: { enabled: id !== '' } })
   const returnsQuery = useMyReturns({ query: { enabled: id !== '' } })
@@ -112,6 +120,7 @@ export default function OrderDetail() {
 
   const cancelMutation = useCancel1()
   const confirmReceiptMutation = useConfirmReceipt()
+  const retryVietQrMutation = useRetryVietQrPayment()
   const createReturnMutation = useCreateReturn()
   const createReviewMutation = useCreateReview()
   const updateReviewMutation = useUpdateReview()
@@ -225,6 +234,30 @@ export default function OrderDetail() {
           },
           onError: (err) => {
             notify.fromError(err, 'confirmReceipt', 'Không thể xác nhận nhận hàng')
+          },
+        },
+      )
+    }
+
+    function handleRetryVietQr() {
+      const fallbackRef = order?.paymentTxnRef
+      retryVietQrMutation.mutate(
+        { id },
+        {
+          onSuccess: (res) => {
+            const sessionData = takeData(res)
+            const targetTxnRef = sessionData.txnRef || fallbackRef
+            if (targetTxnRef) {
+              void navigate('/payment/qr/' + targetTxnRef)
+            }
+          },
+          onError: (err) => {
+            notify.fromError(
+              err,
+              'retryVietQrPayment',
+              'Không thể khởi tạo phiên thanh toán VietQR',
+            )
+            invalidateAll()
           },
         },
       )
@@ -390,6 +423,18 @@ export default function OrderDetail() {
                 >
                   <ChatCircleDots size={15} weight="bold" />
                   <span>Chat với Shop</span>
+                </button>
+              )}
+
+              {order.status === 'AWAITING_PAYMENT' && (
+                <button
+                  type="button"
+                  disabled={retryVietQrMutation.isPending}
+                  onClick={handleRetryVietQr}
+                  className="btn-primary inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold disabled:opacity-50"
+                >
+                  <QrCode size={15} weight="bold" />
+                  <span>Thanh toán ngay (Mã QR)</span>
                 </button>
               )}
 
@@ -566,17 +611,38 @@ export default function OrderDetail() {
             </div>
 
             <div className="space-y-2 border-t border-sky-100 pt-4 text-sm dark:border-white/10">
-              <div className="flex justify-between text-zinc-600 dark:text-zinc-300">
-                <span>Tạm tính</span>
-                <span className="tabular-nums">{formatVnd(order.subtotal ?? 0)}</span>
+              <div className="flex items-center justify-between gap-2 text-zinc-600 dark:text-zinc-300">
+                <span className="whitespace-nowrap">Tạm tính</span>
+                <span className="shrink-0 whitespace-nowrap tabular-nums">
+                  {formatVnd(order.subtotal ?? 0)}
+                </span>
               </div>
-              <div className="flex justify-between text-zinc-600 dark:text-zinc-300">
-                <span>Phí vận chuyển</span>
-                <span className="tabular-nums">{formatVnd(order.shippingFee ?? 0)}</span>
+              <div className="flex items-center justify-between gap-2 text-zinc-600 dark:text-zinc-300">
+                <span className="whitespace-nowrap">Phí vận chuyển</span>
+                <span className="shrink-0 whitespace-nowrap tabular-nums">
+                  {formatVnd(order.shippingFee ?? 0)}
+                </span>
               </div>
-              <div className="flex justify-between border-t border-sky-100 pt-2 text-base font-extrabold text-zinc-900 dark:border-white/10 dark:text-white">
-                <span>Tổng cộng</span>
-                <span className="tabular-nums">{formatVnd(order.total ?? 0)}</span>
+              {(order.discountAmount ?? 0) > 0 && (
+                <div className="flex items-center justify-between gap-2 text-emerald-700 dark:text-emerald-300">
+                  <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    <span className="whitespace-nowrap">Voucher Shop</span>
+                    {Boolean(order.voucherCode) && (
+                      <span className="truncate rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[11px] leading-none font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
+                        {order.voucherCode}
+                      </span>
+                    )}
+                  </span>
+                  <span className="shrink-0 font-bold whitespace-nowrap tabular-nums">
+                    -{formatVnd(order.discountAmount ?? 0)}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between gap-2 border-t border-sky-100 pt-2 text-base font-extrabold text-zinc-900 dark:border-white/10 dark:text-white">
+                <span className="whitespace-nowrap">Tổng cộng</span>
+                <span className="shrink-0 whitespace-nowrap tabular-nums">
+                  {formatVnd(order.total ?? 0)}
+                </span>
               </div>
               {Boolean(order.paymentStatus) && (
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
