@@ -13,10 +13,11 @@ import {
   useRejectWithdrawal,
   useUpdatePaymentGateway,
 } from '@generated/endpoints/admin-payments/admin-payments'
-import { useListBanks } from '@generated/endpoints/banks/banks'
+import { useListBanks, useLookupAccount } from '@generated/endpoints/banks/banks'
 import { ListPaymentTransactionsRefundStatus } from '@generated/model/listPaymentTransactionsRefundStatus'
 import { ListPaymentTransactionsStatus } from '@generated/model/listPaymentTransactionsStatus'
 import {
+  ArrowClockwise,
   ArrowsLeftRight,
   Bank,
   CheckCircle,
@@ -33,6 +34,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import AdminShell from '@/components/admin/AdminShell'
 import Modal from '@/components/Modal'
 import Pagination from '@/components/search/Pagination'
+import BankSearchSelector from '@/components/seller/BankSearchSelector'
 import EmptyState from '@/components/ui/EmptyState'
 import { Skeleton, TableRowsSkeleton } from '@/components/ui/Skeleton'
 import StatePanel from '@/components/ui/StatePanel'
@@ -237,10 +239,13 @@ export default function AdminPayments() {
   // Tab 1: Gateways
   const gatewaysQuery = useListPaymentGateways()
   const banksQuery = useListBanks()
+  const lookupAccountMutation = useLookupAccount()
   const updateGatewayMutation = useUpdatePaymentGateway()
 
   const [codEnabledDraft, setCodEnabledDraft] = useState<boolean | null>(null)
   const [vietQrDraft, setVietQrDraft] = useState<VietQrDraftState | null>(null)
+  const [bankLookupError, setBankLookupError] = useState<string | null>(null)
+  const [isNapasVerified, setIsNapasVerified] = useState(false)
 
   let gateways: PaymentGatewayResponse[] = []
   if (gatewaysQuery.data !== undefined && gatewaysQuery.data.status === 200) {
@@ -275,6 +280,43 @@ export default function AdminPayments() {
       ...vietQrForm,
       [field]: value,
     })
+  }
+
+  async function handleLookupVietQrAccount(binOverride?: string, accountOverride?: string) {
+    const bin = (binOverride ?? vietQrForm.bankBin).trim()
+    const acc = (accountOverride ?? vietQrForm.accountNumber).trim()
+    if (bin === '' || acc.length < 6) {
+      return
+    }
+    setBankLookupError(null)
+    try {
+      const res = await lookupAccountMutation.mutateAsync({
+        data: {
+          bin,
+          accountNumber: acc,
+        },
+      })
+      const data = takeData(res)
+      if (data.accountName !== undefined && data.accountName !== '') {
+        setVietQrDraft({
+          ...vietQrForm,
+          bankBin: bin,
+          accountNumber: acc,
+          accountName: data.accountName,
+        })
+        setIsNapasVerified(true)
+        notify.success('Đã tra cứu tên chủ tài khoản Napas 24/7')
+      }
+    } catch (err: unknown) {
+      setIsNapasVerified(false)
+      setBankLookupError(
+        safeErrorMessage(
+          err,
+          'lookupAccount',
+          'Không tìm thấy tài khoản tại ngân hàng đã chọn. Vui lòng kiểm tra lại số tài khoản.',
+        ),
+      )
+    }
   }
 
   function handleSaveCod() {
@@ -568,6 +610,10 @@ export default function AdminPayments() {
   const vietQrStatus = enabledStatusMeta(vietQrForm.enabled)
   const hasQrPreview = vietQrForm.bankBin.trim() !== '' && vietQrForm.accountNumber.trim() !== ''
   const qrPreviewUrl = `https://img.vietqr.io/image/${vietQrForm.bankBin.trim()}-${vietQrForm.accountNumber.trim()}-compact2.png?accountName=${encodeURIComponent(vietQrForm.accountName.trim())}`
+  let lookupButtonLabel = 'Tra cứu Napas'
+  if (lookupAccountMutation.isPending) {
+    lookupButtonLabel = 'Đang tra...'
+  }
 
   let needRefundBtnClass = cn(
     'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50/90 px-3.5 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300',
@@ -806,59 +852,107 @@ export default function AdminPayments() {
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
-                        <label htmlFor="vietqr-bank-bin" className={LABEL_CLASS}>
-                          Ngân hàng nhận tiền (NAPAS)
-                        </label>
-                        <select
-                          id="vietqr-bank-bin"
-                          value={vietQrForm.bankBin}
-                          onChange={function (event) {
-                            updateVietQrField('bankBin', event.target.value)
+                        <BankSearchSelector
+                          banks={banks}
+                          selectedBankBin={vietQrForm.bankBin}
+                          fallbackBankLabel={
+                            vietQrGateway?.bankName ?? vietQrGateway?.bankCode ?? ''
+                          }
+                          idPrefix="vietqr-bank"
+                          onSelectBank={function (bank) {
+                            const nextBin = bank.bin ?? ''
+                            setIsNapasVerified(false)
+                            setBankLookupError(null)
+                            updateVietQrField('bankBin', nextBin)
+                            const cleanAcc = vietQrForm.accountNumber.trim()
+                            if (nextBin !== '' && cleanAcc.length >= 6) {
+                              void handleLookupVietQrAccount(nextBin, cleanAcc)
+                            }
                           }}
-                          className={INPUT_CLASS}
-                        >
-                          <option value="">-- Chọn ngân hàng NAPAS --</option>
-                          {banks.map(function (bank) {
-                            const bin = bank.bin ?? ''
-                            const shortLabel = bank.shortName ?? bank.code ?? bin
-                            return (
-                              <option key={bin} value={bin}>
-                                {shortLabel} ({bin}) — {bank.name}
-                              </option>
-                            )
-                          })}
-                        </select>
+                        />
                       </div>
 
                       <div>
                         <label htmlFor="vietqr-account-number" className={LABEL_CLASS}>
                           Số tài khoản nhận tiền
                         </label>
-                        <input
-                          id="vietqr-account-number"
-                          type="text"
-                          value={vietQrForm.accountNumber}
-                          onChange={function (event) {
-                            updateVietQrField('accountNumber', event.target.value)
-                          }}
-                          placeholder="0123456789"
-                          className={cn(INPUT_CLASS, 'tabular-nums')}
-                        />
+                        <div className="relative">
+                          <input
+                            id="vietqr-account-number"
+                            type="text"
+                            value={vietQrForm.accountNumber}
+                            onChange={function (event) {
+                              const cleaned = event.target.value.replace(/[^0-9a-zA-Z]/g, '')
+                              setIsNapasVerified(false)
+                              setBankLookupError(null)
+                              updateVietQrField('accountNumber', cleaned)
+                            }}
+                            onBlur={function () {
+                              const cleanAcc = vietQrForm.accountNumber.trim()
+                              if (
+                                cleanAcc.length >= 6 &&
+                                vietQrForm.bankBin.trim() !== '' &&
+                                lookupAccountMutation.isPending === false
+                              ) {
+                                void handleLookupVietQrAccount(vietQrForm.bankBin, cleanAcc)
+                              }
+                            }}
+                            placeholder="0123456789"
+                            className={cn(INPUT_CLASS, 'pr-28 font-mono tabular-nums')}
+                          />
+                          <button
+                            type="button"
+                            disabled={
+                              lookupAccountMutation.isPending ||
+                              vietQrForm.bankBin.trim() === '' ||
+                              vietQrForm.accountNumber.trim().length < 6
+                            }
+                            onClick={function () {
+                              void handleLookupVietQrAccount()
+                            }}
+                            className="absolute top-1.5 right-1.5 inline-flex cursor-pointer items-center gap-1 rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {lookupAccountMutation.isPending && (
+                              <ArrowClockwise size={13} className="animate-spin" />
+                            )}
+                            <span>{lookupButtonLabel}</span>
+                          </button>
+                        </div>
+                        {bankLookupError !== null && (
+                          <p
+                            role="alert"
+                            className="mt-1.5 flex items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400"
+                          >
+                            <WarningCircle size={14} weight="bold" className="shrink-0" />
+                            <span>{bankLookupError}</span>
+                          </p>
+                        )}
                       </div>
 
                       <div>
-                        <label htmlFor="vietqr-account-name" className={LABEL_CLASS}>
-                          Tên chủ tài khoản
-                        </label>
+                        <div className="mb-1 flex items-center justify-between">
+                          <label
+                            htmlFor="vietqr-account-name"
+                            className="text-xs font-bold text-zinc-700 dark:text-zinc-300"
+                          >
+                            Tên chủ tài khoản
+                          </label>
+                          {isNapasVerified && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                              <CheckCircle size={12} weight="fill" />
+                              <span>Đã xác thực Napas 24/7</span>
+                            </span>
+                          )}
+                        </div>
                         <input
                           id="vietqr-account-name"
                           type="text"
                           value={vietQrForm.accountName}
                           onChange={function (event) {
-                            updateVietQrField('accountName', event.target.value)
+                            updateVietQrField('accountName', event.target.value.toUpperCase())
                           }}
-                          placeholder="CONG TY TNHH DHMQ"
-                          className={INPUT_CLASS}
+                          placeholder="Tự động điền khi tra cứu Napas hoặc nhập tay"
+                          className={cn(INPUT_CLASS, 'uppercase')}
                         />
                       </div>
 

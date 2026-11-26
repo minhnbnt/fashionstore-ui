@@ -35,6 +35,7 @@ vi.mock('@generated/endpoints/admin-payments/admin-payments', () => ({
 vi.mock('@generated/endpoints/banks/banks', () => ({
   getListBanksQueryKey: vi.fn(() => ['/api/public/banks'] as const),
   useListBanks: vi.fn(),
+  useLookupAccount: vi.fn(),
 }))
 
 vi.mock('@generated/endpoints/admin-stats/admin-stats', () => ({
@@ -99,7 +100,7 @@ import {
   useRejectWithdrawal,
   useUpdatePaymentGateway,
 } from '@generated/endpoints/admin-payments/admin-payments'
-import { useListBanks } from '@generated/endpoints/banks/banks'
+import { useListBanks, useLookupAccount } from '@generated/endpoints/banks/banks'
 
 const MOCK_GATEWAYS = [
   {
@@ -262,6 +263,7 @@ function renderPage() {
 
 describe('AdminPayments', () => {
   const updateGatewayMutateAsync = vi.fn()
+  const lookupAccountMutateAsync = vi.fn()
   const confirmTransferMutateAsync = vi.fn()
   const markRefundedMutateAsync = vi.fn()
   const approveWithdrawalMutateAsync = vi.fn()
@@ -273,6 +275,14 @@ describe('AdminPayments', () => {
     updateGatewayMutateAsync.mockResolvedValue({
       status: 200,
       data: MOCK_GATEWAYS[1],
+    })
+    lookupAccountMutateAsync.mockResolvedValue({
+      status: 200,
+      data: {
+        bankCode: 'MB',
+        accountNumber: '9999888877',
+        accountName: 'CONG TY CP DHMQ',
+      },
     })
     confirmTransferMutateAsync.mockResolvedValue({
       status: 200,
@@ -325,6 +335,11 @@ describe('AdminPayments', () => {
       error: null,
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof useListBanks>)
+
+    vi.mocked(useLookupAccount).mockReturnValue({
+      mutateAsync: lookupAccountMutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useLookupAccount>)
 
     vi.mocked(useUpdatePaymentGateway).mockReturnValue({
       mutateAsync: updateGatewayMutateAsync,
@@ -388,27 +403,41 @@ describe('AdminPayments', () => {
     cleanup()
   })
 
-  it('hiển thị cấu hình COD và VIETQR trên tab Cổng thanh toán và gọi updatePaymentGateway khi lưu', async function () {
+  it('hiển thị cấu hình COD và VIETQR, gọi API danh sách ngân hàng + tra cứu chủ tài khoản Napas 24/7 và lưu cấu hình', async function () {
     renderPage()
 
     expect(screen.getByText('Thanh toán khi nhận hàng (COD)')).toBeTruthy()
     expect(screen.getByText('Chuyển khoản ngân hàng (VietQR)')).toBeTruthy()
 
-    const bankSelect = screen.getByLabelText('Ngân hàng nhận tiền (NAPAS)') as HTMLSelectElement
+    const bankTrigger = screen.getByLabelText(/Ngân hàng thụ hưởng/i)
     const accountNumberInput = screen.getByLabelText('Số tài khoản nhận tiền') as HTMLInputElement
     const accountNameInput = screen.getByLabelText('Tên chủ tài khoản') as HTMLInputElement
     const webhookSecretInput = screen.getByLabelText('Webhook Secret') as HTMLInputElement
     const sandboxSwitch = screen.getByRole('switch', { name: 'Chế độ Demo Sandbox' })
 
-    expect(bankSelect.value).toBe('970436')
     expect(accountNumberInput.value).toBe('0123456789')
     expect(accountNameInput.value).toBe('CONG TY TNHH DHMQ')
     expect(webhookSecretInput.placeholder).toBe('Đã thiết lập — để trống nếu giữ nguyên')
     expect(sandboxSwitch.getAttribute('aria-checked')).toBe('true')
 
-    fireEvent.change(bankSelect, { target: { value: '970422' } })
     fireEvent.change(accountNumberInput, { target: { value: '9999888877' } })
-    fireEvent.change(accountNameInput, { target: { value: 'CONG TY CP DHMQ' } })
+    fireEvent.click(bankTrigger)
+    fireEvent.click(screen.getByText('MBBank'))
+
+    await waitFor(function () {
+      expect(lookupAccountMutateAsync).toHaveBeenCalledWith({
+        data: {
+          bin: '970422',
+          accountNumber: '9999888877',
+        },
+      })
+    })
+
+    await waitFor(function () {
+      expect(accountNameInput.value).toBe('CONG TY CP DHMQ')
+    })
+    expect(screen.getByText('Đã xác thực Napas 24/7')).toBeTruthy()
+
     fireEvent.change(webhookSecretInput, { target: { value: 'secret-2026' } })
     fireEvent.click(sandboxSwitch)
 
