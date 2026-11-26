@@ -605,32 +605,38 @@ export default function OrderDetail() {
             </div>
 
             <div className="space-y-2 border-t border-sky-100 pt-4 text-sm dark:border-white/10">
-              <div className="flex justify-between text-zinc-600 dark:text-zinc-300">
-                <span>Tạm tính</span>
-                <span className="tabular-nums">{formatVnd(order.subtotal ?? 0)}</span>
+              <div className="flex items-center justify-between gap-2 text-zinc-600 dark:text-zinc-300">
+                <span className="whitespace-nowrap">Tạm tính</span>
+                <span className="shrink-0 whitespace-nowrap tabular-nums">
+                  {formatVnd(order.subtotal ?? 0)}
+                </span>
               </div>
-              <div className="flex justify-between text-zinc-600 dark:text-zinc-300">
-                <span>Phí vận chuyển</span>
-                <span className="tabular-nums">{formatVnd(order.shippingFee ?? 0)}</span>
+              <div className="flex items-center justify-between gap-2 text-zinc-600 dark:text-zinc-300">
+                <span className="whitespace-nowrap">Phí vận chuyển</span>
+                <span className="shrink-0 whitespace-nowrap tabular-nums">
+                  {formatVnd(order.shippingFee ?? 0)}
+                </span>
               </div>
               {(order.discountAmount ?? 0) > 0 && (
-                <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-300">
-                  <span className="flex items-center gap-1.5">
-                    <span>Voucher Shop</span>
+                <div className="flex items-center justify-between gap-2 text-emerald-700 dark:text-emerald-300">
+                  <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    <span className="whitespace-nowrap">Voucher Shop</span>
                     {Boolean(order.voucherCode) && (
-                      <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-xs font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
+                      <span className="truncate rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[11px] leading-none font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
                         {order.voucherCode}
                       </span>
                     )}
                   </span>
-                  <span className="font-bold tabular-nums">
+                  <span className="shrink-0 font-bold whitespace-nowrap tabular-nums">
                     -{formatVnd(order.discountAmount ?? 0)}
                   </span>
                 </div>
               )}
-              <div className="flex justify-between border-t border-sky-100 pt-2 text-base font-extrabold text-zinc-900 dark:border-white/10 dark:text-white">
-                <span>Tổng cộng</span>
-                <span className="tabular-nums">{formatVnd(order.total ?? 0)}</span>
+              <div className="flex items-center justify-between gap-2 border-t border-sky-100 pt-2 text-base font-extrabold text-zinc-900 dark:border-white/10 dark:text-white">
+                <span className="whitespace-nowrap">Tổng cộng</span>
+                <span className="shrink-0 whitespace-nowrap tabular-nums">
+                  {formatVnd(order.total ?? 0)}
+                </span>
               </div>
               {Boolean(order.paymentStatus) && (
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">

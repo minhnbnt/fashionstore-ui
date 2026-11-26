@@ -830,14 +830,14 @@ export default function SellerOrdersTab({ shopId }: Props) {
                     <div className="flex flex-col items-end gap-2.5">
                       <div className="text-right">
                         {rawDiscountAmount > 0 && (
-                          <div className="mb-1 flex items-center justify-end gap-1.5 text-xs text-emerald-700 dark:text-emerald-300">
-                            <span>Voucher Shop</span>
+                          <div className="mb-1 flex flex-wrap items-center justify-end gap-1.5 text-xs text-emerald-700 dark:text-emerald-300">
+                            <span className="whitespace-nowrap">Voucher Shop</span>
                             {Boolean(rawOrder?.voucherCode) && (
-                              <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
+                              <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] leading-none font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
                                 {rawOrder?.voucherCode}
                               </span>
                             )}
-                            <span className="font-bold tabular-nums">
+                            <span className="shrink-0 font-bold whitespace-nowrap tabular-nums">
                               -{formatVnd(rawDiscountAmount)}
                             </span>
                           </div>
@@ -1103,14 +1103,14 @@ export default function SellerOrdersTab({ shopId }: Props) {
                     selectedOrderForDetail.paymentMethod}
                 </p>
                 {(orderById.get(selectedOrderForDetail.id)?.discountAmount ?? 0) > 0 && (
-                  <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                    <span>Voucher Shop</span>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                    <span className="whitespace-nowrap">Voucher Shop</span>
                     {Boolean(orderById.get(selectedOrderForDetail.id)?.voucherCode) && (
-                      <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
+                      <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] leading-none font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
                         {orderById.get(selectedOrderForDetail.id)?.voucherCode}
                       </span>
                     )}
-                    <span className="tabular-nums">
+                    <span className="shrink-0 whitespace-nowrap tabular-nums">
                       -{formatVnd(orderById.get(selectedOrderForDetail.id)?.discountAmount ?? 0)}
                     </span>
                   </p>

@@ -13,7 +13,12 @@ import { useQueryClient } from '@tanstack/react-query'
 import Modal from '@/components/Modal'
 import { useAllShopProducts } from '@/hooks/useAllShopProducts'
 import { takeData } from '@/lib/api/apiAdapters'
-import { formatVnd } from '@/lib/format'
+import {
+  formatMoneyInput,
+  formatNumberWithDots,
+  formatVnd,
+  parseNumberFromDots,
+} from '@/lib/format'
 import { notify } from '@/lib/notifications'
 import {
   cn,
@@ -174,24 +179,29 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
         setDescription(detailData.description ?? '')
         if (detailData.discountType === 'PERCENTAGE') {
           setDiscountType('PERCENTAGE')
+          if (detailData.discountValue !== undefined) {
+            setDiscountValue(String(detailData.discountValue))
+          } else {
+            setDiscountValue('')
+          }
         } else {
           setDiscountType('FIXED_AMOUNT')
-        }
-        if (detailData.discountValue !== undefined) {
-          setDiscountValue(String(detailData.discountValue))
-        } else {
-          setDiscountValue('')
+          if (detailData.discountValue !== undefined) {
+            setDiscountValue(formatNumberWithDots(detailData.discountValue))
+          } else {
+            setDiscountValue('')
+          }
         }
         if (
           detailData.maxDiscountAmount !== null &&
           detailData.maxDiscountAmount !== undefined &&
           detailData.maxDiscountAmount > 0
         ) {
-          setMaxDiscountAmount(String(detailData.maxDiscountAmount))
+          setMaxDiscountAmount(formatNumberWithDots(detailData.maxDiscountAmount))
         } else {
           setMaxDiscountAmount('')
         }
-        setMinOrderSubtotal(String(detailData.minOrderSubtotal ?? 0))
+        setMinOrderSubtotal(formatNumberWithDots(detailData.minOrderSubtotal ?? 0))
         if (detailData.productScope === 'SPECIFIC_PRODUCTS') {
           setProductScope('SPECIFIC_PRODUCTS')
         } else {
@@ -277,8 +287,12 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
   }
 
   let discountValueLabel = 'Mức giảm (₫)'
+  let discountInputType: 'text' | 'number' = 'text'
+  let discountPlaceholder = 'VD: 50.000'
   if (discountType === 'PERCENTAGE') {
     discountValueLabel = 'Mức giảm (%)'
+    discountInputType = 'number'
+    discountPlaceholder = 'Nhập phần trăm (1 - 99)'
   }
 
   const filteredProducts = shopProducts.filter(function (item) {
@@ -327,7 +341,15 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
       return
     }
 
-    const parsedDiscountValue = Number(discountValue)
+    let parsedDiscountValue = Number.NaN
+    if (discountType === 'FIXED_AMOUNT') {
+      const fromDots = parseNumberFromDots(discountValue)
+      if (fromDots !== null) {
+        parsedDiscountValue = fromDots
+      }
+    } else {
+      parsedDiscountValue = Number(discountValue)
+    }
     if (Number.isNaN(parsedDiscountValue) || parsedDiscountValue <= 0) {
       setFormError('Vui lòng nhập mức giảm hợp lệ lớn hơn 0.')
       return
@@ -340,15 +362,23 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
 
     let parsedMaxDiscount: number | null = null
     if (discountType === 'PERCENTAGE' && maxDiscountAmount.trim() !== '') {
-      const candidateMax = Number(maxDiscountAmount)
-      if (Number.isNaN(candidateMax) || candidateMax <= 0) {
+      const candidateMax = parseNumberFromDots(maxDiscountAmount)
+      if (candidateMax === null || candidateMax <= 0) {
         setFormError('Mức giảm tối đa phải là số dương.')
         return
       }
       parsedMaxDiscount = Math.round(candidateMax)
     }
 
-    const parsedMinOrder = Number(minOrderSubtotal)
+    let parsedMinOrder = Number.NaN
+    if (minOrderSubtotal.trim() === '') {
+      parsedMinOrder = 0
+    } else {
+      const candidateMin = parseNumberFromDots(minOrderSubtotal)
+      if (candidateMin !== null) {
+        parsedMinOrder = candidateMin
+      }
+    }
     if (Number.isNaN(parsedMinOrder) || parsedMinOrder < 0) {
       setFormError('Giá trị đơn hàng tối thiểu không được nhỏ hơn 0.')
       return
@@ -450,7 +480,7 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Code */}
-          <div>
+          <div className="flex flex-col justify-end">
             <div className="mb-1.5 flex items-center justify-between">
               <label
                 htmlFor="voucher-code"
@@ -483,7 +513,7 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
           </div>
 
           {/* Name */}
-          <div>
+          <div className="flex flex-col justify-end">
             <label htmlFor="voucher-name" className={LABEL_CLASS}>
               Tên chương trình
             </label>
@@ -521,8 +551,11 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
 
         {/* Discount Type, Value & Max Discount */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
-            <label htmlFor="voucher-discount-type" className={LABEL_CLASS}>
+          <div className="flex flex-col justify-end">
+            <label
+              htmlFor="voucher-discount-type"
+              className={cn(LABEL_CLASS, 'sm:text-[13px] sm:whitespace-nowrap')}
+            >
               Loại giảm giá
             </label>
             <select
@@ -530,7 +563,18 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
               value={discountType}
               disabled={isCoreLocked}
               onChange={function (e) {
-                setDiscountType(e.target.value as CreateShopVoucherRequestDiscountType)
+                const nextType = e.target.value as CreateShopVoucherRequestDiscountType
+                setDiscountType(nextType)
+                if (nextType === 'FIXED_AMOUNT') {
+                  setDiscountValue(formatMoneyInput(discountValue))
+                } else {
+                  const parsed = parseNumberFromDots(discountValue)
+                  if (parsed !== null) {
+                    setDiscountValue(String(parsed))
+                  } else {
+                    setDiscountValue('')
+                  }
+                }
               }}
               className={cn(INPUT_CLASS, 'disabled:opacity-60')}
             >
@@ -539,40 +583,51 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
             </select>
           </div>
 
-          <div>
-            <label htmlFor="voucher-discount-value" className={LABEL_CLASS}>
+          <div className="flex flex-col justify-end">
+            <label
+              htmlFor="voucher-discount-value"
+              className={cn(LABEL_CLASS, 'sm:text-[13px] sm:whitespace-nowrap')}
+            >
               {discountValueLabel}
             </label>
             <input
               id="voucher-discount-value"
-              type="number"
+              type={discountInputType}
+              inputMode="numeric"
               min={1}
               value={discountValue}
               disabled={isCoreLocked}
               onChange={function (e) {
-                setDiscountValue(e.target.value)
+                if (discountType === 'FIXED_AMOUNT') {
+                  setDiscountValue(formatMoneyInput(e.target.value))
+                } else {
+                  setDiscountValue(e.target.value)
+                }
               }}
-              placeholder="Nhập giá trị giảm"
-              className={cn(INPUT_CLASS, 'disabled:opacity-60')}
+              placeholder={discountPlaceholder}
+              className={cn(INPUT_CLASS, 'tabular-nums disabled:opacity-60')}
             />
           </div>
 
           {discountType === 'PERCENTAGE' && (
-            <div>
-              <label htmlFor="voucher-max-discount" className={LABEL_CLASS}>
+            <div className="flex flex-col justify-end">
+              <label
+                htmlFor="voucher-max-discount"
+                className={cn(LABEL_CLASS, 'sm:text-[13px] sm:whitespace-nowrap')}
+              >
                 Giảm tối đa (₫)
               </label>
               <input
                 id="voucher-max-discount"
-                type="number"
-                min={0}
+                type="text"
+                inputMode="numeric"
                 value={maxDiscountAmount}
                 disabled={isCoreLocked}
                 onChange={function (e) {
-                  setMaxDiscountAmount(e.target.value)
+                  setMaxDiscountAmount(formatMoneyInput(e.target.value))
                 }}
                 placeholder="Không giới hạn nếu bỏ trống"
-                className={cn(INPUT_CLASS, 'disabled:opacity-60')}
+                className={cn(INPUT_CLASS, 'tabular-nums disabled:opacity-60')}
               />
             </div>
           )}
@@ -580,25 +635,32 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
 
         {/* Min Order Subtotal, Usage Limit, Per Buyer Limit */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
-            <label htmlFor="voucher-min-order" className={LABEL_CLASS}>
+          <div className="flex flex-col justify-end">
+            <label
+              htmlFor="voucher-min-order"
+              className={cn(LABEL_CLASS, 'sm:text-[13px] sm:whitespace-nowrap')}
+            >
               Đơn hàng tối thiểu (₫)
             </label>
             <input
               id="voucher-min-order"
-              type="number"
-              min={0}
+              type="text"
+              inputMode="numeric"
               value={minOrderSubtotal}
               disabled={isCoreLocked}
               onChange={function (e) {
-                setMinOrderSubtotal(e.target.value)
+                setMinOrderSubtotal(formatMoneyInput(e.target.value))
               }}
-              className={cn(INPUT_CLASS, 'disabled:opacity-60')}
+              placeholder="0"
+              className={cn(INPUT_CLASS, 'tabular-nums disabled:opacity-60')}
             />
           </div>
 
-          <div>
-            <label htmlFor="voucher-usage-limit" className={LABEL_CLASS}>
+          <div className="flex flex-col justify-end">
+            <label
+              htmlFor="voucher-usage-limit"
+              className={cn(LABEL_CLASS, 'sm:text-[13px] sm:whitespace-nowrap')}
+            >
               Tổng lượt sử dụng tối đa
             </label>
             <input
@@ -613,8 +675,11 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
             />
           </div>
 
-          <div>
-            <label htmlFor="voucher-per-buyer-limit" className={LABEL_CLASS}>
+          <div className="flex flex-col justify-end">
+            <label
+              htmlFor="voucher-per-buyer-limit"
+              className={cn(LABEL_CLASS, 'sm:text-[13px] sm:whitespace-nowrap')}
+            >
               Giới hạn lượt dùng mỗi khách
             </label>
             <input
@@ -632,7 +697,7 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
 
         {/* Product Scope & Visibility */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+          <div className="flex flex-col justify-end">
             <label htmlFor="voucher-product-scope" className={LABEL_CLASS}>
               Phạm vi sản phẩm
             </label>
@@ -650,7 +715,7 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
             </select>
           </div>
 
-          <div>
+          <div className="flex flex-col justify-end">
             <label htmlFor="voucher-visibility" className={LABEL_CLASS}>
               Chế độ hiển thị
             </label>
@@ -735,7 +800,7 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
 
         {/* StartsAt & EndsAt */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
+          <div className="flex flex-col justify-end">
             <label htmlFor="voucher-starts-at" className={LABEL_CLASS}>
               Thời gian bắt đầu
             </label>
@@ -751,7 +816,7 @@ export default function VoucherFormModal(props: VoucherFormModalProps) {
             />
           </div>
 
-          <div>
+          <div className="flex flex-col justify-end">
             <label htmlFor="voucher-ends-at" className={LABEL_CLASS}>
               Thời gian kết thúc
             </label>

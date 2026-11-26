@@ -520,8 +520,9 @@ describe('AdminPayments', () => {
     expect(screen.queryByRole('button', { name: /Nhận đủ 100%/i })).toBeNull()
 
     const amountInput = screen.getByLabelText('Số tiền thực nhận (VNĐ)') as HTMLInputElement
-    expect(amountInput.value).toBe('500000')
+    expect(amountInput.value).toBe('500.000')
     fireEvent.change(amountInput, { target: { value: '250000' } })
+    expect(amountInput.value).toBe('250.000')
 
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận đã nhận tiền' }))
 

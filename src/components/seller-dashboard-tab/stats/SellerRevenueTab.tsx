@@ -19,7 +19,7 @@ import { BarChart } from '@/components/ui/charts'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { DashboardSkeleton } from '@/components/ui/Skeleton'
 import { takeData } from '@/lib/api/apiAdapters'
-import { formatDateTime, formatVnd } from '@/lib/format'
+import { formatDateTime, formatNumberWithDots, formatVnd, parseNumberFromDots } from '@/lib/format'
 import { notify } from '@/lib/notifications'
 import { settlementItem, withdrawalItem } from '@/lib/seller/sellerAdapters'
 import { useSellerPermissions } from '@/lib/seller/sellerPermissions'
@@ -587,15 +587,14 @@ export default function SellerRevenueTab({ shopId, bankName, bankAccount, bankHo
             </label>
             <input
               id="withdrawAmountInput"
-              type="number"
-              min={0}
-              max={walletBalance}
+              type="text"
+              inputMode="numeric"
               disabled={!hasBankAccount || !hasSufficientBalance}
-              value={withdrawAmount}
+              value={formatNumberWithDots(withdrawAmount)}
               onChange={function (e) {
-                setWithdrawAmount(Number(e.target.value))
+                setWithdrawAmount(parseNumberFromDots(e.target.value) ?? 0)
               }}
-              className={cn(INPUT_CLASS, 'mt-1.5 font-black disabled:opacity-50')}
+              className={cn(INPUT_CLASS, 'mt-1.5 font-black tabular-nums disabled:opacity-50')}
             />
           </div>
 

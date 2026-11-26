@@ -39,7 +39,13 @@ import EmptyState from '@/components/ui/EmptyState'
 import { Skeleton, TableRowsSkeleton } from '@/components/ui/Skeleton'
 import StatePanel from '@/components/ui/StatePanel'
 import { fallbackImageOnError, takeData } from '@/lib/api/apiAdapters'
-import { formatDateTime, formatVnd } from '@/lib/format'
+import {
+  formatDateTime,
+  formatMoneyInput,
+  formatNumberWithDots,
+  formatVnd,
+  parseNumberFromDots,
+} from '@/lib/format'
 import { notify, safeErrorMessage } from '@/lib/notifications'
 import {
   badgeToneClass,
@@ -471,7 +477,7 @@ export default function AdminPayments() {
 
   function openConfirmTransferModal(tx: PaymentTransactionResponse) {
     setConfirmTransferTarget(tx)
-    setConfirmTransferAmount(String(tx.amount ?? 0))
+    setConfirmTransferAmount(formatNumberWithDots(tx.amount ?? 0))
     setConfirmTransferError(null)
   }
 
@@ -486,8 +492,8 @@ export default function AdminPayments() {
     if (confirmTransferTarget === null || confirmTransferTarget.id === undefined) {
       return
     }
-    const parsed = Number(confirmTransferAmount.trim())
-    if (Number.isFinite(parsed) === false || parsed <= 0) {
+    const parsed = parseNumberFromDots(confirmTransferAmount)
+    if (parsed === null || Number.isFinite(parsed) === false || parsed <= 0) {
       const msg = 'Vui lòng nhập số tiền thực nhận lớn hơn 0.'
       setConfirmTransferError(msg)
       notify.warning('Số tiền chưa hợp lệ', msg)
@@ -1493,11 +1499,11 @@ export default function AdminPayments() {
               </label>
               <input
                 id="confirm-transfer-amount-input"
-                type="number"
-                min={1}
+                type="text"
+                inputMode="numeric"
                 value={confirmTransferAmount}
                 onChange={function (event) {
-                  setConfirmTransferAmount(event.target.value)
+                  setConfirmTransferAmount(formatMoneyInput(event.target.value))
                   if (confirmTransferError !== null) {
                     setConfirmTransferError(null)
                   }

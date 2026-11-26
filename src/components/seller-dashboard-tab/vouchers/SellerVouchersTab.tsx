@@ -65,9 +65,16 @@ const STATUS_TABS: Array<{ value: StatusFilter; label: string }> = [
 
 function filterPillClass(active: boolean): string {
   if (active) {
-    return 'btn-primary cursor-pointer rounded-full px-4 py-2 text-xs font-bold transition'
+    return 'btn-primary flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition'
   }
-  return 'cursor-pointer rounded-full px-4 py-2 text-xs font-bold text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white'
+  return 'flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-white'
+}
+
+function filterCountBadgeClass(active: boolean): string {
+  if (active) {
+    return 'rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black text-white'
+  }
+  return 'rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-500 dark:bg-white/10 dark:text-zinc-400'
 }
 
 function renderStatusBadge(status?: SellerVoucherResponseStatus) {
@@ -211,6 +218,16 @@ export default function SellerVouchersTab({ shopId }: SellerVouchersTabProps) {
     },
   })
 
+  const allVouchersQuery = useListSellerVouchers(
+    shopId,
+    { page: 0, size: 100 },
+    {
+      query: {
+        enabled: shopId !== '',
+      },
+    },
+  )
+
   let vouchers: SellerVoucherResponse[] = []
   let totalItems = 0
   let totalPages = 1
@@ -225,17 +242,54 @@ export default function SellerVouchersTab({ shopId }: SellerVouchersTabProps) {
     }
   }
 
+  let statsSourceVouchers = vouchers
+  let allCount = totalItems
+  if (allVouchersQuery.data !== undefined) {
+    const allPageData = takeData(allVouchersQuery.data)
+    if (allPageData && Array.isArray(allPageData.items)) {
+      statsSourceVouchers = allPageData.items
+      allCount = allPageData.total ?? allPageData.items.length
+    }
+  }
+
   let ongoingCount = 0
   let upcomingCount = 0
+  let pausedCount = 0
+  let depletedCount = 0
+  let expiredCount = 0
   let totalUsedCount = 0
-  for (const v of vouchers) {
+  for (const v of statsSourceVouchers) {
     if (v.status === 'ONGOING') {
       ongoingCount += 1
-    }
-    if (v.status === 'UPCOMING') {
+    } else if (v.status === 'UPCOMING') {
       upcomingCount += 1
+    } else if (v.status === 'PAUSED') {
+      pausedCount += 1
+    } else if (v.status === 'DEPLETED') {
+      depletedCount += 1
+    } else if (v.status === 'EXPIRED') {
+      expiredCount += 1
     }
     totalUsedCount += v.usedCount ?? 0
+  }
+
+  function getTabCount(tabValue: StatusFilter): number {
+    if (tabValue === 'ONGOING') {
+      return ongoingCount
+    }
+    if (tabValue === 'UPCOMING') {
+      return upcomingCount
+    }
+    if (tabValue === 'PAUSED') {
+      return pausedCount
+    }
+    if (tabValue === 'DEPLETED') {
+      return depletedCount
+    }
+    if (tabValue === 'EXPIRED') {
+      return expiredCount
+    }
+    return allCount
   }
 
   const toggleActiveMutation = useToggleSellerVoucherActive({
@@ -350,7 +404,7 @@ export default function SellerVouchersTab({ shopId }: SellerVouchersTabProps) {
             <span>Tổng chương trình</span>
             <Ticket size={18} className="text-zinc-400" />
           </div>
-          <p className="mt-2 text-2xl font-black text-zinc-900 dark:text-white">{totalItems}</p>
+          <p className="mt-2 text-2xl font-black text-zinc-900 dark:text-white">{allCount}</p>
         </div>
 
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-xs dark:border-emerald-900/30 dark:bg-emerald-950/20">
@@ -384,8 +438,10 @@ export default function SellerVouchersTab({ shopId }: SellerVouchersTabProps) {
 
       {/* Status Filter Tabs & Search Bar */}
       <div className={cn(PANEL_CLASS, 'space-y-4')}>
-        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 pb-3 dark:border-white/10">
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-zinc-200 pb-3 dark:border-white/10">
           {STATUS_TABS.map(function (tab) {
+            const isCurrent = statusFilter === tab.value
+            const tabCount = getTabCount(tab.value)
             return (
               <button
                 key={tab.value || 'ALL'}
@@ -394,9 +450,10 @@ export default function SellerVouchersTab({ shopId }: SellerVouchersTabProps) {
                   setStatusFilter(tab.value)
                   setPage(0)
                 }}
-                className={filterPillClass(statusFilter === tab.value)}
+                className={filterPillClass(isCurrent)}
               >
-                {tab.label}
+                <span>{tab.label}</span>
+                <span className={filterCountBadgeClass(isCurrent)}>{tabCount}</span>
               </button>
             )
           })}

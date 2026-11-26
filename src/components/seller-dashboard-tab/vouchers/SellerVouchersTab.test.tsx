@@ -314,6 +314,14 @@ describe('SellerVouchersTab', () => {
     expect(screen.getAllByText('Hết lượt').length).toBeGreaterThanOrEqual(2)
     expect(screen.getAllByText('Đã kết thúc').length).toBeGreaterThanOrEqual(2)
 
+    // Filter tabs display voucher counts
+    expect(screen.getByRole('button', { name: /Tất cả\s*5/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Đang diễn ra\s*1/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Sắp diễn ra\s*1/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Tạm dừng\s*1/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Hết lượt\s*1/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Đã kết thúc\s*1/i })).toBeTruthy()
+
     // Discount summaries
     expect(screen.getByText('15% · Tối đa 50.000 ₫')).toBeTruthy()
     expect(screen.getByText('30.000 ₫')).toBeTruthy()
@@ -347,6 +355,7 @@ describe('SellerVouchersTab', () => {
     fireEvent.change(codeInput, { target: { value: 'tet2027' } })
     fireEvent.change(nameInput, { target: { value: 'Khuyến mãi Tết 2027' } })
     fireEvent.change(discountValueInput, { target: { value: '50000' } })
+    expect((discountValueInput as HTMLInputElement).value).toBe('50.000')
 
     const saveBtn = screen.getByRole('button', { name: 'Lưu mã giảm giá' })
     fireEvent.click(saveBtn)
@@ -402,6 +411,8 @@ describe('SellerVouchersTab', () => {
     expect(maxDiscountInput.disabled).toBe(true)
     expect(minOrderInput.disabled).toBe(true)
     expect(productScopeSelect.disabled).toBe(true)
+    expect(maxDiscountInput.value).toBe('50.000')
+    expect(minOrderInput.value).toBe('200.000')
 
     // Editable fields remain enabled
     const nameInput = screen.getByLabelText('Tên chương trình') as HTMLInputElement

@@ -269,16 +269,18 @@ function DetailBody({
           <MoneyRow label="Tiền hàng" value={detail.subtotal ?? 0} />
           <MoneyRow label="Phí vận chuyển" value={detail.shippingFee ?? 0} />
           {discountAmount > 0 && (
-            <div className="flex items-center justify-between text-sm text-emerald-700 dark:text-emerald-300">
-              <span className="flex items-center gap-1.5">
-                <span>Voucher Shop</span>
+            <div className="flex items-center justify-between gap-2 text-sm text-emerald-700 dark:text-emerald-300">
+              <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <span className="whitespace-nowrap">Voucher Shop</span>
                 {Boolean(voucherCode) && (
-                  <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-xs font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
+                  <span className="truncate rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[11px] leading-none font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
                     {voucherCode}
                   </span>
                 )}
               </span>
-              <span className="font-bold tabular-nums">-{formatVnd(discountAmount)}</span>
+              <span className="shrink-0 font-bold whitespace-nowrap tabular-nums">
+                -{formatVnd(discountAmount)}
+              </span>
             </div>
           )}
           <MoneyRow label="Tổng cộng" value={order.total ?? 0} strong />
