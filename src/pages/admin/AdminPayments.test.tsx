@@ -25,6 +25,7 @@ vi.mock('@generated/endpoints/admin-payments/admin-payments', () => ({
   useListPaymentGateways: vi.fn(),
   useUpdatePaymentGateway: vi.fn(),
   useListPaymentTransactions: vi.fn(),
+  useConfirmPaymentTransfer: vi.fn(),
   useMarkTransactionRefunded: vi.fn(),
   useListAdminWithdrawals: vi.fn(),
   useApproveWithdrawal: vi.fn(),
@@ -90,6 +91,7 @@ vi.mock('@/lib/notifications', () => ({
 
 import {
   useApproveWithdrawal,
+  useConfirmPaymentTransfer,
   useListAdminWithdrawals,
   useListPaymentGateways,
   useListPaymentTransactions,
@@ -192,6 +194,31 @@ const MOCK_TRANSACTIONS = [
     ],
     createdAt: '2026-11-26T09:15:00Z',
   },
+  {
+    id: 'tx-3',
+    buyerId: 'buyer-3',
+    buyerEmail: 'khach3@dhmq.vn',
+    provider: 'VIETQR',
+    txnRef: 'DHMQ261126PEND',
+    amount: 500000,
+    receivedAmount: 0,
+    status: 'PENDING',
+    bankCode: 'VCB',
+    accountNumber: '0123456789',
+    refundStatus: 'NONE',
+    refundAmount: 0,
+    orders: [
+      {
+        orderId: 'ord-3',
+        orderCode: 'DH-103',
+        shopName: 'Atelier Saigon',
+        total: 500000,
+        orderStatus: 'AWAITING_PAYMENT',
+        paymentStatus: 'UNPAID',
+      },
+    ],
+    createdAt: '2026-11-26T09:30:00Z',
+  },
 ]
 
 const MOCK_WITHDRAWALS = [
@@ -235,6 +262,7 @@ function renderPage() {
 
 describe('AdminPayments', () => {
   const updateGatewayMutateAsync = vi.fn()
+  const confirmTransferMutateAsync = vi.fn()
   const markRefundedMutateAsync = vi.fn()
   const approveWithdrawalMutateAsync = vi.fn()
   const rejectWithdrawalMutateAsync = vi.fn()
@@ -245,6 +273,14 @@ describe('AdminPayments', () => {
     updateGatewayMutateAsync.mockResolvedValue({
       status: 200,
       data: MOCK_GATEWAYS[1],
+    })
+    confirmTransferMutateAsync.mockResolvedValue({
+      status: 200,
+      data: {
+        ...MOCK_TRANSACTIONS[2],
+        status: 'SUCCESS',
+        receivedAmount: 500000,
+      },
     })
     markRefundedMutateAsync.mockResolvedValue({
       status: 200,
@@ -310,6 +346,11 @@ describe('AdminPayments', () => {
       error: null,
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof useListPaymentTransactions>)
+
+    vi.mocked(useConfirmPaymentTransfer).mockReturnValue({
+      mutateAsync: confirmTransferMutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useConfirmPaymentTransfer>)
 
     vi.mocked(useMarkTransactionRefunded).mockReturnValue({
       mutateAsync: markRefundedMutateAsync,
@@ -390,13 +431,14 @@ describe('AdminPayments', () => {
     })
   })
 
-  it('hiển thị danh sách giao dịch, lọc nhanh Cần hoàn tiền và mở modal xác nhận hoàn tiền', async function () {
+  it('hiển thị danh sách giao dịch, hỗ trợ Admin xác nhận nhận tiền VietQR và đánh dấu hoàn tiền', async function () {
     renderPage()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Giao dịch & Hoàn tiền' }))
 
     expect(screen.getAllByText('DHMQ261126ABCD').length).toBeGreaterThan(0)
     expect(screen.getAllByText('DHMQ261126RFND').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('DHMQ261126PEND').length).toBeGreaterThan(0)
     expect(
       screen.getAllByText('Đơn hàng #DH-102 bị hủy sau khi đã thanh toán').length,
     ).toBeGreaterThan(0)
@@ -438,6 +480,26 @@ describe('AdminPayments', () => {
       data: {
         note: 'Đã chuyển khoản hoàn tiền qua Vietcombank mã GD 889900',
       },
+    })
+
+    const confirmTransferBtns = screen.getAllByRole('button', { name: 'Xác nhận nhận tiền' })
+    expect(confirmTransferBtns.length).toBeGreaterThan(0)
+    fireEvent.click(confirmTransferBtns[0])
+
+    expect(
+      screen.getByRole('heading', { name: 'Xác nhận nhận tiền chuyển khoản VietQR' }),
+    ).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Giả lập chuyển thiếu 50%/i }))
+    const amountInput = screen.getByLabelText('Số tiền thực nhận (VNĐ)') as HTMLInputElement
+    expect(amountInput.value).toBe('250000')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận đã nhận tiền' }))
+
+    await waitFor(function () {
+      expect(confirmTransferMutateAsync).toHaveBeenCalledWith({
+        id: 'tx-3',
+        data: { amount: 250000 },
+      })
     })
   })
 

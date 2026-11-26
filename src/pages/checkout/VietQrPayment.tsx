@@ -1,12 +1,6 @@
-import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 
-import { getMine3QueryKey } from '@generated/endpoints/orders/orders'
-import {
-  getGetVietQrSessionQueryKey,
-  useGetVietQrSession,
-  useSimulateVietQrTransfer,
-} from '@generated/endpoints/payments-vietqr/payments-vietqr'
+import { useGetVietQrSession } from '@generated/endpoints/payments-vietqr/payments-vietqr'
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,13 +9,11 @@ import {
   Clock,
   Copy,
   DownloadSimple,
-  Flask,
   QrCode,
   ShieldCheck,
   Storefront,
   WarningCircle,
 } from '@phosphor-icons/react'
-import { useQueryClient } from '@tanstack/react-query'
 
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import { PageSkeleton } from '@/components/ui/Skeleton'
@@ -48,8 +40,6 @@ function resolveRefetchInterval(status: string | undefined): number | false {
 
 export default function VietQrPayment() {
   const { txnRef = '' } = useParams()
-  const queryClient = useQueryClient()
-  const [simulatedSession, setSimulatedSession] = useState<VietQrSessionResponse | null>(null)
 
   const sessionQuery = useGetVietQrSession(txnRef, {
     query: {
@@ -64,14 +54,9 @@ export default function VietQrPayment() {
     },
   })
 
-  const simulateMutation = useSimulateVietQrTransfer()
-
   let session: VietQrSessionResponse | null = null
   if (sessionQuery.data !== undefined) {
     session = takeData(sessionQuery.data)
-  }
-  if (simulatedSession !== null && simulatedSession.txnRef === txnRef) {
-    session = simulatedSession
   }
 
   async function handleCopy(label: string, value: string | undefined) {
@@ -86,32 +71,6 @@ export default function VietQrPayment() {
     } catch {
       notify.info(label + ': ' + value)
     }
-  }
-
-  function handleSimulate(amount: number) {
-    if (txnRef === '') {
-      return
-    }
-    simulateMutation.mutate(
-      { txnRef, data: { amount } },
-      {
-        onSuccess: function (res) {
-          const updated = takeData(res)
-          setSimulatedSession(updated)
-          queryClient.setQueryData(getGetVietQrSessionQueryKey(txnRef), res)
-          void queryClient.invalidateQueries({ queryKey: getGetVietQrSessionQueryKey(txnRef) })
-          void queryClient.invalidateQueries({ queryKey: getMine3QueryKey() })
-          if (updated.status === 'SUCCESS') {
-            notify.success('Thanh toán VietQR thành công!')
-          } else if (updated.status === 'UNDERPAID') {
-            notify.warning('Giao dịch chuyển thiếu tiền đã được ghi nhận chờ hoàn tiền')
-          }
-        },
-        onError: function (err) {
-          notify.fromError(err, 'simulateVietQr', 'Không thể giả lập chuyển khoản VietQR')
-        },
-      },
-    )
   }
 
   if (sessionQuery.isLoading && session === null) {
@@ -141,7 +100,6 @@ export default function VietQrPayment() {
   const orders = session.orders ?? []
   const amount = session.amount ?? 0
   const receivedAmount = session.receivedAmount ?? 0
-  const halfAmount = Math.floor(amount / 2)
 
   return (
     <main className="mx-auto max-w-5xl px-4 pt-24 pb-16">
@@ -473,53 +431,6 @@ export default function VietQrPayment() {
                   })}
                 </div>
               </div>
-
-              {/* Công cụ Demo Sandbox */}
-              {session.sandboxMode === true && (
-                <div className="glass space-y-3 rounded-3xl border border-amber-300/80 bg-amber-50/70 p-6 dark:border-amber-500/30 dark:bg-amber-500/10">
-                  <div className="flex items-center gap-2">
-                    <Flask size={18} weight="fill" className="text-amber-700 dark:text-amber-300" />
-                    <h2 className="text-sm font-extrabold text-amber-900 dark:text-amber-200">
-                      Công cụ Demo Sandbox
-                    </h2>
-                  </div>
-                  <p className="text-xs text-amber-800 dark:text-amber-200/90">
-                    Cổng VietQR đang bật chế độ Demo Sandbox. Bấm nút bên dưới để giả lập webhook
-                    ngân hàng báo biến động số dư mà không cần chuyển tiền thật.
-                  </p>
-                  <div className="flex flex-wrap gap-3 pt-1">
-                    <button
-                      type="button"
-                      disabled={simulateMutation.isPending}
-                      onClick={function () {
-                        handleSimulate(amount)
-                      }}
-                      className={cn(
-                        'btn-primary inline-flex cursor-pointer items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50',
-                        FOCUS_RING_CLASS,
-                      )}
-                    >
-                      <CheckCircle size={15} weight="bold" />
-                      <span>Giả lập ngân hàng báo đã nhận đủ tiền</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={simulateMutation.isPending}
-                      onClick={function () {
-                        handleSimulate(halfAmount)
-                      }}
-                      className={cn(
-                        'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-400 bg-white/90 px-4 py-2.5 text-xs font-bold text-amber-900 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-amber-400/40 dark:bg-white/10 dark:text-amber-200 dark:hover:bg-white/15',
-                        FOCUS_RING_CLASS,
-                      )}
-                    >
-                      <WarningCircle size={15} weight="bold" />
-                      <span>Giả lập chuyển thiếu tiền (50%)</span>
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

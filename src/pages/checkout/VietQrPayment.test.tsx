@@ -3,34 +3,21 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 // @vitest-environment happy-dom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import VietQrPayment from './VietQrPayment'
 
-import type { SimulateVietQrRequest } from '@generated/model/simulateVietQrRequest'
 import type { VietQrSessionResponse } from '@generated/model/vietQrSessionResponse'
 
-const { sessionState, mockUseGetVietQrSession, simulateMutate, mockNotifySuccess } = vi.hoisted(
-  () => ({
-    sessionState: {
-      value: null as VietQrSessionResponse | null,
-      isLoading: false,
-      isError: false,
-    },
-    mockUseGetVietQrSession: vi.fn(),
-    simulateMutate: vi.fn<
-      (
-        variables: { txnRef: string; data?: SimulateVietQrRequest },
-        options?: {
-          onSuccess?: (res: { status: 200; data: VietQrSessionResponse; headers: Headers }) => void
-          onError?: (err: unknown) => void
-        },
-      ) => void
-    >(),
-    mockNotifySuccess: vi.fn(),
-  }),
-)
+const { sessionState, mockUseGetVietQrSession, mockNotifySuccess } = vi.hoisted(() => ({
+  sessionState: {
+    value: null as VietQrSessionResponse | null,
+    isLoading: false,
+    isError: false,
+  },
+  mockUseGetVietQrSession: vi.fn(),
+  mockNotifySuccess: vi.fn(),
+}))
 
 vi.mock('@/lib/notifications', () => ({
   notify: {
@@ -45,14 +32,6 @@ vi.mock('@/lib/notifications', () => ({
 vi.mock('@generated/endpoints/payments-vietqr/payments-vietqr', () => ({
   getGetVietQrSessionQueryKey: (txnRef: string) => [`/api/payments/vietqr/${txnRef}`],
   useGetVietQrSession: mockUseGetVietQrSession,
-  useSimulateVietQrTransfer: () => ({
-    mutate: simulateMutate,
-    isPending: false,
-  }),
-}))
-
-vi.mock('@generated/endpoints/orders/orders', () => ({
-  getMine3QueryKey: () => ['/api/orders/mine'],
 }))
 
 function sampleSession(overrides: Partial<VietQrSessionResponse> = {}): VietQrSessionResponse {
@@ -106,7 +85,6 @@ beforeEach(() => {
   sessionState.value = sampleSession()
   sessionState.isLoading = false
   sessionState.isError = false
-  simulateMutate.mockReset()
   mockNotifySuccess.mockReset()
   mockUseGetVietQrSession.mockReset()
   mockUseGetVietQrSession.mockImplementation(() => {
@@ -127,7 +105,8 @@ afterEach(() => {
 })
 
 describe('VietQrPayment (/payment/qr/:txnRef)', () => {
-  it('hiển thị ảnh QR, thông tin tài khoản nhận tiền, số tiền, nội dung chuyển khoản và danh sách đơn hàng', () => {
+  it('hiển thị ảnh QR, thông tin tài khoản nhận tiền, số tiền, nội dung chuyển khoản và không hiển thị nút giả lập cho khách hàng', () => {
+    sessionState.value = sampleSession({ sandboxMode: true })
     renderVietQrPayment()
 
     const qrImg = screen.getByRole('img', { name: 'Mã VietQR thanh toán' }) as HTMLImageElement
@@ -140,71 +119,37 @@ describe('VietQrPayment (/payment/qr/:txnRef)', () => {
     expect(screen.getByText('ORD-QR-01')).toBeTruthy()
     expect(screen.getByText('Shop Alpha')).toBeTruthy()
     expect(screen.queryByText('Công cụ Demo Sandbox')).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: 'Giả lập ngân hàng báo đã nhận đủ tiền' }),
+    ).toBeNull()
   })
 
-  it('khi sandboxMode === true hiển thị Công cụ Demo Sandbox, bấm giả lập đủ tiền gọi simulateVietQrTransfer và hiện Thanh toán thành công!', async () => {
-    const user = userEvent.setup()
-    sessionState.value = sampleSession({ sandboxMode: true })
-    simulateMutate.mockImplementation((_variables, options) => {
-      options?.onSuccess?.({
-        status: 200,
-        data: sampleSession({
-          sandboxMode: true,
-          status: 'SUCCESS',
-          receivedAmount: 748000,
-          paidAt: '2026-11-26T12:05:00Z',
-        }),
-        headers: new Headers(),
-      })
+  it('hiển thị màn hình Thanh toán thành công! khi phiên chuyển sang trạng thái SUCCESS', () => {
+    sessionState.value = sampleSession({
+      status: 'SUCCESS',
+      receivedAmount: 748000,
+      paidAt: '2026-11-26T12:05:00Z',
     })
 
     renderVietQrPayment()
 
-    expect(screen.getByText('Công cụ Demo Sandbox')).toBeTruthy()
-    const fullBtn = screen.getByRole('button', {
-      name: 'Giả lập ngân hàng báo đã nhận đủ tiền',
-    })
-    expect(screen.getByRole('button', { name: 'Giả lập chuyển thiếu tiền (50%)' })).toBeTruthy()
-
-    await user.click(fullBtn)
-
-    expect(simulateMutate).toHaveBeenCalledTimes(1)
-    expect(simulateMutate.mock.calls[0]?.[0]).toEqual({
-      txnRef: 'DHMQ9988776655',
-      data: { amount: 748000 },
-    })
     expect(screen.getByText('Thanh toán thành công!')).toBeTruthy()
+    expect(screen.getAllByText('748.000 ₫').length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: 'Xem đơn hàng của tôi' }).getAttribute('href')).toBe(
       '/account/orders',
     )
   })
 
-  it('bấm giả lập chuyển thiếu tiền (50%) gọi simulateVietQrTransfer với 50% số tiền và hiện cảnh báo UNDERPAID', async () => {
-    const user = userEvent.setup()
-    sessionState.value = sampleSession({ sandboxMode: true })
-    simulateMutate.mockImplementation((_variables, options) => {
-      options?.onSuccess?.({
-        status: 200,
-        data: sampleSession({
-          sandboxMode: true,
-          status: 'UNDERPAID',
-          receivedAmount: 374000,
-          refundStatus: 'PENDING',
-          refundAmount: 374000,
-        }),
-        headers: new Headers(),
-      })
+  it('hiển thị cảnh báo chuyển thiếu tiền khi phiên ở trạng thái UNDERPAID', () => {
+    sessionState.value = sampleSession({
+      status: 'UNDERPAID',
+      receivedAmount: 374000,
+      refundStatus: 'PENDING',
+      refundAmount: 374000,
     })
 
     renderVietQrPayment()
 
-    await user.click(screen.getByRole('button', { name: 'Giả lập chuyển thiếu tiền (50%)' }))
-
-    expect(simulateMutate).toHaveBeenCalledTimes(1)
-    expect(simulateMutate.mock.calls[0]?.[0]).toEqual({
-      txnRef: 'DHMQ9988776655',
-      data: { amount: 374000 },
-    })
     expect(screen.getByText(/Hệ thống ghi nhận bạn đã chuyển thiếu tiền/i)).toBeTruthy()
     expect(screen.getAllByText(/374\.000 ₫/).length).toBeGreaterThan(0)
   })

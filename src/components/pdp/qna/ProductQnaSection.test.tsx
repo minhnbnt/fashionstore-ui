@@ -779,7 +779,9 @@ describe('ProductQnaSection — PDP Q&A Component', () => {
     expect(screen.getByText('Không thể tải danh sách câu hỏi')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Thử lại' })).toBeTruthy()
     expect(
-      screen.queryByText('Chưa có câu hỏi nào cho sản phẩm này. Hãy là người đầu tiên đặt câu hỏi!'),
+      screen.queryByText(
+        'Chưa có câu hỏi nào cho sản phẩm này. Hãy là người đầu tiên đặt câu hỏi!',
+      ),
     ).toBeNull()
   })
 

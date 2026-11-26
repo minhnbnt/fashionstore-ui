@@ -5,6 +5,7 @@ import {
   getListPaymentGatewaysQueryKey,
   getListPaymentTransactionsQueryKey,
   useApproveWithdrawal,
+  useConfirmPaymentTransfer,
   useListAdminWithdrawals,
   useListPaymentGateways,
   useListPaymentTransactions,
@@ -344,6 +345,10 @@ export default function AdminPayments() {
   const [refundTarget, setRefundTarget] = useState<PaymentTransactionResponse | null>(null)
   const [refundNote, setRefundNote] = useState('')
   const [refundNoteError, setRefundNoteError] = useState<string | null>(null)
+  const [confirmTransferTarget, setConfirmTransferTarget] =
+    useState<PaymentTransactionResponse | null>(null)
+  const [confirmTransferAmount, setConfirmTransferAmount] = useState('')
+  const [confirmTransferError, setConfirmTransferError] = useState<string | null>(null)
 
   const txParams: ListPaymentTransactionsParams = {
     page: txPage,
@@ -361,6 +366,7 @@ export default function AdminPayments() {
 
   const transactionsQuery = useListPaymentTransactions(txParams)
   const markRefundedMutation = useMarkTransactionRefunded()
+  const confirmTransferMutation = useConfirmPaymentTransfer()
 
   let transactions: PaymentTransactionResponse[] = []
   let txTotal = 0
@@ -418,6 +424,61 @@ export default function AdminPayments() {
       )
       .then(function () {
         closeRefundModal()
+        void queryClient.invalidateQueries({ queryKey: getListPaymentTransactionsQueryKey() })
+      })
+      .catch(function () {
+        // Đã hiển thị toast lỗi qua notify.promise
+      })
+  }
+
+  function openConfirmTransferModal(tx: PaymentTransactionResponse) {
+    setConfirmTransferTarget(tx)
+    setConfirmTransferAmount(String(tx.amount ?? 0))
+    setConfirmTransferError(null)
+  }
+
+  function closeConfirmTransferModal() {
+    setConfirmTransferTarget(null)
+    setConfirmTransferAmount('')
+    setConfirmTransferError(null)
+  }
+
+  function handleConfirmTransfer(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (confirmTransferTarget === null || confirmTransferTarget.id === undefined) {
+      return
+    }
+    const parsed = Number(confirmTransferAmount.trim())
+    if (Number.isFinite(parsed) === false || parsed <= 0) {
+      const msg = 'Vui lòng nhập số tiền thực nhận lớn hơn 0.'
+      setConfirmTransferError(msg)
+      notify.warning('Số tiền chưa hợp lệ', msg)
+      return
+    }
+
+    const targetId = confirmTransferTarget.id
+    const roundedAmount = Math.round(parsed)
+    void notify
+      .promise(
+        confirmTransferMutation.mutateAsync({
+          id: targetId,
+          data: { amount: roundedAmount },
+        }),
+        {
+          loading: 'Đang xác nhận nhận tiền chuyển khoản...',
+          success: 'Đã ghi nhận giao dịch chuyển khoản VietQR',
+          error: function (err) {
+            return safeErrorMessage(
+              err,
+              'adminPayments',
+              'Không thể xác nhận giao dịch chuyển khoản.',
+            )
+          },
+        },
+        { id: `admin-confirm-transfer-${targetId}` },
+      )
+      .then(function () {
+        closeConfirmTransferModal()
         void queryClient.invalidateQueries({ queryKey: getListPaymentTransactionsQueryKey() })
       })
       .catch(function () {
@@ -715,7 +776,7 @@ export default function AdminPayments() {
                             Chế độ Demo Sandbox
                           </p>
                           <p className="text-xs text-amber-800/80 dark:text-amber-300/80">
-                            Cho phép giả lập biến động số dư trên trang QR
+                            Cho phép Admin giả lập biến động số dư tại tab Giao dịch
                           </p>
                         </div>
                         <button
@@ -1094,21 +1155,38 @@ export default function AdminPayments() {
                                 {formatDateTime(displayTime)}
                               </td>
                               <td className="py-3.5 text-right align-top whitespace-nowrap">
-                                {tx.refundStatus === 'PENDING' && (
-                                  <button
-                                    type="button"
-                                    onClick={function () {
-                                      openRefundModal(tx)
-                                    }}
-                                    className={cn(
-                                      primaryButtonClass(),
-                                      'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold',
-                                    )}
-                                  >
-                                    <CheckCircle size={15} weight="bold" />
-                                    <span>Đánh dấu đã hoàn tiền</span>
-                                  </button>
-                                )}
+                                <div className="inline-flex flex-wrap items-center justify-end gap-2">
+                                  {tx.status === 'PENDING' && (
+                                    <button
+                                      type="button"
+                                      onClick={function () {
+                                        openConfirmTransferModal(tx)
+                                      }}
+                                      className={cn(
+                                        successButtonClass(),
+                                        'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold',
+                                      )}
+                                    >
+                                      <CheckCircle size={15} weight="bold" />
+                                      <span>Xác nhận nhận tiền</span>
+                                    </button>
+                                  )}
+                                  {tx.refundStatus === 'PENDING' && (
+                                    <button
+                                      type="button"
+                                      onClick={function () {
+                                        openRefundModal(tx)
+                                      }}
+                                      className={cn(
+                                        primaryButtonClass(),
+                                        'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold',
+                                      )}
+                                    >
+                                      <CheckCircle size={15} weight="bold" />
+                                      <span>Đánh dấu đã hoàn tiền</span>
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           )
@@ -1330,6 +1408,121 @@ export default function AdminPayments() {
           </section>
         )}
       </div>
+
+      {/* Modal xác nhận / giả lập nhận tiền chuyển khoản VietQR */}
+      {confirmTransferTarget !== null && (
+        <Modal
+          title="Xác nhận nhận tiền chuyển khoản VietQR"
+          onClose={closeConfirmTransferModal}
+          closeOnBackdrop
+        >
+          <form onSubmit={handleConfirmTransfer} className="mt-4 space-y-4">
+            <div className="rounded-2xl border border-sky-200/80 bg-sky-50/70 p-3.5 text-xs dark:border-sky-500/25 dark:bg-sky-500/10">
+              <p className="font-bold text-sky-900 dark:text-sky-200">
+                Mã giao dịch: <span className="font-mono">{confirmTransferTarget.txnRef}</span>
+              </p>
+              <p className="mt-1 font-extrabold text-sky-800 tabular-nums dark:text-sky-300">
+                Số tiền cần thanh toán: {formatVnd(confirmTransferTarget.amount ?? 0)}
+              </p>
+              {confirmTransferTarget.buyerEmail !== undefined &&
+                confirmTransferTarget.buyerEmail !== '' && (
+                  <p className="mt-1 text-sky-800/90 dark:text-sky-300/90">
+                    Người mua: {confirmTransferTarget.buyerEmail}
+                  </p>
+                )}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                Chọn nhanh kịch bản đối soát / giả lập:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={function () {
+                    setConfirmTransferAmount(String(confirmTransferTarget.amount ?? 0))
+                    setConfirmTransferError(null)
+                  }}
+                  className={cn(
+                    'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-200',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <CheckCircle size={14} weight="bold" />
+                  <span>Nhận đủ 100% ({formatVnd(confirmTransferTarget.amount ?? 0)})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={function () {
+                    const half = Math.floor((confirmTransferTarget.amount ?? 0) / 2)
+                    setConfirmTransferAmount(String(half))
+                    setConfirmTransferError(null)
+                  }}
+                  className={cn(
+                    'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <WarningCircle size={14} weight="bold" />
+                  <span>
+                    Giả lập chuyển thiếu 50% (
+                    {formatVnd(Math.floor((confirmTransferTarget.amount ?? 0) / 2))})
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="confirm-transfer-amount-input" className={LABEL_CLASS}>
+                Số tiền thực nhận (VNĐ)
+              </label>
+              <input
+                id="confirm-transfer-amount-input"
+                type="number"
+                min={1}
+                value={confirmTransferAmount}
+                onChange={function (event) {
+                  setConfirmTransferAmount(event.target.value)
+                  if (confirmTransferError !== null) {
+                    setConfirmTransferError(null)
+                  }
+                }}
+                className={cn(INPUT_CLASS, 'tabular-nums')}
+              />
+              {confirmTransferError !== null && (
+                <p
+                  role="alert"
+                  className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                >
+                  {confirmTransferError}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={closeConfirmTransferModal}
+                disabled={confirmTransferMutation.isPending}
+                className={secondaryButtonClass()}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={confirmTransferMutation.isPending}
+                className={cn(
+                  successButtonClass(),
+                  'inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50',
+                )}
+              >
+                <CheckCircle size={16} weight="bold" />
+                <span>Xác nhận đã nhận tiền</span>
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* Modal xác nhận hoàn tiền */}
       {refundTarget !== null && (
