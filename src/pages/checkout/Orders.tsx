@@ -254,6 +254,7 @@ export default function Orders() {
   const tabCounts = useMemo(() => {
     const counts: Record<BuyerOrderTabKey, number> = {
       ALL: combinedOrders.length,
+      AWAITING_PAYMENT: 0,
       PENDING: 0,
       CONFIRMED: 0,
       SHIPPING: 0,
@@ -262,7 +263,9 @@ export default function Orders() {
       RETURNS: 0,
     }
     for (const order of combinedOrders) {
-      if (order.status === 'PENDING') {
+      if (order.status === 'AWAITING_PAYMENT') {
+        counts.AWAITING_PAYMENT += 1
+      } else if (order.status === 'PENDING') {
         counts.PENDING += 1
       } else if (order.status === 'CONFIRMED') {
         counts.CONFIRMED += 1

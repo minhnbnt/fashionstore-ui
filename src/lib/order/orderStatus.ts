@@ -1,8 +1,16 @@
+import { formatVnd } from '@/lib/format'
+
 import type { StatusMeta } from '@/types/admin'
 
 // Nhãn trạng thái đơn hàng cho người mua. Không dùng statusMeta (lib/admin) vì bảng đó
 // dành cho shop/sản phẩm: PENDING ở đó là "Chờ duyệt", còn đơn hàng là "Chờ xác nhận".
 export function orderStatusMeta(status: string | null | undefined): StatusMeta {
+  if (status === 'AWAITING_PAYMENT') {
+    return {
+      label: 'Chờ thanh toán',
+      className: 'bg-sky-100 text-sky-800 dark:bg-sky-400/15 dark:text-sky-200',
+    }
+  }
   if (status === 'PENDING') {
     return {
       label: 'Chờ xác nhận',
@@ -52,13 +60,14 @@ export function orderItemSummary(items: { productName?: string }[] | undefined):
   return firstName + ' +' + rest + ' sản phẩm khác'
 }
 
-/** Backend chỉ cho buyer hủy khi đơn còn PENDING (OrderService.cancel). */
+/** Backend cho buyer hủy khi đơn còn PENDING hoặc AWAITING_PAYMENT (OrderService.cancel). */
 export function canCancel(status: string | null | undefined): boolean {
-  return status === 'PENDING'
+  return status === 'PENDING' || status === 'AWAITING_PAYMENT'
 }
 
 export type BuyerOrderTabKey =
   | 'ALL'
+  | 'AWAITING_PAYMENT'
   | 'PENDING'
   | 'CONFIRMED'
   | 'SHIPPING'
@@ -73,6 +82,7 @@ export interface BuyerOrderTabDef {
 
 export const BUYER_ORDER_TABS: readonly BuyerOrderTabDef[] = [
   { key: 'ALL', label: 'Tất cả' },
+  { key: 'AWAITING_PAYMENT', label: 'Chờ thanh toán' },
   { key: 'PENDING', label: 'Chờ xác nhận' },
   { key: 'CONFIRMED', label: 'Đang chuẩn bị' },
   { key: 'SHIPPING', label: 'Đang giao' },
@@ -136,11 +146,30 @@ export function paymentStatusLabel(status: string | null | undefined): string {
   if (status === 'UNPAID') {
     return 'Chưa thanh toán'
   }
+  if (status === 'PAID') {
+    return 'Đã thanh toán'
+  }
   if (status === 'COLLECTED') {
     return 'Đã thu tiền'
   }
   if (status === 'FAILED') {
     return 'Thanh toán lỗi'
   }
+  if (status === 'REFUND_PENDING') {
+    return 'Chờ hoàn tiền'
+  }
+  if (status === 'REFUNDED') {
+    return 'Đã hoàn tiền'
+  }
   return status ?? 'Không rõ'
+}
+
+export function codUnavailableReason(total: number, min: number, max: number): string | null {
+  if (min > 0 && total < min) {
+    return 'Đơn hàng dưới ' + formatVnd(min) + ' không hỗ trợ thanh toán COD'
+  }
+  if (max > 0 && total > max) {
+    return 'Đơn hàng trên ' + formatVnd(max) + ' không hỗ trợ thanh toán COD'
+  }
+  return null
 }

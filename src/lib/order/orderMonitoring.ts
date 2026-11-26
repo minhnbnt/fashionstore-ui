@@ -102,6 +102,9 @@ export function canAdminCancel(status: string | undefined): boolean {
 }
 
 export function statusLabel(status: string | null | undefined): string {
+  if (status === 'AWAITING_PAYMENT') {
+    return 'Chờ thanh toán'
+  }
   const tab = STATUS_TABS.find((item) => item.value === status)
   if (tab === undefined || tab.value === 'ALL') {
     return status ?? ''
@@ -114,7 +117,7 @@ export function statusBadgeClass(status: string | undefined): string {
   if (status === 'PENDING') {
     return `${base} bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300`
   }
-  if (status === 'CONFIRMED' || status === 'SHIPPING') {
+  if (status === 'AWAITING_PAYMENT' || status === 'CONFIRMED' || status === 'SHIPPING') {
     return `${base} bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300`
   }
   if (status === 'DELIVERED') {
@@ -170,6 +173,9 @@ export function cancelReasonLabel(
   }
   if (reason === 'ORDERED_BY_MISTAKE') {
     return 'Đặt nhầm'
+  }
+  if (reason === 'PAYMENT_EXPIRED') {
+    return 'Quá hạn thanh toán'
   }
   if (reason === 'OTHER') {
     if (cancelledBy === 'BUYER') {

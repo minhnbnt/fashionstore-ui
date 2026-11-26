@@ -8,6 +8,7 @@ import {
   cancelReasonLabel,
   dateRangeError,
   elapsedLabel,
+  statusBadgeClass,
   statusLabel,
   tabCount,
   timelineTitle,
@@ -26,6 +27,8 @@ describe('canAdminCancel', () => {
 
 describe('labels', () => {
   it('maps statuses, alerts and actors to Vietnamese', () => {
+    expect(statusLabel('AWAITING_PAYMENT')).toBe('Chờ thanh toán')
+    expect(statusBadgeClass('AWAITING_PAYMENT')).toContain('bg-sky-100')
     expect(statusLabel('PENDING')).toBe('Chờ xác nhận')
     expect(statusLabel('SHIPPING')).toBe('Đang giao')
     expect(alertLabel('HANDOVER_LATE')).toBe('Chậm bàn giao vận chuyển')
@@ -36,6 +39,7 @@ describe('labels', () => {
 
   it('keeps unknown cancel reasons as typed by seller', () => {
     expect(cancelReasonLabel('FRAUD_SUSPECTED')).toBe('Nghi gian lận, đơn ảo')
+    expect(cancelReasonLabel('PAYMENT_EXPIRED', 'SYSTEM')).toBe('Quá hạn thanh toán')
     expect(cancelReasonLabel('OUT_OF_STOCK')).toBe('OUT_OF_STOCK')
     expect(cancelReasonLabel(undefined)).toBe('')
   })
