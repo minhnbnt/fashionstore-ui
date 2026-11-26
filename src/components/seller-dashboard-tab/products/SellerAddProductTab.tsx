@@ -167,7 +167,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
   const [images, setImages] = useState<ProductMediaItem[]>([])
   const [video, setVideo] = useState<ProductMediaValue | null>(null)
   const [tryOnEnabled, setTryOnEnabled] = useState(false)
-  const [garment, setGarment] = useState<ProductMediaValue | null>(null)
+  const [garments, setGarments] = useState<ProductMediaItem[]>([])
 
   // 3. Classifications (Màu sắc & Kích cỡ), Bulk Apply & Variants — đồng bộ 1:1 ngay từ đầu
   const [colors, setColors] = useState<string[]>(['Trắng'])
@@ -597,7 +597,7 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       reportValidationError('Sản phẩm chỉ được tải lên tối đa 9 ảnh.')
       return
     }
-    if (tryOnEnabled && garment === null) {
+    if (tryOnEnabled && garments.length === 0) {
       reportValidationError(
         'Ảnh garment (trải phẳng trên nền trắng) là bắt buộc khi bật tính năng thử đồ ảo.',
       )
@@ -671,6 +671,14 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       }
     })
 
+    const garmentUploadIds = garments.map(function (g) {
+      return g.uploadId
+    })
+    let primaryGarmentUploadId: string | null = null
+    if (garmentUploadIds.length > 0 && garmentUploadIds[0] !== undefined) {
+      primaryGarmentUploadId = garmentUploadIds[0]
+    }
+
     const payload: CreateProductRequest = {
       name: name.trim(),
       slug,
@@ -679,7 +687,8 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
       variants: variantItems,
       images: imageItems,
       videoUploadId: video?.uploadId ?? null,
-      garmentUploadId: garment?.uploadId ?? null,
+      garmentUploadId: primaryGarmentUploadId,
+      garmentUploadIds,
       tryOnEnabled,
       material: trimmedOrNull(material),
       origin: trimmedOrNull(origin),
@@ -877,8 +886,8 @@ export default function SellerAddProductTab({ shopId, onBack }: Props) {
           onVideoChange={setVideo}
           tryOnEnabled={tryOnEnabled}
           onTryOnToggle={setTryOnEnabled}
-          garment={garment}
-          onGarmentChange={setGarment}
+          garments={garments}
+          onGarmentsChange={setGarments}
         />
       </section>
 

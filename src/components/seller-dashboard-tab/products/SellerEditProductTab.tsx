@@ -131,7 +131,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
   const [images, setImages] = useState<ProductMediaItem[]>([])
   const [video, setVideo] = useState<ProductMediaValue | null>(null)
   const [tryOnEnabled, setTryOnEnabled] = useState(false)
-  const [garment, setGarment] = useState<ProductMediaValue | null>(null)
+  const [garments, setGarments] = useState<ProductMediaItem[]>([])
 
   // 3. Variants
   const [variants, setVariants] = useState<EditableVariantRow[]>([])
@@ -187,11 +187,28 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
         prefilledVideo = { uploadId: p.videoUploadId ?? null, url: p.videoUrl }
       }
       setVideo(prefilledVideo)
-      let prefilledGarment: ProductMediaValue | null = null
-      if (p.garmentUrl !== undefined && p.garmentUrl !== null) {
-        prefilledGarment = { uploadId: p.garmentUploadId ?? null, url: p.garmentUrl }
+      const prefilledGarments: ProductMediaItem[] = []
+      if (p.garments !== undefined && p.garments !== null && p.garments.length > 0) {
+        for (const g of p.garments) {
+          if (
+            g.uploadId !== undefined &&
+            g.uploadId !== '' &&
+            g.url !== undefined &&
+            g.url !== ''
+          ) {
+            prefilledGarments.push({ uploadId: g.uploadId, url: g.url })
+          }
+        }
+      } else if (
+        p.garmentUrl !== undefined &&
+        p.garmentUrl !== null &&
+        p.garmentUploadId !== undefined &&
+        p.garmentUploadId !== null &&
+        p.garmentUploadId !== ''
+      ) {
+        prefilledGarments.push({ uploadId: p.garmentUploadId, url: p.garmentUrl })
       }
-      setGarment(prefilledGarment)
+      setGarments(prefilledGarments)
       setTryOnEnabled(p.tryOnEnabled === true)
 
       setMaterial(p.material ?? '')
@@ -483,6 +500,17 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       return
     }
 
+    const validGarments = garments.filter(function (g) {
+      return g.uploadId.trim() !== ''
+    })
+
+    if (tryOnEnabled === true && validGarments.length === 0) {
+      setErrorMessage(
+        'Ảnh garment (trải phẳng trên nền trắng) là bắt buộc khi bật tính năng thử đồ ảo.',
+      )
+      return
+    }
+
     setIsSaving(true)
 
     const mappedImages: ImageItemRequest[] = images.map(function (item, idx) {
@@ -519,9 +547,12 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
     if (video !== null) {
       videoUploadId = video.uploadId
     }
+    const garmentUploadIds = validGarments.map(function (g) {
+      return g.uploadId
+    })
     let garmentUploadId: string | null = null
-    if (garment !== null) {
-      garmentUploadId = garment.uploadId
+    if (garmentUploadIds.length > 0 && garmentUploadIds[0] !== undefined) {
+      garmentUploadId = garmentUploadIds[0]
     }
 
     const requestData: UpdateProductRequest = {
@@ -532,6 +563,7 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
       images: mappedImages,
       videoUploadId,
       garmentUploadId,
+      garmentUploadIds,
       tryOnEnabled: tryOnEnabled,
       material: material.trim(),
       origin: origin.trim(),
@@ -881,8 +913,8 @@ export default function SellerEditProductTab({ shopId, productId, onBack }: Prop
           onVideoChange={setVideo}
           tryOnEnabled={tryOnEnabled}
           onTryOnToggle={setTryOnEnabled}
-          garment={garment}
-          onGarmentChange={setGarment}
+          garments={garments}
+          onGarmentsChange={setGarments}
         />
       </section>
 

@@ -28,7 +28,6 @@ import Markdown from '../Markdown'
 import Modal from '../Modal'
 import UserAvatar from '../UserAvatar'
 
-import type { Tab } from '@/types/product'
 import type { List1Sort } from '@generated/model/list1Sort'
 import type { ProductResponse } from '@generated/model/productResponse'
 import type { ReviewResponse } from '@generated/model/reviewResponse'
@@ -73,7 +72,6 @@ function starDistributionPct(count: number, total: number): number {
 }
 
 export default function ProductTabs(props: { product: ProductResponse }) {
-  const [tab, setTab] = useState<Tab>('mo-ta')
   const [sort, setSort] = useState<List1Sort>('HELPFUL')
   const [starsFilter, setStarsFilter] = useState<number | undefined>(undefined)
   const [hasMediaOnly, setHasMediaOnly] = useState(false)
@@ -186,91 +184,127 @@ export default function ProductTabs(props: { product: ProductResponse }) {
     )
   }
 
+  let colorsDisplay = 'Mặc định'
+  if (info.colors.length > 0) {
+    colorsDisplay = info.colors.join(' · ')
+  }
+
+  const hasMaterial = Boolean(p.material && p.material.trim().length > 0)
+  const hasOrigin = Boolean(p.origin && p.origin.trim().length > 0)
+  const hasCareInstructions = Boolean(p.careInstructions && p.careInstructions.trim().length > 0)
+  const hasSizeGuide = Boolean(p.sizeGuide && p.sizeGuide.trim().length > 0)
+
   return (
-    <section className="mt-10 rounded-3xl border border-zinc-200/80 bg-white/80 p-6 dark:border-white/10 dark:bg-[#11182a]">
+    <section className="mt-6 rounded-3xl border border-zinc-200/80 bg-white/80 p-5 sm:p-6 dark:border-white/10 dark:bg-[#11182a]">
       <div
         role="tablist"
         aria-label="Thông tin sản phẩm"
-        className={cn(segmentedTrackClass(), 'inline-flex flex-wrap')}
+        className="border-b border-zinc-200/80 pb-3.5 dark:border-white/10"
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'mo-ta'}
-          onClick={function () {
-            setTab('mo-ta')
-          }}
-          className={tabButtonClass(tab === 'mo-ta')}
-        >
-          Mô tả
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'thong-so'}
-          onClick={function () {
-            setTab('thong-so')
-          }}
-          className={tabButtonClass(tab === 'thong-so')}
-        >
-          Thông số
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'danh-gia'}
-          onClick={function () {
-            setTab('danh-gia')
-          }}
-          className={tabButtonClass(tab === 'danh-gia')}
-        >
-          Đánh giá ({totalReviews})
+        <button type="button" role="tab" aria-selected={true} className={tabButtonClass(true)}>
+          Mô tả · Thông số · Đánh giá ({totalReviews})
         </button>
       </div>
 
-      {tab === 'mo-ta' && (
-        <div className="mt-5">
-          <Markdown source={p.description ?? p.name ?? ''} />
-        </div>
-      )}
-
-      {tab === 'thong-so' && (
-        <div className="mt-5 overflow-hidden rounded-3xl border border-sky-100 dark:border-white/10">
-          <div className="flex items-center gap-3 bg-sky-50/70 px-5 py-3 text-sm font-bold dark:bg-white/5">
-            <Ruler size={16} className="text-sky-500" />
-            Kích cỡ có sẵn
+      <div className="mt-5 space-y-6">
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <span className="h-4 w-1 rounded-full bg-blue-600 dark:bg-sky-400" />
+            <h2 className="text-base font-extrabold text-[#17203a] dark:text-white">Mô tả</h2>
           </div>
-          <p className="flex flex-wrap gap-2 px-5 py-3">
-            {info.sizes.map(function (s) {
-              return (
-                <span
-                  key={s}
-                  className="rounded-full border border-sky-100 px-3 py-1 text-xs font-bold dark:border-white/10"
-                >
-                  {s}
-                </span>
-              )
-            })}
-          </p>
-          <div className="flex items-center gap-3 bg-sky-50/70 px-5 py-3 text-sm font-bold dark:bg-white/5">
-            <Package size={16} className="text-sky-500" />
-            Chi tiết sản phẩm
+          <div className="rounded-2xl bg-zinc-50/70 p-4 dark:bg-white/[0.03]">
+            <Markdown source={p.description ?? p.name ?? ''} />
           </div>
-          <dl>
-            <div className="flex items-center justify-between gap-4 px-5 py-2.5 text-sm odd:bg-white even:bg-sky-50/50 dark:odd:bg-transparent dark:even:bg-white/5">
-              <dt className="font-bold text-zinc-500 dark:text-zinc-400">Màu sắc</dt>
-              <dd className="font-semibold">{info.colors.join(' · ')}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4 px-5 py-2.5 text-sm odd:bg-white even:bg-sky-50/50 dark:odd:bg-transparent dark:even:bg-white/5">
-              <dt className="font-bold text-zinc-500 dark:text-zinc-400">Tình trạng</dt>
-              <dd className="font-semibold">Còn {info.totalStock} sản phẩm</dd>
-            </div>
-          </dl>
         </div>
-      )}
 
-      {tab === 'danh-gia' && (
-        <div className="mt-5 space-y-5">
+        <div className="border-t border-zinc-200/70 pt-5 dark:border-white/10">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="h-4 w-1 rounded-full bg-blue-600 dark:bg-sky-400" />
+            <h2 className="text-base font-extrabold text-[#17203a] dark:text-white">Thông số</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+            <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 md:col-span-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <div className="flex items-center gap-2 text-xs font-extrabold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+                <Ruler size={15} className="text-blue-600 dark:text-sky-400" />
+                <span>Kích cỡ có sẵn</span>
+              </div>
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {info.sizes.length === 0 && (
+                  <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    Tiêu chuẩn
+                  </span>
+                )}
+                {info.sizes.map(function (s) {
+                  return (
+                    <span
+                      key={s}
+                      className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-bold text-[#17203a] shadow-2xs dark:border-white/10 dark:bg-white/10 dark:text-white"
+                    >
+                      {s}
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 md:col-span-8 dark:border-white/10 dark:bg-white/[0.03]">
+              <div className="flex items-center gap-2 text-xs font-extrabold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+                <Package size={15} className="text-blue-600 dark:text-sky-400" />
+                <span>Chi tiết sản phẩm</span>
+              </div>
+              <dl className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3.5 py-2 text-xs shadow-2xs dark:bg-white/5">
+                  <dt className="font-semibold text-zinc-500 dark:text-zinc-400">Màu sắc</dt>
+                  <dd className="font-bold text-[#17203a] dark:text-white">{colorsDisplay}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3.5 py-2 text-xs shadow-2xs dark:bg-white/5">
+                  <dt className="font-semibold text-zinc-500 dark:text-zinc-400">Tình trạng</dt>
+                  <dd className="font-bold text-[#17203a] dark:text-white">
+                    Còn {info.totalStock} sản phẩm
+                  </dd>
+                </div>
+                {hasMaterial && (
+                  <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3.5 py-2 text-xs shadow-2xs dark:bg-white/5">
+                    <dt className="font-semibold text-zinc-500 dark:text-zinc-400">Chất liệu</dt>
+                    <dd className="font-bold text-[#17203a] dark:text-white">{p.material}</dd>
+                  </div>
+                )}
+                {hasOrigin && (
+                  <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3.5 py-2 text-xs shadow-2xs dark:bg-white/5">
+                    <dt className="font-semibold text-zinc-500 dark:text-zinc-400">Xuất xứ</dt>
+                    <dd className="font-bold text-[#17203a] dark:text-white">{p.origin}</dd>
+                  </div>
+                )}
+                {hasCareInstructions && (
+                  <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3.5 py-2 text-xs shadow-2xs sm:col-span-2 dark:bg-white/5">
+                    <dt className="font-semibold text-zinc-500 dark:text-zinc-400">
+                      Hướng dẫn bảo quản
+                    </dt>
+                    <dd className="font-bold text-[#17203a] dark:text-white">
+                      {p.careInstructions}
+                    </dd>
+                  </div>
+                )}
+                {hasSizeGuide && (
+                  <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3.5 py-2 text-xs shadow-2xs sm:col-span-2 dark:bg-white/5">
+                    <dt className="font-semibold text-zinc-500 dark:text-zinc-400">
+                      Bảng chọn size
+                    </dt>
+                    <dd className="font-bold text-[#17203a] dark:text-white">{p.sizeGuide}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-5 border-t border-zinc-200/70 pt-5 dark:border-white/10">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="h-4 w-1 rounded-full bg-blue-600 dark:bg-sky-400" />
+            <h2 className="text-base font-extrabold text-[#17203a] dark:text-white">
+              Đánh giá ({totalReviews})
+            </h2>
+          </div>
           {totalReviews > 0 && (
             <div className="grid grid-cols-1 gap-5 rounded-3xl bg-sky-50/70 p-5 md:grid-cols-[auto_1fr] dark:bg-white/5">
               <div className="text-center md:min-w-36">
@@ -577,7 +611,7 @@ export default function ProductTabs(props: { product: ProductResponse }) {
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {lightboxMedia !== null && (
         <Modal

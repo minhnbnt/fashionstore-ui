@@ -35,6 +35,25 @@ function renderUploader(images: ProductMediaItem[] = []) {
     onTryOnToggle: vi.fn(),
     garment: null as ProductMediaValue | null,
     onGarmentChange: vi.fn(),
+    garments: [] as ProductMediaItem[],
+    onGarmentsChange: vi.fn(),
+  }
+  render(<ProductMediaUploader {...props} />)
+  return props
+}
+
+function renderTryOnUploader(garments: ProductMediaItem[] = []) {
+  const props = {
+    images: [] as ProductMediaItem[],
+    onImagesChange: vi.fn(),
+    video: null as ProductMediaValue | null,
+    onVideoChange: vi.fn(),
+    tryOnEnabled: true,
+    onTryOnToggle: vi.fn(),
+    garment: null as ProductMediaValue | null,
+    onGarmentChange: vi.fn(),
+    garments,
+    onGarmentsChange: vi.fn(),
   }
   render(<ProductMediaUploader {...props} />)
   return props
@@ -117,5 +136,53 @@ describe('ProductMediaUploader - upload nhiều ảnh', () => {
       expect(screen.getByText('S3 lỗi')).toBeTruthy()
     })
     expect(props.onImagesChange).not.toHaveBeenCalled()
+  })
+
+  it('khi bật tryOnEnabled, chọn 2 ảnh garment cùng lúc → onGarmentsChange nhận đủ 2 ảnh', async function () {
+    vi.mocked(uploadImage).mockImplementation(async function (file: File) {
+      return `u-${file.name}`
+    })
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: () => 'blob:garment-preview',
+      revokeObjectURL: () => undefined,
+    })
+
+    const props = renderTryOnUploader()
+    const garmentInput = screen.getByLabelText('Input tải ảnh garment') as HTMLInputElement
+    chooseFiles(garmentInput, [makeFile('g1.webp'), makeFile('g2.webp')])
+
+    await waitFor(function () {
+      expect(props.onGarmentsChange).toHaveBeenCalledTimes(1)
+    })
+
+    const calls = props.onGarmentsChange.mock.calls as unknown as ProductMediaItem[][][]
+    const items = calls[0][0]
+    expect(items).toHaveLength(2)
+    expect(
+      items.map(function (item) {
+        return item.uploadId
+      }),
+    ).toEqual(['u-g1.webp', 'u-g2.webp'])
+    expect(props.onGarmentChange).toHaveBeenCalledWith({
+      uploadId: 'u-g1.webp',
+      url: 'blob:garment-preview',
+    })
+  })
+
+  it('đã có 8 ảnh garment, chọn thêm 2 ảnh garment thì chặn tối đa 9 ảnh', async function () {
+    vi.mocked(uploadImage).mockResolvedValue('u-new-garment')
+    const existingGarments: ProductMediaItem[] = Array.from({ length: 8 }, function (_, i) {
+      return { uploadId: `g-${i}`, url: `https://s3.test/garment-${i}.jpg` }
+    })
+
+    const props = renderTryOnUploader(existingGarments)
+    const garmentInput = screen.getByLabelText('Input tải ảnh garment') as HTMLInputElement
+    chooseFiles(garmentInput, [makeFile('g9.webp'), makeFile('g10.webp')])
+
+    await waitFor(function () {
+      expect(screen.getByText('Sản phẩm chỉ được tải lên tối đa 9 ảnh garment.')).toBeTruthy()
+    })
+    expect(props.onGarmentsChange).not.toHaveBeenCalled()
   })
 })

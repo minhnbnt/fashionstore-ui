@@ -7,7 +7,9 @@ import {
   ArrowLeft,
   CaretDown,
   ChatCircleDots,
+  DownloadSimple,
   MagnifyingGlass,
+  MagnifyingGlassPlus,
   Paperclip,
   PaperPlaneRight,
   Plus,
@@ -18,6 +20,7 @@ import {
 } from '@phosphor-icons/react'
 
 import Markdown from '@/components/Markdown'
+import { MediaLightbox } from '@/components/ui/MediaLightbox'
 import {
   useAiConversations,
   useAiMessages,
@@ -28,7 +31,12 @@ import {
 import { usePinToBottom } from '@/hooks/usePinToBottom'
 import { useSessionQuery } from '@/hooks/useSession'
 import { readAgentConfig } from '@/lib/ai/agent'
-import { deserializeAgentMessage, serializeAgentMessage } from '@/lib/ai/agentHistory'
+import {
+  deserializeAgentMessage,
+  getMessageImageUrl,
+  serializeAgentMessage,
+  serializeUserMessageMetadata,
+} from '@/lib/ai/agentHistory'
 import { createChatTransport } from '@/lib/ai/chatTransport'
 import { MAX_IMAGE_BYTES, uploadImageWithUrl } from '@/lib/api/uploadImage'
 import { EMPTY_FILTERS, parseFilters, toQueryString, withFilter } from '@/lib/searchFilters'
@@ -117,14 +125,44 @@ function TryOnBlock(props: { part: TryOnToolPart }) {
   return <StatusPill text="Đang tạo ảnh thử đồ, chờ chút nhé…" />
 }
 
-/** Ảnh kết quả tool showImage trả về — hiển thị thẳng trong khung chat. */
+/** Ảnh kết quả tool showImage trả về — hiển thị thẳng trong khung chat kèm phóng to & tải ảnh. */
 function ShowImageBlock(props: { url: string }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   return (
     <div className="flex flex-col items-start">
-      <img
+      <button
+        type="button"
+        aria-label="Phóng to ảnh kết quả thử đồ"
+        onClick={function () {
+          setLightboxOpen(true)
+        }}
+        className={cn(
+          'group relative max-w-[85%] cursor-zoom-in overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-2xs transition hover:border-blue-500 dark:border-white/10 dark:bg-white/10',
+          FOCUS_RING_CLASS,
+        )}
+      >
+        <img src={props.url} alt="Ảnh kết quả thử đồ" className="max-h-80 w-full object-contain" />
+        <span className="pointer-events-none absolute right-2 bottom-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/70 text-white opacity-0 transition group-hover:opacity-100">
+          <MagnifyingGlassPlus size={14} weight="bold" />
+        </span>
+      </button>
+      <a
+        href={props.url}
+        download="ket-qua-thu-do.png"
+        target="_blank"
+        rel="noreferrer"
+        className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-zinc-200/80 bg-white/95 px-3 py-1 text-[11px] font-bold text-[#17203a] shadow-2xs transition hover:border-blue-600 hover:text-blue-700 dark:border-white/15 dark:bg-white/10 dark:text-slate-200 dark:hover:border-sky-400"
+      >
+        <DownloadSimple size={13} weight="bold" />
+        <span>Tải ảnh về</span>
+      </a>
+      <MediaLightbox
+        open={lightboxOpen}
         src={props.url}
-        alt="Ảnh kết quả thử đồ"
-        className="max-h-80 max-w-[85%] rounded-2xl border border-zinc-200/80 bg-white object-contain shadow-2xs dark:border-white/10 dark:bg-white/10"
+        alt="Ảnh kết quả thử đồ (phóng to)"
+        onClose={function () {
+          setLightboxOpen(false)
+        }}
       />
     </div>
   )
@@ -549,7 +587,11 @@ export default function AgentTab(props: AgentTabProps) {
         .then(async function () {
           let targetConvId = currentConvId
           if (targetConvId === null) {
-            const newConv = await createConvMutation.mutateAsync(text.slice(0, 40))
+            let titleSeed = text.slice(0, 40)
+            if (titleSeed === '') {
+              titleSeed = 'Thử đồ ảo với AI'
+            }
+            const newConv = await createConvMutation.mutateAsync(titleSeed)
             targetConvId = newConv.id
             if (sessionEpochRef.current === epochAtSubmit) {
               liveConvIdsRef.current.add(targetConvId)
@@ -561,7 +603,7 @@ export default function AgentTab(props: AgentTabProps) {
             conversationId: targetConvId,
             role: 'user',
             content: text,
-            metadata: JSON.stringify({ parts: [{ type: 'text', text }] }),
+            metadata: serializeUserMessageMetadata(text, image?.url),
           })
         })
         .catch(function (e) {
@@ -603,7 +645,10 @@ export default function AgentTab(props: AgentTabProps) {
 
     // Tin nhắn user: bubble indigo bên phải. Tin nhắn agent: markdown tràn khung, không bubble.
     if (message.role === 'user') {
-      const sentImageUrl = sentImageByMessageId.get(message.id)
+      let sentImageUrl = sentImageByMessageId.get(message.id)
+      if (sentImageUrl === undefined) {
+        sentImageUrl = getMessageImageUrl(message)
+      }
       return (
         <div key={message.id} className={userRowContainerClass}>
           {message.parts.map(function (part, index) {

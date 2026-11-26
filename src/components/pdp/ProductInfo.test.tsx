@@ -158,4 +158,40 @@ describe('ProductInfo — chọn variant và thêm giỏ (DOM)', () => {
     expect(screen.getByText('Hết hàng')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Thêm giỏ' })).toBeNull()
   })
+
+  it('khi tryOnEnabled: true → hiển thị link Thử đồ ảo với AI dẫn tới /try-on/p-1', () => {
+    renderInfo(makeProduct({ tryOnEnabled: true }))
+
+    expect(screen.getByText('Hỗ trợ Thử đồ ảo AI')).toBeTruthy()
+    const link = screen.getByRole('link', { name: /Thử đồ ảo với AI/i })
+    expect(link.getAttribute('href')).toBe('/try-on/p-1')
+  })
+
+  it('khi tryOnEnabled: false hoặc undefined → không hiển thị Thử đồ ảo với AI', () => {
+    renderInfo(makeProduct({ tryOnEnabled: false }))
+    expect(screen.queryByRole('link', { name: /Thử đồ ảo với AI/i })).toBeNull()
+
+    cleanup()
+    renderInfo(makeProduct())
+    expect(screen.queryByRole('link', { name: /Thử đồ ảo với AI/i })).toBeNull()
+  })
+
+  it('khi compareAtPrice bằng price (không giảm giá) → không hiển thị giá gạch ngang trùng lặp', () => {
+    const { container } = renderInfo(
+      makeProduct({
+        variants: [
+          {
+            id: 'v-same',
+            color: 'Trắng',
+            size: 'M',
+            price: 200000,
+            compareAtPrice: 200000,
+            stockQuantity: 10,
+          },
+        ],
+      }),
+    )
+
+    expect(container.querySelector('.line-through')).toBeNull()
+  })
 })

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 
-import { Minus, Plus, ShoppingBag, Star } from '@phosphor-icons/react'
+import { Minus, Plus, ShoppingBag, Sparkle, Star } from '@phosphor-icons/react'
 
 import { priceInfo } from '@/lib/api/apiAdapters'
 import { formatVnd, priceLabel } from '@/lib/format'
@@ -260,189 +260,215 @@ export default function ProductInfo(props: { product: ProductResponse }) {
   const showSizeError = selectionError && needsSize
 
   return (
-    <div className="flex flex-col">
-      <h1 className="text-2xl font-extrabold tracking-tight text-[#17203a] md:text-3xl dark:text-white">
-        {p.name}
-      </h1>
+    <div className="flex w-full flex-col justify-between">
+      <div>
+        <h1 className="text-xl font-extrabold tracking-tight text-[#17203a] md:text-2xl dark:text-white">
+          {p.name}
+        </h1>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
-        <Star size={16} weight="fill" className="text-amber-400" />
-        {p.averageRating !== null && p.averageRating !== undefined && (
-          <span className="font-semibold tabular-nums">
-            {p.averageRating.toFixed(1)} · {p.reviewCount ?? 0} đánh giá
-          </span>
-        )}
-        {(p.averageRating === null || p.averageRating === undefined) && (
-          <span>Chưa có đánh giá</span>
-        )}
-        {p.id !== undefined && (
-          <div className="ml-3">
-            <ReportProductButton productId={p.id} />
-          </div>
-        )}
-      </div>
+        <div className="mt-2.5 flex flex-wrap items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+          <Star size={16} weight="fill" className="text-amber-400" />
+          {p.averageRating !== null && p.averageRating !== undefined && (
+            <span className="font-semibold tabular-nums">
+              {p.averageRating.toFixed(1)} · {p.reviewCount ?? 0} đánh giá
+            </span>
+          )}
+          {(p.averageRating === null || p.averageRating === undefined) && (
+            <span>Chưa có đánh giá</span>
+          )}
+          {p.id !== undefined && (
+            <div className="ml-3">
+              <ReportProductButton productId={p.id} />
+            </div>
+          )}
+        </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2.5">
-        <span className="text-2xl font-extrabold text-blue-700 tabular-nums md:text-3xl dark:text-sky-300">
-          {priceLabel(price)}
-        </span>
-        {discountPct !== null && compareAt !== null && compareAt !== undefined && (
-          <>
-            <span className="text-sm text-zinc-400 tabular-nums line-through dark:text-zinc-500">
-              {formatVnd(compareAt)}
+        <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-zinc-50/90 px-4 py-3 dark:bg-white/5">
+          <div className="flex flex-wrap items-baseline gap-2.5">
+            <span className="text-2xl font-extrabold text-blue-700 tabular-nums dark:text-sky-300">
+              {priceLabel(price)}
             </span>
-            <span className="inline-flex items-center rounded-full bg-rose-600 px-2.5 py-0.5 text-xs font-extrabold text-white tabular-nums">
-              -{discountPct}%
-            </span>
-          </>
-        )}
-        {discountPct === null && compareAt !== null && compareAt !== undefined && (
-          <span className="text-sm text-zinc-400 tabular-nums line-through dark:text-zinc-500">
-            {formatVnd(compareAt)}
-          </span>
-        )}
-      </div>
-
-      {isOutOfStock && (
-        <div className="mt-5 space-y-4">
-          <div className="rounded-3xl border border-rose-200 bg-rose-50/70 p-4 dark:border-rose-500/30 dark:bg-rose-500/10">
-            <span
-              className={cn(
-                'inline-flex items-center rounded-full px-3 py-1 text-xs font-extrabold',
-                badgeToneClass('danger'),
-              )}
-            >
-              Hết hàng
-            </span>
-            <p className="mt-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-              Sản phẩm hiện tạm hết hàng. Lưu vào yêu thích để theo dõi khi gian hàng nhập thêm.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <WishlistButton productId={p.id} variant="action" />
-            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-              Lưu sản phẩm yêu thích
-            </span>
+            {discountPct !== null && compareAt !== null && compareAt !== undefined && (
+              <>
+                <span className="text-sm text-zinc-400 tabular-nums line-through dark:text-zinc-500">
+                  {formatVnd(compareAt)}
+                </span>
+                <span className="inline-flex items-center rounded-full bg-rose-600 px-2.5 py-0.5 text-xs font-extrabold text-white tabular-nums">
+                  -{discountPct}%
+                </span>
+              </>
+            )}
           </div>
         </div>
-      )}
+
+        {p.tryOnEnabled === true && p.id !== undefined && p.id !== '' && (
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-blue-200/80 bg-blue-50/60 px-3.5 py-2 dark:border-sky-400/25 dark:bg-sky-500/10">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white shadow-2xs dark:bg-sky-500">
+                <Sparkle size={14} weight="fill" />
+              </span>
+              <p className="truncate text-xs font-bold text-[#17203a] dark:text-sky-100">
+                Hỗ trợ Thử đồ ảo AI
+              </p>
+            </div>
+            <Link
+              to={'/try-on/' + p.id}
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#17203a] px-3.5 py-1.5 text-xs font-bold whitespace-nowrap text-white shadow-2xs transition hover:bg-blue-700 active:scale-[0.98] dark:bg-sky-500 dark:hover:bg-sky-400',
+                FOCUS_RING_CLASS,
+              )}
+            >
+              <Sparkle size={13} weight="fill" />
+              <span>Thử đồ ảo với AI</span>
+            </Link>
+          </div>
+        )}
+
+        {isOutOfStock && (
+          <div className="mt-5 space-y-4">
+            <div className="rounded-3xl border border-rose-200 bg-rose-50/70 p-4 dark:border-rose-500/30 dark:bg-rose-500/10">
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full px-3 py-1 text-xs font-extrabold',
+                  badgeToneClass('danger'),
+                )}
+              >
+                Hết hàng
+              </span>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
+                Sản phẩm hiện tạm hết hàng. Lưu vào yêu thích để theo dõi khi gian hàng nhập thêm.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <WishlistButton productId={p.id} variant="action" />
+              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                Lưu sản phẩm yêu thích
+              </span>
+            </div>
+          </div>
+        )}
+
+        {isOutOfStock === false && (
+          <div className="mt-4 space-y-4 border-t border-zinc-200/70 pt-4 dark:border-white/10">
+            {info.colors.length > 0 && (
+              <div
+                className={cn(
+                  'rounded-2xl transition',
+                  showColorError &&
+                    'border border-rose-300 bg-rose-50/60 p-3 dark:border-rose-500/40 dark:bg-rose-500/10',
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-bold text-[#17203a] dark:text-white">Màu sắc</p>
+                  {showColorError && (
+                    <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                      Vui lòng chọn màu sắc
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {info.colors.map(function (c) {
+                    const selected = color === c
+                    const available = isOptionAvailable(variants, 'color', c, size)
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        aria-pressed={selected}
+                        disabled={available === false && selected === false}
+                        title={unavailableTitle(available)}
+                        onClick={function () {
+                          pickColor(c)
+                        }}
+                        className={optionClass(selected, available)}
+                      >
+                        {c}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {info.sizes.length > 0 && (
+              <div
+                className={cn(
+                  'rounded-2xl transition',
+                  showSizeError &&
+                    'border border-rose-300 bg-rose-50/60 p-3 dark:border-rose-500/40 dark:bg-rose-500/10',
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-bold text-[#17203a] dark:text-white">Kích cỡ</p>
+                  {showSizeError && (
+                    <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                      Vui lòng chọn kích cỡ
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {info.sizes.map(function (s) {
+                    const selected = size === s
+                    const available = isOptionAvailable(variants, 'size', s, color)
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        aria-pressed={selected}
+                        disabled={available === false && selected === false}
+                        title={unavailableTitle(available)}
+                        onClick={function () {
+                          pickSize(s)
+                        }}
+                        className={optionClass(selected, available)}
+                      >
+                        {s}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 rounded-full border border-zinc-300 bg-white/85 px-2 py-1 dark:border-white/15 dark:bg-white/10">
+                <button
+                  type="button"
+                  aria-label="Giảm"
+                  disabled={qty <= 1}
+                  onClick={dec}
+                  className={cn(
+                    'cursor-pointer rounded-full p-2 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <Minus size={14} />
+                </button>
+                <span className="min-w-6 text-center font-bold tabular-nums">{qty}</span>
+                <button
+                  type="button"
+                  aria-label="Tăng"
+                  disabled={qty >= stock}
+                  onClick={inc}
+                  className={cn(
+                    'cursor-pointer rounded-full p-2 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+              <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                Còn {stock} sản phẩm
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
 
       {isOutOfStock === false && (
         <>
-          {info.colors.length > 0 && (
-            <div
-              className={cn(
-                'mt-5 rounded-2xl transition',
-                showColorError &&
-                  'border border-rose-300 bg-rose-50/60 p-3 dark:border-rose-500/40 dark:bg-rose-500/10',
-              )}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-bold text-[#17203a] dark:text-white">Màu sắc</p>
-                {showColorError && (
-                  <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
-                    Vui lòng chọn màu sắc
-                  </span>
-                )}
-              </div>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                {info.colors.map(function (c) {
-                  const selected = color === c
-                  const available = isOptionAvailable(variants, 'color', c, size)
-                  return (
-                    <button
-                      key={c}
-                      type="button"
-                      aria-pressed={selected}
-                      disabled={available === false && selected === false}
-                      title={unavailableTitle(available)}
-                      onClick={function () {
-                        pickColor(c)
-                      }}
-                      className={optionClass(selected, available)}
-                    >
-                      {c}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {info.sizes.length > 0 && (
-            <div
-              className={cn(
-                'mt-5 rounded-2xl transition',
-                showSizeError &&
-                  'border border-rose-300 bg-rose-50/60 p-3 dark:border-rose-500/40 dark:bg-rose-500/10',
-              )}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-bold text-[#17203a] dark:text-white">Kích cỡ</p>
-                {showSizeError && (
-                  <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
-                    Vui lòng chọn kích cỡ
-                  </span>
-                )}
-              </div>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                {info.sizes.map(function (s) {
-                  const selected = size === s
-                  const available = isOptionAvailable(variants, 'size', s, color)
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      aria-pressed={selected}
-                      disabled={available === false && selected === false}
-                      title={unavailableTitle(available)}
-                      onClick={function () {
-                        pickSize(s)
-                      }}
-                      className={optionClass(selected, available)}
-                    >
-                      {s}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-5 flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-full border border-zinc-300 bg-white/85 px-2 py-1 dark:border-white/15 dark:bg-white/10">
-              <button
-                type="button"
-                aria-label="Giảm"
-                disabled={qty <= 1}
-                onClick={dec}
-                className={cn(
-                  'cursor-pointer rounded-full p-2 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10',
-                  FOCUS_RING_CLASS,
-                )}
-              >
-                <Minus size={14} />
-              </button>
-              <span className="min-w-6 text-center font-bold tabular-nums">{qty}</span>
-              <button
-                type="button"
-                aria-label="Tăng"
-                disabled={qty >= stock}
-                onClick={inc}
-                className={cn(
-                  'cursor-pointer rounded-full p-2 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10',
-                  FOCUS_RING_CLASS,
-                )}
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-            <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
-              Còn {stock} sản phẩm
-            </span>
-          </div>
-
-          <div className="mt-8 flex flex-col gap-2.5 sm:flex-row">
+          <div className="mt-6 flex flex-col gap-2.5 pt-2 sm:flex-row">
             <button
               type="button"
               onClick={addToCart}
@@ -468,7 +494,7 @@ export default function ProductInfo(props: { product: ProductResponse }) {
 
           {/* Sticky Mobile Bottom CTA Bar */}
           <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200/90 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-md md:hidden dark:border-white/10 dark:bg-[#0a0f1e]/95">
-            <div className="mx-auto flex max-w-[1400px] items-center gap-2.5">
+            <div className="mx-auto flex max-w-6xl items-center gap-2.5">
               <div className="min-w-0 pr-1">
                 <p className="truncate text-sm font-extrabold text-blue-700 tabular-nums dark:text-sky-300">
                   {priceLabel(price)}

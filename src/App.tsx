@@ -43,6 +43,7 @@ import {
   ShopStorefront,
   StaticPage,
   VietQrPayment,
+  VirtualTryOn,
   Wishlist,
 } from './pages'
 
@@ -101,6 +102,14 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/product/:id" element={<ProductDetail />} />
+            <Route
+              path="/try-on/:id"
+              element={
+                <RequireAuth>
+                  <VirtualTryOn />
+                </RequireAuth>
+              }
+            />
             <Route path="/shops/:slug" element={<ShopStorefront />} />
             <Route path="/search" element={<Search />} />
             <Route path="/messages" element={<Messages />} />

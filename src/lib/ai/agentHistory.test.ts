@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { deserializeAgentMessage, serializeAgentMessage } from './agentHistory'
+import {
+  deserializeAgentMessage,
+  getMessageImageUrl,
+  serializeAgentMessage,
+  serializeUserMessageMetadata,
+} from './agentHistory'
 
 import type { AgentUIMessage } from './agent'
 
@@ -75,5 +80,54 @@ describe('agentHistory serialization & deserialization', () => {
 
     const restored = deserializeAgentMessage(payload)
     expect(restored.parts).toEqual([{ type: 'text', text: 'Chào shop' }])
+    expect(restored.metadata).toBeUndefined()
+    expect(getMessageImageUrl(restored)).toBeUndefined()
+  })
+
+  it('serializeUserMessageMetadata và deserializeAgentMessage lưu & khôi phục imageUrl', () => {
+    const metadata = serializeUserMessageMetadata('Mặc thử áo này', 'https://assets.test/me.png')
+    const restored = deserializeAgentMessage({
+      id: 'msg-img-1',
+      conversationId: 'conv-1',
+      role: 'user',
+      content: 'Mặc thử áo này',
+      metadata,
+      sentAt: '2026-11-11T10:15:00Z',
+    })
+
+    expect(restored.parts).toEqual([{ type: 'text', text: 'Mặc thử áo này' }])
+    expect(getMessageImageUrl(restored)).toBe('https://assets.test/me.png')
+  })
+
+  it('serializeUserMessageMetadata chỉ có ảnh (text rỗng) vẫn khôi phục được imageUrl và text part rỗng', () => {
+    const metadata = serializeUserMessageMetadata('', 'https://assets.test/only-img.png')
+    const restored = deserializeAgentMessage({
+      id: 'msg-img-2',
+      conversationId: 'conv-1',
+      role: 'user',
+      content: '',
+      metadata,
+      sentAt: '2026-11-11T10:20:00Z',
+    })
+
+    expect(restored.parts).toEqual([{ type: 'text', text: '' }])
+    expect(getMessageImageUrl(restored)).toBe('https://assets.test/only-img.png')
+  })
+
+  it('serializeUserMessageMetadata không truyền imageUrl thì không gắn metadata imageUrl khi deserialize', () => {
+    const metadata = serializeUserMessageMetadata('Chỉ có chữ')
+    expect(metadata).not.toContain('imageUrl')
+
+    const restored = deserializeAgentMessage({
+      id: 'msg-no-img',
+      conversationId: 'conv-1',
+      role: 'user',
+      content: 'Chỉ có chữ',
+      metadata,
+      sentAt: '2026-11-11T10:25:00Z',
+    })
+
+    expect(restored.metadata).toBeUndefined()
+    expect(getMessageImageUrl(restored)).toBeUndefined()
   })
 })

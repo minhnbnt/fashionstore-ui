@@ -4,6 +4,7 @@ import { lazy } from 'react'
 export const Home = lazy(() => import('./Home'))
 export const Search = lazy(() => import('./Search'))
 export const ProductDetail = lazy(() => import('./ProductDetail'))
+export const VirtualTryOn = lazy(() => import('./VirtualTryOn'))
 export const Faq = lazy(() => import('./Faq'))
 export const StaticPage = lazy(() => import('./StaticPage'))
 export const Messages = lazy(() => import('./Messages'))
