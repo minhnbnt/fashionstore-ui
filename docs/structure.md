@@ -38,7 +38,7 @@ fashionstore-ui/
 │   │   ├── notifications/ # toast/notification helpers dùng chung
 │   │   └── ai/            # agent (facade compose), tools/ (mỗi tool 1 file), chatTransport
 │   ├── pages/             # barrel index.ts export lazy mọi trang; root: Home, Search, ProductDetail, Faq, StaticPage
-│   │   ├── admin/         # 10 trang admin (Dashboard/Shops/ShopDetail/Users/UserDetail/Orders/Products/BannedKeywords/Content/Holidays)
+│   │   ├── admin/         # 12 trang admin (Dashboard/Shops/ShopDetail/Users/UserDetail/Orders/Payments/Products/BannedKeywords/Content/Holidays/Settings)
 │   │   ├── shop/          # ShopDashboard, ShopStorefront, InvitationAccept
 │   │   ├── checkout/      # Cart, Checkout, VietQrPayment, Orders, OrderDetail, Wishlist
 │   │   └── account/       # Account, Addresses, Login, ResetPassword, AuthCallback

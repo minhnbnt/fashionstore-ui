@@ -18,6 +18,7 @@ import {
   AdminDashboard,
   AdminHolidays,
   AdminOrders,
+  AdminPayments,
   AdminProducts,
   AdminSettings,
   AdminShopDetail,
@@ -241,6 +242,14 @@ export default function App() {
               element={
                 <RequireRole requiredRole="admin">
                   <AdminOrders />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/payments"
+              element={
+                <RequireRole requiredRole="admin">
+                  <AdminPayments />
                 </RequireRole>
               }
             />
