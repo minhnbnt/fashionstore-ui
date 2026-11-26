@@ -613,6 +613,21 @@ export default function OrderDetail() {
                 <span>Phí vận chuyển</span>
                 <span className="tabular-nums">{formatVnd(order.shippingFee ?? 0)}</span>
               </div>
+              {(order.discountAmount ?? 0) > 0 && (
+                <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-300">
+                  <span className="flex items-center gap-1.5">
+                    <span>Voucher Shop</span>
+                    {Boolean(order.voucherCode) && (
+                      <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-xs font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
+                        {order.voucherCode}
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-bold tabular-nums">
+                    -{formatVnd(order.discountAmount ?? 0)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between border-t border-sky-100 pt-2 text-base font-extrabold text-zinc-900 dark:border-white/10 dark:text-white">
                 <span>Tổng cộng</span>
                 <span className="tabular-nums">{formatVnd(order.total ?? 0)}</span>

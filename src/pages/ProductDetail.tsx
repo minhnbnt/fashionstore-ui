@@ -4,6 +4,7 @@ import { useListCategories } from '@generated/endpoints/categories/categories'
 import { useDetail1 } from '@generated/endpoints/products/products'
 import { ArrowClockwise } from '@phosphor-icons/react'
 
+import ShopVoucherStrip from '@/components/shop-storefront/ShopVoucherStrip'
 import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/Breadcrumb'
 import { DetailSkeleton } from '@/components/ui/Skeleton'
 import { apiErrorMessage, takeData } from '@/lib/api/apiAdapters'
@@ -139,7 +140,10 @@ export default function ProductDetail() {
         <ProductInfo key={'info-' + productId} product={product} />
       </div>
       {product.shopId !== undefined && product.shopId !== null && product.shopId !== '' && (
-        <PdpShopCard shopId={product.shopId} />
+        <>
+          <ShopVoucherStrip shopId={product.shopId} productId={productId} />
+          <PdpShopCard shopId={product.shopId} />
+        </>
       )}
       <ProductTabs product={product} />
       <ProductQnaSection key={'qna-' + productId} productId={productId} />

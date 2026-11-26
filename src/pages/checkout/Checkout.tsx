@@ -17,11 +17,14 @@ import {
   ShieldCheck,
   ShoppingBag,
   Storefront,
+  Ticket,
   Truck,
   WarningCircle,
+  X,
 } from '@phosphor-icons/react'
 
 import AddressFormModal from '@/components/account/AddressFormModal'
+import ShopVoucherModal from '@/components/checkout/ShopVoucherModal'
 import Modal from '@/components/Modal'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import { PageSkeleton } from '@/components/ui/Skeleton'
@@ -159,6 +162,11 @@ export default function Checkout() {
   const [formOpen, setFormOpen] = useState(false)
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'COD' | 'VIETQR'>('COD')
+  const [selectedVouchers, setSelectedVouchers] = useState<Record<string, string>>({})
+  const [activeVoucherShop, setActiveVoucherShop] = useState<{
+    shopId: string
+    shopName: string
+  } | null>(null)
 
   const addressesQuery = useList({
     query: {
@@ -244,7 +252,11 @@ export default function Checkout() {
   }
 
   // Phí ship và tổng tiền do server tính (mỗi shop 1 đơn), FE chỉ hiển thị.
-  const checkoutPreview = useCheckoutPreview(wanted, cart.isLoggedIn && orderItems.length > 0)
+  const checkoutPreview = useCheckoutPreview(
+    wanted,
+    cart.isLoggedIn && orderItems.length > 0,
+    selectedVouchers,
+  )
   const preview = checkoutPreview.preview
   const shopQuotes = new Map<string, ShopCheckoutPreview>()
   if (preview !== null) {
@@ -306,6 +318,25 @@ export default function Checkout() {
     }
     if (wanted.length > 0) {
       payload.variantIds = wanted
+    }
+
+    const validShopVouchers: Record<string, string> = {}
+    let hasValidVoucher = false
+    for (const [shopId, code] of Object.entries(selectedVouchers)) {
+      const trimmedCode = code.trim()
+      const quote = shopQuotes.get(shopId)
+      const hasVoucherError =
+        quote !== undefined &&
+        quote.voucherError !== null &&
+        quote.voucherError !== undefined &&
+        quote.voucherError !== ''
+      if (shopId !== '' && trimmedCode !== '' && !hasVoucherError) {
+        validShopVouchers[shopId] = trimmedCode
+        hasValidVoucher = true
+      }
+    }
+    if (hasValidVoucher) {
+      payload.shopVouchers = validShopVouchers
     }
 
     cart.checkout.mutate(
@@ -578,6 +609,75 @@ export default function Checkout() {
                     </div>
 
                     {shopQuote !== undefined && <ShopShippingRow quote={shopQuote} />}
+
+                    {group.shopId !== '' && (
+                      <div className="mt-2 rounded-2xl border border-zinc-200/80 bg-white/60 px-3.5 py-2.5 text-xs dark:border-white/10 dark:bg-white/5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
+                            <Ticket
+                              size={14}
+                              weight="bold"
+                              className="shrink-0 text-blue-700 dark:text-sky-300"
+                            />
+                            <span>Voucher của Shop</span>
+                            {Boolean(selectedVouchers[group.shopId] || shopQuote?.voucherCode) && (
+                              <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[11px] font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300">
+                                {selectedVouchers[group.shopId] || shopQuote?.voucherCode}
+                              </span>
+                            )}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {(shopQuote?.discountAmount ?? 0) > 0 && (
+                              <span className="font-extrabold text-emerald-600 tabular-nums dark:text-emerald-300">
+                                -{formatVnd(shopQuote?.discountAmount ?? 0)}
+                              </span>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={function () {
+                                setActiveVoucherShop({
+                                  shopId: group.shopId,
+                                  shopName: group.shopName,
+                                })
+                              }}
+                              className={cn(
+                                'cursor-pointer font-bold text-blue-700 hover:underline dark:text-sky-300',
+                                FOCUS_RING_CLASS,
+                              )}
+                            >
+                              {Boolean(selectedVouchers[group.shopId]) && 'Đổi mã'}
+                              {!selectedVouchers[group.shopId] && 'Chọn hoặc nhập mã'}
+                            </button>
+
+                            {Boolean(selectedVouchers[group.shopId]) && (
+                              <button
+                                type="button"
+                                aria-label={`Gỡ mã giảm giá của ${group.shopName || 'Shop'}`}
+                                onClick={function () {
+                                  setSelectedVouchers(function (prev) {
+                                    const next = { ...prev }
+                                    delete next[group.shopId]
+                                    return next
+                                  })
+                                }}
+                                className="inline-flex cursor-pointer items-center text-zinc-400 hover:text-rose-600 dark:hover:text-rose-300"
+                              >
+                                <X size={13} weight="bold" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {Boolean(shopQuote?.voucherError) && (
+                          <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-rose-600 dark:text-rose-300">
+                            <WarningCircle size={13} weight="fill" className="shrink-0" />
+                            <span>{shopQuote?.voucherError}</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -734,6 +834,14 @@ export default function Checkout() {
                   <ShippingFeeValue fee={preview?.shippingFee} state={feeState} />
                 </span>
               </div>
+              {(preview?.discountAmount ?? 0) > 0 && (
+                <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
+                  <span>Voucher giảm giá từ Shop:</span>
+                  <span className="font-bold tabular-nums">
+                    -{formatVnd(preview?.discountAmount ?? 0)}
+                  </span>
+                </div>
+              )}
               <div className="border-t border-zinc-200/70 pt-3 dark:border-white/10">
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm font-extrabold">Tổng thanh toán:</span>
@@ -897,6 +1005,37 @@ export default function Checkout() {
             if (a.id !== undefined) {
               setSelectedAddressId(a.id)
             }
+          }}
+        />
+      )}
+
+      {/* Modal Chọn hoặc Nhập Mã Giảm Giá Của Shop */}
+      {activeVoucherShop !== null && (
+        <ShopVoucherModal
+          key={activeVoucherShop.shopId}
+          open={true}
+          shopId={activeVoucherShop.shopId}
+          shopName={activeVoucherShop.shopName}
+          shopItems={
+            shopGroups.find(function (g) {
+              return g.shopId === activeVoucherShop.shopId
+            })?.items ?? []
+          }
+          currentCode={selectedVouchers[activeVoucherShop.shopId] ?? null}
+          onApply={function (code) {
+            const targetShopId = activeVoucherShop.shopId
+            setSelectedVouchers(function (prev) {
+              const next = { ...prev }
+              if (code === null || code.trim() === '') {
+                delete next[targetShopId]
+              } else {
+                next[targetShopId] = code.trim().toUpperCase()
+              }
+              return next
+            })
+          }}
+          onClose={function () {
+            setActiveVoucherShop(null)
           }}
         />
       )}

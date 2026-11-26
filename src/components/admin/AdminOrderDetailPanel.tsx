@@ -109,6 +109,11 @@ function MoneyRow({ label, value, strong }: { label: string; value: number; stro
   )
 }
 
+interface OrderVoucherFields {
+  voucherCode?: string | null
+  discountAmount?: number
+}
+
 function DetailBody({
   detail,
   onCancel,
@@ -128,6 +133,10 @@ function DetailBody({
     return <p className="text-sm text-zinc-500 dark:text-zinc-400">Không có dữ liệu đơn hàng.</p>
   }
   const alert = ALERT_OPTIONS.find((option) => option.value === order.alert)
+  const orderWithVoucher = order as AdminOrderResponse & OrderVoucherFields
+  const detailWithVoucher = detail as AdminOrderDetailResponse & OrderVoucherFields
+  const discountAmount = orderWithVoucher.discountAmount ?? detailWithVoucher.discountAmount ?? 0
+  const voucherCode = orderWithVoucher.voucherCode ?? detailWithVoucher.voucherCode ?? null
 
   return (
     <div className="space-y-6">
@@ -266,6 +275,19 @@ function DetailBody({
         <div className="mt-3 space-y-1 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 px-4 py-3 dark:border-white/10 dark:bg-white/5">
           <MoneyRow label="Tiền hàng" value={detail.subtotal ?? 0} />
           <MoneyRow label="Phí vận chuyển" value={detail.shippingFee ?? 0} />
+          {discountAmount > 0 && (
+            <div className="flex items-center justify-between text-sm text-emerald-700 dark:text-emerald-300">
+              <span className="flex items-center gap-1.5">
+                <span>Voucher Shop</span>
+                {Boolean(voucherCode) && (
+                  <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-xs font-bold dark:border-emerald-500/30 dark:bg-emerald-500/15">
+                    {voucherCode}
+                  </span>
+                )}
+              </span>
+              <span className="font-bold tabular-nums">-{formatVnd(discountAmount)}</span>
+            </div>
+          )}
           <MoneyRow label="Tổng cộng" value={order.total ?? 0} strong />
           <p className="pt-1 text-xs text-zinc-500 dark:text-zinc-400">
             {paymentMethodLabel(detail.paymentMethod)} ·{' '}
