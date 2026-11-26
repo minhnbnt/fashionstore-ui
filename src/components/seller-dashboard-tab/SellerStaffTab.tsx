@@ -76,6 +76,8 @@ const ALL_SYSTEM_PERMISSIONS = [
   { key: 'REVIEW_REPLY', label: 'Phản hồi đánh giá & báo cáo vi phạm', group: 'CSKH' },
   { key: 'CHAT_ACCESS', label: 'Nhắn tin trực tiếp với người mua (DHMQ Chat)', group: 'CSKH' },
   { key: 'DECORATION_WRITE', label: 'Trang trí gian hàng & xếp layout', group: 'Gian hàng' },
+  { key: 'VOUCHER_READ', label: 'Xem danh sách mã giảm giá', group: 'Khuyến mãi' },
+  { key: 'VOUCHER_WRITE', label: 'Tạo, sửa, bật/tắt & xóa mã giảm giá', group: 'Khuyến mãi' },
 ]
 
 const AUDIT_ACTIONS = [
@@ -85,6 +87,10 @@ const AUDIT_ACTIONS = [
   'PRODUCT_STATUS',
   'PRODUCT_IMAGE_DELETE',
   'INVENTORY_ADJUST',
+  'VOUCHER_CREATE',
+  'VOUCHER_UPDATE',
+  'VOUCHER_STATUS',
+  'VOUCHER_DELETE',
   'ORDER_CONFIRM',
   'ORDER_SHIP',
   'ORDER_DELIVER',

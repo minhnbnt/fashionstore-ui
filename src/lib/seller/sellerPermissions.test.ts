@@ -59,6 +59,12 @@ describe('canSeeTab', () => {
     expect(canSeeTab('ADD_PRODUCT', permissions, false)).toBe(false)
   })
 
+  it('staff có VOUCHER_READ hoặc VOUCHER_WRITE thấy VOUCHERS', () => {
+    expect(canSeeTab('VOUCHERS', ['VOUCHER_READ'], false)).toBe(true)
+    expect(canSeeTab('VOUCHERS', ['VOUCHER_WRITE'], false)).toBe(true)
+    expect(canSeeTab('VOUCHERS', ['ORDER_READ'], false)).toBe(false)
+  })
+
   it('staff không có quyền gì không được thấy OVERVIEW hay PROFILE', () => {
     expect(canSeeTab('OVERVIEW', [], false)).toBe(false)
     expect(canSeeTab('PROFILE', [], false)).toBe(false)
@@ -87,6 +93,12 @@ describe('permissionLabel', () => {
     expect(permissionLabel('PRODUCT_WRITE')).toBe('Quản lý sản phẩm')
     expect(permissionLabel('REVENUE_WITHDRAW')).toBe('Yêu cầu rút tiền')
     expect(permissionLabel('CHANGE_MEMBER_ROLE')).toBe('Đổi vai trò nhân viên')
+    expect(permissionLabel('VOUCHER_READ')).toBe('Xem mã giảm giá')
+    expect(permissionLabel('VOUCHER_WRITE')).toBe('Quản lý mã giảm giá')
+    expect(permissionLabel('VOUCHER_CREATE')).toBe('Tạo mã giảm giá')
+    expect(permissionLabel('VOUCHER_UPDATE')).toBe('Cập nhật mã giảm giá')
+    expect(permissionLabel('VOUCHER_STATUS')).toBe('Đổi trạng thái mã giảm giá')
+    expect(permissionLabel('VOUCHER_DELETE')).toBe('Xóa mã giảm giá')
     expect(permissionLabel('UNKNOWN_ACTION')).toBe('UNKNOWN_ACTION')
   })
 })
@@ -101,6 +113,7 @@ describe('formatTargetType', () => {
     expect(formatTargetType('MEMBER')).toBe('Thành viên')
     expect(formatTargetType('SHOP_MEMBER')).toBe('Thành viên')
     expect(formatTargetType('INVITATION')).toBe('Lời mời')
+    expect(formatTargetType('VOUCHER')).toBe('Mã giảm giá')
     expect(formatTargetType(null)).toBe('Hệ thống')
     expect(formatTargetType(undefined)).toBe('Hệ thống')
     expect(formatTargetType('OTHER_CUSTOM')).toBe('OTHER_CUSTOM')
@@ -111,10 +124,14 @@ describe('getAuditActionBadgeMeta', () => {
   it('phân loại đúng 5 nhóm màu sắc và badgeType', () => {
     expect(getAuditActionBadgeMeta('PRODUCT_DELETE').badgeType).toBe('danger')
     expect(getAuditActionBadgeMeta('ORDER_CANCEL').badgeType).toBe('danger')
+    expect(getAuditActionBadgeMeta('VOUCHER_DELETE').badgeType).toBe('danger')
     expect(getAuditActionBadgeMeta('ORDER_DELIVER').badgeType).toBe('success')
     expect(getAuditActionBadgeMeta('RETURN_APPROVE').badgeType).toBe('success')
+    expect(getAuditActionBadgeMeta('VOUCHER_CREATE').badgeType).toBe('success')
     expect(getAuditActionBadgeMeta('PRODUCT_CREATE').badgeType).toBe('info')
     expect(getAuditActionBadgeMeta('UPDATE_ROLE').badgeType).toBe('info')
+    expect(getAuditActionBadgeMeta('VOUCHER_UPDATE').badgeType).toBe('info')
+    expect(getAuditActionBadgeMeta('VOUCHER_STATUS').badgeType).toBe('info')
     expect(getAuditActionBadgeMeta('INVENTORY_ADJUST').badgeType).toBe('warning')
     expect(getAuditActionBadgeMeta('ORDER_CONFIRM').badgeType).toBe('warning')
     expect(getAuditActionBadgeMeta('CHAT_REPLY').badgeType).toBe('neutral')
