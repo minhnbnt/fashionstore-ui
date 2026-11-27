@@ -191,7 +191,9 @@ describe('VirtualTryOn — Trang Phòng Thử Đồ Ảo AI (/try-on/:id)', func
       objectUrl: 'blob:https://assets.test/tryon-res',
       blob: new Blob(['fake-png-bytes'], { type: 'image/png' }),
     })
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function () {})
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(function () {})
 
     const user = userEvent.setup()
     renderTryOnPage({ runTryOn: runTryOnMock })

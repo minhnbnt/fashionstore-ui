@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, DragEvent } from 'react'
 import { Link, useParams } from 'react-router'
 
-import { useChat } from '@ai-sdk/react'
 import { useDetail1 } from '@generated/endpoints/products/products'
 import {
   ArrowLeft,
@@ -17,45 +16,25 @@ import {
 
 import { MediaLightbox } from '@/components/ui/MediaLightbox'
 import { PageSkeleton } from '@/components/ui/Skeleton'
-import { readAgentConfig } from '@/lib/ai/agent'
-import { createChatTransport } from '@/lib/ai/chatTransport'
+import { inferTryOnMode, runDirectTryOn } from '@/lib/ai/vtonClient'
 import { fallbackImageOnError, takeData, urlOrPlaceholder } from '@/lib/api/apiAdapters'
-import { MAX_IMAGE_BYTES, uploadImageWithUrl } from '@/lib/api/uploadImage'
-import { EMPTY_FILTERS } from '@/lib/searchFilters'
+import { MAX_IMAGE_BYTES } from '@/lib/api/uploadImage'
 import { CARD_CLASS, cn, FOCUS_RING_CLASS, secondaryButtonClass } from '@/lib/ui/styles'
 
-import type { AgentConfig, AgentContext, AgentImageContext, AgentUIMessage } from '@/lib/ai/agent'
+import type { DirectTryOnInput, DirectTryOnResult } from '@/lib/ai/vtonClient'
 import type { ProductResponse } from '@generated/model/productResponse'
-import type { ChatTransport } from 'ai'
 
 export interface VirtualTryOnProps {
-  config?: AgentConfig
-  transport?: ChatTransport<AgentUIMessage>
+  vtonUrl?: string
+  runTryOn?: (input: DirectTryOnInput) => Promise<DirectTryOnResult>
 }
 
 interface UploadedPersonImage {
   previewUrl: string | null
-  status: 'uploading' | 'ready' | 'error'
+  status: 'ready' | 'error'
   filename?: string
-  image?: AgentImageContext
+  file?: File
   error?: string
-}
-
-function inferGarmentHint(name: string, description: string): string {
-  const combined = (name + ' ' + description).toLowerCase()
-  if (combined.includes('quần') || combined.includes('chân váy')) {
-    return 'bottom (quần / chân váy)'
-  }
-  if (
-    combined.includes('đầm') ||
-    combined.includes('váy liền') ||
-    combined.includes('jumpsuit') ||
-    combined.includes('set') ||
-    combined.includes('bộ')
-  ) {
-    return 'full (nguyên bộ / váy đầm)'
-  }
-  return 'top (áo / thân trên)'
 }
 
 function getCoverImageUrl(product: ProductResponse): string {
@@ -95,6 +74,12 @@ function nextTryOnProgress(prev: number): number {
   return Number(next.toFixed(2))
 }
 
+function revokeBlobUrl(url: string | null) {
+  if (url !== null && url.startsWith('blob:')) {
+    window.URL.revokeObjectURL(url)
+  }
+}
+
 export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
   const params = useParams()
   const id = params.id ?? ''
@@ -108,86 +93,11 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
   const [isDragging, setIsDragging] = useState(false)
   const [compareMode, setCompareMode] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
-  const uploadSeqRef = useRef(0)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [tryOnError, setTryOnError] = useState<string | null>(null)
+  const [resultImageUrl, setResultImageUrl] = useState<string | null>(null)
+  const tryOnSeqRef = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const config = useMemo(
-    function () {
-      if (props.config !== undefined) {
-        return props.config
-      }
-      return readAgentConfig()
-    },
-    [props.config],
-  )
-
-  const context = useMemo<AgentContext>(
-    function () {
-      return {
-        route: '/product/' + id,
-        filters: { ...EMPTY_FILTERS },
-        productId: id,
-      }
-    },
-    [id],
-  )
-
-  const agentTransport = useMemo(
-    function () {
-      if (props.transport !== undefined) {
-        return props.transport
-      }
-      if (config === null) {
-        return undefined
-      }
-      return createChatTransport({
-        backendUrl: config.backendUrl,
-        getContext: function () {
-          return context
-        },
-      })
-    },
-    [props.transport, config, context],
-  )
-
-  const chat = useChat<AgentUIMessage>({ transport: agentTransport })
-
-  let resultImageUrl: string | null = null
-  let hasTryOnError = false
-  let isTryOnToolRunning = false
-
-  for (const msg of chat.messages) {
-    if (msg.role === 'assistant') {
-      for (const part of msg.parts) {
-        if (part.type === 'tool-tryOn') {
-          if (part.state === 'input-streaming' || part.state === 'input-available') {
-            isTryOnToolRunning = true
-          }
-          if (part.state === 'output-error') {
-            isTryOnToolRunning = false
-            hasTryOnError = true
-          }
-          if (part.state === 'output-available') {
-            isTryOnToolRunning = false
-            hasTryOnError = false
-            resultImageUrl = part.output.image.url
-          }
-        }
-        if (part.type === 'tool-showImage' && part.state === 'output-available') {
-          isTryOnToolRunning = false
-          hasTryOnError = false
-          resultImageUrl = part.output.url
-        }
-      }
-    }
-  }
-  if (chat.error !== undefined) {
-    hasTryOnError = true
-  }
-
-  const isStreaming = chat.status === 'submitted' || chat.status === 'streaming'
-  const isGenerating =
-    (isStreaming || isTryOnToolRunning) && resultImageUrl === null && hasTryOnError === false
 
   useEffect(
     function () {
@@ -206,20 +116,24 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
 
   useEffect(function () {
     return function () {
+      tryOnSeqRef.current += 1
       setPersonImage(function (current) {
-        if (current !== null && current.previewUrl !== null) {
-          window.URL.revokeObjectURL(current.previewUrl)
+        if (current !== null) {
+          revokeBlobUrl(current.previewUrl)
         }
         return current
+      })
+      setResultImageUrl(function (currentUrl) {
+        revokeBlobUrl(currentUrl)
+        return currentUrl
       })
     }
   }, [])
 
   function clearPersonImage() {
-    uploadSeqRef.current += 1
     setPersonImage(function (current) {
-      if (current !== null && current.previewUrl !== null) {
-        window.URL.revokeObjectURL(current.previewUrl)
+      if (current !== null) {
+        revokeBlobUrl(current.previewUrl)
       }
       return null
     })
@@ -247,36 +161,13 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
     }
 
     clearPersonImage()
-    const seq = uploadSeqRef.current
     const previewUrl = window.URL.createObjectURL(file)
     setPersonImage({
       previewUrl,
-      status: 'uploading',
+      status: 'ready',
       filename: file.name,
+      file,
     })
-
-    uploadImageWithUrl(file)
-      .then(function (uploaded) {
-        if (uploadSeqRef.current !== seq) {
-          return
-        }
-        setPersonImage({
-          previewUrl,
-          status: 'ready',
-          filename: file.name,
-          image: { url: uploaded.publicUrl, mediaType: file.type },
-        })
-      })
-      .catch(function () {
-        if (uploadSeqRef.current !== seq) {
-          return
-        }
-        setPersonImage({
-          previewUrl,
-          status: 'error',
-          error: 'Không tải được ảnh lên, vui lòng thử lại.',
-        })
-      })
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -365,9 +256,9 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
     )
   }
 
-  const readyImage = personImage?.image
+  const readyFile = personImage?.file
   const previewUrl = personImage?.previewUrl ?? null
-  const canStartTryOn = config !== null && readyImage !== undefined && isGenerating === false
+  const canStartTryOn = readyFile !== undefined && isGenerating === false
 
   const coverUrl = getCoverImageUrl(product)
   const garmentUrls: string[] = []
@@ -401,40 +292,55 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
   }
 
   function handleStartTryOn() {
-    if (readyImage === undefined) {
+    if (readyFile === undefined || isGenerating) {
       return
     }
-    const hint = inferGarmentHint(product.name ?? '', product.description ?? '')
-    const hiddenPrompt =
-      'Hãy thực hiện thử đồ ảo (tryOn) cho sản phẩm "' +
-      (product.name ?? '') +
-      '" (ID: ' +
-      productId +
-      ', URL ảnh garment trang phục cần mặc thử: ' +
-      primaryTryOnImageUrl +
-      ', gợi ý phân loại tự động: ' +
-      hint +
-      ') với ảnh cá nhân mình vừa tải lên, sau đó hiển thị ảnh kết quả bằng showImage.'
+    tryOnSeqRef.current += 1
+    const seq = tryOnSeqRef.current
 
+    setResultImageUrl(function (prevUrl) {
+      revokeBlobUrl(prevUrl)
+      return null
+    })
+    setTryOnError(null)
     setCompareMode(false)
     setProgressPct(5)
-    if (typeof chat.clearError === 'function') {
-      chat.clearError()
+    setIsGenerating(true)
+
+    let runner = runDirectTryOn
+    if (props.runTryOn !== undefined) {
+      runner = props.runTryOn
     }
-    if (typeof chat.setMessages === 'function') {
-      chat.setMessages([])
-    }
-    void chat.sendMessage(
-      {
-        id: crypto.randomUUID(),
-        role: 'user',
-        parts: [{ type: 'text', text: hiddenPrompt }],
-      },
-      { body: { image: readyImage } },
-    )
+
+    const mode = inferTryOnMode(product.name ?? '', product.description ?? '')
+    runner({
+      personFile: readyFile,
+      garmentImageUrl: primaryTryOnImageUrl,
+      mode,
+      vtonUrl: props.vtonUrl,
+    })
+      .then(function (result) {
+        if (tryOnSeqRef.current !== seq) {
+          revokeBlobUrl(result.objectUrl)
+          return
+        }
+        setResultImageUrl(result.objectUrl)
+        setIsGenerating(false)
+      })
+      .catch(function (err: unknown) {
+        if (tryOnSeqRef.current !== seq) {
+          return
+        }
+        let message = 'Có lỗi khi tạo ảnh thử đồ. Vui lòng thử lại với ảnh rõ nét hơn.'
+        if (err instanceof Error && err.message.trim() !== '') {
+          message = err.message
+        }
+        setTryOnError(message)
+        setIsGenerating(false)
+      })
   }
 
-  async function handleDownloadResult() {
+  function handleDownloadResult() {
     if (resultImageUrl === null) {
       return
     }
@@ -443,27 +349,12 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
       slugPart = product.slug
     }
     const filename = 'thu-do-' + slugPart + '.png'
-    try {
-      const response = await fetch(resultImageUrl)
-      const blob = await response.blob()
-      const objectUrl = window.URL.createObjectURL(blob)
-      const anchor = document.createElement('a')
-      anchor.href = objectUrl
-      anchor.download = filename
-      document.body.appendChild(anchor)
-      anchor.click()
-      document.body.removeChild(anchor)
-      window.URL.revokeObjectURL(objectUrl)
-    } catch {
-      const anchor = document.createElement('a')
-      anchor.href = resultImageUrl
-      anchor.download = filename
-      anchor.target = '_blank'
-      anchor.rel = 'noreferrer'
-      document.body.appendChild(anchor)
-      anchor.click()
-      document.body.removeChild(anchor)
-    }
+    const anchor = document.createElement('a')
+    anchor.href = resultImageUrl
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
   }
 
   return (
@@ -588,11 +479,6 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
                   alt="Ảnh cá nhân của bạn"
                   className="max-h-72 w-auto rounded-2xl border border-zinc-200/80 object-contain shadow-xs dark:border-white/10"
                 />
-                {personImage?.status === 'uploading' && (
-                  <p className="text-xs font-semibold text-indigo-600 dark:text-sky-300">
-                    Đang tải ảnh lên…
-                  </p>
-                )}
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <button
                     type="button"
@@ -768,16 +654,16 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
               </div>
             )}
 
-            {hasTryOnError && !isGenerating && (
+            {tryOnError !== null && !isGenerating && (
               <p
                 role="alert"
                 className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-xs font-semibold text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"
               >
-                Có lỗi khi tạo ảnh thử đồ. Vui lòng thử lại với ảnh rõ nét hơn.
+                {tryOnError}
               </p>
             )}
 
-            {resultImageUrl === null && !isGenerating && !hasTryOnError && (
+            {resultImageUrl === null && !isGenerating && tryOnError === null && (
               <div className="flex flex-col items-center gap-3 text-center">
                 <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500 dark:bg-sky-500/10 dark:text-sky-300">
                   <Sparkle size={22} weight="fill" />
@@ -847,9 +733,7 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
               </button>
               <button
                 type="button"
-                onClick={function () {
-                  void handleDownloadResult()
-                }}
+                onClick={handleDownloadResult}
                 className={cn(
                   'btn-primary flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full py-2.5 text-xs font-bold',
                   FOCUS_RING_CLASS,
