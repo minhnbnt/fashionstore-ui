@@ -8,9 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import VirtualTryOn from './VirtualTryOn'
 
-import type { AgentConfig, AgentUIMessage } from '@/lib/ai/agent'
+import type { DirectTryOnInput, DirectTryOnResult } from '@/lib/ai/vtonClient'
 import type { ProductResponse } from '@generated/model/productResponse'
-import type { ChatTransport, UIMessageChunk } from 'ai'
 
 const { uploadWithUrlMock, useDetail1Mock } = vi.hoisted(function () {
   return {
@@ -29,10 +28,6 @@ vi.mock('@generated/endpoints/products/products', function () {
   }
 })
 
-function configFixture(): AgentConfig {
-  return { backendUrl: 'https://ai.test' }
-}
-
 function makeProduct(overrides?: Partial<ProductResponse>): ProductResponse {
   return {
     id: 'p-1',
@@ -47,29 +42,13 @@ function makeProduct(overrides?: Partial<ProductResponse>): ProductResponse {
   }
 }
 
-function transportOf(chunks: UIMessageChunk[]): ChatTransport<AgentUIMessage> {
-  return {
-    sendMessages: async function () {
-      return new ReadableStream<UIMessageChunk>({
-        start: function (controller) {
-          for (const chunk of chunks) {
-            controller.enqueue(chunk)
-          }
-          controller.close()
-        },
-      })
-    },
-    reconnectToStream: async function () {
-      return null
-    },
-  }
-}
-
-function renderTryOnPage(props: {
-  config?: AgentConfig
-  transport?: ChatTransport<AgentUIMessage>
-  productId?: string
-}) {
+function renderTryOnPage(
+  props: {
+    vtonUrl?: string
+    runTryOn?: (input: DirectTryOnInput) => Promise<DirectTryOnResult>
+    productId?: string
+  } = {},
+) {
   let pid = 'p-1'
   if (props.productId !== undefined) {
     pid = props.productId
@@ -83,7 +62,7 @@ function renderTryOnPage(props: {
         <Routes>
           <Route
             path="/try-on/:id"
-            element={<VirtualTryOn config={props.config} transport={props.transport} />}
+            element={<VirtualTryOn vtonUrl={props.vtonUrl} runTryOn={props.runTryOn} />}
           />
         </Routes>
       </MemoryRouter>
@@ -107,61 +86,13 @@ beforeEach(function () {
 
 afterEach(function () {
   cleanup()
+  vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
 
-const TRYON_INPUT = {
-  personImageUrl: 'https://assets.test/person.png',
-  garmentImageUrl: 'https://assets.test/garment-p1.png',
-  category: 'tops',
-  garmentPhotoType: 'flat-lay',
-}
-
-const TRYON_PENDING_CHUNKS: UIMessageChunk[] = [
-  { type: 'start', messageId: 'a1' },
-  { type: 'start-step' },
-  {
-    type: 'tool-input-available',
-    toolCallId: 'tc1',
-    toolName: 'tryOn',
-    input: TRYON_INPUT,
-  },
-  { type: 'finish-step' },
-  { type: 'finish' },
-]
-
-const TRYON_DONE_CHUNKS: UIMessageChunk[] = [
-  { type: 'start', messageId: 'a1' },
-  { type: 'start-step' },
-  {
-    type: 'tool-input-available',
-    toolCallId: 'tc1',
-    toolName: 'tryOn',
-    input: TRYON_INPUT,
-  },
-  {
-    type: 'tool-output-available',
-    toolCallId: 'tc1',
-    output: { image: { key: 'tryon/res.png', url: 'https://assets.test/tryon/res.png' } },
-  },
-  {
-    type: 'tool-input-available',
-    toolCallId: 'tc2',
-    toolName: 'showImage',
-    input: { url: 'https://assets.test/tryon/res.png' },
-  },
-  {
-    type: 'tool-output-available',
-    toolCallId: 'tc2',
-    output: { url: 'https://assets.test/tryon/res.png' },
-  },
-  { type: 'finish-step' },
-  { type: 'finish' },
-]
-
 describe('VirtualTryOn — Trang Phòng Thử Đồ Ảo AI (/try-on/:id)', function () {
   it('hiển thị ảnh garment trang phục và vùng kéo-thả ảnh mà không hiển thị tên/giá hay bắt chọn loại trang phục thủ công', function () {
-    renderTryOnPage({ config: configFixture() })
+    renderTryOnPage()
 
     expect(screen.getByText('1. Trang phục đang thử')).toBeTruthy()
     expect(screen.queryByText('Áo Sơ Mi Lụa')).toBeNull()
@@ -187,19 +118,15 @@ describe('VirtualTryOn — Trang Phòng Thử Đồ Ảo AI (/try-on/:id)', func
       isError: false,
       data: { status: 200, data: makeProduct({ tryOnEnabled: false }) },
     })
-    renderTryOnPage({ config: configFixture() })
+    renderTryOnPage()
 
     expect(screen.getByText('Sản phẩm này chưa hỗ trợ Thử đồ ảo AI')).toBeTruthy()
     const backLink = screen.getByRole('link', { name: /Quay lại trang sản phẩm/i })
     expect(backLink.getAttribute('href')).toBe('/product/p-1')
   })
 
-  it('kéo-thả một file ảnh hợp lệ vào vùng dropzone → gọi uploadImageWithUrl, hiện ảnh preview và bật nút Bắt đầu Thử Đồ Ảo AI', async function () {
-    uploadWithUrlMock.mockResolvedValue({
-      uploadId: 'up-person-1',
-      publicUrl: 'https://assets.test/person.png',
-    })
-    renderTryOnPage({ config: configFixture() })
+  it('kéo-thả một file ảnh hợp lệ vào vùng dropzone → hiện ngay ảnh preview và bật nút Bắt đầu Thử Đồ Ảo AI mà không gọi uploadImageWithUrl lên S3', async function () {
+    renderTryOnPage()
 
     const dropzone = screen.getByTestId('tryon-dropzone')
     fireEvent.drop(dropzone, {
@@ -207,24 +134,25 @@ describe('VirtualTryOn — Trang Phòng Thử Đồ Ảo AI (/try-on/:id)', func
     })
 
     expect(await screen.findByAltText('Ảnh cá nhân của bạn')).toBeTruthy()
-    expect(uploadWithUrlMock).toHaveBeenCalledTimes(1)
-    await waitFor(function () {
-      const startBtn = screen.getByRole('button', {
-        name: /Bắt đầu Thử Đồ Ảo AI/i,
-      }) as HTMLButtonElement
-      expect(startBtn.disabled).toBe(false)
-    })
+    expect(uploadWithUrlMock).not.toHaveBeenCalled()
+    const startBtn = screen.getByRole('button', {
+      name: /Bắt đầu Thử Đồ Ảo AI/i,
+    }) as HTMLButtonElement
+    expect(startBtn.disabled).toBe(false)
   })
 
-  it('kéo-thả file không phải ảnh hoặc ảnh > 5MB → hiển thị thông báo lỗi và không upload', async function () {
-    renderTryOnPage({ config: configFixture() })
+  it('kéo-thả file không phải ảnh hoặc ảnh > 5MB → hiển thị thông báo lỗi và giữ nút bắt đầu disabled', async function () {
+    renderTryOnPage()
     const dropzone = screen.getByTestId('tryon-dropzone')
 
     fireEvent.drop(dropzone, {
       dataTransfer: { files: [makeImageFile('note.txt', 'text/plain')] },
     })
     expect(await screen.findByText('Chỉ nhận file ảnh.')).toBeTruthy()
-    expect(uploadWithUrlMock).not.toHaveBeenCalled()
+    const startBtn = screen.getByRole('button', {
+      name: /Bắt đầu Thử Đồ Ảo AI/i,
+    }) as HTMLButtonElement
+    expect(startBtn.disabled).toBe(true)
 
     const bigImage = makeImageFile('big.png', 'image/png')
     Object.defineProperty(bigImage, 'size', { value: 6 * 1024 * 1024 })
@@ -232,28 +160,20 @@ describe('VirtualTryOn — Trang Phòng Thử Đồ Ảo AI (/try-on/:id)', func
       dataTransfer: { files: [bigImage] },
     })
     expect(await screen.findByText('Ảnh tối đa 5 MB.')).toBeTruthy()
-    expect(uploadWithUrlMock).not.toHaveBeenCalled()
+    expect(startBtn.disabled).toBe(true)
   })
 
-  it('bấm Bắt đầu Thử Đồ Ảo AI → hiện trạng thái chờ khi tryOn đang chạy', async function () {
-    uploadWithUrlMock.mockResolvedValue({
-      uploadId: 'up-person-1',
-      publicUrl: 'https://assets.test/person.png',
+  it('bấm Bắt đầu Thử Đồ Ảo AI → hiện trạng thái chờ kèm thanh progressbar và các bước tiến trình khi runTryOn đang chạy', async function () {
+    const runTryOnMock = vi.fn(function () {
+      return new Promise<DirectTryOnResult>(function () {
+        // giữ pending để kiểm tra UI loading
+      })
     })
     const user = userEvent.setup()
-    renderTryOnPage({
-      config: configFixture(),
-      transport: transportOf(TRYON_PENDING_CHUNKS),
-    })
+    renderTryOnPage({ runTryOn: runTryOnMock })
 
     fireEvent.drop(screen.getByTestId('tryon-dropzone'), {
       dataTransfer: { files: [makeImageFile()] },
-    })
-    await waitFor(function () {
-      const startBtn = screen.getByRole('button', {
-        name: /Bắt đầu Thử Đồ Ảo AI/i,
-      }) as HTMLButtonElement
-      expect(startBtn.disabled).toBe(false)
     })
 
     await user.click(screen.getByRole('button', { name: /Bắt đầu Thử Đồ Ảo AI/i }))
@@ -266,38 +186,32 @@ describe('VirtualTryOn — Trang Phòng Thử Đồ Ảo AI (/try-on/:id)', func
     expect(screen.getByText(/Phân tích dáng người & tư thế ảnh cá nhân/)).toBeTruthy()
   })
 
-  it('khi có kết quả thử đồ → hiện Ảnh kết quả thử đồ, hỗ trợ So sánh Trước / Sau, phóng to và Tải ảnh về máy', async function () {
-    uploadWithUrlMock.mockResolvedValue({
-      uploadId: 'up-person-1',
-      publicUrl: 'https://assets.test/person.png',
+  it('khi runTryOn trả về kết quả → truyền đúng tham số, hiện Ảnh kết quả thử đồ, hỗ trợ So sánh Trước / Sau, Phóng to ảnh và Tải ảnh về máy', async function () {
+    const runTryOnMock = vi.fn().mockResolvedValue({
+      objectUrl: 'blob:https://assets.test/tryon-res',
+      blob: new Blob(['fake-png-bytes'], { type: 'image/png' }),
     })
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(new Blob(['fake-png-bytes'], { type: 'image/png' }), {
-        status: 200,
-      }),
-    )
-    vi.stubGlobal('fetch', fetchMock)
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function () {})
 
     const user = userEvent.setup()
-    renderTryOnPage({
-      config: configFixture(),
-      transport: transportOf(TRYON_DONE_CHUNKS),
-    })
+    renderTryOnPage({ runTryOn: runTryOnMock })
 
+    const personFile = makeImageFile()
     fireEvent.drop(screen.getByTestId('tryon-dropzone'), {
-      dataTransfer: { files: [makeImageFile()] },
-    })
-    await waitFor(function () {
-      const startBtn = screen.getByRole('button', {
-        name: /Bắt đầu Thử Đồ Ảo AI/i,
-      }) as HTMLButtonElement
-      expect(startBtn.disabled).toBe(false)
+      dataTransfer: { files: [personFile] },
     })
 
     await user.click(screen.getByRole('button', { name: /Bắt đầu Thử Đồ Ảo AI/i }))
 
+    expect(runTryOnMock).toHaveBeenCalledWith({
+      personFile,
+      garmentImageUrl: 'https://assets.test/garment-p1.png',
+      mode: 'top',
+      vtonUrl: undefined,
+    })
+
     const resultImg = (await screen.findByAltText('Ảnh kết quả thử đồ')) as HTMLImageElement
-    expect(resultImg.getAttribute('src')).toBe('https://assets.test/tryon/res.png')
+    expect(resultImg.getAttribute('src')).toBe('blob:https://assets.test/tryon-res')
 
     // Bật So sánh Trước / Sau
     const compareBtn = screen.getByRole('button', { name: /So sánh Trước \/ Sau/i })
@@ -314,11 +228,11 @@ describe('VirtualTryOn — Trang Phòng Thử Đồ Ảo AI (/try-on/:id)', func
     const downloadBtn = screen.getByRole('button', { name: /Tải ảnh về máy/i })
     await user.click(downloadBtn)
     await waitFor(function () {
-      expect(fetchMock).toHaveBeenCalledWith('https://assets.test/tryon/res.png')
+      expect(clickSpy).toHaveBeenCalledTimes(1)
     })
   })
 
-  it('khi sản phẩm có nhiều ảnh Garment → hiển thị danh sách mẫu trang phục và cho phép người mua bấm đổi ảnh Garment để thử', async function () {
+  it('khi sản phẩm có nhiều ảnh Garment → hiển thị danh sách mẫu trang phục và gửi đúng garmentImageUrl của mẫu đã chọn cho runTryOn', async function () {
     useDetail1Mock.mockReturnValue({
       isPending: false,
       isError: false,
@@ -343,8 +257,12 @@ describe('VirtualTryOn — Trang Phòng Thử Đồ Ảo AI (/try-on/:id)', func
         }),
       },
     })
+    const runTryOnMock = vi.fn().mockResolvedValue({
+      objectUrl: 'blob:https://assets.test/tryon-black',
+      blob: new Blob(['fake-png-bytes'], { type: 'image/png' }),
+    })
     const user = userEvent.setup()
-    renderTryOnPage({ config: configFixture() })
+    renderTryOnPage({ runTryOn: runTryOnMock })
 
     const productImg = screen.getByAltText('Áo Sơ Mi Lụa')
     expect(productImg.getAttribute('src')).toBe('https://assets.test/garment-white.png')
@@ -359,5 +277,35 @@ describe('VirtualTryOn — Trang Phòng Thử Đồ Ảo AI (/try-on/:id)', func
     expect(productImg.getAttribute('src')).toBe('https://assets.test/garment-black.png')
     expect(thumb2.getAttribute('aria-pressed')).toBe('true')
     expect(thumb1.getAttribute('aria-pressed')).toBe('false')
+
+    const personFile = makeImageFile()
+    fireEvent.drop(screen.getByTestId('tryon-dropzone'), {
+      dataTransfer: { files: [personFile] },
+    })
+    await user.click(screen.getByRole('button', { name: /Bắt đầu Thử Đồ Ảo AI/i }))
+
+    expect(runTryOnMock).toHaveBeenCalledWith({
+      personFile,
+      garmentImageUrl: 'https://assets.test/garment-black.png',
+      mode: 'top',
+      vtonUrl: undefined,
+    })
+  })
+
+  it('khi runTryOn reject lỗi → hiển thị thông báo lỗi role="alert" và thoát trạng thái loading', async function () {
+    const runTryOnMock = vi
+      .fn()
+      .mockRejectedValue(new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.'))
+    const user = userEvent.setup()
+    renderTryOnPage({ runTryOn: runTryOnMock })
+
+    fireEvent.drop(screen.getByTestId('tryon-dropzone'), {
+      dataTransfer: { files: [makeImageFile()] },
+    })
+    await user.click(screen.getByRole('button', { name: /Bắt đầu Thử Đồ Ảo AI/i }))
+
+    const alertEl = await screen.findByRole('alert')
+    expect(alertEl.textContent).toContain('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
+    expect(screen.queryByText('Đang tạo ảnh thử đồ, chờ chút nhé…')).toBeNull()
   })
 })
