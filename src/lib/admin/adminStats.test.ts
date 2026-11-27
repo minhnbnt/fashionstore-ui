@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import {
   breakdownRows,
+  formatDuration,
+  formatPercent,
+  percentChange,
+  periodWindow,
+  safeRatio,
   formatCompactVnd,
   formatDayLabel,
   niceCeiling,
@@ -84,5 +89,91 @@ describe('formatCompactVnd', () => {
 describe('formatDayLabel', () => {
   it('dinh dang ngay/thang, khong lech mui gio', () => {
     expect(formatDayLabel('2026-10-06')).toBe('06/10')
+  })
+})
+
+function trendOf(values: number[]): AdminStatsResponse {
+  return {
+    dailyTrend: values.map(function (value, idx) {
+      const day = String(idx + 1).padStart(2, '0')
+      return {
+        date: `2026-10-${day}`,
+        orders: value,
+        orderValue: value * 1000,
+        newUsers: 0,
+        newShops: 0,
+      }
+    }),
+  }
+}
+
+describe('periodWindow', () => {
+  it('lay N ngay cuoi lam ky nay va N ngay lien truoc lam ky truoc', () => {
+    const stats = trendOf([1, 2, 3, 4, 5, 6])
+    const win = periodWindow(stats, 'orders', 3)
+
+    expect(win.current.map((p) => p.value)).toEqual([4, 5, 6])
+    expect(win.previous.map((p) => p.value)).toEqual([1, 2, 3])
+    expect(win.currentTotal).toBe(15)
+    expect(win.previousTotal).toBe(6)
+    expect(win.change).toBeCloseTo(1.5)
+  })
+
+  it('thieu du lieu ky truoc thi ky truoc ngan hon, change null khi ky truoc bang 0', () => {
+    const stats = trendOf([0, 2, 3])
+    const win = periodWindow(stats, 'orders', 2)
+
+    expect(win.current.map((p) => p.value)).toEqual([2, 3])
+    expect(win.previous.map((p) => p.value)).toEqual([0])
+    expect(win.change).toBeNull()
+  })
+
+  it('stats undefined thi rong', () => {
+    const win = periodWindow(undefined, 'orderValue', 7)
+
+    expect(win.current).toEqual([])
+    expect(win.previous).toEqual([])
+    expect(win.currentTotal).toBe(0)
+    expect(win.change).toBeNull()
+  })
+})
+
+describe('percentChange', () => {
+  it('tinh ti le thay doi so voi ky truoc', () => {
+    expect(percentChange(120, 100)).toBeCloseTo(0.2)
+    expect(percentChange(50, 100)).toBeCloseTo(-0.5)
+  })
+
+  it('ky truoc 0 thi khong so sanh duoc', () => {
+    expect(percentChange(10, 0)).toBeNull()
+    expect(percentChange(0, 0)).toBeNull()
+  })
+})
+
+describe('formatPercent', () => {
+  it('lam tron 1 chu so thap phan theo vi-VN', () => {
+    expect(formatPercent(0.1234)).toBe('12,3%')
+    expect(formatPercent(1)).toBe('100%')
+    expect(formatPercent(0)).toBe('0%')
+  })
+})
+
+describe('formatDuration', () => {
+  it('duoi 1 gio hien phut, duoi 48 gio hien gio, con lai hien ngay', () => {
+    expect(formatDuration(0.5)).toBe('30 phút')
+    expect(formatDuration(0.001)).toBe('Dưới 1 phút')
+    expect(formatDuration(5.25)).toBe('5,3 giờ')
+    expect(formatDuration(72)).toBe('3 ngày')
+  })
+
+  it('0 thi chua co du lieu', () => {
+    expect(formatDuration(0)).toBe('Chưa có')
+  })
+})
+
+describe('safeRatio', () => {
+  it('mau 0 thi tra 0 thay vi NaN', () => {
+    expect(safeRatio(3, 4)).toBeCloseTo(0.75)
+    expect(safeRatio(3, 0)).toBe(0)
   })
 })
