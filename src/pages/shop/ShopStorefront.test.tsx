@@ -64,7 +64,12 @@ vi.mock('@generated/endpoints/shops-decoration/shops-decoration', () => ({
             title: 'Khuyến Mãi Mùa Hè',
             enabled: true,
             banners: [
-              { id: 's-1', imageKey: 'b1.jpg', title: 'Ưu Đãi 50%', linkUrl: '/search?q=sale' },
+              {
+                id: 's-1',
+                imageUrl: 'https://img.test/b1.jpg',
+                title: 'Ưu Đãi 50%',
+                linkUrl: '/search?q=sale',
+              },
             ],
           },
           {

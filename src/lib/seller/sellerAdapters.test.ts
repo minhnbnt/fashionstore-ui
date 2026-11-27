@@ -448,6 +448,38 @@ describe('decoration adapter', () => {
     expect(parsed[0]?.videoUrl).toBe('https://s3.test/decoration/shop-intro.mp4')
   })
 
+  it('giu uploadId cua slide, videoUploadId va categoryId qua vong tron', () => {
+    const full: DecorationBlock[] = [
+      {
+        id: 'b-s',
+        type: 'BANNER_SLIDER',
+        title: 'Slider',
+        enabled: true,
+        banners: [{ id: 's1', uploadId: 'up-1', imageUrl: 'https://s3.test/a.jpg' }],
+      },
+      { id: 'b-v', type: 'VIDEO', title: 'V', enabled: true, videoUploadId: 'up-v' },
+      {
+        id: 'b-c',
+        type: 'PRODUCT_COLLECTION',
+        title: 'Áo',
+        enabled: true,
+        collectionType: 'CUSTOM',
+        categoryId: 'cat-1',
+      },
+    ]
+    const parsed = decorationBlocks({ draft: decorationDraftJson(full) })
+    expect(parsed[0]?.banners?.[0]?.uploadId).toBe('up-1')
+    expect(parsed[1]?.videoUploadId).toBe('up-v')
+    expect(parsed[2]?.categoryId).toBe('cat-1')
+  })
+
+  it('ban nhap rong thi dung layout da xuat ban', () => {
+    const layout = decorationDraftJson([
+      { id: 'b-1', type: 'CATEGORY_GRID', title: 'Danh mục', enabled: true },
+    ])
+    expect(decorationBlocks({ layout, draft: '' })[0]?.id).toBe('b-1')
+  })
+
   it('JSON loi thi tra mang rong', () => {
     expect(decorationBlocks({ draft: '{khong phai json' })).toEqual([])
     expect(decorationBlocks(undefined)).toEqual([])

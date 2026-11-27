@@ -67,9 +67,10 @@ describe('SellerDecorationTab', () => {
     )
 
     // Tiêu đề studio
-    expect(html).toContain('Trang Trí Gian Hàng (Store Decoration)')
+    expect(html).toContain('Lưu nháp để thử, xuất bản để khách thấy.')
     expect(html).toContain('Lưu nháp')
-    expect(html).toContain('Áp dụng gian hàng')
+    expect(html).toContain('Xuất bản')
+    expect(html).toContain('Bản nháp chưa xuất bản')
 
     // Hiển thị các khối module mở rộng
     expect(html).toContain('Slider Chào Hè')
