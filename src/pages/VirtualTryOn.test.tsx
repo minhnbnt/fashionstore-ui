@@ -310,4 +310,30 @@ describe('VirtualTryOn — Trang Phòng Thử Đồ Ảo AI (/try-on/:id)', func
     expect(alertEl.textContent).toContain('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
     expect(screen.queryByText('Đang tạo ảnh thử đồ, chờ chút nhé…')).toBeNull()
   })
+
+  it('thu hồi cả blob URL ảnh cá nhân lẫn blob URL ảnh kết quả khi unmount trang', async function () {
+    const revokeSpy = vi.spyOn(window.URL, 'revokeObjectURL')
+    const runTryOnMock = vi.fn().mockResolvedValue({
+      objectUrl: 'blob:https://assets.test/tryon-unmount',
+      blob: new Blob(['fake-png-bytes'], { type: 'image/png' }),
+    })
+    const user = userEvent.setup()
+    const rendered = renderTryOnPage({ runTryOn: runTryOnMock })
+
+    fireEvent.drop(screen.getByTestId('tryon-dropzone'), {
+      dataTransfer: { files: [makeImageFile()] },
+    })
+    const previewImg = (await screen.findByAltText('Ảnh cá nhân của bạn')) as HTMLImageElement
+    const previewBlobUrl = previewImg.getAttribute('src') ?? ''
+    expect(previewBlobUrl.startsWith('blob:')).toBe(true)
+
+    await user.click(screen.getByRole('button', { name: /Bắt đầu Thử Đồ Ảo AI/i }))
+    await screen.findByAltText('Ảnh kết quả thử đồ')
+
+    revokeSpy.mockClear()
+    rendered.unmount()
+
+    expect(revokeSpy).toHaveBeenCalledWith(previewBlobUrl)
+    expect(revokeSpy).toHaveBeenCalledWith('blob:https://assets.test/tryon-unmount')
+  })
 })

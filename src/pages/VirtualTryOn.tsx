@@ -96,6 +96,8 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [tryOnError, setTryOnError] = useState<string | null>(null)
   const [resultImageUrl, setResultImageUrl] = useState<string | null>(null)
+  const personPreviewUrlRef = useRef<string | null>(null)
+  const resultImageUrlRef = useRef<string | null>(null)
   const tryOnSeqRef = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -117,26 +119,17 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
   useEffect(function () {
     return function () {
       tryOnSeqRef.current += 1
-      setPersonImage(function (current) {
-        if (current !== null) {
-          revokeBlobUrl(current.previewUrl)
-        }
-        return current
-      })
-      setResultImageUrl(function (currentUrl) {
-        revokeBlobUrl(currentUrl)
-        return currentUrl
-      })
+      revokeBlobUrl(personPreviewUrlRef.current)
+      personPreviewUrlRef.current = null
+      revokeBlobUrl(resultImageUrlRef.current)
+      resultImageUrlRef.current = null
     }
   }, [])
 
   function clearPersonImage() {
-    setPersonImage(function (current) {
-      if (current !== null) {
-        revokeBlobUrl(current.previewUrl)
-      }
-      return null
-    })
+    revokeBlobUrl(personPreviewUrlRef.current)
+    personPreviewUrlRef.current = null
+    setPersonImage(null)
   }
 
   function processSelectedFile(file: File | undefined) {
@@ -144,6 +137,8 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
       return
     }
     if (file.type.startsWith('image/') === false) {
+      revokeBlobUrl(personPreviewUrlRef.current)
+      personPreviewUrlRef.current = null
       setPersonImage({
         previewUrl: null,
         status: 'error',
@@ -152,6 +147,8 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
       return
     }
     if (file.size > MAX_IMAGE_BYTES) {
+      revokeBlobUrl(personPreviewUrlRef.current)
+      personPreviewUrlRef.current = null
       setPersonImage({
         previewUrl: null,
         status: 'error',
@@ -162,6 +159,7 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
 
     clearPersonImage()
     const previewUrl = window.URL.createObjectURL(file)
+    personPreviewUrlRef.current = previewUrl
     setPersonImage({
       previewUrl,
       status: 'ready',
@@ -298,10 +296,9 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
     tryOnSeqRef.current += 1
     const seq = tryOnSeqRef.current
 
-    setResultImageUrl(function (prevUrl) {
-      revokeBlobUrl(prevUrl)
-      return null
-    })
+    revokeBlobUrl(resultImageUrlRef.current)
+    resultImageUrlRef.current = null
+    setResultImageUrl(null)
     setTryOnError(null)
     setCompareMode(false)
     setProgressPct(5)
@@ -324,6 +321,7 @@ export default function VirtualTryOn(props: VirtualTryOnProps = {}) {
           revokeBlobUrl(result.objectUrl)
           return
         }
+        resultImageUrlRef.current = result.objectUrl
         setResultImageUrl(result.objectUrl)
         setIsGenerating(false)
       })
