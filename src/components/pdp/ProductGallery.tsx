@@ -16,9 +16,21 @@ export default function ProductGallery(props: {
   const [active, setActive] = useState(0)
   const [zoomOpen, setZoomOpen] = useState(false)
 
-  const imgs = [...props.images].sort(function (a, b) {
+  const sortedImgs = [...props.images].sort(function (a, b) {
     return (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
   })
+  const seenImgKeys = new Set<string>()
+  const imgs: ImageResponse[] = []
+  for (const img of sortedImgs) {
+    const key = img.uploadId ?? img.url ?? ''
+    if (key !== '' && seenImgKeys.has(key)) {
+      continue
+    }
+    if (key !== '') {
+      seenImgKeys.add(key)
+    }
+    imgs.push(img)
+  }
   const hasVideo = props.videoUrl !== null && props.videoUrl !== undefined && props.videoUrl !== ''
   let videoOffset = 0
   if (hasVideo) {
