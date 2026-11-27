@@ -9,14 +9,15 @@ import {
   ArrowRight,
   CaretLeft,
   CaretRight,
+  Image as ImageIcon,
   Pause,
   Play,
-  Sparkle,
   SquaresFour,
   VideoCamera,
 } from '@phosphor-icons/react'
 
 import { ProductCard, type ProductCardItem } from '@/components/ui/ProductCard'
+import { ProductCardSkeleton } from '@/components/ui/Skeleton'
 import {
   fallbackImageOnError,
   hookErrorMessage,
@@ -25,9 +26,11 @@ import {
   urlOrPlaceholder,
 } from '@/lib/api/apiAdapters'
 import { isInternalLink } from '@/lib/content/siteContent'
+import { safeBannerLink } from '@/lib/seller/decoration'
 import { CARD_CLASS, cn, FOCUS_RING_CLASS, iconChipClass } from '@/lib/ui/styles'
 
 import type { DecorationBlock } from '@/types/seller'
+import type { GetShopProductsParams } from '@generated/model/getShopProductsParams'
 import type { PageResponseProductResponse } from '@generated/model/pageResponseProductResponse'
 import type { ProductResponse } from '@generated/model/productResponse'
 import type { ShopCategorySummaryResponse } from '@generated/model/shopCategorySummaryResponse'
@@ -37,6 +40,11 @@ interface ShopDecorationRendererProps {
   shopId: string
   onSelectCategory?: (categoryId: string) => void
   onViewAllProducts?: () => void
+  /**
+   * Chế độ xem trước trong trình trang trí của seller: khối trống (chưa có ảnh, chưa có video,
+   * không có sản phẩm khớp) hiện khung gợi ý thay vì ẩn đi như với khách.
+   */
+  preview?: boolean
 }
 
 function toProductCardItem(p: ProductResponse): ProductCardItem {
@@ -84,12 +92,27 @@ function toProductCardItem(p: ProductResponse): ProductCardItem {
   }
 }
 
+/** Khung gợi ý chỉ seller thấy trong chế độ xem trước. */
+function PreviewPlaceholder(props: { icon: React.ReactNode; title: string; hint: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-3xl border border-dashed border-zinc-300 bg-white/60 px-5 py-6 text-left dark:border-white/15 dark:bg-white/[0.03]">
+      <span className="text-zinc-400 dark:text-zinc-500">{props.icon}</span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-bold text-[#17203a] dark:text-zinc-100">
+          {props.title}
+        </span>
+        <span className="block text-xs text-zinc-500 dark:text-zinc-400">{props.hint}</span>
+      </span>
+    </div>
+  )
+}
+
 function BannerAnchor(props: {
   linkUrl: string | undefined
   className: string
   children: React.ReactNode
 }) {
-  const link = props.linkUrl ?? ''
+  const link = safeBannerLink(props.linkUrl)
   if (link === '') {
     return <div className={props.className}>{props.children}</div>
   }
@@ -107,8 +130,9 @@ function BannerAnchor(props: {
   )
 }
 
-function BannerSliderBlock({ block }: { block: DecorationBlock }) {
-  const banners = block.banners ?? []
+function BannerSliderBlock({ block, preview }: { block: DecorationBlock; preview: boolean }) {
+  // Slide chưa tải ảnh thì bỏ qua — khách không nên thấy ô placeholder xám trong slider.
+  const banners = (block.banners ?? []).filter((b) => b.imageUrl !== '')
   const [currentIdx, setCurrentIdx] = useState(0)
   const [paused, setPaused] = useState(false)
 
@@ -119,11 +143,20 @@ function BannerSliderBlock({ block }: { block: DecorationBlock }) {
 
     const timer = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % banners.length)
-    }, 4500)
+    }, 5000)
     return () => clearInterval(timer)
   }, [banners.length, paused])
 
   if (banners.length === 0) {
+    if (preview) {
+      return (
+        <PreviewPlaceholder
+          icon={<ImageIcon size={22} />}
+          title={block.title || 'Banner'}
+          hint="Chưa có ảnh nào. Bấm biểu tượng bánh răng để tải banner lên — khách chỉ thấy khối này khi có ảnh."
+        />
+      )
+    }
     return null
   }
 
@@ -149,157 +182,174 @@ function BannerSliderBlock({ block }: { block: DecorationBlock }) {
     pauseLabel = 'Tiếp tục tự chuyển banner'
   }
 
-  const hasLink =
-    activeBanner?.linkUrl !== undefined &&
-    activeBanner.linkUrl !== null &&
-    activeBanner.linkUrl !== ''
+  const hasLink = safeBannerLink(activeBanner?.linkUrl) !== ''
+  const slideTitle = activeBanner?.title ?? ''
 
   return (
     <div
       aria-roledescription="carousel"
       aria-label={block.title || 'Banner gian hàng'}
-      className="relative overflow-hidden rounded-3xl bg-zinc-900 shadow-md"
+      className="relative overflow-hidden rounded-3xl bg-zinc-900 shadow-sm"
     >
-      <div className="relative aspect-[3/1] min-h-[180px] w-full overflow-hidden">
+      <div className="relative aspect-[16/9] w-full overflow-hidden @xl:aspect-[3/1]">
         <BannerAnchor linkUrl={activeBanner?.linkUrl} className="block h-full w-full">
           <img
             src={imageSrc}
-            alt={activeBanner?.title ?? block.title}
+            alt={slideTitle || block.title}
             onError={fallbackImageOnError}
             className={cn(
               'h-full w-full object-cover',
               hasLink &&
-                'motion-safe:transition-transform motion-safe:duration-700 hover:scale-105',
+                'motion-safe:transition-transform motion-safe:duration-700 hover:scale-[1.03]',
             )}
           />
         </BannerAnchor>
 
-        {/* Title overlay: pointer-events-none so underlying banner link clicks work */}
-        {activeBanner?.title && (
-          <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 text-white">
-            <h3 className="text-lg font-bold drop-shadow-md sm:text-2xl">{activeBanner.title}</h3>
+        {/* pointer-events-none để click vẫn rơi xuống link của banner */}
+        {slideTitle !== '' && (
+          <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/10 to-transparent p-5 text-white @xl:p-8">
+            <h3 className="max-w-lg text-xl leading-tight font-bold drop-shadow-sm @xl:text-3xl">
+              {slideTitle}
+            </h3>
           </div>
         )}
       </div>
 
-      {/* Navigation Arrows & Pause Toggle */}
       {banners.length > 1 && (
         <>
           <button
             type="button"
             onClick={handlePrevSlide}
             className={cn(
-              'absolute top-1/2 left-3 -translate-y-1/2 cursor-pointer rounded-full bg-black/45 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/75',
+              'absolute top-1/2 left-3 hidden -translate-y-1/2 cursor-pointer rounded-full bg-black/40 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/70 @md:block',
               FOCUS_RING_CLASS,
             )}
             aria-label="Banner trước"
           >
-            <CaretLeft size={20} weight="bold" />
+            <CaretLeft size={18} weight="bold" />
           </button>
           <button
             type="button"
             onClick={() => setCurrentIdx((prev) => (prev + 1) % banners.length)}
             className={cn(
-              'absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded-full bg-black/45 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/75',
+              'absolute top-1/2 right-3 hidden -translate-y-1/2 cursor-pointer rounded-full bg-black/40 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/70 @md:block',
               FOCUS_RING_CLASS,
             )}
             aria-label="Banner sau"
           >
-            <CaretRight size={20} weight="bold" />
+            <CaretRight size={18} weight="bold" />
           </button>
-          <button
-            type="button"
-            onClick={() => setPaused(paused === false)}
-            aria-label={pauseLabel}
-            className={cn(
-              'absolute right-3 bottom-3 cursor-pointer rounded-full bg-black/45 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/75',
-              FOCUS_RING_CLASS,
-            )}
-          >
-            {paused && <Play size={14} weight="fill" />}
-            {paused === false && <Pause size={14} weight="fill" />}
-          </button>
+          <div className="absolute right-3 bottom-2 left-3 flex items-center justify-end gap-1">
+            {banners.map((b, idx) => {
+              const isCurrent = idx === safeIdx
+              let dotClass = 'block h-1.5 w-1.5 rounded-full bg-white/55 transition-all'
+              if (isCurrent) {
+                dotClass = 'block h-1.5 w-5 rounded-full bg-white transition-all'
+              }
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => setCurrentIdx(idx)}
+                  aria-label={`Xem banner ${idx + 1}`}
+                  aria-current={isCurrent}
+                  className={cn(
+                    'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full',
+                    FOCUS_RING_CLASS,
+                  )}
+                >
+                  <span className={dotClass} />
+                </button>
+              )
+            })}
+            <button
+              type="button"
+              onClick={() => setPaused(paused === false)}
+              aria-label={pauseLabel}
+              className={cn(
+                'ml-1 cursor-pointer rounded-full bg-black/40 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-black/70',
+                FOCUS_RING_CLASS,
+              )}
+            >
+              {paused && <Play size={12} weight="fill" />}
+              {paused === false && <Pause size={12} weight="fill" />}
+            </button>
+          </div>
         </>
-      )}
-
-      {/* Pagination Dots */}
-      {banners.length > 1 && (
-        <div className="absolute right-0 bottom-2 left-0 flex justify-center gap-0.5">
-          {banners.map((b, idx) => {
-            const isCurrent = idx === safeIdx
-            let dotClass = 'block h-2 w-2 rounded-full bg-white/55 transition-all'
-            if (isCurrent) {
-              dotClass = 'block h-2 w-6 rounded-full bg-white shadow transition-all'
-            }
-            return (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => setCurrentIdx(idx)}
-                aria-label={`Xem banner ${idx + 1}`}
-                aria-current={isCurrent}
-                className={cn(
-                  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-full',
-                  FOCUS_RING_CLASS,
-                )}
-              >
-                <span className={dotClass} />
-              </button>
-            )
-          })}
-        </div>
       )}
     </div>
   )
+}
+
+function collectionCaption(block: DecorationBlock, categoryName: string): string {
+  if (block.collectionType === 'BEST_SELLER') {
+    return 'Được mua nhiều nhất'
+  }
+  if (block.collectionType === 'SALE_OFF') {
+    return 'Đang giảm giá'
+  }
+  if (block.collectionType === 'CUSTOM') {
+    if (categoryName !== '') {
+      return `Danh mục ${categoryName}`
+    }
+    return 'Shop tuyển chọn'
+  }
+  return 'Mới lên kệ'
+}
+
+function collectionParams(block: DecorationBlock): GetShopProductsParams {
+  const params: GetShopProductsParams = { limit: block.itemLimit ?? 8 }
+  if (block.collectionType === 'CUSTOM') {
+    if (block.categoryId !== undefined && block.categoryId !== '') {
+      params.categoryId = block.categoryId
+    }
+    params.sort = 'BEST_SELLER'
+    return params
+  }
+  if (block.collectionType === 'BEST_SELLER' || block.collectionType === 'SALE_OFF') {
+    params.collection = block.collectionType
+    return params
+  }
+  params.collection = 'NEW_ARRIVALS'
+  return params
 }
 
 function ProductCollectionBlock({
   block,
   shopId,
   onViewAll,
+  preview,
 }: {
   block: DecorationBlock
   shopId: string
   onViewAll?: () => void
+  preview: boolean
 }) {
-  let badgeText = 'MỚI NHẤT'
-  if (block.collectionType === 'BEST_SELLER') {
-    badgeText = 'BÁN CHẠY NHẤT'
-  }
-  if (block.collectionType === 'SALE_OFF') {
-    badgeText = 'GIẢM GIÁ SÂU'
-  }
-  if (block.collectionType === 'CUSTOM') {
-    badgeText = 'TUYỂN CHỌN'
-  }
-
-  const limit = block.itemLimit ?? 8
-  let collectionType: 'NEW_ARRIVALS' | 'BEST_SELLER' | 'SALE_OFF' = 'NEW_ARRIVALS'
-  if (block.collectionType === 'BEST_SELLER' || block.collectionType === 'SALE_OFF') {
-    collectionType = block.collectionType
-  }
-
-  const productsQuery = useGetShopProducts(
-    shopId,
-    {
-      collection: collectionType,
-      limit,
+  const params = collectionParams(block)
+  const productsQuery = useGetShopProducts(shopId, params, {
+    query: {
+      enabled: shopId !== '',
     },
-    {
-      query: {
-        enabled: shopId !== '',
-      },
+  })
+  const categoriesQuery = useGetShopCategories(shopId, {
+    query: {
+      enabled: shopId !== '' && block.collectionType === 'CUSTOM',
     },
-  )
+  })
 
   let pageData: PageResponseProductResponse | null = null
   if (productsQuery.data !== undefined && productsQuery.data.status === 200) {
     pageData = takeData(productsQuery.data)
   }
-
   const items = pageData?.items ?? []
+  const total = pageData?.total ?? items.length
 
-  // API lỗi thì báo lỗi thay vì tự biến mất im lặng
+  let categoryName = ''
+  if (categoriesQuery.data !== undefined && categoriesQuery.data.status === 200) {
+    const match = takeData(categoriesQuery.data).find((c) => c.id === block.categoryId)
+    categoryName = match?.name ?? ''
+  }
+
   if (productsQuery.isError) {
     return (
       <div className="rounded-3xl border border-rose-200 bg-rose-50/70 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10">
@@ -310,23 +360,38 @@ function ProductCollectionBlock({
     )
   }
 
-  // Auto-hide when no products match this smart collection
+  // Bộ sưu tập không có sản phẩm nào khớp thì khách không thấy khối này
   if (!productsQuery.isLoading && items.length === 0) {
+    if (preview) {
+      return (
+        <PreviewPlaceholder
+          icon={<SquaresFour size={22} />}
+          title={block.title || 'Bộ sưu tập'}
+          hint="Chưa có sản phẩm đang bán nào khớp tiêu chí này, nên khách sẽ không thấy khối."
+        />
+      )
+    }
     return null
   }
 
+  const isSlider = block.displayStyle === 'SLIDER'
+  const heading = block.title || collectionCaption(block, categoryName)
+
   return (
-    <div className={cn(CARD_CLASS, 'space-y-4 p-6')}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <span className="flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300">
-            <Sparkle size={14} weight="fill" />
-            {badgeText}
-          </span>
-          <h2 className="text-lg font-bold text-[#17203a] dark:text-zinc-100">{block.title}</h2>
+    <section className={cn(CARD_CLASS, 'space-y-4 p-5 @xl:p-6')}>
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+        <div className="min-w-0">
+          <h2 className="text-lg font-extrabold tracking-tight text-[#17203a] @xl:text-xl dark:text-zinc-100">
+            {heading}
+          </h2>
+          {block.title !== '' && (
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {collectionCaption(block, categoryName)}
+            </p>
+          )}
         </div>
 
-        {onViewAll && (
+        {onViewAll !== undefined && total > items.length && (
           <button
             type="button"
             onClick={onViewAll}
@@ -335,18 +400,44 @@ function ProductCollectionBlock({
               FOCUS_RING_CLASS,
             )}
           >
-            <span>Xem tất cả ({items.length})</span>
-            <ArrowRight size={14} weight="bold" />
+            <span>Xem tất cả {total.toLocaleString('vi-VN')} sản phẩm</span>
+            <ArrowRight size={14} weight="bold" aria-hidden="true" />
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        {items.map((prod) => (
-          <ProductCard key={prod.id} item={toProductCardItem(prod)} showShop={false} />
-        ))}
-      </div>
-    </div>
+      {productsQuery.isLoading && (
+        <div className="grid grid-cols-2 gap-3 @lg:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-4">
+          {[0, 1, 2, 3].map(function (idx) {
+            return <ProductCardSkeleton key={idx} />
+          })}
+        </div>
+      )}
+
+      {productsQuery.isLoading === false && isSlider && (
+        <div
+          className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 @xl:-mx-6 @xl:px-6"
+          aria-label={`${heading}, cuộn ngang`}
+        >
+          {items.map((prod) => (
+            <div
+              key={prod.id}
+              className="w-[46%] shrink-0 snap-start @lg:w-[31%] @3xl:w-[23.5%] @5xl:w-[18.5%]"
+            >
+              <ProductCard item={toProductCardItem(prod)} showShop={false} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {productsQuery.isLoading === false && isSlider === false && (
+        <div className="grid grid-cols-2 gap-3 @lg:grid-cols-3 @3xl:grid-cols-4 @3xl:gap-4">
+          {items.map((prod) => (
+            <ProductCard key={prod.id} item={toProductCardItem(prod)} showShop={false} />
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -354,10 +445,12 @@ function CategoryGridBlock({
   block,
   shopId,
   onSelectCategory,
+  preview,
 }: {
   block: DecorationBlock
   shopId: string
   onSelectCategory?: (categoryId: string) => void
+  preview: boolean
 }) {
   const categoriesQuery = useGetShopCategories(shopId, {
     query: {
@@ -371,19 +464,25 @@ function CategoryGridBlock({
   }
 
   if (!categoriesQuery.isLoading && categories.length === 0) {
+    if (preview) {
+      return (
+        <PreviewPlaceholder
+          icon={<SquaresFour size={22} />}
+          title={block.title || 'Danh mục'}
+          hint="Shop chưa có sản phẩm đang bán thuộc danh mục nào."
+        />
+      )
+    }
     return null
   }
 
   return (
-    <div className={cn(CARD_CLASS, 'space-y-4 p-6')}>
-      <div className="flex items-center gap-2">
-        <SquaresFour size={20} className="text-blue-700 dark:text-sky-300" />
-        <h2 className="text-base font-bold text-[#17203a] dark:text-zinc-100">
-          {block.title || 'Danh Mục Nổi Bật Của Shop'}
-        </h2>
-      </div>
+    <section className={cn(CARD_CLASS, 'space-y-4 p-5 @xl:p-6')}>
+      <h2 className="text-lg font-extrabold tracking-tight text-[#17203a] @xl:text-xl dark:text-zinc-100">
+        {block.title || 'Mua theo danh mục'}
+      </h2>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 @md:grid-cols-3 @2xl:grid-cols-4 @4xl:grid-cols-6">
         {categories.map((c) => (
           <button
             key={c.id}
@@ -394,52 +493,81 @@ function CategoryGridBlock({
               }
             }}
             className={cn(
-              'flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-zinc-200/70 bg-zinc-50/50 p-4 text-center transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:border-sky-400/40 dark:hover:bg-white/10',
+              'flex cursor-pointer items-center gap-3 rounded-2xl border border-zinc-200/70 bg-zinc-50/50 p-3 text-left transition-colors hover:border-blue-300 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:border-sky-400/40 dark:hover:bg-white/10',
               FOCUS_RING_CLASS,
             )}
           >
-            <span className={cn(iconChipClass(), 'h-12 w-12 rounded-2xl')}>
-              <SquaresFour size={24} />
+            <span className={cn(iconChipClass(), 'h-10 w-10 rounded-xl')}>
+              <SquaresFour size={20} />
             </span>
-            <span className="text-xs font-semibold text-[#17203a] dark:text-zinc-200">
-              {c.name}
-            </span>
-            <span className="text-[10px] text-zinc-500 tabular-nums dark:text-zinc-400">
-              {c.productCount} sản phẩm
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-[#17203a] dark:text-zinc-200">
+                {c.name}
+              </span>
+              <span className="block text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                {(c.productCount ?? 0).toLocaleString('vi-VN')} sản phẩm
+              </span>
             </span>
           </button>
         ))}
       </div>
-    </div>
+    </section>
+  )
+}
+
+/** Block VIDEO: một video do seller upload qua presign, stream thẳng từ S3. */
+function VideoBlock({ block }: { block: DecorationBlock }) {
+  return (
+    <section className={cn(CARD_CLASS, 'overflow-hidden')}>
+      {block.title !== '' && (
+        <h2 className="px-5 pt-4 text-lg font-extrabold tracking-tight text-[#17203a] dark:text-white">
+          {block.title}
+        </h2>
+      )}
+      <div className="p-4">
+        {block.videoUrl !== undefined && block.videoUrl !== '' && (
+          // eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track
+          <video
+            src={urlOrPlaceholder(block.videoUrl)}
+            controls
+            playsInline
+            preload="metadata"
+            className="aspect-video w-full rounded-2xl bg-black object-contain"
+          />
+        )}
+      </div>
+    </section>
   )
 }
 
 // NOTE: Block FLASH_SALE đã bị xoá hoàn toàn (type + parser) — BE chưa có API
-// khuyến mãi, block cũ render dữ liệu mock cứng (ảnh picsum, giá 199.000đ) lên
-// storefront công khai. Layout legacy chứa block này bị bỏ qua lúc parse
-// (allowedTypes trong lib/sellerAdapters.ts).
+// khuyến mãi. Layout legacy chứa block này bị bỏ qua lúc parse (allowedTypes trong
+// lib/seller/sellerAdapters.ts).
 
 export default function ShopDecorationRenderer({
   blocks,
   shopId,
   onSelectCategory,
   onViewAllProducts,
+  preview = false,
 }: ShopDecorationRendererProps) {
   const activeBlocks = blocks.filter((b) => b.enabled)
 
   if (activeBlocks.length === 0) {
     return (
-      <div className="rounded-3xl border border-dashed border-zinc-200 bg-white/60 p-12 text-center text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-400">
-        <p className="text-sm">Gian hàng đang cập nhật trang trí giao diện mới.</p>
+      <div className="rounded-3xl border border-dashed border-zinc-300 bg-white/60 p-10 text-center text-zinc-500 dark:border-white/15 dark:bg-white/5 dark:text-zinc-400">
+        <p className="text-sm">Chưa có khối nào đang bật.</p>
       </div>
     )
   }
 
+  // @container: lưới đổi cột theo bề rộng khung chứa (không theo viewport) để khung xem
+  // trước điện thoại trong trình trang trí hiện đúng bố cục mobile.
   return (
-    <div className="space-y-6">
+    <div className="@container space-y-5">
       {activeBlocks.map((b) => {
         if (b.type === 'BANNER_SLIDER' || b.type === 'BANNER') {
-          return <BannerSliderBlock key={b.id} block={b} />
+          return <BannerSliderBlock key={b.id} block={b} preview={preview} />
         }
         if (b.type === 'PRODUCT_COLLECTION' || b.type === 'COLLECTION') {
           return (
@@ -448,6 +576,7 @@ export default function ShopDecorationRenderer({
               block={b}
               shopId={shopId}
               onViewAll={onViewAllProducts}
+              preview={preview}
             />
           )
         }
@@ -458,51 +587,29 @@ export default function ShopDecorationRenderer({
               block={b}
               shopId={shopId}
               onSelectCategory={onSelectCategory}
+              preview={preview}
             />
           )
         }
         if (b.type === 'VIDEO') {
           // Block chưa gắn video thì bỏ qua, đừng render hộp rỗng cho buyer
           if (b.videoUrl === undefined || b.videoUrl === '') {
+            if (preview) {
+              return (
+                <PreviewPlaceholder
+                  key={b.id}
+                  icon={<VideoCamera size={22} />}
+                  title={b.title || 'Video'}
+                  hint="Chưa tải video lên, khách sẽ không thấy khối này."
+                />
+              )
+            }
             return null
           }
           return <VideoBlock key={b.id} block={b} />
         }
         return null
       })}
-    </div>
-  )
-}
-
-/** Block VIDEO: một video do seller upload qua presign, stream thẳng từ S3. */
-function VideoBlock({ block }: { block: DecorationBlock }) {
-  let bodyPadding = 'p-4'
-  if (block.title !== '') {
-    bodyPadding = 'p-4 pt-3'
-  }
-
-  return (
-    <div className={cn(CARD_CLASS, 'overflow-hidden')}>
-      {block.title !== '' && (
-        <div className="flex items-center gap-2 px-5 pt-4">
-          <VideoCamera size={18} weight="fill" className="text-blue-700 dark:text-sky-300" />
-          <h2 className="text-base font-extrabold text-[#17203a] sm:text-lg dark:text-white">
-            {block.title}
-          </h2>
-        </div>
-      )}
-      <div className={bodyPadding}>
-        {block.videoUrl !== undefined && block.videoUrl !== '' && (
-          // eslint-disable-next-line jsx-a11y/media-has-caption -- video do merchant tự upload, không có file phụ đề để gắn track
-          <video
-            src={urlOrPlaceholder(block.videoUrl)}
-            controls
-            playsInline
-            preload="none"
-            className="aspect-video w-full rounded-2xl bg-black object-contain"
-          />
-        )}
-      </div>
     </div>
   )
 }

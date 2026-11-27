@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Plus, Trash } from '@phosphor-icons/react'
 
 import ImageUploadField from '@/components/admin/fields/ImageUploadField'
 import Modal from '@/components/Modal'
+import { safeBannerLink } from '@/lib/seller/decoration'
 
 import type { BannerSlideItem, DecorationBlock } from '@/types/seller'
 
@@ -23,12 +24,18 @@ export default function BannerSliderConfigModal({
   const [title, setTitle] = useState(block.title)
   const [banners, setBanners] = useState<BannerSlideItem[]>(block.banners ?? [])
 
+  // Banner đơn chỉ có 1 ảnh, slider tối đa 5
+  let maxSlides = 5
+  if (block.type === 'BANNER') {
+    maxSlides = 1
+  }
+
   if (!isOpen) {
     return null
   }
 
   const handleAddBanner = () => {
-    if (banners.length >= 5) {
+    if (banners.length >= maxSlides) {
       return
     }
     const newSlide: BannerSlideItem = {
@@ -81,14 +88,15 @@ export default function BannerSliderConfigModal({
     onClose()
   }
 
-  const isMaxReached = banners.length >= 5
+  const isMaxReached = banners.length >= maxSlides
+
+  let modalTitle = 'Banner trình chiếu'
+  if (maxSlides === 1) {
+    modalTitle = 'Banner đơn'
+  }
 
   return (
-    <Modal
-      title="Cấu hình Banner Slider (Tối đa 5 banner)"
-      onClose={onClose}
-      widthClass="max-w-2xl"
-    >
+    <Modal title={modalTitle} onClose={onClose} widthClass="max-w-2xl">
       <div className="space-y-4">
         <div>
           <label
@@ -110,11 +118,9 @@ export default function BannerSliderConfigModal({
         <div className="flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-white/10">
           <div>
             <h4 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
-              Danh sách ảnh Banner Slider ({banners.length}/5)
+              Ảnh banner ({banners.length}/{maxSlides})
             </h4>
-            <p className="text-[11px] text-zinc-400">
-              Ảnh hiển thị dạng trình chiếu xoay vòng tự động trên trang chủ gian hàng.
-            </p>
+            <p className="text-[11px] text-zinc-400">Slide chưa có ảnh sẽ không hiện với khách.</p>
           </div>
           <button
             type="button"
@@ -129,7 +135,7 @@ export default function BannerSliderConfigModal({
 
         {isMaxReached && (
           <p className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300">
-            Đã đạt số lượng tối đa 5 banner quảng cáo theo quy định của sàn.
+            Đã đủ {maxSlides} ảnh. Xóa bớt một ảnh nếu muốn thay.
           </p>
         )}
 
@@ -233,6 +239,13 @@ export default function BannerSliderConfigModal({
                         placeholder="/search?category=ao-khoac..."
                         className="w-full rounded-full border border-zinc-300 px-3 py-1.5 text-xs focus:border-blue-600 focus:outline-none dark:border-white/15 dark:bg-white/10"
                       />
+                      {(slide.linkUrl ?? '').trim() !== '' &&
+                        safeBannerLink(slide.linkUrl) === '' && (
+                          <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
+                            Link phải bắt đầu bằng / hoặc https://, nếu không banner sẽ không bấm
+                            được.
+                          </p>
+                        )}
                     </div>
                   </div>
                 </div>

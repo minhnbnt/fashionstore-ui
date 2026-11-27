@@ -126,6 +126,7 @@ export default function ShopDashboard() {
 
   let shopId = ''
   let shopName = ''
+  let shopSlug = ''
   let autoReplyText = FALLBACK_AUTO_REPLY
   let shopReady = false
   let isOwner = false
@@ -134,6 +135,7 @@ export default function ShopDashboard() {
   if (currentMembership !== null) {
     shopId = currentMembership.shopId ?? ''
     shopName = currentMembership.shopName ?? ''
+    shopSlug = currentMembership.shopSlug ?? ''
     shopReady = true
     if (currentMembership.role === 'OWNER') {
       isOwner = true
@@ -446,7 +448,7 @@ export default function ShopDashboard() {
       )}
 
       {isTabAllowed && activeTab === 'DECORATION' && (
-        <SellerDecorationTab shopId={shopId} shopName={shopName} />
+        <SellerDecorationTab shopId={shopId} shopName={shopName} shopSlug={shopSlug} />
       )}
 
       {isTabAllowed && activeTab === 'STAFF' && <SellerStaffTab shopId={shopId} />}

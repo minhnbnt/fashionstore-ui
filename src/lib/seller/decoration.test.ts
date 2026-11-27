@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { reorderBlocks } from './decoration'
+import { reorderBlocks, safeBannerLink, storefrontBlocks } from './decoration'
 
 describe('reorderBlocks', () => {
   const blocks = ['A', 'B', 'C', 'D']
@@ -42,5 +42,44 @@ describe('reorderBlocks', () => {
   it('mảng 1 phần tử hoặc rỗng', () => {
     expect(reorderBlocks(['X'], 0, 0)).toEqual(['X'])
     expect(reorderBlocks([], 0, 0)).toEqual([])
+  })
+})
+
+describe('safeBannerLink', () => {
+  it('giu duong dan noi bo va link http(s)', () => {
+    expect(safeBannerLink('/search?q=ao')).toBe('/search?q=ao')
+    expect(safeBannerLink('https://example.com/sale')).toBe('https://example.com/sale')
+    expect(safeBannerLink('http://example.com')).toBe('http://example.com')
+  })
+
+  it('bo link nguy hiem hoac khong hop le', () => {
+    expect(safeBannerLink('javascript:alert(1)')).toBe('')
+    expect(safeBannerLink(' JavaScript:alert(1)')).toBe('')
+    expect(safeBannerLink('data:text/html,hi')).toBe('')
+    expect(safeBannerLink('//evil.example')).toBe('')
+    expect(safeBannerLink('ftp://x')).toBe('')
+    expect(safeBannerLink(undefined)).toBe('')
+  })
+})
+
+describe('storefrontBlocks', () => {
+  it('shop chua xuat ban khoi nao dang bat thi dung bo cuc mac dinh', () => {
+    const blocks = storefrontBlocks([])
+    expect(blocks.map((b) => b.type)).toEqual([
+      'PRODUCT_COLLECTION',
+      'CATEGORY_GRID',
+      'PRODUCT_COLLECTION',
+    ])
+    expect(blocks.every((b) => b.enabled)).toBe(true)
+  })
+
+  it('tat ca khoi deu tat cung dung mac dinh', () => {
+    const blocks = storefrontBlocks([{ id: 'x', type: 'VIDEO', title: 'v', enabled: false }])
+    expect(blocks[0]?.collectionType).toBe('NEW_ARRIVALS')
+  })
+
+  it('co khoi dang bat thi giu nguyen bo cuc cua shop', () => {
+    const own = [{ id: 'a', type: 'CATEGORY_GRID' as const, title: 'Danh muc', enabled: true }]
+    expect(storefrontBlocks(own)).toBe(own)
   })
 })
