@@ -79,3 +79,60 @@ describe('ShopDecorationRenderer — block VIDEO', () => {
     expect(html).toContain('Xuân Hè')
   })
 })
+
+function renderBlocks(
+  blocks: Parameters<typeof ShopDecorationRenderer>[0]['blocks'],
+  preview = false,
+): string {
+  const queryClient = new QueryClient()
+  return renderToString(
+    createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(ShopDecorationRenderer, { shopId: 'shop-uuid-1', blocks, preview }),
+      ),
+    ),
+  )
+}
+
+describe('ShopDecorationRenderer — banner và chế độ xem trước', () => {
+  it('link javascript: trong banner không thành thẻ <a>', () => {
+    const html = renderBlocks([
+      {
+        id: 'b-1',
+        type: 'BANNER_SLIDER',
+        title: 'Banner',
+        enabled: true,
+        banners: [{ id: 's1', imageUrl: 'https://s3.test/a.jpg', linkUrl: 'javascript:alert(1)' }],
+      },
+    ])
+    expect(html).toContain('a.jpg')
+    expect(html).not.toContain('javascript:')
+    expect(html).not.toContain('<a ')
+  })
+
+  it('slide chưa có ảnh bị bỏ với khách, còn xem trước thì hiện khung gợi ý', () => {
+    const block = {
+      id: 'b-empty',
+      type: 'BANNER_SLIDER' as const,
+      title: 'Banner trống',
+      enabled: true,
+      banners: [{ id: 's1', imageUrl: '' }],
+    }
+
+    expect(renderBlocks([block])).not.toContain('Banner trống')
+    expect(renderBlocks([block], true)).toContain('Chưa có ảnh nào')
+  })
+
+  it('xem trước hiện khung gợi ý cho video chưa tải', () => {
+    const html = renderBlocks(
+      [{ id: 'v', type: 'VIDEO', title: 'Video shop', enabled: true }],
+      true,
+    )
+    expect(html).toContain('Video shop')
+    expect(html).toContain('Chưa tải video lên')
+  })
+})

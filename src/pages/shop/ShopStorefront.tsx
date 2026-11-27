@@ -17,9 +17,11 @@ import ShopProductsTab from '@/components/shop-storefront/ShopProductsTab'
 import ShopStorefrontHeader, {
   type StorefrontTab,
 } from '@/components/shop-storefront/ShopStorefrontHeader'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { useSessionQuery } from '@/hooks/useSession'
 import { takeData } from '@/lib/api/apiAdapters'
 import { notify } from '@/lib/notifications'
+import { storefrontBlocks } from '@/lib/seller/decoration'
 import { decorationBlocks } from '@/lib/seller/sellerAdapters'
 
 import type { DecorationBlock } from '@/types/seller'
@@ -168,9 +170,11 @@ export default function ShopStorefront() {
     )
   }
 
-  let blocks: DecorationBlock[] = []
-  if (decorationQuery.data !== undefined) {
-    blocks = decorationBlocks(takeData(decorationQuery.data))
+  // Shop chưa xuất bản khối nào đang bật (hoặc tải lỗi) thì khách vẫn thấy bố cục mặc định
+  // thay vì trang chủ trống.
+  let blocks: DecorationBlock[] = storefrontBlocks([])
+  if (decorationQuery.data !== undefined && decorationQuery.data.status === 200) {
+    blocks = storefrontBlocks(decorationBlocks(takeData(decorationQuery.data)))
   }
 
   return (
@@ -191,17 +195,20 @@ export default function ShopStorefront() {
       {/* Tab 1: Home (Decoration Layout) */}
       {activeTab === 'HOME' && (
         <>
-          {decorationQuery.isError && (
-            <p className="rounded-2xl border border-rose-200 bg-rose-50/70 px-4 py-3 text-xs font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
-              Không tải được giao diện trang trí của shop. Vui lòng thử lại sau.
-            </p>
+          {decorationQuery.isPending && (
+            <div aria-label="Đang tải trang gian hàng" className="space-y-5">
+              <Skeleton className="aspect-[16/9] w-full rounded-3xl md:aspect-[3/1]" />
+              <Skeleton className="h-72 w-full rounded-3xl" />
+            </div>
           )}
-          <ShopDecorationRenderer
-            blocks={blocks}
-            shopId={shopId}
-            onSelectCategory={handleSelectCategory}
-            onViewAllProducts={() => setActiveTab('PRODUCTS')}
-          />
+          {!decorationQuery.isPending && (
+            <ShopDecorationRenderer
+              blocks={blocks}
+              shopId={shopId}
+              onSelectCategory={handleSelectCategory}
+              onViewAllProducts={() => setActiveTab('PRODUCTS')}
+            />
+          )}
         </>
       )}
 

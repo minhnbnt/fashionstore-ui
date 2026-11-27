@@ -2,7 +2,7 @@ import { urlOrPlaceholder } from '../api/apiAdapters'
 import { formatDateTime } from '../format'
 import { cancelReasonLabel } from '../order/orderMonitoring'
 
-import type { DecorationBlock } from '@/types/seller'
+import type { BannerSlideItem, DecorationBlock } from '@/types/seller'
 import type {
   ChatConversationItem,
   ChatMessageItem,
@@ -603,12 +603,11 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
             if (typeof bRec['linkUrl'] === 'string') {
               linkUrl = bRec['linkUrl']
             }
-            banners.push({
-              id: bannerId,
-              imageUrl,
-              title,
-              linkUrl,
-            })
+            const slide: BannerSlideItem = { id: bannerId, imageUrl, title, linkUrl }
+            if (typeof bRec['uploadId'] === 'string') {
+              slide.uploadId = bRec['uploadId']
+            }
+            banners.push(slide)
           }
         }
       }
@@ -634,6 +633,16 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
       let videoUrl: string | undefined
       if (typeof record['videoUrl'] === 'string') {
         videoUrl = record['videoUrl']
+      }
+
+      let videoUploadId: string | undefined
+      if (typeof record['videoUploadId'] === 'string') {
+        videoUploadId = record['videoUploadId']
+      }
+
+      let categoryId: string | undefined
+      if (typeof record['categoryId'] === 'string' && record['categoryId'] !== '') {
+        categoryId = record['categoryId']
       }
 
       let blockId = `block-${blocks.length + 1}`
@@ -665,6 +674,12 @@ export function decorationBlocks(decoration: DecorationResponse | undefined): De
       }
       if (videoUrl !== undefined) {
         block.videoUrl = videoUrl
+      }
+      if (videoUploadId !== undefined) {
+        block.videoUploadId = videoUploadId
+      }
+      if (categoryId !== undefined) {
+        block.categoryId = categoryId
       }
       blocks.push(block)
     }

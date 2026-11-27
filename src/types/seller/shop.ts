@@ -33,7 +33,10 @@ export interface DecorationBlock {
   title: string
   enabled: boolean
   banners?: BannerSlideItem[]
+  /** CUSTOM = lọc theo danh mục shop chọn (`categoryId`). */
   collectionType?: 'NEW_ARRIVALS' | 'BEST_SELLER' | 'SALE_OFF' | 'CUSTOM'
+  /** Danh mục dùng cho collectionType CUSTOM. */
+  categoryId?: string
   itemLimit?: number
   displayStyle?: 'GRID' | 'SLIDER'
   /** Id upload của video — lưu vào draft để truy vết, không dùng để gọi API */

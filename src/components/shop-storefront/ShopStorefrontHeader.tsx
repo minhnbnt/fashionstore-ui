@@ -148,11 +148,11 @@ export default function ShopStorefrontHeader({
       </div>
 
       {/* Main Info Card */}
-      <div className="relative -mt-16 px-6 pb-4">
+      <div className="relative px-6 pt-3 pb-4">
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           {/* Avatar and Basic Details */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full shadow-xl">
+            <div className="relative -mt-16 h-28 w-28 shrink-0 overflow-hidden rounded-full shadow-xl ring-4 ring-white dark:ring-[#11182a]">
               {hasLogo && !logoFailed && (
                 <img
                   src={logoSrc}
